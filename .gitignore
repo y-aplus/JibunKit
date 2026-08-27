@@ -1,0 +1,27 @@
+# Local credentials and signing material
+.env
+.env.*
+!.env.example
+*.p8
+*.p12
+*.pfx
+*.pem
+*.key
+*.mobileprovision
+
+# Toolchains, SDKs, and build output
+.build/
+.swiftpm/
+DerivedData/
+build/
+SDKs/
+*.xip
+*.ipa
+*.xcarchive
+*.dSYM/
+
+# Machine-specific files
+.DS_Store
+Thumbs.db
+xcuserdata/
+*.xcuserstate

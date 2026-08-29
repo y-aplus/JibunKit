@@ -2,7 +2,7 @@
 
 更新日: 2026-08-29
 
-**状態:** 調査中。採用するビルド経路は未確定。環境のインストール、Appleへのログイン、SDK取得、ビルドはまだ実施していない。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3の準備とLinux向け最小Swiftパッケージのビルドまでは完了した。xtool、Apple SDK、iOS向けビルドは未検証。
 
 ## Windows環境の初期確認
 
@@ -30,16 +30,29 @@ WSL内のSwift・xtool・cargo確認は、実行可能なLinuxディストリビ
 | Linuxカーネル | `6.18.33.2-2` |
 | ディストリビューション | `Ubuntu 24.04.4 LTS`、WSL 2 |
 | 既定ユーザー | `dev`（UID 1000、ホーム`/home/dev`、パスワードはロック済み） |
-| Swift | 未導入。`which swift`は終了コード1 |
+| Swift | `6.3.3`を導入済み。導入前の`which swift`は終了コード1 |
 | xtool | 未導入。`which xtool`は終了コード1 |
 | cargo | 未導入。`which cargo`は終了コード1 |
 
 個人名を環境へ含めないため、開発用ユーザー名は`dev`とした。通常作業は`dev`で行い、パッケージ導入等の管理操作だけをWindows側から明示的にroot指定する。パスワードや無制限のpasswordless sudoは設定していない。
 
+## Swift導入結果
+
+2026-08-29にUbuntu 24.04向けの公式依存パッケージとSwiftly 1.1.2を導入し、Swift 6.3.3を固定した。
+
+| 項目 | 結果 |
+| --- | --- |
+| Swiftly | `1.1.2`。公式アーカイブと署名を取得し、Swift公式鍵のfingerprint `E813 C892 820A 6FA1 3755 B268 F167 DF1A CF9C E069`によるGood signatureを確認 |
+| Swift | `6.3.3 (swift-6.3.3-RELEASE)`、target `x86_64-unknown-linux-gnu`。Swiftly側の署名検証を有効にして導入 |
+| バージョン固定 | リポジトリ直下の`.swift-version`に`6.3.3`を記録。Swiftlyのglobal defaultも6.3.3 |
+| 最小確認 | 一時的な実行可能Swiftパッケージを生成し、`swift build`成功後に`swift run`で`Hello, world!`を確認 |
+
+Swiftlyの管理領域は`/home/dev/.local/share/swiftly`で約3.4 GiB。検証用パッケージは製品実装ではなく、Linuxホスト用SwiftコンパイラとSwift Package Managerが動作することだけを確かめるためにユーザーキャッシュ配下で作成した。この成功をiOSアプリやIPAのビルド成功とは扱わない。
+
 ## 現時点の判断
 
-- Windows上のWSLを優先する方針は維持するが、ローカル経路の成立・不成立はまだ判定しない。
-- 調査結果と必要な環境変更を説明してから、WSL・Swift・xtool等のインストールへ進む。
+- Windows上のWSLを優先する方針は維持するが、iOS向けローカル経路の成立・不成立はまだ判定しない。
+- WSLとSwiftの基礎環境は成立した。次はxtoolを導入し、Apple認証やSDK取得を行わない範囲のコマンドを確認する。
 - GitHub Actionsのクラウド経路は、ローカル経路が許容範囲で成立しない場合だけ検証する。
 
 ## 公式要件と固定する候補
@@ -59,9 +72,9 @@ xtool 1.17.0の公式手順は、Swift 6.3、Xcode 26、Linux上の`usbmuxd`、W
 
 ## 容量と環境変更
 
-初期確認時のCドライブ空き容量は約65.1 GiB、WSL導入後は約61.5 GiB。WSL、Ubuntu、Swift、xtool、Xcode 26のXIP、展開中の一時領域、生成したSDKを同時に保持する正確な必要量はまだ確定していない。Appleへのログイン前に取得ファイルの正確なサイズを確認できていないため、この空き容量で十分とは判断しない。WSLの`df`が示す仮想ディスク上限ではなく、ホスト側の実空き容量を判断に使う。
+初期確認時のCドライブ空き容量は約65.1 GiB、WSL導入後は約61.5 GiB、Swift導入後は約56.2 GiB。WSL、Ubuntu、Swift、xtool、Xcode 26のXIP、展開中の一時領域、生成したSDKを同時に保持する正確な必要量はまだ確定していない。Appleへのログイン前に取得ファイルの正確なサイズを確認できていないため、この空き容量で十分とは判断しない。WSLの`df`が示す仮想ディスク上限ではなく、ホスト側の実空き容量を判断に使う。
 
-次はSwift 6.3.3とxtool 1.17.0を導入する。Xcode 26の取得と`xtool setup`はApple Accountの操作を伴うため、認証情報を扱わない形でユーザー操作と切り分ける。
+次はxtool 1.17.0を導入する。Xcode 26の取得と`xtool setup`はApple Accountの操作を伴うため、認証情報を扱わない形でユーザー操作と切り分ける。
 
 ## 実行した確認
 

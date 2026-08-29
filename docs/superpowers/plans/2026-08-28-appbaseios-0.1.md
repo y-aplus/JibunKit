@@ -62,7 +62,7 @@ Get-Command git, wsl, swift, xtool, gh -ErrorAction SilentlyContinue |
 wsl --list --verbose
 ```
 
-- [ ] WSL内で次を実行する。見つからないツールは未導入として記録し、その終了結果を成功扱いしない。この段階ではインストールしない。
+- [x] WSL内で次を実行する。見つからないツールは未導入として記録し、その終了結果を成功扱いしない。この段階ではインストールしない。
 
 ```sh
 cat /etc/os-release

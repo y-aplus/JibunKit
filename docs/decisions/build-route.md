@@ -2,7 +2,7 @@
 
 更新日: 2026-08-30
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0の準備とLinux向け最小Swiftパッケージのビルドまでは完了した。Apple SDKとiOS向けビルドは未検証。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKの準備まで完了した。iOS向けアプリとIPAのビルドは未検証。
 
 ## Windows環境の初期確認
 
@@ -59,31 +59,33 @@ Swiftlyの管理領域は`/home/dev/.local/share/swiftly`で約3.4 GiB。検証�
 | AppImage | `xtool-x86_64.AppImage`、53,594,616 bytes |
 | SHA-256 | GitHub release APIのdigest `7566d62b829a4deadb01b5389c94f45763d851f204c5d22fa36e9f9d1c88d57b`と実ファイルが一致 |
 | 起動確認 | `xtool --version`は`xtool 1.17.0`。`xtool --help`と`xtool dev build --help`は終了コード0 |
-| Darwin Swift SDK | `swift sdk list`は`No Swift SDKs are currently installed.`。Apple SDKは未導入 |
+| Darwin Swift SDK | 導入前の`swift sdk list`は`No Swift SDKs are currently installed.`。Xcode 26.6取得後に導入し、現在は`darwin`を表示 |
 
 `xtool setup`はApple Accountの認証情報とXcode 26のXIPを要求するため実行していない。ヘルプ起動の成功だけを、Apple認証、Darwin SDK生成、iOSビルド、署名、実機導入の成功として扱わない。
 
 ## Apple SDK取得の境界
 
-2026-08-30時点の安定版で、xtool 1.17.0と導入済みSwiftに合うXcode 26.6 Universalを採用候補として固定する。
+2026-08-30時点の安定版で、xtool 1.17.0と導入済みSwiftに合うXcode 26.6 Universalを採用し、Darwin Swift SDKを生成した。
 
 | 項目 | 判断 |
 | --- | --- |
 | Xcode | `26.6`、build `17F113`、Swift `6.3.3`、iOS SDK `26.5` |
-| 取得物 | `Xcode_26.6_Universal.xip`。x86_64を含むUniversal版を使う |
+| 取得物 | `Xcode_26.6_Universal.xip`。x86_64を含むUniversal版。実ファイルは2,965,708,631 bytesで、Appleの画面表示は2.76 GB |
 | 公式取得先 | [Apple Developer Downloads](https://developer.apple.com/download/all/?q=Xcode%2026.6)。ブラウザでApple Accountへログインし、表示された利用条件をユーザーが確認・同意して取得する |
-| 取得前の状態 | 公式URLへの未認証HEAD要求は`/unauthorized/`へredirectされた。コマンドだけでは取得せず、認証情報をコマンド履歴へ入れない |
-| SDK生成 | XIP取得後に`xtool sdk install <path>`を使う。このコマンドはApple Developer Services認証と分離できる |
+| 取得前の状態 | 公式URLへの未認証HEAD要求は`/unauthorized/`へredirectされた。Apple Accountへログイン済みのブラウザから取得し、認証情報をコマンド履歴へ入れていない |
+| XIP検証 | ファイル先頭がXIPの`xar!`であることと、SHA-1 `31f49573964bb9b13f1c5f4bad83a23e3be2a44e`が公開releaseカタログの値と一致することを確認 |
+| SDK生成 | Apple Developer Servicesへログインせず`xtool sdk install <path>`を実行して成功。`iPhoneOS26.5.sdk`、`iPhoneSimulator26.5.sdk`、`MacOSX26.5.sdk`を含む`darwin.artifactbundle`を生成 |
+| 導入確認 | `swift sdk list`は`darwin`、`xtool sdk status`は`/home/dev/.swiftpm/swift-sdks/darwin.artifactbundle`への導入済み状態を表示 |
 | Apple認証 | `xtool auth status`は`Logged out`。SDK生成時はこの状態を維持し、署名・実機導入が必要になるまで`xtool auth login`を実行しない |
 
-Appleの公式資料ではXcode 26.6が安定版であること、build、Swift・SDKの版を確認した。ログイン前にAppleからXIPのsizeやchecksumは取得できなかった。補助情報として公開releaseカタログはUniversal XIPのSHA-1を`31f49573964bb9b13f1c5f4bad83a23e3be2a44e`、第三者の版一覧はsizeを約2.97 GBとしているが、取得後に実ファイルで照合するまで確定値として扱わない。
+Appleの公式資料ではXcode 26.6が安定版であること、build、Swift・SDKの版を確認した。ログイン前にAppleからchecksumは取得できなかったため、取得後の実ファイルを公開releaseカタログのSHA-1と照合した。XIPの個人別Downloadsパスは文書へ記録せず、XIPと生成したDarwin SDKをGit管理外に置いている。
 
-取得後はWindowsの個人別Downloadsパスを文書へ記録せず、その場でWSLから参照できるパスを確認する。XIP、生成途中のXcode.app、Darwin SDKはGit管理外とし、リポジトリ内へ置かない。
+SDKの使用量は約3.2 GiB。展開用一時ディレクトリは処理終了後に約12 KiBまで縮小し、生成途中のXcode.appは残っていない。取得したXIPは後続の再現性確認に備えて削除せず保持している。
 
 ## 現時点の判断
 
 - Windows上のWSLを優先する方針は維持するが、iOS向けローカル経路の成立・不成立はまだ判定しない。
-- WSL、Swift、xtoolの基礎環境は成立した。次はApple公式のXcode 26取得条件と実ファイルの必要容量を確認し、ユーザー操作が必要な認証部分を切り分ける。
+- WSL、Swift、xtool、Darwin Swift SDKの基礎環境は成立した。次はApple Developer Servicesへログインしないまま提供元の最小アプリをビルドし、`.app`とIPAの生成可否を確かめる。
 - GitHub Actionsのクラウド経路は、ローカル経路が許容範囲で成立しない場合だけ検証する。
 
 ## 公式要件と固定する候補
@@ -103,11 +105,11 @@ xtool 1.17.0の公式手順は、Swift 6.3、Xcode 26、Linux上の`usbmuxd`、W
 
 ## 容量と環境変更
 
-初期確認時のCドライブ空き容量は約65.1 GiB、WSL導入後は約61.5 GiB、Swiftとxtool導入後は約56.2 GiB。xtool本体は約52 MiB。Xcode 26.6 Universal XIPの補助的なsize情報は約2.97 GBであり、XIP単体の取得余地はある。
+初期確認時のCドライブ空き容量は約65.1 GiB、WSL導入後は約61.5 GiB、Swiftとxtool導入後は約56.2 GiB。xtool本体は約52 MiB。取得したXcode 26.6 Universal XIPは2,965,708,631 bytesだった。
 
-ただしxtool 1.17.0の実装は、XIP全体を一時的なXcode.appへ展開し、必要なSDKを別の出力先へコピーしてから展開物を削除する。そのため処理中はXIP、展開済みXcode.app、生成中のDarwin SDKが同時に存在する。ピーク使用量は実測前であり、現在の空き容量で十分とはまだ断定しない。WSLの`df`が示す仮想ディスク上限ではなく、ホスト側の実空き容量を判断に使う。
+SDK導入後のDarwin Swift SDKは約3.2 GiB、WSL内の論理使用量は約8.7 GiB、Cドライブの空き容量は約39.8 GiBだった。xtoolの展開用一時データは削除されたが、拡張されたWSL仮想ディスクのホスト側割当ては自動では縮小していない。仮想ディスクの圧縮やXIP削除は環境を変えるため、必要性を説明して承認を得るまでは実施しない。
 
-次はユーザーがPCのブラウザでXcode 26.6 Universal XIPを取得する。取得後にsizeとchecksumを確認し、Apple Developer Servicesへログインせず`xtool sdk install`でDarwin SDKを生成する。
+次はxtool提供元の最小アプリ例を使い、Apple Developer Servicesへログインせず`.app`とIPAのビルドを試す。使用した版、コマンド、終了結果、成果物の場所を記録する。
 
 ## 実行した確認
 

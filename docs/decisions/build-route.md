@@ -2,7 +2,7 @@
 
 更新日: 2026-08-30
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。署名、SideStore導入、実機動作は未検証。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。GitHub ActionsのmacOS経路はローカルにworkflowを用意したが、まだpush・実行していない。SideStore導入と実機動作も未検証。
 
 ## Windows環境の初期確認
 
@@ -135,11 +135,30 @@ xtool dev build --ipa
 
 この結果は、Widgetを含むIPA生成はローカルで成立した一方、F2に必要なApp Intentsメタデータ生成はxtool 1.17.0の機能不足で不成立、という区分になる。同じ標準SwiftソースをGitHub Actionsが提供するmacOS環境でビルドする経路を次に具体化する。SideStore導入は、メタデータを含むIPAが得られてから行う。
 
+## GitHub ActionsのmacOS経路
+
+2026-08-30に`.github/workflows/build-ios.yml`をローカルへ追加した。意図しない利用枠消費を避けるため`workflow_dispatch`だけを入口とし、pushやpull requestでは自動実行しない。この文書更新時点ではworkflow自体をGitHubへpushしておらず、以下は実行済みの結果ではなく、次に検証する固定手順である。
+
+| 項目 | 固定した内容 |
+| --- | --- |
+| runner | GitHub標準runnerの`macos-26`。現在の公式一覧ではApple Silicon、3 CPU、7 GB RAM、14 GB SSD |
+| Xcode | `/Applications/Xcode_26.6.app`を`xcode-select`で明示し、`xcodebuild -version`の先頭行が`Xcode 26.6`であることを検査。runner imageの現在の一覧ではbuild `17F113` |
+| xtool | 公式release `1.17.0`の`xtool.app.zip`。GitHub release APIのSHA-256 `7796364f6b568f3a728ec4afef1d6ccd4b12bdfbca1b33a92cbead65545ed2fe`との一致を必須にする |
+| プロジェクト生成 | macOSだけで有効な`xtool dev generate-xcode-project`を使う。xtool 1.17.0の固定ソースを確認し、本体とWidgetをXcode targets、リポジトリ直下をlocal packageとして生成することを確認した |
+| ビルド | Xcode workspaceの`AppbaseIOS` schemeを、iOS実機向けReleaseとして`xcodebuild`する。Apple署名情報をrunnerへ渡さず、最初は`CODE_SIGNING_ALLOWED=NO`で生成する |
+| 署名・梱包 | SideStoreへ渡す資格情報を残すため、Widgetを先、本体を後の順に、リポジトリ内のentitlementsを使ってmacOS標準`codesign`でアドホック署名する。Apple証明書、provisioning profile、Apple Accountのsecretは使わない |
+| 合格条件 | arm64の本体とWidget、bundle ID、0.1.0／build 1、両バンドルの論理App Group、`Metadata.appintents/extract.actionsdata`の非空ファイル、IPAのZIP整合性をjob内で検査する。いずれかが欠ければIPAを成果物としてuploadしない |
+| 成果物 | `AppbaseIOS-ad-hoc`というActions artifactへIPAだけを保存し、保持期間は7日。実機合格前の検証物でありrelease成果物にはしない |
+
+非公開リポジトリの標準runner利用は、所有者のプランに含まれるActions利用枠から消費され、超過分の費用もリポジトリ所有者に帰属する。2026-08-30現在、GitHub Freeは月2,000分とartifact 500 MBを含み、標準macOS runnerの基準単価は超過時$0.062／分と案内されている。料金と残量は変更され得るため、最初の手動実行前に[Actionsの課金説明](https://docs.github.com/en/billing/concepts/product-billing/github-actions)と[Billing画面](https://github.com/settings/billing)で実際のアカウント状態を確認する。公開リポジトリにして無料化するために、0.1完成時まで非公開という公開方針を前倒ししない。
+
+この経路が満たすのは、Macを購入せずXcodeの正規ビルド処理を使えるかという確認までである。App Intentsメタデータ入りIPAが生成できても、Shortcutsへの表示・入出力、SideStore再署名後のApp Group、Widget表示を実機で別に確認する。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- 次は条件付きで合意済みのGitHub Actions上のmacOS経路を具体化し、同じソースからメタデータ入りIPAを作れるか確認する。利用枠と必要設定を先に記録する。
+- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録した。次はユーザーのpush指示後に手動実行し、同じソースからメタデータ入りIPAを作れるか確認する。
 
 ## 公式要件と固定する候補
 

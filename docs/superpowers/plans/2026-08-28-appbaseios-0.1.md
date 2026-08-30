@@ -10,7 +10,7 @@
 
 **Spec:** [0.1の設計・完成条件](../specs/2026-08-28-appbaseios-foundation-design.md)、[技術確認](../specs/2026-08-28-appbaseios-technical-review.md)、[1.0の目標案と設計原則](../specs/2026-08-28-appbaseios-1.0-direction.md)
 
-**状態:** 実行中。工程1の製品最小構成を実装し、WSL上で単体テストと、App Intent型・Widget extensionを含むIPA生成に成功した。IPAにApp IntentsメタデータがないためF2のローカル経路は不成立と判定し、合意済みのGitHub Actions上のmacOS経路を具体化する段階。署名、SideStore導入、実機動作は未検証。後続工程の詳細は、その前段の実測結果を根拠に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
+**状態:** 実行中。工程1の製品最小構成を実装し、WSL上で単体テストと、App Intent型・Widget extensionを含むIPA生成に成功した。IPAにApp IntentsメタデータがないためF2のローカル経路は不成立と判定した。GitHub Actions上のmacOS経路は具体化し、手動実行用workflowをローカルに用意したが、push・クラウド実行、SideStore導入、実機動作は未検証。後続工程の詳細は、その前段の実測結果を根拠に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
 
 **引継ぎ:** 計画作成後にこのWindows環境での続行指示を得たため、ローカル経路の検証を進めている。0.1の完成・リリースまでは非公開で保存する。文書のGit管理・非公開保存や基礎環境の準備は、アプリの実装・検証・OSS公開・0.1のリリースの完了ではない。
 
@@ -84,8 +84,10 @@ xtool dev build --help
 - [x] Apple SDKは正規の取得手順を使う。ユーザーによるAppleへのログイン・利用条件の確認が必要な箇所を切り分ける。認証情報を文書やコマンド履歴へ書かせない。Xcode 26.6 Universalのブラウザ取得と実ファイル検証を行い、Apple Developer Services認証を使わずDarwin Swift SDKを生成・導入した。
 - [x] 合意した範囲で必要な環境を準備した後、提供元の最小アプリ例でビルド・IPA出力を実行する。Swift 6.3.3、xtool 1.17.0、Darwin Swift SDKを使い、Apple認証なしでarm64 `.app`と未署名IPAを生成した。実際のコマンド、終了結果、リポジトリ外の成果物の場所は`docs/decisions/build-route.md`に記録した。
 - [x] 最小アプリで、数値を受け取って結果を返すApp Intentと、同じ値を表示するWidgetを実証するための具体的なファイル・型・テスト手順を本計画へ追加する。下記の「App Intent／Widget最小実証の実装境界」に固定し、この詳細が揃ってからコードに着手する。
+- [x] ローカル経路の不成立を受け、GitHub Actionsの`macos-26`、Xcode 26.6、xtool 1.17.0、Xcode workspace生成、アドホック署名、App Intentsメタデータ検査、7日間のIPA artifactまでを`.github/workflows/build-ios.yml`へ具体化する。自動起動とAppleのsecretは入れず、利用枠・料金・未実行状態を`docs/decisions/build-route.md`へ記録する。
+- [ ] workflowをGitHubへpushした後、利用枠を確認して手動実行する。`Metadata.appintents/extract.actionsdata`を含むIPAがuploadされたこと、jobのXcode・xtool版、SHA-256、実行時間、消費した利用量を記録する。workflowの存在だけで成功扱いにしない。
 - [ ] SideStore経由で最小アプリを導入し、ショートカットへの登録・入出力とWidgetの共有領域読取りを確認する。再署名後の識別子、本体と拡張、消費した枠を記録する。
-- [ ] 失敗は以下の区分で整理する。原因に対応しないビルド環境の変更を繰り返さない。
+- [x] ローカル経路の失敗を以下の区分で整理し、ツール内部や生成物を改造せずmacOS経路へ切り替える。今後の失敗も原因に対応しないビルド環境の変更を繰り返さない。
 
 | 結果 | 次の行動 |
 | --- | --- |
@@ -117,7 +119,7 @@ xtool dev build --help
 1. WSLで`swift test`を実行し、iOS非依存の加算と保存先解決を確認する。TDDはこの小さな更新規則に使い、iOSフレームワークの実機確認を単体テストへ偽装しない。
 2. `xtool dev build --ipa`を実行し、終了コードとIPAを記録する。`unzip -t`に加え、`Payload/AppbaseIOS.app/PlugIns/AppbaseIOSWidget.appex`、本体とWidgetのInfo.plist、両バンドルのentitlementsを確認する。
 3. ビルド成功とは別に、`Payload/AppbaseIOS.app/Metadata.appintents/extract.actionsdata`の有無を確認する。xtool 1.17.0の固定タグにはApp Intentsメタデータ生成処理がなく、Issue #145も未解決なので、ファイルがなければF2のローカル経路は不成立と判定する。
-4. メタデータがない場合、生成物の手修正やxtool内部の改造は行わない。同じ標準SwiftソースをGitHub Actionsが提供するmacOS環境でビルドする具体的なjob、Xcode版、成果物確認を計画へ追記してからクラウド経路を試す。
+4. メタデータがない場合、生成物の手修正やxtool内部の改造は行わない。同じ標準SwiftソースをGitHub Actionsが提供するmacOS環境でビルドする具体的なjob、Xcode版、成果物確認を計画へ追記してからクラウド経路を試す。`macos-26`、Xcode 26.6、xtool 1.17.0を固定し、手動実行だけの`.github/workflows/build-ios.yml`へ具体化した。
 5. メタデータを含むIPAが得られた後にSideStoreで導入する。ショートカット一覧に「カウンターに追加」が現れること、`2`を渡すと更新後の値`2`が返ること、アプリ画面も`2`を表示すること、WidgetがOSの更新後に同じ`2`を表示することを実機で確認する。再署名後の本体・拡張bundle ID、解決したApp Group、消費したApp ID枠も記録する。
 
 WSLでのコンパイル、IPA内のメタデータ、SideStore署名、Shortcuts実行、Widget共有値を別々の証拠として扱う。どれか1つの成功で残りを完了扱いにしない。

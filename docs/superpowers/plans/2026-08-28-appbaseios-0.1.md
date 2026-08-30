@@ -10,7 +10,7 @@
 
 **Spec:** [0.1の設計・完成条件](../specs/2026-08-28-appbaseios-foundation-design.md)、[技術確認](../specs/2026-08-28-appbaseios-technical-review.md)、[1.0の目標案と設計原則](../specs/2026-08-28-appbaseios-1.0-direction.md)
 
-**状態:** 実行中。工程1の環境・ビルド経路を確認しており、WSL 2／Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、提供元の最小SwiftUI例から未署名の`.app`とIPAを生成できた。App Intent、Widget、署名、SideStore導入は未検証。コードの配置と実装・テストの詳細手順は、その結果を根拠に次の工程へ入る前に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
+**状態:** 実行中。工程1の環境・ビルド経路を確認しており、WSL 2／Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、提供元の最小SwiftUI例から未署名の`.app`とIPAを生成できた。App IntentとWidgetの最小実証に使うファイル・型・検証手順も具体化した。実装、App Intentsメタデータ、署名、SideStore導入は未検証。後続工程の詳細は、その前段の実測結果を根拠に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
 
 **引継ぎ:** 計画作成後にこのWindows環境での続行指示を得たため、ローカル経路の検証を進めている。0.1の完成・リリースまでは非公開で保存する。文書のGit管理・非公開保存や基礎環境の準備は、アプリの実装・検証・OSS公開・0.1のリリースの完了ではない。
 
@@ -83,7 +83,7 @@ xtool dev build --help
 - [x] 技術確認文書で参照したxtoolと代替メタデータ生成ツールの版・配布条件を再確認し、採用または保留する版、取得元、理由を`docs/decisions/build-route.md`へ記す。単に`latest`だけを記録して終わらせない。
 - [x] Apple SDKは正規の取得手順を使う。ユーザーによるAppleへのログイン・利用条件の確認が必要な箇所を切り分ける。認証情報を文書やコマンド履歴へ書かせない。Xcode 26.6 Universalのブラウザ取得と実ファイル検証を行い、Apple Developer Services認証を使わずDarwin Swift SDKを生成・導入した。
 - [x] 合意した範囲で必要な環境を準備した後、提供元の最小アプリ例でビルド・IPA出力を実行する。Swift 6.3.3、xtool 1.17.0、Darwin Swift SDKを使い、Apple認証なしでarm64 `.app`と未署名IPAを生成した。実際のコマンド、終了結果、リポジトリ外の成果物の場所は`docs/decisions/build-route.md`に記録した。
-- [ ] 最小アプリで、数値を受け取って結果を返すApp Intentと、同じ値を表示するWidgetを実証するための具体的なファイル・型・テスト手順を本計画へ追加する。この詳細が揃ってからコードに着手する。
+- [x] 最小アプリで、数値を受け取って結果を返すApp Intentと、同じ値を表示するWidgetを実証するための具体的なファイル・型・テスト手順を本計画へ追加する。下記の「App Intent／Widget最小実証の実装境界」に固定し、この詳細が揃ってからコードに着手する。
 - [ ] SideStore経由で最小アプリを導入し、ショートカットへの登録・入出力とWidgetの共有領域読取りを確認する。再署名後の識別子、本体と拡張、消費した枠を記録する。
 - [ ] 失敗は以下の区分で整理する。原因に対応しないビルド環境の変更を繰り返さない。
 
@@ -93,6 +93,34 @@ xtool dev build --help
 | ローカルのツール側で不成立 | 不成立理由を説明し、合意済みのGitHub Actionsのクラウド上のmacOS環境で同じ必須操作を確認する。利用枠と必要設定を先に示す。 |
 | IPAは作れるが署名・共有領域・実機連携が不成立 | SideStore再署名後の設定・識別子・権限を調べる。クラウドへ移すだけで解決すると決めつけない。 |
 | ツール内部の改造や生成物の手修正が必要 | その経路を中断し、未達条件・原因・必要な変更を示す。0.1を縮小して完了扱いにしない。 |
+
+### App Intent／Widget最小実証の実装境界
+
+これは捨てるための別プローブではなく、工程2のカウンターへ継続利用する最小の製品ソースとして作る。App Intentは外部から価値のある1操作だけ、Widgetは表示だけとし、AppEntity、設定画面、即時更新機構は追加しない。最初の実機がiOS 26.6であるため、当面のdeployment targetはiOS 26.0とし、対象OSの拡張は別の実測後に判断する。
+
+| パス | 作成する内容・公開する型 |
+| --- | --- |
+| `Package.swift` | SwiftPM 6.0。`AppbaseIOS`、`CounterFeature`、`AppbaseIOSWidget`の3 targets、アプリとWidgetの2 library products、`CounterFeatureTests`を宣言する。アプリとWidgetだけが`CounterFeature`へ依存する。 |
+| `xtool.yml` | 暫定bundle ID、アプリproduct、Widget extension product、本体・拡張それぞれのInfo.plistとentitlementsを宣言する。実機更新に使う恒久bundle IDは、最初の署名前に別途固定する。 |
+| `AppbaseIOS.entitlements` / `AppbaseIOSWidget.entitlements` | 同じ論理App Groupを宣言する。資格情報やTeam IDは書かない。 |
+| `AppbaseIOS-Info.plist` / `AppbaseIOSWidget-Info.plist` | 論理App Group名を`AppbaseAppGroup`へ持たせる。Widget側は`com.apple.widgetkit-extension`を宣言する。 |
+| `Sources/CounterFeature/CounterFeature.swift` | `CounterStore` actorを公開し、`currentValue()`と`add(_:)`だけを提供する。App Groupの`UserDefaults`を使い、画面とApp Intentを同じ更新処理へ通す。 |
+| `Sources/CounterFeature/SharedGroupResolver.swift` | `SharedGroupResolver`を公開する。SideStoreがInfo.plistへ入れる`ALTAppGroups`の`[String]`から論理App Groupの末尾に一致する候補を1件だけ選ぶ。見つからない・複数候補の場合は黙って通常のUserDefaultsへ切り替えず、判別可能な失敗にする。通常署名では`AppbaseAppGroup`の値を使う。 |
+| `Sources/AppbaseIOS/AppbaseIOSApp.swift` / `CounterScreen.swift` | 最小のアプリ入口とカウンター画面。画面は`CounterStore`の現在値を読み、同じ`add(_:)`で更新する。 |
+| `Sources/AppbaseIOS/AddCounterValueIntent.swift` | `AddCounterValueIntent: AppIntent`。`amount: Int`を受け、`CounterStore.add(_:)`の更新後の`Int`を`ReturnsValue<Int>`として返す。iOS 26の`supportedModes = [.background]`を使い、画面を開くことに依存しない。 |
+| `Sources/AppbaseIOS/AppbaseShortcuts.swift` | `AppbaseShortcuts: AppShortcutsProvider`。上記Intentを「カウンターに追加」として1件だけ登録する。Intent宣言をホストtargetへ集め、複数moduleのメタデータ集約を要求しない。 |
+| `Sources/AppbaseIOSWidget/CounterWidget.swift` | `CounterWidget`と読取り専用`TimelineProvider`。同じ`CounterStore.currentValue()`を読み、Widgetからは書き込まない。即時更新は保証しない。 |
+| `Tests/CounterFeatureTests/CounterFeatureTests.swift` | 値の加算と保存先解決の分岐だけを検査する。App IntentsやWidgetKitをLinux単体テストで動作済み扱いにしない。 |
+
+実装後の確認順は次のとおり。
+
+1. WSLで`swift test`を実行し、iOS非依存の加算と保存先解決を確認する。TDDはこの小さな更新規則に使い、iOSフレームワークの実機確認を単体テストへ偽装しない。
+2. `xtool dev build --ipa`を実行し、終了コードとIPAを記録する。`unzip -t`に加え、`Payload/AppbaseIOS.app/PlugIns/AppbaseIOSWidget.appex`、本体とWidgetのInfo.plist、両バンドルのentitlementsを確認する。
+3. ビルド成功とは別に、`Payload/AppbaseIOS.app/Metadata.appintents/extract.actionsdata`の有無を確認する。xtool 1.17.0の固定タグにはApp Intentsメタデータ生成処理がなく、Issue #145も未解決なので、ファイルがなければF2のローカル経路は不成立と判定する。
+4. メタデータがない場合、生成物の手修正やxtool内部の改造は行わない。同じ標準SwiftソースをGitHub Actionsが提供するmacOS環境でビルドする具体的なjob、Xcode版、成果物確認を計画へ追記してからクラウド経路を試す。
+5. メタデータを含むIPAが得られた後にSideStoreで導入する。ショートカット一覧に「カウンターに追加」が現れること、`2`を渡すと更新後の値`2`が返ること、アプリ画面も`2`を表示すること、WidgetがOSの更新後に同じ`2`を表示することを実機で確認する。再署名後の本体・拡張bundle ID、解決したApp Group、消費したApp ID枠も記録する。
+
+WSLでのコンパイル、IPA内のメタデータ、SideStore署名、Shortcuts実行、Widget共有値を別々の証拠として扱う。どれか1つの成功で残りを完了扱いにしない。
 
 **完了判定:** 採用する経路において、最小アプリのビルドとSideStore導入、App Intentの登録・入出力、Widgetの共有値の表示を実際に確認し、再現可能な手順を記録できたこと。これは0.1全体の完成ではない。
 

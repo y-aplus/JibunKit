@@ -108,10 +108,20 @@ xtool dev build --ipa
 
 `xtool dev build --ipa`は同じ`xtool`出力ディレクトリを作り直すため、直前の`.app`は残らない。上記の保存先では、`.app`ビルド後にコピーしてからIPAを生成して両方を保持した。
 
+## App IntentとWidgetの着手判定
+
+2026-08-30にxtool 1.17.0の固定タグをコミット`9e8bfd432c99c7ef9ade6c4b6723f1321ed0e7ed`で取得し、提供元の文書とパッケージ処理を再確認した。
+
+- Widgetは、SwiftPMの別library product、`xtool.yml`の`extensions`、Widget用Info.plistによって`.appex`として組み込める。本体と拡張には別々の`entitlementsPath`も指定できる。
+- 固定タグのソースを`AppIntents`、`appintentsmetadataprocessor`、`Metadata.appintents`で検索した結果は該当なしだった。[Issue #145](https://github.com/xtool-org/xtool/issues/145)はOpenのまま、Linux向けメタデータ生成の[PR #217](https://github.com/xtool-org/xtool/pull/217)は未マージで閉じている。
+- したがって、標準のApp IntentsコードがクロスコンパイルできてもF2の成立証拠にはしない。IPA内の`Metadata.appintents/extract.actionsdata`と、実機のショートカット一覧への登録、数値入力、戻り値を別々に確認する。
+- まずAppleの公開APIだけで継続利用する製品ソースを作る。メタデータが生成されなければローカルツール側の不成立として記録し、生成物の手修正やxtool内部の改造は行わず、合意済みのGitHub Actions上のmacOS経路へ進む。
+- `re-appintentsmetadataprocessor`は、ライセンス配布物、iOS向け出力、xtoolへの薄い接続だけで使えることをまだ実証できていないため、現時点では導入しない。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer Servicesへログインしない未署名iOSアプリ／IPA生成までは成立した。ただしApp Intent、Widget、署名、実機導入を含むローカル経路全体の成立・不成立はまだ判定しない。
-- 次は最小アプリへApp IntentとWidgetを加えるための具体的なファイル・型・テスト手順を、xtoolのextension対応と現在の仕様に照らして計画へ追記する。
+- App IntentとWidgetを含む最小実証のファイル・型・テスト手順を計画へ具体化した。次はその構成を継続利用する製品ソースとして実装し、ローカル経路のメタデータ生成可否を測る。
 - GitHub Actionsのクラウド経路は、ローカル経路が許容範囲で成立しない場合だけ検証する。
 
 ## 公式要件と固定する候補

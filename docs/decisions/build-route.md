@@ -2,7 +2,7 @@
 
 更新日: 2026-08-30
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKの準備まで完了した。iOS向けアプリとIPAのビルドは未検証。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、提供元の最小SwiftUIアプリから未署名の`.app`とIPAを生成できた。署名、SideStore導入、App Intent、Widgetは未検証。
 
 ## Windows環境の初期確認
 
@@ -82,10 +82,36 @@ Appleの公式資料ではXcode 26.6が安定版であること、build、Swift�
 
 SDKの使用量は約3.2 GiB。展開用一時ディレクトリは処理終了後に約12 KiBまで縮小し、生成途中のXcode.appは残っていない。取得したXIPは後続の再現性確認に備えて削除せず保持している。
 
+## 最小アプリとIPAの生成結果
+
+2026-08-30にxtool 1.17.0自身のジェネレータを使い、リポジトリ外のWSLキャッシュ領域へ`AppbaseXtoolProbe`を生成した。`--skip-setup`で認証とSDK再設定を明示的に省き、ビルド後も`xtool auth status`が`Logged out`であることを確認した。
+
+```sh
+export PATH=/home/dev/.local/share/swiftly/bin:/home/dev/.local/bin:$PATH
+cd /home/dev/.cache
+xtool new AppbaseXtoolProbe --skip-setup
+cd AppbaseXtoolProbe
+xtool dev build
+xtool dev build --ipa
+```
+
+生成された例はSwift tools 6.0、iOS 17以上、macOS 14以上を宣言し、SwiftUIの`WindowGroup`から`ContentView`を表示するだけの構成だった。製品用のbundle IDや設計を確定する材料にはせず、ビルド経路のプローブとしてのみ扱う。
+
+| 項目 | 結果 |
+| --- | --- |
+| `.app` | 初回ビルドは52.58秒で終了コード0。`/home/dev/.cache/AppbaseXtoolProbe/xtool/AppbaseXtoolProbe.app`へ出力 |
+| IPA | キャッシュ利用後のビルドは0.47秒で終了コード0。`/home/dev/.cache/AppbaseXtoolProbe/xtool/AppbaseXtoolProbe.ipa`へ出力 |
+| 保存した検証成果物 | `/home/dev/.cache/AppbaseXtoolProbe-artifacts-20260830/`に`.app`とIPAを保存。リポジトリ外でありGit管理対象外 |
+| IPA検証 | 106,011 bytes、SHA-256 `ed358948f12c5aaa1168298fcb9447c2a2070dd2a1df870a6a0c19dd6fd0eaf9`。`unzip -t`は全4項目を正常と判定 |
+| 実行ファイル | 103,680 bytesの64-bit arm64 Mach-O。iPhone実機向けの既定tripleで生成 |
+| 署名 | `.app`に`_CodeSignature`は存在しない。ビルドとIPA梱包の成功だけを確認し、SideStoreによる再署名・導入成功とは扱わない |
+
+`xtool dev build --ipa`は同じ`xtool`出力ディレクトリを作り直すため、直前の`.app`は残らない。上記の保存先では、`.app`ビルド後にコピーしてからIPAを生成して両方を保持した。
+
 ## 現時点の判断
 
-- Windows上のWSLを優先する方針は維持するが、iOS向けローカル経路の成立・不成立はまだ判定しない。
-- WSL、Swift、xtool、Darwin Swift SDKの基礎環境は成立した。次はApple Developer Servicesへログインしないまま提供元の最小アプリをビルドし、`.app`とIPAの生成可否を確かめる。
+- Windows上のWSLで、Apple Developer Servicesへログインしない未署名iOSアプリ／IPA生成までは成立した。ただしApp Intent、Widget、署名、実機導入を含むローカル経路全体の成立・不成立はまだ判定しない。
+- 次は最小アプリへApp IntentとWidgetを加えるための具体的なファイル・型・テスト手順を、xtoolのextension対応と現在の仕様に照らして計画へ追記する。
 - GitHub Actionsのクラウド経路は、ローカル経路が許容範囲で成立しない場合だけ検証する。
 
 ## 公式要件と固定する候補
@@ -109,7 +135,7 @@ xtool 1.17.0の公式手順は、Swift 6.3、Xcode 26、Linux上の`usbmuxd`、W
 
 SDK導入後のDarwin Swift SDKは約3.2 GiB、WSL内の論理使用量は約8.7 GiB、Cドライブの空き容量は約39.8 GiBだった。xtoolの展開用一時データは削除されたが、拡張されたWSL仮想ディスクのホスト側割当ては自動では縮小していない。仮想ディスクの圧縮やXIP削除は環境を変えるため、必要性を説明して承認を得るまでは実施しない。
 
-次はxtool提供元の最小アプリ例を使い、Apple Developer Servicesへログインせず`.app`とIPAのビルドを試す。使用した版、コマンド、終了結果、成果物の場所を記録する。
+次はApp IntentとWidgetを含む最小実証の構成を具体化する。署名や実機が必要になるまではApple Developer Servicesへログインしない。
 
 ## 実行した確認
 

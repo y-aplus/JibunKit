@@ -1,0 +1,10 @@
+version: 1
+bundleID: com.example.AppbaseIOS
+product: AppbaseIOS
+infoPath: AppbaseIOS-Info.plist
+entitlementsPath: AppbaseIOS.entitlements
+extensions:
+  - product: AppbaseIOSWidget
+    bundleID: com.example.AppbaseIOS.Widget
+    infoPath: AppbaseIOSWidget-Info.plist
+    entitlementsPath: AppbaseIOSWidget.entitlements

@@ -12,6 +12,7 @@
 # Toolchains, SDKs, and build output
 .build/
 .swiftpm/
+xtool/
 DerivedData/
 build/
 SDKs/

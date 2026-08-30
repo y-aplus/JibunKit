@@ -10,7 +10,7 @@
 
 **Spec:** [0.1の設計・完成条件](../specs/2026-08-28-appbaseios-foundation-design.md)、[技術確認](../specs/2026-08-28-appbaseios-technical-review.md)、[1.0の目標案と設計原則](../specs/2026-08-28-appbaseios-1.0-direction.md)
 
-**状態:** 実行中。工程1の環境・ビルド経路を確認しており、WSL 2／Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、提供元の最小SwiftUI例から未署名の`.app`とIPAを生成できた。App IntentとWidgetの最小実証に使うファイル・型・検証手順も具体化した。実装、App Intentsメタデータ、署名、SideStore導入は未検証。後続工程の詳細は、その前段の実測結果を根拠に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
+**状態:** 実行中。工程1の製品最小構成を実装し、WSL上で単体テストと、App Intent型・Widget extensionを含むIPA生成に成功した。IPAにApp IntentsメタデータがないためF2のローカル経路は不成立と判定し、合意済みのGitHub Actions上のmacOS経路を具体化する段階。署名、SideStore導入、実機動作は未検証。後続工程の詳細は、その前段の実測結果を根拠に具体化する。全工程のコードまで確定した実行手順書とは扱わない。
 
 **引継ぎ:** 計画作成後にこのWindows環境での続行指示を得たため、ローカル経路の検証を進めている。0.1の完成・リリースまでは非公開で保存する。文書のGit管理・非公開保存や基礎環境の準備は、アプリの実装・検証・OSS公開・0.1のリリースの完了ではない。
 
@@ -121,6 +121,8 @@ xtool dev build --help
 5. メタデータを含むIPAが得られた後にSideStoreで導入する。ショートカット一覧に「カウンターに追加」が現れること、`2`を渡すと更新後の値`2`が返ること、アプリ画面も`2`を表示すること、WidgetがOSの更新後に同じ`2`を表示することを実機で確認する。再署名後の本体・拡張bundle ID、解決したApp Group、消費したApp ID枠も記録する。
 
 WSLでのコンパイル、IPA内のメタデータ、SideStore署名、Shortcuts実行、Widget共有値を別々の証拠として扱う。どれか1つの成功で残りを完了扱いにしない。
+
+**2026-08-30の実行結果:** `swift test`は5件合格し、`xtool dev build --ipa`も終了コード0。Widget extensionとApp Intent型を含むarm64 IPAは生成できたが、`Metadata.appintents/extract.actionsdata`は存在しなかった。手順3の判定に従い、ローカルツール側の不成立として、手順4のmacOSクラウド経路の具体化へ進む。
 
 **完了判定:** 採用する経路において、最小アプリのビルドとSideStore導入、App Intentの登録・入出力、Widgetの共有値の表示を実際に確認し、再現可能な手順を記録できたこと。これは0.1全体の完成ではない。
 

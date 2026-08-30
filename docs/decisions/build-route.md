@@ -2,7 +2,7 @@
 
 更新日: 2026-08-30
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、提供元の最小SwiftUIアプリから未署名の`.app`とIPAを生成できた。署名、SideStore導入、App Intent、Widgetは未検証。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。署名、SideStore導入、実機動作は未検証。
 
 ## Windows環境の初期確認
 
@@ -118,11 +118,28 @@ xtool dev build --ipa
 - まずAppleの公開APIだけで継続利用する製品ソースを作る。メタデータが生成されなければローカルツール側の不成立として記録し、生成物の手修正やxtool内部の改造は行わず、合意済みのGitHub Actions上のmacOS経路へ進む。
 - `re-appintentsmetadataprocessor`は、ライセンス配布物、iOS向け出力、xtoolへの薄い接続だけで使えることをまだ実証できていないため、現時点では導入しない。
 
+### 製品最小構成の実測
+
+計画に具体化したアプリ、`CounterFeature`、Widgetの3 targetsを実装し、2026-08-30に次を確認した。
+
+| 確認 | 結果 |
+| --- | --- |
+| Linux単体テスト | `swift test`で加算・保存とSideStore App Group解決の5件が合格。x86_64 Linux上の結果であり、iOSフレームワークや実機の合格ではない |
+| iOSビルド | `xtool dev build --ipa`は終了コード0。App Intent、本体、Widgetをコンパイル・リンクし、entitlements付き擬似署名後にIPAを生成 |
+| IPA | `xtool/AppbaseIOS.ipa`、488,929 bytes、SHA-256 `8760a8a269dd3f3ab099b7c94f83d7bcb220579efb519bb471f529b79768a007`。ビルド成果物なのでGit管理外 |
+| IPA整合性 | `unzip -t`で12項目すべて正常。本体とWidgetの実行ファイルはいずれも64-bit arm64 Mach-O |
+| Widget | `Payload/AppbaseIOS.app/PlugIns/AppbaseIOSWidget.appex`、Widget extension point、本体・Widget双方の論理App Group文字列を確認 |
+| App Intentコード | 本体バイナリに`AddCounterValueIntent`と`AppbaseShortcuts`の型・適合情報が存在 |
+| App Intentsメタデータ | `Payload/AppbaseIOS.app/Metadata.appintents/extract.actionsdata`は存在しない。Shortcutsへの登録条件を満たしたとは扱わない |
+| 版と識別子 | 本体・Widgetとも`CFBundleShortVersionString`は`0.1.0`、buildは`1`。`com.example`のbundle IDは未署名検証用の暫定値 |
+
+この結果は、Widgetを含むIPA生成はローカルで成立した一方、F2に必要なApp Intentsメタデータ生成はxtool 1.17.0の機能不足で不成立、という区分になる。同じ標準SwiftソースをGitHub Actionsが提供するmacOS環境でビルドする経路を次に具体化する。SideStore導入は、メタデータを含むIPAが得られてから行う。
+
 ## 現時点の判断
 
-- Windows上のWSLで、Apple Developer Servicesへログインしない未署名iOSアプリ／IPA生成までは成立した。ただしApp Intent、Widget、署名、実機導入を含むローカル経路全体の成立・不成立はまだ判定しない。
-- App IntentとWidgetを含む最小実証のファイル・型・テスト手順を計画へ具体化した。次はその構成を継続利用する製品ソースとして実装し、ローカル経路のメタデータ生成可否を測る。
-- GitHub Actionsのクラウド経路は、ローカル経路が許容範囲で成立しない場合だけ検証する。
+- Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
+- F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
+- 次は条件付きで合意済みのGitHub Actions上のmacOS経路を具体化し、同じソースからメタデータ入りIPAを作れるか確認する。利用枠と必要設定を先に記録する。
 
 ## 公式要件と固定する候補
 

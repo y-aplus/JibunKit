@@ -122,9 +122,16 @@ jobs:
             /usr/libexec/PlistBuddy -c "Print :$2" "$1"
           }
 
-          require_executable "app executable" "$app/AppbaseIOS"
-          require_executable "widget executable" "$widget/AppbaseIOSWidget"
+          require_nonempty "app executable" "$app/AppbaseIOS"
+          require_nonempty "widget executable" "$widget/AppbaseIOSWidget"
           require_nonempty "App Intents metadata" "$metadata"
+
+          stat -f '%Sp %N' "$app/AppbaseIOS" "$widget/AppbaseIOSWidget"
+          chmod 0755 "$app/AppbaseIOS" "$widget/AppbaseIOSWidget"
+          require_executable "app executable after permission normalization" \
+            "$app/AppbaseIOS"
+          require_executable "widget executable after permission normalization" \
+            "$widget/AppbaseIOSWidget"
 
           app_architecture="$(file "$app/AppbaseIOS")"
           widget_architecture="$(file "$widget/AppbaseIOSWidget")"

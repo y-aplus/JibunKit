@@ -82,26 +82,79 @@ jobs:
           widget="$app/PlugIns/AppbaseIOSWidget.appex"
           metadata="$app/Metadata.appintents/extract.actionsdata"
 
-          test -x "$app/AppbaseIOS"
-          test -x "$widget/AppbaseIOSWidget"
-          test -s "$metadata"
-          file "$app/AppbaseIOS" | grep -q 'arm64'
-          file "$widget/AppbaseIOSWidget" | grep -q 'arm64'
+          require_executable() {
+            local label="$1" path="$2"
+            printf '%s: %s\n' "$label" "$path"
+            if [[ ! -x "$path" ]]; then
+              echo "error: $label is missing or not executable" >&2
+              return 1
+            fi
+          }
 
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = "com.example.AppbaseIOS"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$widget/Info.plist")" = "com.example.AppbaseIOS.Widget"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = "0.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = "1"
+          require_nonempty() {
+            local label="$1" path="$2"
+            printf '%s: %s\n' "$label" "$path"
+            if [[ ! -s "$path" ]]; then
+              echo "error: $label is missing or empty" >&2
+              return 1
+            fi
+          }
+
+          require_contains() {
+            local label="$1" actual="$2" expected="$3"
+            printf '%s: %s\n' "$label" "$actual"
+            if [[ "$actual" != *"$expected"* ]]; then
+              echo "error: $label does not contain $expected" >&2
+              return 1
+            fi
+          }
+
+          require_equal() {
+            local label="$1" actual="$2" expected="$3"
+            printf '%s: actual=%q expected=%q\n' "$label" "$actual" "$expected"
+            if [[ "$actual" != "$expected" ]]; then
+              echo "error: $label does not match" >&2
+              return 1
+            fi
+          }
+
+          plist_value() {
+            /usr/libexec/PlistBuddy -c "Print :$2" "$1"
+          }
+
+          require_executable "app executable" "$app/AppbaseIOS"
+          require_executable "widget executable" "$widget/AppbaseIOSWidget"
+          require_nonempty "App Intents metadata" "$metadata"
+
+          app_architecture="$(file "$app/AppbaseIOS")"
+          widget_architecture="$(file "$widget/AppbaseIOSWidget")"
+          require_contains "app architecture" "$app_architecture" "arm64"
+          require_contains "widget architecture" "$widget_architecture" "arm64"
+
+          require_equal "app bundle identifier" \
+            "$(plist_value "$app/Info.plist" CFBundleIdentifier)" \
+            "com.example.AppbaseIOS"
+          require_equal "widget bundle identifier" \
+            "$(plist_value "$widget/Info.plist" CFBundleIdentifier)" \
+            "com.example.AppbaseIOS.Widget"
+          require_equal "app short version" \
+            "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
+            "0.1.0"
+          require_equal "app build version" \
+            "$(plist_value "$app/Info.plist" CFBundleVersion)" \
+            "1"
 
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements AppbaseIOSWidget.entitlements "$widget"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements AppbaseIOS.entitlements "$app"
           codesign --verify --deep --strict "$app"
-          codesign --display --entitlements :- "$app" 2>&1 \
-            | grep -q 'group.com.example.AppbaseIOS.shared'
-          codesign --display --entitlements :- "$widget" 2>&1 \
-            | grep -q 'group.com.example.AppbaseIOS.shared'
+          app_entitlements="$(codesign --display --entitlements :- "$app" 2>&1)"
+          widget_entitlements="$(codesign --display --entitlements :- "$widget" 2>&1)"
+          require_contains "app entitlements" "$app_entitlements" \
+            "group.com.example.AppbaseIOS.shared"
+          require_contains "widget entitlements" "$widget_entitlements" \
+            "group.com.example.AppbaseIOS.shared"
 
           mkdir -p artifacts "$RUNNER_TEMP/AppbaseIOS-ipa/Payload"
           ditto "$app" "$RUNNER_TEMP/AppbaseIOS-ipa/Payload/AppbaseIOS.app"

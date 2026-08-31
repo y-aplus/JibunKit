@@ -1,8 +1,8 @@
 # ビルド経路の判断記録
 
-更新日: 2026-08-30
+更新日: 2026-08-31
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。GitHub ActionsのmacOS workflowは非公開repoの`main`へpush済みだが、まだ実行していない。SideStore導入と実機動作も未検証。
+**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore導入と実機動作が未検証のため、最終経路の確定は保留する。
 
 ## Windows環境の初期確認
 
@@ -137,7 +137,7 @@ xtool dev build --ipa
 
 ## GitHub ActionsのmacOS経路
 
-2026-08-30に`.github/workflows/build-ios.yml`を追加し、2026-08-31に非公開repoの`main`へpushした。意図しない利用枠消費を避けるため`workflow_dispatch`だけを入口とし、pushやpull requestでは自動実行しない。この文書更新時点ではworkflowをまだ手動実行しておらず、以下は実行済みの結果ではなく、次に検証する固定手順である。
+2026-08-30に`.github/workflows/build-ios.yml`を追加し、2026-08-31に非公開repoの`main`へpushして手動実行した。意図しない利用枠消費を避けるため`workflow_dispatch`だけを入口とし、pushやpull requestでは自動実行しない。
 
 | 項目 | 固定した内容 |
 | --- | --- |
@@ -145,7 +145,7 @@ xtool dev build --ipa
 | Xcode | `/Applications/Xcode_26.6.app`を`xcode-select`で明示し、`xcodebuild -version`の先頭行が`Xcode 26.6`であることを検査。runner imageの現在の一覧ではbuild `17F113` |
 | xtool | 公式release `1.17.0`の`xtool.app.zip`。GitHub release APIのSHA-256 `7796364f6b568f3a728ec4afef1d6ccd4b12bdfbca1b33a92cbead65545ed2fe`との一致を必須にする |
 | プロジェクト生成 | macOSだけで有効な`xtool dev generate-xcode-project`を使う。xtool 1.17.0の固定ソースを確認し、本体とWidgetをXcode targets、リポジトリ直下をlocal packageとして生成することを確認した |
-| ビルド | Xcode workspaceの`AppbaseIOS` schemeを、iOS実機向けReleaseとして`xcodebuild`する。Apple署名情報をrunnerへ渡さず、最初は`CODE_SIGNING_ALLOWED=NO`で生成する |
+| ビルド | Xcode workspaceのアプリtargetである`AppbaseIOS-App` schemeを、iOS実機向けReleaseとして`xcodebuild`する。Apple署名情報をrunnerへ渡さず、`CODE_SIGNING_ALLOWED=NO`で生成する。同名の`AppbaseIOS` schemeはSwift Packageのlibrary productなので選ばない |
 | 署名・梱包 | SideStoreへ渡す資格情報を残すため、Widgetを先、本体を後の順に、リポジトリ内のentitlementsを使ってmacOS標準`codesign`でアドホック署名する。Apple証明書、provisioning profile、Apple Accountのsecretは使わない |
 | 合格条件 | arm64の本体とWidget、bundle ID、0.1.0／build 1、両バンドルの論理App Group、`Metadata.appintents/extract.actionsdata`の非空ファイル、IPAのZIP整合性をjob内で検査する。いずれかが欠ければIPAを成果物としてuploadしない |
 | 成果物 | `AppbaseIOS-ad-hoc`というActions artifactへIPAだけを保存し、保持期間は7日。実機合格前の検証物でありrelease成果物にはしない |
@@ -162,11 +162,19 @@ xtool dev build --ipa
 
 対処は、Xcodeが生成した`Metadata.appintents`ディレクトリを内容変更せず、署名前に`.app`へ`ditto`でコピーする梱包工程だけとする。生成処理の置換、出力内容の手修正、xtool内部の改造は行わない。コピー元とコピー先の`extract.actionsdata`をどちらも非空ファイルとして検査してから、既存の署名・IPA検証へ進む。
 
+### 成功したクラウド実行
+
+後続runのログから、`AppbaseIOS` schemeはSwift Packageのlibrary productを選び、`.app`ではなく再配置可能な`AppbaseIOS.o`を生成することを確認した。生成workspaceのアプリtargetは`AppbaseIOS-App` schemeであり、実際のXcode製品名は`AppbaseIOS-App.app`、組み込まれるWidgetは`AppbaseIOSWidget-Extension.appex`だった。workflowをアプリschemeへ切り替え、実行ファイル名は各Info.plistの`CFBundleExecutable`から取得するよう修正した。
+
+run [`33395722076`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33395722076)では全stepが成功した。job表示は1分19秒、timing APIは`run_duration_ms: 85000`とmacOSの`total_ms: 0`を返した。後者は取得時点のAPI応答であり、月間残量や将来の無課金を保証するものではない。artifact API上の`AppbaseIOS-ad-hoc`は75,847 bytes、保持期限は2026-09-07 13:14:09 UTCだった。
+
+取得したIPAは79,561 bytes、SHA-256 `5a4ec66c6c561722b6788f012d1f6949ccdf143493873f8bd2e629ea1eeef3d3`で、runログの値と一致した。ZIP展開と再検査で、237,040-byteのarm64本体、171,792-byteのarm64 Widget、2,494-byteの`Metadata.appintents/extract.actionsdata`、本体とWidgetの署名を確認した。bundle IDは`com.example.AppbaseIOS`／`com.example.AppbaseIOS.Widget`、版は0.1.0／build 1である。これは実機検証前のartifactであり、0.1リリース成果物とは扱わない。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録して`main`へpushした。初回runでXcodeによるメタデータ生成までは確認できたが、アプリwrapperへのコピーが欠けて失敗した。公式生成物を内容変更せず梱包する修正後に再実行する。
+- GitHub Actions上のmacOS経路は、run `33395722076`で公式App Intentsメタデータ、Widget、署名を含むIPA生成とartifact取得まで成立した。次はSideStore再署名後のShortcuts登録・入出力、App Group共有、Widget表示を実機で検証し、その結果で最終経路を確定する。
 
 ## 公式要件と固定する候補
 

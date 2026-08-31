@@ -68,7 +68,7 @@ jobs:
           set -euo pipefail
           products="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos"
           generated_metadata="$products/AppbaseIOS.appintents/Metadata.appintents"
-          embedded_metadata="$products/AppbaseIOS.app/Metadata.appintents"
+          embedded_metadata="$products/AppbaseIOS-App.app/Metadata.appintents"
 
           test -s "$generated_metadata/extract.actionsdata"
           ditto "$generated_metadata" "$embedded_metadata"
@@ -78,8 +78,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/AppbaseIOS.app"
-          widget="$app/PlugIns/AppbaseIOSWidget.appex"
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/AppbaseIOS-App.app"
+          widget="$app/PlugIns/AppbaseIOSWidget-Extension.appex"
           metadata="$app/Metadata.appintents/extract.actionsdata"
 
           require_executable() {
@@ -122,12 +122,14 @@ jobs:
             /usr/libexec/PlistBuddy -c "Print :$2" "$1"
           }
 
-          require_executable "app executable" "$app/AppbaseIOS"
-          require_executable "widget executable" "$widget/AppbaseIOSWidget"
+          app_executable="$(plist_value "$app/Info.plist" CFBundleExecutable)"
+          widget_executable="$(plist_value "$widget/Info.plist" CFBundleExecutable)"
+          require_executable "app executable" "$app/$app_executable"
+          require_executable "widget executable" "$widget/$widget_executable"
           require_nonempty "App Intents metadata" "$metadata"
 
-          app_architecture="$(file "$app/AppbaseIOS")"
-          widget_architecture="$(file "$widget/AppbaseIOSWidget")"
+          app_architecture="$(file "$app/$app_executable")"
+          widget_architecture="$(file "$widget/$widget_executable")"
           require_contains "app architecture" "$app_architecture" "arm64"
           require_contains "widget architecture" "$widget_architecture" "arm64"
 

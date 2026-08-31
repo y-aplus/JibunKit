@@ -154,11 +154,19 @@ xtool dev build --ipa
 
 この経路が満たすのは、Macを購入せずXcodeの正規ビルド処理を使えるかという確認までである。App Intentsメタデータ入りIPAが生成できても、Shortcutsへの表示・入出力、SideStore再署名後のApp Group、Widget表示を実機で別に確認する。
 
+### 初回クラウド実行
+
+2026-08-31にrun [`33392043166`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33392043166)を手動実行した。Xcode 26.6の選択、xtool 1.17.0のdigest検証、単体テスト、workspace生成、Xcodeビルドまでは成功し、全体は1分42秒で終了した。GitHubのrun timing APIは、このrunについて`run_duration_ms: 102000`、macOSの`total_ms: 0`を返した。これは取得時点のAPI応答として記録し、月間残量全体や将来の実行が無課金である根拠にはしない。
+
+失敗箇所は、IPA梱包前の`Metadata.appintents/extract.actionsdata`検査だった。詳細ログではXcode標準の`appintentsmetadataprocessor`が`AppbaseIOS.appintents/Metadata.appintents`を正常に生成していたが、xtoolが作るXcodeのアプリwrapper targetには、そのSwiftPM productのメタデータを`.app`へコピーする工程がなかった。`CopyAppIntentsMetadata`に相当する工程もログに存在しなかった。
+
+対処は、Xcodeが生成した`Metadata.appintents`ディレクトリを内容変更せず、署名前に`.app`へ`ditto`でコピーする梱包工程だけとする。生成処理の置換、出力内容の手修正、xtool内部の改造は行わない。コピー元とコピー先の`extract.actionsdata`をどちらも非空ファイルとして検査してから、既存の署名・IPA検証へ進む。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録して`main`へpushした。次は手動実行し、同じソースからメタデータ入りIPAを作れるか確認する。
+- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録して`main`へpushした。初回runでXcodeによるメタデータ生成までは確認できたが、アプリwrapperへのコピーが欠けて失敗した。公式生成物を内容変更せず梱包する修正後に再実行する。
 
 ## 公式要件と固定する候補
 

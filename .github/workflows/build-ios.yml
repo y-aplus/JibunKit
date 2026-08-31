@@ -62,6 +62,18 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Embed Xcode-generated App Intents metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          products="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos"
+          generated_metadata="$products/AppbaseIOS.appintents/Metadata.appintents"
+          embedded_metadata="$products/AppbaseIOS.app/Metadata.appintents"
+
+          test -s "$generated_metadata/extract.actionsdata"
+          ditto "$generated_metadata" "$embedded_metadata"
+          test -s "$embedded_metadata/extract.actionsdata"
+
       - name: Verify, ad-hoc sign, and package IPA
         shell: bash
         run: |

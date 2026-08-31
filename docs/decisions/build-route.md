@@ -2,7 +2,7 @@
 
 更新日: 2026-08-30
 
-**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。GitHub ActionsのmacOS経路はローカルにworkflowを用意したが、まだpush・実行していない。SideStore導入と実機動作も未検証。
+**状態:** 調査中。採用するビルド経路は未確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使い、製品へ継続利用する最小構成からApp Intent型とWidget extensionを含むIPAを生成できた。ただしApp Intentsメタデータが生成されないためF2のローカル経路は不成立。GitHub ActionsのmacOS workflowは非公開repoの`main`へpush済みだが、まだ実行していない。SideStore導入と実機動作も未検証。
 
 ## Windows環境の初期確認
 
@@ -137,7 +137,7 @@ xtool dev build --ipa
 
 ## GitHub ActionsのmacOS経路
 
-2026-08-30に`.github/workflows/build-ios.yml`をローカルへ追加した。意図しない利用枠消費を避けるため`workflow_dispatch`だけを入口とし、pushやpull requestでは自動実行しない。この文書更新時点ではworkflow自体をGitHubへpushしておらず、以下は実行済みの結果ではなく、次に検証する固定手順である。
+2026-08-30に`.github/workflows/build-ios.yml`を追加し、2026-08-31に非公開repoの`main`へpushした。意図しない利用枠消費を避けるため`workflow_dispatch`だけを入口とし、pushやpull requestでは自動実行しない。この文書更新時点ではworkflowをまだ手動実行しておらず、以下は実行済みの結果ではなく、次に検証する固定手順である。
 
 | 項目 | 固定した内容 |
 | --- | --- |
@@ -158,7 +158,7 @@ xtool dev build --ipa
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録した。次はユーザーのpush指示後に手動実行し、同じソースからメタデータ入りIPAを作れるか確認する。
+- GitHub Actions上のmacOS経路を具体化し、利用枠と必要設定を記録して`main`へpushした。次は手動実行し、同じソースからメタデータ入りIPAを作れるか確認する。
 
 ## 公式要件と固定する候補
 

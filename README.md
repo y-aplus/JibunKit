@@ -28,6 +28,7 @@ SideStore 0.6.3でIPAをiPhone 16e／iOS 26.6へ導入し、アプリ起動、�
 | [技術確認](docs/superpowers/specs/2026-08-28-appbaseios-technical-review.md) | 一次資料・公開ソースの確認結果と、実機で確かめること |
 | [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-appbaseios-1.0-direction.md) | 継続利用の目標、YAGNI、将来の検討候補 |
 | [0.1の作業計画](docs/superpowers/plans/2026-08-28-appbaseios-0.1.md) | 技術検証から公開までの順序と完成条件の対応 |
+| [ビルド手順](docs/build.md) | WSLでのローカル確認とGitHub ActionsによるSideStore向けIPA生成 |
 | [元の検討メモ](personal-swiftui-superapp-plan.md) | ChatGPTが作成した参考資料。現在の仕様は上記の設計文書を優先 |
 
 ## 開発・導入の前提

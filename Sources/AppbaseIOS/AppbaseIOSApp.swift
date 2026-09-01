@@ -5,7 +5,7 @@ import SwiftUI
 struct AppbaseIOSApp: App {
     var body: some Scene {
         WindowGroup {
-            CounterScreen()
+            MiniAppListScreen()
         }
     }
 }

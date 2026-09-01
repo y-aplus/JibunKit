@@ -3,9 +3,13 @@ import SwiftUI
 
 @main
 struct AppbaseIOSApp: App {
+    @UIApplicationDelegateAdaptor(NotificationAppDelegate.self)
+    private var notificationAppDelegate
+    @State private var navigation = AppNavigation.shared
+
     var body: some Scene {
         WindowGroup {
-            MiniAppListScreen()
+            MiniAppListScreen(navigation: navigation)
         }
     }
 }

@@ -31,7 +31,11 @@ let package = Package(
         ),
         .target(
             name: "AppbaseIOS",
-            dependencies: ["CounterFeature"]
+            dependencies: [
+                "AppbaseCore",
+                "CounterFeature",
+                "ReminderFeature",
+            ]
         ),
         .target(
             name: "AppbaseIOSWidget",

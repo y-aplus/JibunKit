@@ -1,17 +1,49 @@
 #if os(iOS)
+import AppbaseCore
+import Observation
 import SwiftUI
 
 struct MiniAppListScreen: View {
+    @Bindable var navigation: AppNavigation
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigation.path) {
             List {
-                NavigationLink {
-                    CounterScreen()
-                } label: {
-                    Label("カウンター", systemImage: "number")
+                ForEach(MiniAppID.allCases, id: \.self) { miniAppID in
+                    NavigationLink(value: miniAppID) {
+                        Label(miniAppID.title, systemImage: miniAppID.systemImage)
+                    }
                 }
             }
             .navigationTitle("ミニアプリ")
+            .navigationDestination(for: MiniAppID.self) { miniAppID in
+                switch miniAppID {
+                case .counter:
+                    CounterScreen()
+                case .reminder:
+                    ReminderScreen()
+                }
+            }
+        }
+    }
+}
+
+private extension MiniAppID {
+    var title: String {
+        switch self {
+        case .counter:
+            "カウンター"
+        case .reminder:
+            "リマインダー"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .counter:
+            "number"
+        case .reminder:
+            "bell"
         }
     }
 }

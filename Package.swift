@@ -26,6 +26,10 @@ let package = Package(
             dependencies: ["AppbaseCore"]
         ),
         .target(
+            name: "ReminderFeature",
+            dependencies: ["AppbaseCore"]
+        ),
+        .target(
             name: "AppbaseIOS",
             dependencies: ["CounterFeature"]
         ),
@@ -40,6 +44,10 @@ let package = Package(
         .testTarget(
             name: "AppbaseCoreTests",
             dependencies: ["AppbaseCore"]
+        ),
+        .testTarget(
+            name: "MiniAppIntegrationTests",
+            dependencies: ["CounterFeature", "ReminderFeature"]
         ),
     ]
 )

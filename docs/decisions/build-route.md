@@ -1,8 +1,8 @@
 # ビルド経路の判断記録
 
-更新日: 2026-08-31
+更新日: 2026-09-01
 
-**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore導入と実機動作が未検証のため、最終経路の確定は保留する。
+**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore再署名後のアプリ起動、Shortcuts登録・入出力、3サイズのWidgetによる共有値表示も成立した。更新インストールと署名更新が未検証のため、最終経路の確定は保留する。
 
 ## Windows環境の初期確認
 
@@ -170,11 +170,19 @@ run [`33395722076`](https://github.com/y-aplus/AppbaseIOS/actions/runs/333957220
 
 取得したIPAは79,561 bytes、SHA-256 `5a4ec66c6c561722b6788f012d1f6949ccdf143493873f8bd2e629ea1eeef3d3`で、runログの値と一致した。ZIP展開と再検査で、237,040-byteのarm64本体、171,792-byteのarm64 Widget、2,494-byteの`Metadata.appintents/extract.actionsdata`、本体とWidgetの署名を確認した。bundle IDは`com.example.AppbaseIOS`／`com.example.AppbaseIOS.Widget`、版は0.1.0／build 1である。これは実機検証前のartifactであり、0.1リリース成果物とは扱わない。
 
+### 初回SideStore実機確認
+
+2026-09-01に上記IPAをSideStore 0.6.3からiPhone 16e／iOS 26.6へ導入し、アプリの起動とShortcutsへの「カウンターに追加」の登録を確認した。初回artifactでは画面更新とIntent実行がどちらも`SharedGroupResolutionError`になった。原因は、SideStore 0.6.3がApp Groupを`論理識別子.TEAMID`へ書き換えるのに対し、`SharedGroupResolver`のテストと実装が`TEAMID.論理識別子`を想定していたことだった。
+
+SideStoreの固定ソースどおり、`ALTAppGroups`から論理識別子と一致する値、または`論理識別子.`で始まる値を1件だけ選ぶようコミット`ff0ca65`で修正した。WSLのSwift 6.3.3で5テストが合格し、Actions run [`33460927742`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33460927742)も全stepが成功した。修正版IPAは79,730 bytes、SHA-256 `a52c1a2b55fd18bd4ad596d26a4e5dcf6bcc2b66869bba63a22dad58a28cd485`、job表示は1分38秒、timing APIは`run_duration_ms: 103000`とmacOSの`total_ms: 0`を返した。
+
+修正版をSideStoreで導入後、画面の`1を追加`で値`1`、Shortcutsから数値`2`を渡して戻り値`3`、アプリ画面でも値`3`を確認した。さらに3サイズのWidgetが共有値を表示した。Widgetの反映はアプリより遅れたが、実装は15分後を次回更新候補にする表示専用Timelineであり、即時更新を保証しない仕様と一致する。これによりF2・F3は合格とする。アプリ再起動後の保存、更新インストール、署名更新は別の未検証項目として残す。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路は、run `33395722076`で公式App Intentsメタデータ、Widget、署名を含むIPA生成とartifact取得まで成立した。次はSideStore再署名後のShortcuts登録・入出力、App Group共有、Widget表示を実機で検証し、その結果で最終経路を確定する。
+- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有は、修正版run `33460927742`のIPAで成立した。次は再起動後の保存、更新・署名更新を実機で検証し、その結果で最終経路を確定する。
 
 ## 公式要件と固定する候補
 

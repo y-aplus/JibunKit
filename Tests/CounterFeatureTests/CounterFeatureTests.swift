@@ -26,6 +26,41 @@ final class CounterFeatureTests: XCTestCase {
         XCTAssertEqual(persistedValue, 1)
     }
 
+    func testConcurrentAddsAreAllPersisted() async throws {
+        let suiteName = "CounterFeatureTests.\(UUID().uuidString)"
+        try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            .removePersistentDomain(forName: suiteName)
+        defer {
+            UserDefaults(suiteName: suiteName)?
+                .removePersistentDomain(forName: suiteName)
+        }
+
+        let store = CounterStore(suiteName: suiteName)
+        let additionCount = 100
+
+        let returnedValues = try await withThrowingTaskGroup(of: Int.self) { group in
+            for _ in 0..<additionCount {
+                group.addTask {
+                    try await store.add(1)
+                }
+            }
+
+            var values: [Int] = []
+            for try await value in group {
+                values.append(value)
+            }
+            return values
+        }
+
+        let reloadedStore = CounterStore(suiteName: suiteName)
+        let currentValue = try await store.currentValue()
+        let persistedValue = try await reloadedStore.currentValue()
+
+        XCTAssertEqual(Set(returnedValues), Set(1...additionCount))
+        XCTAssertEqual(currentValue, additionCount)
+        XCTAssertEqual(persistedValue, additionCount)
+    }
+
     func testResolverUsesLogicalGroupWithoutSideStoreRewrite() throws {
         let result = try SharedGroupResolver().resolve(infoDictionary: [
             SharedGroupResolver.logicalGroupInfoKey: "group.com.example.AppbaseIOS.shared",

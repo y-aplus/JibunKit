@@ -136,7 +136,23 @@ WSLでのコンパイル、IPA内のメタデータ、SideStore署名、Shortcut
 
 **成果物:** ホストの一覧・遷移、カウンターの画面・保存・共通更新処理、App Intent、表示用Widget。工程1の実証で使えるコードは整えて継続利用し、無条件に作り直さない。
 
-- [ ] 工程1の結果に基づき、各ファイルのパス、担当、使う型・関数、ビルド・テストコマンドをこの工程に追記する。iOSでしか検証できない部分とWSLで試せる処理を分ける。
+### 工程2の実装境界
+
+工程1で実証した`CounterFeature`、App Intent、Widgetを継続利用する。ミニアプリが1件の現段階では、rootの`NavigationStack`と`List`、`NavigationLink`による直接的な一覧・遷移で足りる。将来用Router、汎用レジストリ、ViewModel、プラグイン機構は追加しない。第2ミニアプリを実際に追加する工程3で、重複した登録情報が生じた場合にだけ最小の共通化を判断する。
+
+| 対象 | 工程2での責務・変更 |
+| --- | --- |
+| `Sources/AppbaseIOS/AppbaseIOSApp.swift` | `WindowGroup`のrootをミニアプリ一覧へ切り替える。依存やナビゲーション状態は増やさない。 |
+| `Sources/AppbaseIOS/MiniAppListScreen.swift` | 新規のホスト画面。`NavigationStack`内の`List`に「カウンター」を1件表示し、`NavigationLink`で`CounterScreen`を開く。 |
+| `Sources/AppbaseIOS/CounterScreen.swift` | 工程1で実証した表示・加算・再読込みを維持する。保存処理やApp Group解決を画面へ移さない。 |
+| `Sources/CounterFeature/CounterFeature.swift` | `CounterStore` actorの`currentValue()`と`add(_:)`を、画面とApp Intentの唯一の読書き入口として維持する。 |
+| `Sources/AppbaseIOS/AddCounterValueIntent.swift` / `AppbaseShortcuts.swift` | 工程1で実証した操作名、入力、戻り値、共通`CounterStore.add(_:)`を変更しない。 |
+| `Sources/AppbaseIOSWidget/CounterWidget.swift` | 表示専用と15分後の更新候補を維持し、即時更新機構を追加しない。 |
+| `Tests/CounterFeatureTests/CounterFeatureTests.swift` | 同一`CounterStore`へ複数の加算を並行要求し、全加算の合計と再生成したstoreの読取りが一致する回帰テストを追加する。既存actorがすでに直列化する性質を確かめるため、形式的な失敗を作る目的の製品変更は行わない。 |
+
+WSLでは`swift test`でiOS非依存の保存と並行加算を検証する。iOS向けコンパイル、Xcode公式App Intentsメタデータ、IPA構成は工程1で確立したGitHub Actions workflowで検証する。実機では一覧からカウンターを開くこと、保存値、Shortcuts、Widgetを確認する。ローカル単体テスト、Actionsの生成物、SideStore再署名後の実機結果を相互の代用にはしない。
+
+- [x] 工程1の結果に基づき、各ファイルのパス、担当、使う型・関数、ビルド・テストコマンドをこの工程に追記する。iOSでしか検証できない部分とWSLで試せる処理を分ける。
 - [ ] 更新処理と保存のテストを先に作り、失敗を確認してから必要な処理を実装する。画面とショートカットからの更新を意図的に同時進行させ、全更新を反映した期待値が保存後と再読込み後にも一致し、更新が失われないケースを含める。逐次実行だけではこの確認を完了扱いにしない。
 - [ ] ホストの一覧からカウンターを開き、値を変更する。本体を再起動し、値が残ることを実機で確認する。
 

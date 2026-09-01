@@ -4,7 +4,7 @@ import Foundation
 public actor CounterStore {
     public static let shared = CounterStore()
 
-    private static let valueKey = "counter.value"
+    private static let valueKey = MiniAppID.counter.storageKey("value")
 
     private let defaults: UserDefaults?
     private let configurationError: SharedGroupResolutionError?

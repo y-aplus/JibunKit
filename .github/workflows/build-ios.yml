@@ -40,7 +40,7 @@ jobs:
           echo "$RUNNER_TEMP/xtool.app/Contents/Resources/bin" >> "$GITHUB_PATH"
           test "$($RUNNER_TEMP/xtool.app/Contents/Resources/bin/xtool --version)" = "xtool $XTOOL_VERSION"
 
-      - name: Test shared counter logic
+      - name: Test shared feature logic
         run: swift test
 
       - name: Generate Xcode workspace

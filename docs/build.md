@@ -31,7 +31,7 @@ unzip -t xtool/AppbaseIOS.ipa
 sha256sum xtool/AppbaseIOS.ipa
 ```
 
-`swift test`は`CounterFeature`の保存、並行加算、SideStore App Group解決を検査する。`xtool dev build --ipa`はiOS向け本体とWidgetをコンパイルし、`xtool/AppbaseIOS.ipa`を生成する。
+`swift test`はカウンターの保存と並行加算、SideStore App Group解決、ミニアプリIDの衝突、カウンターとリマインダーの独立保存を検査する。工程4確定時点では全10テストである。`xtool dev build --ipa`はiOS向け本体、リマインダー通知、Widgetをコンパイルし、`xtool/AppbaseIOS.ipa`を生成する。
 
 このIPAで確認できるのは、iOS向けコンパイル、Widgetの組込み、IPAのZIP整合性までである。`Metadata.appintents/extract.actionsdata`がないため、Shortcutsを含むSideStore実機検証には使わない。
 
@@ -60,6 +60,8 @@ workflowは次を順に検査し、どれかが失敗した場合はartifactをu
 - 本体とWidgetの論理App Group、アドホック署名、IPAのZIP整合性。
 
 成功時のartifact名は`AppbaseIOS-ad-hoc`、中身は`AppbaseIOS.ipa`、保持期間は7日である。これはSideStoreで再署名するための検証物であり、0.1のrelease成果物ではない。
+
+工程4の確定runは[`33465093595`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33465093595)、対象commitは`a3098ef`である。新しいクリーンな`macos-26` runner上で全10テスト、Xcode 26.6ビルド、公式App Intentsメタデータ、Widget、署名、IPA検査に合格した。同一IPAをSideStoreで上書き・署名更新し、F1〜F6を実機で確認した。
 
 ## 認証情報と料金
 

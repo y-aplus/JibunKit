@@ -2,7 +2,7 @@
 
 更新日: 2026-09-01
 
-**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore再署名後のアプリ起動、Shortcuts登録・入出力、3サイズのWidget、工程2への上書き更新と保存値維持も成立した。署名更新とF4・F5を含む最終更新が未検証のため、最終経路の確定は保留する。
+**状態:** 確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で実機用経路としては不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、全10テスト、公式メタデータ、arm64本体、リマインダー通知、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadに成功した。同一IPAのSideStore上書きと署名更新後にF1〜F6を実機確認し、このクラウド経路を0.1のMac購入不要の確定ビルド経路とする。
 
 ## Windows環境の初期確認
 
@@ -186,11 +186,17 @@ artifact IDは`9783741537`、archiveは78,164 bytes、保持期限は2026-09-08 
 
 既存アプリを削除せずにこのIPAをSideStoreで上書き更新し、保存値`3`の維持、一覧の「カウンター」からの遷移、`4`への更新、ShortcutsとWidgetの継続動作を確認した。これによりF1〜F3は合格とする。F6は現在の機能に対する更新インストールまで成立したが、署名更新とF4・F5を含む最終更新が残るため調査中とする。
 
+### 工程3・4の最終実証
+
+第2ミニアプリとローカル通知を含むcommit `a3098ef`をActions run [`33465093595`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33465093595)で処理した。新しい`macos-26` runner上で全10テスト、Xcode 26.6によるiOS実機向けbuild、公式App Intentsメタデータ、arm64本体・Widget、識別子・版・App Group、署名、IPA整合性、artifact uploadの全stepが1分6秒で合格した。
+
+同IPAを既存アプリへ上書きし、リマインダー、通知許可の拒否と許可、foregroundと終了状態からの通知タップ、カウンター・Shortcuts・Widgetの維持を確認した。続けてLocalDevVPN接続下でSideStoreの残り日数をタップして署名更新し、両ミニアプリの保存値、Widget、Shortcuts、終了状態の通知タップからの起動を再確認した。これによりF1〜F6が同一成果物で成立した。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路、SideStore再署名後のF1〜F3、工程2への上書き更新と保存値維持は成立した。次はF4・F5を実装・実証し、それらを含む最終更新と署名更新を検証して最終経路を確定する。
+- GitHub Actions上のmacOS経路でF1〜F6を含むIPAをクリーンなrunnerから生成し、SideStore上書き・署名更新後のF1〜F6まで成立した。この経路を0.1のMac購入不要の確定ビルド経路とし、F7を合格とする。
 
 ## 公式要件と固定する候補
 

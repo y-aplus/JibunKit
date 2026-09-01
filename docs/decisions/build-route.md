@@ -178,11 +178,17 @@ SideStoreの固定ソースどおり、`ALTAppGroups`から論理識別子と一
 
 修正版をSideStoreで導入後、画面の`1を追加`で値`1`、Shortcutsから数値`2`を渡して戻り値`3`、アプリ画面でも値`3`を確認した。さらに3サイズのWidgetが共有値を表示した。Widgetの反映はアプリより遅れたが、実装は15分後を次回更新候補にする表示専用Timelineであり、即時更新を保証しない仕様と一致する。値`3`の状態でアプリを完全終了して開き直しても`3`が再読込みされた。これによりF2・F3は合格、F1の保存部分も成立とする。F1に必要なミニアプリ一覧、更新インストール、署名更新は別の未検証項目として残す。
 
+### 工程2のクラウド再生成
+
+ミニアプリ一覧と並行加算テストを含むコミット`9c595fe`を、Actions run [`33462672016`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33462672016)で再生成した。全stepが成功し、jobは1分13秒、timing APIは`run_duration_ms: 79000`とmacOSの`total_ms: 0`を返した。後者は今回のAPI応答であり、将来の無課金を保証しない。
+
+artifact IDは`9783741537`、archiveは78,164 bytes、保持期限は2026-09-08 02:29:47 UTCである。取得したIPAは82,027 bytes、SHA-256 `06fbb35c2191529fd2790fefc1bef966c210de97678edb26e8452bff3ee18bd6`でrunログと一致した。245,488-byteのarm64本体、171,856-byteのarm64 Widget、2,494-byteの公式App Intentsメタデータ、識別子・版・App Group、署名、ZIP整合性を再確認した。次はこのIPAをSideStoreで更新インストールし、ミニアプリ一覧、既存の値、Shortcuts、Widgetの維持を実機で確認する。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有、アプリ完全終了後の保存値再読込みは、修正版run `33460927742`のIPAで成立した。次は工程2のミニアプリ一覧、更新・署名更新を実機で検証し、その結果で最終経路を確定する。
+- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有、アプリ完全終了後の保存値再読込みは、run `33460927742`のIPAで成立した。工程2の一覧を含むrun `33462672016`のIPA再生成も成立した。次はこのIPAの更新インストール、ミニアプリ一覧、保存値の維持、署名更新を実機で検証し、その結果で最終経路を確定する。
 
 ## 公式要件と固定する候補
 

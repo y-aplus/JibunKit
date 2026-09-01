@@ -19,7 +19,11 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "CounterFeature"
+            name: "AppbaseCore"
+        ),
+        .target(
+            name: "CounterFeature",
+            dependencies: ["AppbaseCore"]
         ),
         .target(
             name: "AppbaseIOS",
@@ -32,6 +36,10 @@ let package = Package(
         .testTarget(
             name: "CounterFeatureTests",
             dependencies: ["CounterFeature"]
+        ),
+        .testTarget(
+            name: "AppbaseCoreTests",
+            dependencies: ["AppbaseCore"]
         ),
     ]
 )

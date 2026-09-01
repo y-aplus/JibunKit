@@ -214,6 +214,8 @@ WSLではcore、両feature、衝突・独立保存を単体テストする。xto
 - [ ] 第2ミニアプリを一覧へ追加し、両方の保存値と起動先が衝突しないことを確認する。通常の登録・ビルド宣言以外に、ホストの共通処理を書き換えていないか差分を見る。
 
   2026-09-01に一覧を`MiniAppID.allCases`から生成するようにし、カウンターとリマインダーを同じdestination mappingへ登録した。通知centerのdelegateはアプリ起動時に設定し、通知許可の確認・要求はリマインダー画面の「10秒後に通知」からだけ行う。通知payloadの未知IDはnavigation pathを空にして一覧へ戻す。WSLの全10テストは0失敗、`xtool dev build --ipa`も終了コード0で、797,665-byte、SHA-256 `4e4c3397e084bd240d00bff0ce904afb21e8d5955d6b395d81d0387c09ec6d93`のIPAを生成し、ZIP 12項目の整合性を確認した。通知予約・拒否・タップ遷移と両画面の実機確認が残るため、この項目と通知項目は未完了とする。
+
+  同日のActions run `33465093595`（job `99723196217`）はcommit `a3098ef`をXcode 26.6で1分6秒で処理し、テスト、Xcodeビルド、公式App Intentsメタデータ、arm64本体・Widget、識別子・版・App Group、署名、IPA整合性、artifact uploadの全stepが合格した。artifact `9784571143`から取得した128,294-byteのIPAはSHA-256 `41f5e071e69a928aa9bd45d3371eeeb35ab13b95d2439e0ed9996523bfa73cb9`で、`Metadata.appintents/extract.actionsdata`とWidgetを含む16項目を再検査した。実機確認前なのでF4・F5の状態は変えない。
 - [x] 実際に変更した箇所から追加手順を書く。WidgetやApp Intentの追加設定も、通常の画面追加との違いを説明する。
 
   2026-09-01に`docs/mini-apps.md`を追加した。リマインダーの実差分を基に、安定ID、feature target、独立保存、画面、一覧・destination登録、通知payloadと許可要求、検証の順を記載した。通常画面だけの追加と、別extension・entitlementが必要なWidget、Xcode生成メタデータが必要なApp Intentの違いも分けた。

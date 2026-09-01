@@ -29,8 +29,11 @@ public struct SharedGroupResolver: Sendable {
             throw SharedGroupResolutionError.invalidSignedGroups
         }
 
+        let signedIdentifierPrefix = logicalIdentifier + "."
         let matches = signedGroups
-            .filter { $0.hasSuffix(logicalIdentifier) }
+            .filter {
+                $0 == logicalIdentifier || $0.hasPrefix(signedIdentifierPrefix)
+            }
             .sorted()
 
         switch matches.count {

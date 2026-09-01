@@ -34,23 +34,23 @@ final class CounterFeatureTests: XCTestCase {
         XCTAssertEqual(result, "group.com.example.AppbaseIOS.shared")
     }
 
-    func testResolverSelectsTheSingleSideStoreGroupBySuffix() throws {
+    func testResolverSelectsTheSingleSideStoreGroupWithTeamSuffix() throws {
         let result = try SharedGroupResolver().resolve(infoDictionary: [
             SharedGroupResolver.logicalGroupInfoKey: "group.com.example.AppbaseIOS.shared",
             SharedGroupResolver.signedGroupsInfoKey: [
-                "TEAMID.group.com.example.unrelated",
-                "TEAMID.group.com.example.AppbaseIOS.shared",
+                "group.com.example.unrelated.TEAMID",
+                "group.com.example.AppbaseIOS.shared.TEAMID",
             ],
         ])
 
-        XCTAssertEqual(result, "TEAMID.group.com.example.AppbaseIOS.shared")
+        XCTAssertEqual(result, "group.com.example.AppbaseIOS.shared.TEAMID")
     }
 
     func testResolverRejectsMissingSideStoreGroupInsteadOfFallingBack() {
         XCTAssertThrowsError(try SharedGroupResolver().resolve(infoDictionary: [
             SharedGroupResolver.logicalGroupInfoKey: "group.com.example.AppbaseIOS.shared",
             SharedGroupResolver.signedGroupsInfoKey: [
-                "TEAMID.group.com.example.unrelated",
+                "group.com.example.unrelated.TEAMID",
             ],
         ])) { error in
             XCTAssertEqual(
@@ -66,8 +66,8 @@ final class CounterFeatureTests: XCTestCase {
         XCTAssertThrowsError(try SharedGroupResolver().resolve(infoDictionary: [
             SharedGroupResolver.logicalGroupInfoKey: "group.com.example.AppbaseIOS.shared",
             SharedGroupResolver.signedGroupsInfoKey: [
-                "A.group.com.example.AppbaseIOS.shared",
-                "B.group.com.example.AppbaseIOS.shared",
+                "group.com.example.AppbaseIOS.shared.A",
+                "group.com.example.AppbaseIOS.shared.B",
             ],
         ])) { error in
             XCTAssertEqual(
@@ -75,8 +75,8 @@ final class CounterFeatureTests: XCTestCase {
                 .multipleMatchingSignedGroups(
                     logicalIdentifier: "group.com.example.AppbaseIOS.shared",
                     matches: [
-                        "A.group.com.example.AppbaseIOS.shared",
-                        "B.group.com.example.AppbaseIOS.shared",
+                        "group.com.example.AppbaseIOS.shared.A",
+                        "group.com.example.AppbaseIOS.shared.B",
                     ]
                 )
             )

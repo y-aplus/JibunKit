@@ -179,7 +179,30 @@ WSLでは`swift test`でiOS非依存の保存と並行加算を検証する。iO
 
 **成果物:** 通知の受け取り口、通知からの遷移、第2の独立したサンプルミニアプリ、`docs/mini-apps.md`。
 
-- [ ] 実装するファイル・型と検証コードをこの工程に追記する。第2ミニアプリは保存先・起動先の独立を確認できる簡単な用途にし、個別アプリの移植を持ち込まない。
+### 工程3の実装境界
+
+第2ミニアプリは、短いメッセージを独立保存し、利用者の操作で10秒後のローカル通知を予約する「リマインダー」とする。通知機能だけの捨てるprobeにはせず、ミニアプリの保存・一覧・遷移・通知を1つの小さな用途として実証する。通知の正確な配信時刻はOSが決めるため保証しない。
+
+| 対象 | 工程3での責務・変更 |
+| --- | --- |
+| `Package.swift` | iOS非依存の`AppbaseCore`、独立した`ReminderFeature`、衝突・保存を検査するtest targetsを追加する。本体は両featureへ依存し、Widgetは引き続き`CounterFeature`だけへ依存する。 |
+| `Sources/AppbaseCore/SharedGroupResolver.swift` | `CounterFeature`から挙動を変えず移し、本体内の複数featureが同じSideStore App Group解決を共有できるようにする。 |
+| `Sources/AppbaseCore/MiniAppID.swift` | `counter`と`reminder`の安定ID、保存namespace、通知request ID、通知payload keyと安全な解決を宣言する。未登録IDは`nil`にして既定の一覧へ戻す。 |
+| `Sources/CounterFeature/CounterFeature.swift` | `AppbaseCore`のresolverと`counter` namespaceを使う。公開する更新APIと保存キー`counter.value`は維持する。 |
+| `Sources/ReminderFeature/ReminderFeature.swift` | `ReminderStore` actorが共有App Group内の`reminder.message`だけを読み書きする。カウンターの型・保存キーには依存しない。 |
+| `Sources/AppbaseIOS/AppNavigation.swift` | `MiniAppID`のpathをrootで所有し、一覧操作と通知タップを同じdestination mappingへ通す。未登録IDではpathを空にして一覧を表示する。 |
+| `Sources/AppbaseIOS/NotificationAppDelegate.swift` | 起動時に`UNUserNotificationCenter.delegate`を設定し、通知タップのpayloadを`AppNavigation`へ渡す。foregroundでは通知を表示する。 |
+| `Sources/AppbaseIOS/ReminderNotificationScheduler.swift` | 予約ボタンからだけ許可状態を確認・要求し、許可済みなら10秒後の通知を登録する。拒否を正常な結果として画面へ返す。 |
+| `Sources/AppbaseIOS/ReminderScreen.swift` | メッセージの読込み・保存、通知予約、成功・拒否・失敗の状態を表示する。通知拒否後も保存と一覧への復帰を使えるようにする。 |
+| `Sources/AppbaseIOS/MiniAppListScreen.swift` | `MiniAppID.allCases`を一覧にし、値ベースの`NavigationLink`と1か所の`navigationDestination`でカウンターとリマインダーを開く。 |
+| `Sources/AppbaseIOS/AppbaseIOSApp.swift` | `UIApplicationDelegateAdaptor`とrootの`AppNavigation`だけを構成する。起動だけでは通知許可を要求しない。 |
+| `Tests/AppbaseCoreTests` / `Tests/MiniAppIntegrationTests` | ID、保存namespace、通知request ID、通知payload解決の衝突・未知値を検査する。同じsuiteでカウンター値とリマインダーメッセージを保存し、相互に変化しないことを検査する。 |
+
+Appleの[`UNUserNotificationCenterDelegate`](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate)と[通知許可の指針](https://developer.apple.com/documentation/usernotifications/asking-permission-to-use-notifications)に従い、通知centerのdelegateはapp delegateの起動処理で設定し、通知許可は予約操作の文脈でだけ要求する。通知タップはdelegateで処理する。App GroupとSideStore再署名、Shortcuts、Widgetの既存経路は変更しない。
+
+WSLではcore、両feature、衝突・独立保存を単体テストする。xtoolとActionsではUserNotificationsを含むiOSコード、既存App Intentsメタデータ、Widget入りIPAを検査する。実機では、起動だけで許可画面が出ないこと、拒否後も通常操作できること、許可後に通知を予約できること、foregroundと終了状態の通知タップからリマインダーへ戻ること、両ミニアプリの保存値が独立することを確認する。
+
+- [x] 実装するファイル・型と検証コードをこの工程に追記する。第2ミニアプリは保存先・起動先の独立を確認できる簡単な用途にし、個別アプリの移植を持ち込まない。
 - [ ] ミニアプリID・保存先・通知ID・起動先の衝突を検出するテストを作り、失敗を確認してから登録を整える。
 - [ ] 利用者の操作で通知を予約し、通知から該当ミニアプリへ戻れることを、本体の起動中と終了状態から確認する。
 - [ ] 通知を拒否しても通常操作を続けられること、起動だけでは通知許可を要求しないことを確認する。

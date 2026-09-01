@@ -176,13 +176,13 @@ run [`33395722076`](https://github.com/y-aplus/AppbaseIOS/actions/runs/333957220
 
 SideStoreの固定ソースどおり、`ALTAppGroups`から論理識別子と一致する値、または`論理識別子.`で始まる値を1件だけ選ぶようコミット`ff0ca65`で修正した。WSLのSwift 6.3.3で5テストが合格し、Actions run [`33460927742`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33460927742)も全stepが成功した。修正版IPAは79,730 bytes、SHA-256 `a52c1a2b55fd18bd4ad596d26a4e5dcf6bcc2b66869bba63a22dad58a28cd485`、job表示は1分38秒、timing APIは`run_duration_ms: 103000`とmacOSの`total_ms: 0`を返した。
 
-修正版をSideStoreで導入後、画面の`1を追加`で値`1`、Shortcutsから数値`2`を渡して戻り値`3`、アプリ画面でも値`3`を確認した。さらに3サイズのWidgetが共有値を表示した。Widgetの反映はアプリより遅れたが、実装は15分後を次回更新候補にする表示専用Timelineであり、即時更新を保証しない仕様と一致する。これによりF2・F3は合格とする。アプリ再起動後の保存、更新インストール、署名更新は別の未検証項目として残す。
+修正版をSideStoreで導入後、画面の`1を追加`で値`1`、Shortcutsから数値`2`を渡して戻り値`3`、アプリ画面でも値`3`を確認した。さらに3サイズのWidgetが共有値を表示した。Widgetの反映はアプリより遅れたが、実装は15分後を次回更新候補にする表示専用Timelineであり、即時更新を保証しない仕様と一致する。値`3`の状態でアプリを完全終了して開き直しても`3`が再読込みされた。これによりF2・F3は合格、F1の保存部分も成立とする。F1に必要なミニアプリ一覧、更新インストール、署名更新は別の未検証項目として残す。
 
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有は、修正版run `33460927742`のIPAで成立した。次は再起動後の保存、更新・署名更新を実機で検証し、その結果で最終経路を確定する。
+- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有、アプリ完全終了後の保存値再読込みは、修正版run `33460927742`のIPAで成立した。次は工程2のミニアプリ一覧、更新・署名更新を実機で検証し、その結果で最終経路を確定する。
 
 ## 公式要件と固定する候補
 

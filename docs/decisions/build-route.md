@@ -2,7 +2,7 @@
 
 更新日: 2026-09-01
 
-**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore再署名後のアプリ起動、Shortcuts登録・入出力、3サイズのWidgetによる共有値表示も成立した。更新インストールと署名更新が未検証のため、最終経路の確定は保留する。
+**状態:** 調査中。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、公式メタデータ、arm64本体、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功した。SideStore再署名後のアプリ起動、Shortcuts登録・入出力、3サイズのWidget、工程2への上書き更新と保存値維持も成立した。署名更新とF4・F5を含む最終更新が未検証のため、最終経路の確定は保留する。
 
 ## Windows環境の初期確認
 
@@ -184,11 +184,13 @@ SideStoreの固定ソースどおり、`ALTAppGroups`から論理識別子と一
 
 artifact IDは`9783741537`、archiveは78,164 bytes、保持期限は2026-09-08 02:29:47 UTCである。取得したIPAは82,027 bytes、SHA-256 `06fbb35c2191529fd2790fefc1bef966c210de97678edb26e8452bff3ee18bd6`でrunログと一致した。245,488-byteのarm64本体、171,856-byteのarm64 Widget、2,494-byteの公式App Intentsメタデータ、識別子・版・App Group、署名、ZIP整合性を再確認した。次はこのIPAをSideStoreで更新インストールし、ミニアプリ一覧、既存の値、Shortcuts、Widgetの維持を実機で確認する。
 
+既存アプリを削除せずにこのIPAをSideStoreで上書き更新し、保存値`3`の維持、一覧の「カウンター」からの遷移、`4`への更新、ShortcutsとWidgetの継続動作を確認した。これによりF1〜F3は合格とする。F6は現在の機能に対する更新インストールまで成立したが、署名更新とF4・F5を含む最終更新が残るため調査中とする。
+
 ## 現時点の判断
 
 - Windows上のWSLで、Apple Developer ServicesへログインせずWidgetを含む未署名iOS IPAを生成する部分は成立した。
 - F2のApp Intentsメタデータ生成はローカルツール側で不成立と判定した。ソースはAppleの公開APIだけで構成できており、生成物の手修正やxtool内部の改造は行わない。
-- GitHub Actions上のmacOS経路とSideStore再署名後のShortcuts登録・入出力、WidgetのApp Group共有、アプリ完全終了後の保存値再読込みは、run `33460927742`のIPAで成立した。工程2の一覧を含むrun `33462672016`のIPA再生成も成立した。次はこのIPAの更新インストール、ミニアプリ一覧、保存値の維持、署名更新を実機で検証し、その結果で最終経路を確定する。
+- GitHub Actions上のmacOS経路、SideStore再署名後のF1〜F3、工程2への上書き更新と保存値維持は成立した。次はF4・F5を実装・実証し、それらを含む最終更新と署名更新を検証して最終経路を確定する。
 
 ## 公式要件と固定する候補
 

@@ -9,7 +9,7 @@ public enum SharedGroupResolutionError: Error, Equatable, Sendable {
 }
 
 public struct SharedGroupResolver: Sendable {
-    public static let logicalGroupInfoKey = "AppbaseAppGroup"
+    public static let logicalGroupInfoKey = "JibunKitAppGroup"
     public static let signedGroupsInfoKey = "ALTAppGroups"
 
     public init() {}

@@ -9,7 +9,7 @@ public enum MiniAppID: String, CaseIterable, Hashable, Sendable {
     }
 
     public var notificationRequestIdentifier: String {
-        "appbase.\(rawValue).notification"
+        "jibunkit.\(rawValue).notification"
     }
 
     public func storageKey(_ key: String) -> String {
@@ -18,7 +18,7 @@ public enum MiniAppID: String, CaseIterable, Hashable, Sendable {
 }
 
 public enum MiniAppNotificationRoute {
-    public static let miniAppIDUserInfoKey = "AppbaseMiniAppID"
+    public static let miniAppIDUserInfoKey = "JibunKitMiniAppID"
 
     public static func resolve(userInfo: [AnyHashable: Any]) -> MiniAppID? {
         guard let rawValue = userInfo[miniAppIDUserInfoKey] as? String else {

@@ -2,7 +2,7 @@
 import SwiftUI
 
 @main
-struct AppbaseIOSApp: App {
+struct JibunKitApp: App {
     @UIApplicationDelegateAdaptor(NotificationAppDelegate.self)
     private var notificationAppDelegate
     @State private var navigation = AppNavigation.shared

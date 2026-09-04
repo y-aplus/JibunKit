@@ -3,42 +3,42 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppbaseIOS",
+    name: "JibunKit",
     platforms: [
         .iOS("26.0"),
     ],
     products: [
         .library(
-            name: "AppbaseIOS",
-            targets: ["AppbaseIOS"]
+            name: "JibunKit",
+            targets: ["JibunKit"]
         ),
         .library(
-            name: "AppbaseIOSWidget",
-            targets: ["AppbaseIOSWidget"]
+            name: "JibunKitWidget",
+            targets: ["JibunKitWidget"]
         ),
     ],
     targets: [
         .target(
-            name: "AppbaseCore"
+            name: "JibunKitCore"
         ),
         .target(
             name: "CounterFeature",
-            dependencies: ["AppbaseCore"]
+            dependencies: ["JibunKitCore"]
         ),
         .target(
             name: "ReminderFeature",
-            dependencies: ["AppbaseCore"]
+            dependencies: ["JibunKitCore"]
         ),
         .target(
-            name: "AppbaseIOS",
+            name: "JibunKit",
             dependencies: [
-                "AppbaseCore",
+                "JibunKitCore",
                 "CounterFeature",
                 "ReminderFeature",
             ]
         ),
         .target(
-            name: "AppbaseIOSWidget",
+            name: "JibunKitWidget",
             dependencies: ["CounterFeature"]
         ),
         .testTarget(
@@ -46,8 +46,8 @@ let package = Package(
             dependencies: ["CounterFeature"]
         ),
         .testTarget(
-            name: "AppbaseCoreTests",
-            dependencies: ["AppbaseCore"]
+            name: "JibunKitCoreTests",
+            dependencies: ["JibunKitCore"]
         ),
         .testTarget(
             name: "MiniAppIntegrationTests",

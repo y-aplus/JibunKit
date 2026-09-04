@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build JibunKit IPA
 
 on:
   workflow_dispatch:
@@ -78,16 +78,16 @@ jobs:
         run: |
           set -euo pipefail
           xtool dev generate-xcode-project
-          test -d xtool/AppbaseIOS.xcworkspace
-          xcodebuild -workspace xtool/AppbaseIOS.xcworkspace -list
+          test -d xtool/JibunKit.xcworkspace
+          xcodebuild -workspace xtool/JibunKit.xcworkspace -list
 
       - name: Build with Xcode
         shell: bash
         run: |
           set -euo pipefail
           xcodebuild build \
-            -workspace xtool/AppbaseIOS.xcworkspace \
-            -scheme AppbaseIOS-App \
+            -workspace xtool/JibunKit.xcworkspace \
+            -scheme JibunKit-App \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
@@ -98,8 +98,8 @@ jobs:
         run: |
           set -euo pipefail
           products="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos"
-          generated_metadata="$products/AppbaseIOS.appintents/Metadata.appintents"
-          embedded_metadata="$products/AppbaseIOS-App.app/Metadata.appintents"
+          generated_metadata="$products/JibunKit.appintents/Metadata.appintents"
+          embedded_metadata="$products/JibunKit-App.app/Metadata.appintents"
 
           test -s "$generated_metadata/extract.actionsdata"
           ditto "$generated_metadata" "$embedded_metadata"
@@ -109,8 +109,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/AppbaseIOS-App.app"
-          widget="$app/PlugIns/AppbaseIOSWidget-Extension.appex"
+          app="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/JibunKit-App.app"
+          widget="$app/PlugIns/JibunKitWidget-Extension.appex"
           metadata="$app/Metadata.appintents/extract.actionsdata"
 
           require_executable() {
@@ -166,10 +166,10 @@ jobs:
 
           require_equal "app bundle identifier" \
             "$(plist_value "$app/Info.plist" CFBundleIdentifier)" \
-            "com.example.AppbaseIOS"
+            "com.jibunkit.app"
           require_equal "widget bundle identifier" \
             "$(plist_value "$widget/Info.plist" CFBundleIdentifier)" \
-            "com.example.AppbaseIOS.Widget"
+            "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
             "0.1.0"
@@ -178,30 +178,30 @@ jobs:
             "1"
 
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements AppbaseIOSWidget.entitlements "$widget"
+            --entitlements JibunKitWidget.entitlements "$widget"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements AppbaseIOS.entitlements "$app"
+            --entitlements JibunKit.entitlements "$app"
           codesign --verify --deep --strict "$app"
           app_entitlements="$(codesign --display --entitlements :- "$app" 2>&1)"
           widget_entitlements="$(codesign --display --entitlements :- "$widget" 2>&1)"
           require_contains "app entitlements" "$app_entitlements" \
-            "group.com.example.AppbaseIOS.shared"
+            "group.com.jibunkit.shared"
           require_contains "widget entitlements" "$widget_entitlements" \
-            "group.com.example.AppbaseIOS.shared"
+            "group.com.jibunkit.shared"
 
-          mkdir -p artifacts "$RUNNER_TEMP/AppbaseIOS-ipa/Payload"
-          ditto "$app" "$RUNNER_TEMP/AppbaseIOS-ipa/Payload/AppbaseIOS.app"
+          mkdir -p artifacts "$RUNNER_TEMP/JibunKit-ipa/Payload"
+          ditto "$app" "$RUNNER_TEMP/JibunKit-ipa/Payload/JibunKit.app"
           (
-            cd "$RUNNER_TEMP/AppbaseIOS-ipa"
-            ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/AppbaseIOS.ipa"
+            cd "$RUNNER_TEMP/JibunKit-ipa"
+            ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/JibunKit.ipa"
           )
-          unzip -t artifacts/AppbaseIOS.ipa
-          shasum --algorithm 256 artifacts/AppbaseIOS.ipa
+          unzip -t artifacts/JibunKit.ipa
+          shasum --algorithm 256 artifacts/JibunKit.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: AppbaseIOS-ad-hoc
-          path: artifacts/AppbaseIOS.ipa
+          name: JibunKit-ad-hoc
+          path: artifacts/JibunKit.ipa
           if-no-files-found: error
           retention-days: 7

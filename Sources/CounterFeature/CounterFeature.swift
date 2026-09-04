@@ -1,4 +1,4 @@
-import AppbaseCore
+import JibunKitCore
 import Foundation
 
 public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {

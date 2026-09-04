@@ -1,7 +1,7 @@
 #if os(iOS)
 import AppIntents
 
-struct AppbaseShortcuts: AppShortcutsProvider {
+struct JibunKitShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: AddCounterValueIntent(),

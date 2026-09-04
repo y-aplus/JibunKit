@@ -1,10 +1,10 @@
 version: 1
-bundleID: com.example.AppbaseIOS
-product: AppbaseIOS
-infoPath: AppbaseIOS-Info.plist
-entitlementsPath: AppbaseIOS.entitlements
+bundleID: com.jibunkit.app
+product: JibunKit
+infoPath: JibunKit-Info.plist
+entitlementsPath: JibunKit.entitlements
 extensions:
-  - product: AppbaseIOSWidget
-    bundleID: com.example.AppbaseIOS.Widget
-    infoPath: AppbaseIOSWidget-Info.plist
-    entitlementsPath: AppbaseIOSWidget.entitlements
+  - product: JibunKitWidget
+    bundleID: com.jibunkit.app.Widget
+    infoPath: JibunKitWidget-Info.plist
+    entitlementsPath: JibunKitWidget.entitlements

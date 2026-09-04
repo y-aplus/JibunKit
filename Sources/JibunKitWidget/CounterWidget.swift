@@ -4,14 +4,14 @@ import SwiftUI
 import WidgetKit
 
 @main
-struct AppbaseIOSWidgetBundle: WidgetBundle {
+struct JibunKitWidgetBundle: WidgetBundle {
     var body: some Widget {
         CounterWidget()
     }
 }
 
 struct CounterWidget: Widget {
-    static let kind = "AppbaseCounterWidget"
+    static let kind = "JibunKitCounterWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: Self.kind, provider: CounterProvider()) { entry in

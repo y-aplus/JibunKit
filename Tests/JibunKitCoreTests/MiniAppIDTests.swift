@@ -1,5 +1,5 @@
 import XCTest
-@testable import AppbaseCore
+@testable import JibunKitCore
 
 final class MiniAppIDTests: XCTestCase {
     func testMiniAppIdentifiersAndNamespacesDoNotCollide() {

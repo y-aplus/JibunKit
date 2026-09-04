@@ -1,5 +1,5 @@
 #if os(iOS)
-import AppbaseCore
+import JibunKitCore
 import UIKit
 import UserNotifications
 

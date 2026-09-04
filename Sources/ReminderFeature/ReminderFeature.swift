@@ -1,4 +1,4 @@
-import AppbaseCore
+import JibunKitCore
 import Foundation
 
 public actor ReminderStore {

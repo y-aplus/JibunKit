@@ -1,16 +1,17 @@
 # ミニアプリの追加
 
-JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。動的プラグイン、任意のIPA読込み、ミニアプリストアは0.1の対象ではない。
+JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。
 
-工程3で追加したリマインダーが、保存・画面・通知を持つ最小の実例である。追加時は、ホストへ個別処理を散らさず、安定ID、feature、画面、登録、必要なsystem surfaceの順に変更する。
+リマインダーが、保存・画面・通知を持つ最小の実例である。ID、表示名、アイコン、遷移先は`MiniAppRegistry.swift`の1件のDescriptorへまとめ、ホストの一覧や画面遷移へ個別のswitchを増やさない。
 
 ## 通常の画面を追加する
 
-1. `Sources/JibunKitCore/MiniAppID.swift`へ重複しないcaseを追加する。caseのraw valueは保存namespace、通知request ID、通知payloadの遷移先にも使うため、公開後に安易に変更しない。
-2. `Sources/<Name>Feature`へ保存・更新処理を置き、`Package.swift`へtargetを追加する。共有保存が必要なら`SharedGroupResolver`を使い、キーは`MiniAppID.<case>.storageKey("...")`から生成する。別ミニアプリのStoreやキーへ依存させない。
-3. `Sources/JibunKit`へSwiftUI画面を追加する。
-4. `Package.swift`の`JibunKit` targetへfeature依存を追加し、`MiniAppListScreen.swift`の表示名・アイコン・destination mappingへ1件登録する。一覧そのものは`MiniAppID.allCases`から生成されるため、個別の一覧行は追加しない。
-5. `JibunKitCoreTests`でID、保存namespace、通知request IDの一意性を、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
+1. `Sources/<Name>Feature`へ保存・更新処理と、JibunKitから生成できるRoot Viewを置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。
+2. `Sources/JibunKit/MiniAppRegistry.swift`へ`MiniAppDescriptor`を1件追加する。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
+3. Descriptorが受け取る`MiniAppContext`から名前空間付き保存キーと通知情報を取得し、FeatureのRoot Viewや薄いadapterへ渡す。別ミニアプリのStoreやキーへ依存させない。
+4. `JibunKitCoreTests`でID、保存namespace、通知request IDを、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
+
+通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 
 リマインダーでは、`ReminderStore`が`reminder.message`だけを扱う。カウンターの`counter.value`とは同じApp Group内でもキーが分かれ、統合テストで独立した保存と再読込みを確認している。
 
@@ -20,8 +21,7 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 
 通知を予約する側では、次を守る。
 
-- request IDは`MiniAppID.<case>.notificationRequestIdentifier`を使う。
-- payloadには`MiniAppNotificationRoute.miniAppIDUserInfoKey`とミニアプリIDのraw valueを入れる。
+- request IDとpayloadはDescriptorから渡された`MiniAppContext.notificationRequestIdentifier`と`notificationUserInfo`を使う。
 - 通知許可は、通知を使うと利用者が選んだ操作の中で確認・要求する。アプリ起動時には要求しない。
 - 拒否はクラッシュや全画面エラーにせず、そのミニアプリの通常操作を続けられる結果として扱う。
 - 未登録・古い・不正なpayloadは別ミニアプリへ推測で遷移させず、一覧へ戻す。

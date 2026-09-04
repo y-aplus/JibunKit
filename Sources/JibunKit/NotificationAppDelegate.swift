@@ -26,8 +26,10 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        let registeredIDs = await MiniAppRegistry.registeredIDs
         let miniAppID = MiniAppNotificationRoute.resolve(
-            userInfo: response.notification.request.content.userInfo
+            userInfo: response.notification.request.content.userInfo,
+            registeredIDs: registeredIDs
         )
         await AppNavigation.shared.openNotificationTarget(miniAppID)
     }

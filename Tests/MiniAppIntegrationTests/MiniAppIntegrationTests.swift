@@ -1,9 +1,21 @@
 import Foundation
+import JibunKitCore
 import XCTest
 @testable import CounterFeature
 @testable import ReminderFeature
 
 final class MiniAppIntegrationTests: XCTestCase {
+    func testFeatureIdentifiersAndNamespacesDoNotCollide() {
+        let miniApps: [MiniAppID] = [.counter, .reminder]
+
+        XCTAssertEqual(Set(miniApps.map(\.rawValue)).count, miniApps.count)
+        XCTAssertEqual(Set(miniApps.map(\.storageNamespace)).count, miniApps.count)
+        XCTAssertEqual(
+            Set(miniApps.map(\.notificationRequestIdentifier)).count,
+            miniApps.count
+        )
+    }
+
     func testCounterAndReminderPersistWithoutChangingEachOther() async throws {
         let suiteName = "MiniAppIntegrationTests.\(UUID().uuidString)"
         try XCTUnwrap(UserDefaults(suiteName: suiteName))

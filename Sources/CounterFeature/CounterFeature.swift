@@ -1,6 +1,10 @@
 import JibunKitCore
 import Foundation
 
+public extension MiniAppID {
+    static let counter = MiniAppID("counter")
+}
+
 public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
     case valueOutOfRange
 

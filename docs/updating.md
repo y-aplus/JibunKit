@@ -1,6 +1,6 @@
 # 基盤を更新する
 
-更新日: 2026-09-01
+更新日: 2026-09-04
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。0.1は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
@@ -10,9 +10,8 @@
 
 | 交差箇所 | 個人用ミニアプリで行う変更 |
 | --- | --- |
-| `Sources/JibunKitCore/MiniAppID.swift` | 安定したcaseを1つ追加する |
 | `Package.swift` | feature targetと本体からの依存を追加する |
-| `Sources/JibunKit/MiniAppListScreen.swift` | 表示名、アイコン、destinationを1件登録する |
+| `Sources/JibunKit/MiniAppRegistry.swift` | ID、表示名、アイコン、destinationを1件のDescriptorとして登録する |
 
 通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。WidgetやApp Intentを追加する場合だけ、extension、entitlements、App Shortcuts、Actionsの検査対象を追加する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。
 
@@ -38,12 +37,12 @@ git merge upstream/main
 
 ## 競合を解消する
 
-`Package.swift`、`MiniAppID.swift`、`MiniAppListScreen.swift`は、基盤と個人用ミニアプリの両方が触れやすい。単純に`ours`または`theirs`を選ばず、次をすべて残す。
+`Package.swift`と`MiniAppRegistry.swift`は、基盤と個人用ミニアプリの両方が触れやすい。単純に`ours`または`theirs`を選ばず、次をすべて残す。
 
 - 基盤側が追加・変更したtargetsと依存。
 - 個人用feature targetと本体からの依存。
-- 既存と新規の`MiniAppID` case、およびID・namespace・通知IDの一意性。
-- すべての画面の表示名、アイコン、destination mapping。
+- 既存と新規のDescriptor、およびID・namespace・通知IDの一意性。
+- 各Descriptorの表示名、アイコン、destination。
 - 既存のbundle ID、App Group、保存キー。変更が必要なら移行を別タスクとして設計する。
 
 通知payloadの古いIDは未知値として一覧へ戻し、別ミニアプリへ推測で割り当てない。保存形式を変更する場合は、旧値を残すか移行するかを明示し、0.xであることを理由に黙って破棄しない。

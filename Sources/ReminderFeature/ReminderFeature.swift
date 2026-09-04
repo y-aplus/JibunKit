@@ -1,6 +1,10 @@
 import JibunKitCore
 import Foundation
 
+public extension MiniAppID {
+    static let reminder = MiniAppID("reminder")
+}
+
 public actor ReminderStore {
     public static let shared = ReminderStore()
 

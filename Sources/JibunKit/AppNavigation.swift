@@ -10,6 +10,10 @@ final class AppNavigation {
     var path: [MiniAppID] = []
 
     func open(_ miniAppID: MiniAppID) {
+        guard MiniAppRegistry.registeredIDs.contains(miniAppID) else {
+            path = []
+            return
+        }
         path = [miniAppID]
     }
 

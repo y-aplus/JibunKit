@@ -1,5 +1,6 @@
 #if os(iOS)
 import JibunKitCore
+import ReminderFeature
 import UserNotifications
 
 enum ReminderScheduleResult {

@@ -51,7 +51,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MiniAppIntegrationTests",
-            dependencies: ["CounterFeature", "ReminderFeature"]
+            dependencies: ["JibunKitCore", "CounterFeature", "ReminderFeature"]
         ),
     ]
 )

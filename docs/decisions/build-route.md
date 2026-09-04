@@ -1,6 +1,8 @@
 # ビルド経路の判断記録
 
-更新日: 2026-09-01
+更新日: 2026-09-04
+
+この文書の実測名、bundle ID、artifact名、repository URLは、検証時点の旧称・旧識別子をそのまま残している。現行のJibunKit名と識別子、および改名後の検証状態は[ビルド手順](../build.md)と[0.1検証記録](../verification/0.1.md)を正とする。
 
 **状態:** 確定。WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0、Xcode 26.6由来のDarwin Swift SDKを使うローカル経路は、Widget入りIPAまで生成できたがApp Intentsメタデータ不足で実機用経路としては不成立と判定した。GitHub Actionsの`macos-26`／Xcode 26.6経路では、全10テスト、公式メタデータ、arm64本体、リマインダー通知、Widgetを含むアドホック署名IPAの生成・検査・artifact uploadに成功した。同一IPAのSideStore上書きと署名更新後にF1〜F6を実機確認し、このクラウド経路を0.1のMac購入不要の確定ビルド経路とする。
 

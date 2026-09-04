@@ -1,16 +1,16 @@
 # ミニアプリの追加
 
-AppbaseIOSのミニアプリは、ビルド時にSwift Packageへ組み込む。動的プラグイン、任意のIPA読込み、ミニアプリストアは0.1の対象ではない。
+JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。動的プラグイン、任意のIPA読込み、ミニアプリストアは0.1の対象ではない。
 
 工程3で追加したリマインダーが、保存・画面・通知を持つ最小の実例である。追加時は、ホストへ個別処理を散らさず、安定ID、feature、画面、登録、必要なsystem surfaceの順に変更する。
 
 ## 通常の画面を追加する
 
-1. `Sources/AppbaseCore/MiniAppID.swift`へ重複しないcaseを追加する。caseのraw valueは保存namespace、通知request ID、通知payloadの遷移先にも使うため、公開後に安易に変更しない。
+1. `Sources/JibunKitCore/MiniAppID.swift`へ重複しないcaseを追加する。caseのraw valueは保存namespace、通知request ID、通知payloadの遷移先にも使うため、公開後に安易に変更しない。
 2. `Sources/<Name>Feature`へ保存・更新処理を置き、`Package.swift`へtargetを追加する。共有保存が必要なら`SharedGroupResolver`を使い、キーは`MiniAppID.<case>.storageKey("...")`から生成する。別ミニアプリのStoreやキーへ依存させない。
-3. `Sources/AppbaseIOS`へSwiftUI画面を追加する。
-4. `Package.swift`の`AppbaseIOS` targetへfeature依存を追加し、`MiniAppListScreen.swift`の表示名・アイコン・destination mappingへ1件登録する。一覧そのものは`MiniAppID.allCases`から生成されるため、個別の一覧行は追加しない。
-5. `AppbaseCoreTests`でID、保存namespace、通知request IDの一意性を、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
+3. `Sources/JibunKit`へSwiftUI画面を追加する。
+4. `Package.swift`の`JibunKit` targetへfeature依存を追加し、`MiniAppListScreen.swift`の表示名・アイコン・destination mappingへ1件登録する。一覧そのものは`MiniAppID.allCases`から生成されるため、個別の一覧行は追加しない。
+5. `JibunKitCoreTests`でID、保存namespace、通知request IDの一意性を、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
 
 リマインダーでは、`ReminderStore`が`reminder.message`だけを扱う。カウンターの`counter.value`とは同じApp Group内でもキーが分かれ、統合テストで独立した保存と再読込みを確認している。
 
@@ -35,7 +35,7 @@ AppbaseIOSのミニアプリは、ビルド時にSwift Packageへ組み込む。
 
 Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。現在のカウンターWidgetが実例である。
 
-App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。現在のxtool 1.17.0ローカル経路ではこのメタデータを生成できないため、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`AppbaseShortcuts`が実例である。
+App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。現在のxtool 1.17.0ローカル経路ではこのメタデータを生成できないため、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。
 
 ## 検証
 

@@ -6,7 +6,7 @@
 
 ## 現在の公開先
 
-- repository: `y-aplus/AppbaseIOS`
+- repository: `y-aplus/JibunKit`
 - default branch: `main`
 - visibility: private
 - license: MIT
@@ -14,7 +14,7 @@
 状態はGitHub CLIで確認できる。
 
 ```powershell
-gh repo view y-aplus/AppbaseIOS --json nameWithOwner,visibility,defaultBranchRef,url
+gh repo view y-aplus/JibunKit --json nameWithOwner,visibility,defaultBranchRef,url
 ```
 
 ## 公開前チェック
@@ -35,10 +35,10 @@ workflowのpublication boundaryは、追跡済みの`.env`、鍵・証明書・p
 公開前チェックがすべて合格し、利用者が公開を承認した後にだけ実行する。
 
 ```powershell
-git tag -a 0.1.0 -m "AppbaseIOS 0.1.0"
+git tag -a 0.1.0 -m "JibunKit 0.1.0"
 git push origin 0.1.0
-gh repo edit y-aplus/AppbaseIOS --visibility public --accept-visibility-change-consequences
-gh release create 0.1.0 .\actions-run-RUN_ID\AppbaseIOS.ipa --verify-tag --title "AppbaseIOS 0.1.0" --notes-file .\release-notes-0.1.0.md
+gh repo edit y-aplus/JibunKit --visibility public --accept-visibility-change-consequences
+gh release create 0.1.0 .\actions-run-RUN_ID\JibunKit.ipa --verify-tag --title "JibunKit 0.1.0" --notes-file .\release-notes-0.1.0.md
 ```
 
 `release-notes-0.1.0.md`は公開前に作成し、確認済み環境、導入方法、既知の制限、変更履歴へのlinkを含める。IPAの取得元を曖昧にせず、Actionsの一時artifactをrelease成果物として参照し続けない。

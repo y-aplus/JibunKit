@@ -1,4 +1,4 @@
-# AppbaseIOS 0.1.0
+# JibunKit 0.1.0
 
 SideStoreで使う、自作ミニアプリを1本のnative iOS appへまとめる基盤の最初の実験的releaseです。
 
@@ -16,6 +16,8 @@ SideStoreで使う、自作ミニアプリを1本のnative iOS appへまとめ�
 - iOS 26.6
 - SideStore 0.6.3
 - GitHub Actions `macos-26` / Xcode 26.6 / xtool 1.17.0
+
+公開時には、JibunKit識別子で同じ確認を完了した結果へ更新します。現在記録されている実機結果は旧称・旧識別子での公開前検証です。
 
 導入と署名更新は[SideStore導入・更新手順](docs/sidestore.md)、buildの再現方法は[build手順](docs/build.md)を参照してください。
 

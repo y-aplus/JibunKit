@@ -4,7 +4,11 @@
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-09-04
+## [0.1.0] - Unreleased
+
+### Changed
+
+- 製品名をJibunKitへ変更し、本体・Widget・App Groupの技術識別子も中立なJibunKit名へ統一。
 
 ### Added
 
@@ -17,7 +21,7 @@
 
 ### Verified
 
-- iPhone 16e、iOS 26.6、SideStore 0.6.3で、導入、上書き更新、署名更新後の保存値・Shortcuts・Widget・通知を確認。
+- 旧称・旧識別子では、iPhone 16e、iOS 26.6、SideStore 0.6.3で、導入、上書き更新、署名更新後の保存値・Shortcuts・Widget・通知を確認。JibunKit識別子での再確認はリリース前に行う。
 - クリーンなGitHub-hosted macOS runnerで、全テスト、App Intentsメタデータ、本体・Widget、署名構造、IPA整合性を確認。
 
 ### Security
@@ -29,5 +33,5 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/AppbaseIOS/compare/0.1.0...HEAD
-[0.1.0]: https://github.com/y-aplus/AppbaseIOS/releases/tag/0.1.0
+[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.1.0

@@ -2,21 +2,21 @@
 
 更新日: 2026-09-01
 
-この文書は、AppbaseIOS基盤を更新しながら個人用ミニアプリを維持するための境界を示す。0.1は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
+この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。0.1は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
 ## 編集箇所を分ける
 
-個人用ミニアプリの処理と保存形式は`Sources/<Name>Feature`、画面は`Sources/AppbaseIOS/<Name>Screen.swift`へ置く。通常の追加で基盤と交差する箇所は次に限定する。
+個人用ミニアプリの処理と保存形式は`Sources/<Name>Feature`、画面は`Sources/JibunKit/<Name>Screen.swift`へ置く。通常の追加で基盤と交差する箇所は次に限定する。
 
 | 交差箇所 | 個人用ミニアプリで行う変更 |
 | --- | --- |
-| `Sources/AppbaseCore/MiniAppID.swift` | 安定したcaseを1つ追加する |
+| `Sources/JibunKitCore/MiniAppID.swift` | 安定したcaseを1つ追加する |
 | `Package.swift` | feature targetと本体からの依存を追加する |
-| `Sources/AppbaseIOS/MiniAppListScreen.swift` | 表示名、アイコン、destinationを1件登録する |
+| `Sources/JibunKit/MiniAppListScreen.swift` | 表示名、アイコン、destinationを1件登録する |
 
 通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。WidgetやApp Intentを追加する場合だけ、extension、entitlements、App Shortcuts、Actionsの検査対象を追加する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。
 
-基盤側として扱うのは、`AppbaseCore`、root navigation、通知の受け取り口、共有ビルド設定、workflow、共通文書である。個人用の機能処理をこれらへ直接埋め込まない。
+基盤側として扱うのは、`JibunKitCore`、root navigation、通知の受け取り口、共有ビルド設定、workflow、共通文書である。個人用の機能処理をこれらへ直接埋め込まない。
 
 ## 基盤更新を取り込む前
 

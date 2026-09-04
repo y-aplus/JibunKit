@@ -1,4 +1,4 @@
-# AppbaseIOS
+# JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。
 
@@ -6,9 +6,9 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-**0.1の公開準備中です。** Windows上のWSLでは単体テストとWidget入りIPA生成に成功しましたが、xtool 1.17.0だけではShortcuts登録に必要なApp Intentsメタデータを生成できませんでした。GitHub ActionsのmacOS／Xcode 26.6経路では、公式メタデータとWidgetを含むアドホック署名IPAの生成・検査・artifact uploadまで成功しています。
+**0.1の公開準備中です。** 製品名をJibunKitへ変更し、本体`com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`へ技術識別子も変更しました。Windows上のWSLでは全11テストとJibunKit名のWidget入りIPA生成に成功しています。Shortcuts登録に必要な公式App Intentsメタデータは、GitHub ActionsのmacOS／Xcode 26.6経路で生成します。
 
-SideStore 0.6.3でIPAをiPhone 16e／iOS 26.6へ導入し、アプリ起動、画面からのカウンター更新、Shortcutsへの独自操作の登録・数値入力・更新値の返却、3サイズのWidgetによる共有値表示まで実機で成功しました。Widgetの表示はアプリより遅れて更新されましたが、即時更新を保証しない現在の仕様内です。工程2ではミニアプリ一覧と並行加算テストを追加し、既存アプリへの上書き更新後も保存値、カウンター、Shortcuts、Widgetを維持しました。工程3ではリマインダー、独立保存、ローカル通知、通知からの遷移を追加し、再度の上書き更新後に、起動時に許可を要求しないこと、通知拒否後の通常操作、foregroundと終了状態からの通知タップ、既存機能の継続動作を確認しました。さらにSideStoreで署名更新し、保存値、Widget、Shortcuts、通知からの起動を再確認しました。クリーンなGitHub Actions runnerから同じIPAを再生成できる手順も確定し、F1〜F7は合格です。工程5では貢献・問題報告・変更履歴・第三者notice・公開手順とActionsの公開境界チェックを整え、privateの`main`上で再実行に成功しました。残る工程6は、同じ版の最終IPA確認、tag、公開切替、0.1 releaseです。現在のIPAはまだ配布・導入対象として認定したリリース成果物ではありません。**0.1の完成・リリースに合わせてOSS公開し、それまでは非公開**とします。
+旧称・旧識別子のビルドでは、iPhone 16e／iOS 26.6／SideStore 0.6.3上でF1〜F7を確認済みです。ただしJibunKitは別のアプリ識別子を持つため、その結果を現在の版へそのまま引き継ぎません。改名後のActionsビルド、初回導入、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、上書き更新、署名更新を再確認してから最終候補とします。現在のIPAはまだ配布・導入対象として認定したリリース成果物ではありません。**0.1の完成・リリースに合わせてOSS公開し、それまでは非公開**とします。
 
 ## 0.1で届けるもの
 
@@ -24,10 +24,10 @@ SideStore 0.6.3でIPAをiPhone 16e／iOS 26.6へ導入し、アプリ起動、�
 
 | 文書 | 内容 |
 | --- | --- |
-| [0.1の設計・完成条件](docs/superpowers/specs/2026-08-28-appbaseios-foundation-design.md) | 製品像、必須機能、対象外、Git・OSS運用 |
-| [技術確認](docs/superpowers/specs/2026-08-28-appbaseios-technical-review.md) | 一次資料・公開ソースの確認結果と、実機で確かめること |
-| [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-appbaseios-1.0-direction.md) | 継続利用の目標、YAGNI、将来の検討候補 |
-| [0.1の作業計画](docs/superpowers/plans/2026-08-28-appbaseios-0.1.md) | 技術検証から公開までの順序と完成条件の対応 |
+| [0.1の設計・完成条件](docs/superpowers/specs/2026-08-28-jibunkit-foundation-design.md) | 製品像、必須機能、対象外、Git・OSS運用 |
+| [技術確認](docs/superpowers/specs/2026-08-28-jibunkit-technical-review.md) | 一次資料・公開ソースの確認結果と、実機で確かめること |
+| [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-jibunkit-1.0-direction.md) | 継続利用の目標、YAGNI、将来の検討候補 |
+| [0.1の作業計画](docs/superpowers/plans/2026-08-28-jibunkit-0.1.md) | 技術検証から公開までの順序と完成条件の対応 |
 | [ビルド手順](docs/build.md) | WSLでのローカル確認とGitHub ActionsによるSideStore向けIPA生成 |
 | [SideStore導入・更新](docs/sidestore.md) | IPAの導入、上書き、署名更新、確認済み条件と保証境界 |
 | [ミニアプリの追加](docs/mini-apps.md) | feature、画面、通知、Widget、App Intentを追加する手順と検証境界 |
@@ -43,7 +43,7 @@ SideStore 0.6.3でIPAをiPhone 16e／iOS 26.6へ導入し、アプリ起動、�
 
 無料のAppleアカウントとSideStoreを最低条件にします。Windows上のWSLは単体テストと補助的なiOS buildに使い、Shortcutsを含むSideStore向けIPAはGitHub Actionsが提供するmacOS／Xcode環境で作ります。Macの購入は前提にしません。
 
-Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保存、更新インストール、署名更新後の維持は、GitHub Actionsで生成した公式メタデータ入りIPAをSideStoreで再署名した構成で実証済みです。現在確認済みの組合せはiPhone 16e／iOS 26.6／SideStore 0.6.3だけです。ビルド環境や署名の制約は技術確認文書に記録しています。
+Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保存、更新インストール、署名更新後の維持は、旧称・旧識別子の構成で実証済みです。JibunKitとしての確認対象もiPhone 16e／iOS 26.6／SideStore 0.6.3とし、改名後の実機結果は[検証記録](docs/verification/0.1.md)へ追記します。ビルド環境や署名の制約は技術確認文書に記録しています。
 
 個別アプリの移植、任意の既存IPAの実行、ミニアプリのストアは0.1の対象外です。IPA向けアダプタ・変換器は将来の検討候補であり、実現方式や提供時期は決まっていません。
 

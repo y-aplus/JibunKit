@@ -1,11 +1,11 @@
-# AppbaseIOSへの貢献
+# JibunKitへの貢献
 
-AppbaseIOSは、SideStoreで使う個人向けミニアプリ基盤を、小さく保ちながら育てる実験的なプロジェクトです。変更は現在の設計と完成条件に直接つながる範囲へ絞ってください。
+JibunKitは、SideStoreで使う個人向けミニアプリ基盤を、小さく保ちながら育てる実験的なプロジェクトです。変更は現在の設計と完成条件に直接つながる範囲へ絞ってください。
 
 ## 変更を始める前に
 
 - 現在の仕様は、READMEから参照している設計文書を優先します。元の検討メモは参考資料です。
-- 通常の不具合や提案は[GitHub Issues](https://github.com/y-aplus/AppbaseIOS/issues)へ送ってください。脆弱性は公開Issueへ書かず、[SECURITY.md](SECURITY.md)に従ってください。
+- 通常の不具合や提案は[GitHub Issues](https://github.com/y-aplus/JibunKit/issues)へ送ってください。脆弱性は公開Issueへ書かず、[SECURITY.md](SECURITY.md)に従ってください。
 - 大きな仕様変更は、実装前にIssueで完成条件、利用者への影響、代案を確認してください。
 - 認証情報、Apple Account情報、署名鍵、証明書、provisioning profile、SideStore pairing file、Team ID、端末識別子、実データ、Apple SDKを投稿しないでください。
 

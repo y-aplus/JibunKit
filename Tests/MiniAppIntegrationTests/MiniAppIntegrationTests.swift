@@ -63,7 +63,8 @@ final class MiniAppIntegrationTests: XCTestCase {
         )
         let counterDefault = CounterStore(suiteName: suiteName)
         _ = try await counterViaContext.add(7)
-        XCTAssertEqual(try await counterDefault.currentValue(), 7)
+        let counterValue = try await counterDefault.currentValue()
+        XCTAssertEqual(counterValue, 7)
 
         let reminderViaContext = ReminderStore(
             context: MiniAppContext(id: .reminder),
@@ -71,6 +72,7 @@ final class MiniAppIntegrationTests: XCTestCase {
         )
         let reminderDefault = ReminderStore(suiteName: suiteName)
         _ = try await reminderViaContext.saveMessage("コンテキスト経由")
-        XCTAssertEqual(try await reminderDefault.currentMessage(), "コンテキスト経由")
+        let reminderMessage = try await reminderDefault.currentMessage()
+        XCTAssertEqual(reminderMessage, "コンテキスト経由")
     }
 }

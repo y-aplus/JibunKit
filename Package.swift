@@ -30,6 +30,10 @@ let package = Package(
             dependencies: ["JibunKitCore"]
         ),
         .target(
+            name: "ZaikoFeature",
+            dependencies: ["JibunKitCore"]
+        ),
+        .target(
             name: "JibunKit",
             dependencies: [
                 "JibunKitCore",
@@ -48,6 +52,10 @@ let package = Package(
         .testTarget(
             name: "JibunKitCoreTests",
             dependencies: ["JibunKitCore"]
+        ),
+        .testTarget(
+            name: "ZaikoFeatureTests",
+            dependencies: ["ZaikoFeature", "JibunKitCore"]
         ),
         .testTarget(
             name: "MiniAppIntegrationTests",

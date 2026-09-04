@@ -252,14 +252,19 @@ unzip -t xtool/JibunKit.ipa
 
 ビルド成功だけで実機合格としない。
 
-## 11. 候補実装の状態
+## 11. 実装の状態
 
 `codex/simplify-mini-app-integration`には次のlocal commitがある。
 
 - `c0b5847 refactor: simplify mini-app registration`
 - `e20c9ae docs: clarify standalone app feature goal`
+- `32241e7 docs: require feature-owned mini-app roots`
+- Feature側Root ViewとContext実利用への移行(計4 commit: Counter移行、Reminder移行、Registry切替とJibunKit側削除、文書更新)
+- Context経路の保存キー一致テストの追加
+- 再検証で指摘された2件の修正(テストの`await`位置、`ReminderNotificationScheduler`の`Sendable`対応)
+- `73736d5 docs: record implementation and auto verification pass`
 
-`c0b5847`では、2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。ただし、次の設計差分が残っている。
+`c0b5847`時点では2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功したが、次の設計差分が残っていた。
 
 - RegistryはContextを生成するが、CounterとReminderの画面が受け取っていない。
 - CounterとReminderのStoreが保存キーをContextではなくFeature IDから直接生成している。
@@ -267,20 +272,8 @@ unzip -t xtool/JibunKit.ipa
 - CounterとReminderの画面、およびReminderの通知予約処理がJibunKit targetに残っている。
 - `docs/updating.md`がミニアプリ固有画面をJibunKit targetへ置くよう説明している。
 
-したがって、`c0b5847`を本書への適合済み実装として扱わない。実機検証も未実施である。
-
-外部エージェントは、最初に次を行う。
-
-1. `AGENTS.md`と本書を最後まで読む。
-2. `git status --short`、現在branch、上記2 commitを確認する。
-3. 上記5点を解消し、`c0b5847`の残りの実装を本書の受入条件へ照合する。
-4. Contextを受け取るだけで使わない形式的な移行にしない。
-5. 過剰な抽象化や本書の対象外機能を追加しない。
-6. 不足修正後に自動検証を再実行する。
-7. 独立した作業単位ごとに、その変更だけをlocal commitへまとめる。
-
-新しいbranchを無断で作らない。checkpointごとにはpushしない。remote検証が必要な節目では、リポジトリの`AGENTS.md`とユーザーの指示に従う。
+上記5点は解消済みである。再検証で指摘された2件も修正し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。実機検証は未実施である。
 
 ## 12. 未完了と次の判断
 
-候補実装は従来構造のまま自動検証へ合格しただけで、本書の構造上の受入条件には未達である。外部エージェントへは、Contextの実利用とFeature側Root Viewへの移行を含む不足修正、および自動検証の再実行を依頼する。利用者向け更新としての実機検証も未完了である。Feature化支援や特定アプリの移植を、この依頼へ暗黙に追加しない。
+構造上の受入条件と自動検証は満たした。残る作業は、利用者向け更新としての実機検証(§10.3)のみである。Feature化支援や特定アプリの移植を、この依頼へ暗黙に追加しない。

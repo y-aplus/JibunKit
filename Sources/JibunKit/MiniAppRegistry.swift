@@ -38,15 +38,15 @@ enum MiniAppRegistry {
             id: .counter,
             title: "カウンター",
             systemImage: "number"
-        ) { _ in
-            CounterScreen()
+        ) { context in
+            CounterRootView(context: context)
         },
         MiniAppDescriptor(
             id: .reminder,
             title: "リマインダー",
             systemImage: "bell"
-        ) { _ in
-            ReminderScreen()
+        ) { context in
+            ReminderRootView(context: context)
         },
     ])
 

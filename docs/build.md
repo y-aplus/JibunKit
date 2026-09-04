@@ -1,6 +1,6 @@
 # ビルド手順
 
-更新日: 2026-09-01
+更新日: 2026-09-04
 
 AppbaseIOSは、Windows上のWSLで行う高速なローカル確認と、GitHub Actions上のXcodeで行うSideStore向けIPA生成を分ける。WSLのxtool 1.17.0だけではShortcuts登録に必要な公式App Intentsメタデータを生成できないため、ローカルIPAを実機導入用成果物として扱わない。
 
@@ -52,6 +52,7 @@ gh run download RUN_ID --name AppbaseIOS-ad-hoc --dir actions-run-RUN_ID
 
 workflowは次を順に検査し、どれかが失敗した場合はartifactをuploadしない。
 
+- 追跡済みのcredential・署名・pairing・SDK・IPA候補がないこと。外部GitHub Actionは固定commitを使い、checkout credentialを保持しない。
 - Xcode 26.6とxtool 1.17.0の版、およびxtool archiveのSHA-256。
 - `swift test`の全テスト。
 - `AppbaseIOS-App` schemeのRelease／実機向けXcodeビルド。
@@ -66,6 +67,8 @@ workflowは次を順に検査し、どれかが失敗した場合はartifactをu
 ## 認証情報と料金
 
 workflowへApple Account、パスワード、2FA、証明書、provisioning profileを渡さない。GitHub CLIのtokenや端末情報もリポジトリへ保存しない。
+
+公開境界チェックの対象と限界、およびrelease前に必要な追加確認は[公開・release手順](releasing.md)を参照する。
 
 非公開リポジトリの標準runnerはGitHub Actionsの利用枠を消費し、契約状態によっては超過料金が発生する。必要な節目だけ手動実行し、現在の料金・残量はGitHubのBilling画面で確認する。公開を前倒しして利用料を避ける運用はしない。
 

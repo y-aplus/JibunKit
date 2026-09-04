@@ -7,7 +7,7 @@ public enum ReminderScheduleResult {
     case denied
 }
 
-public struct ReminderNotificationScheduler {
+public struct ReminderNotificationScheduler: Sendable {
     private let context: MiniAppContext
 
     public init(context: MiniAppContext) {

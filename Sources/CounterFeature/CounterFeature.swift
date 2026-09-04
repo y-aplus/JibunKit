@@ -7,6 +7,7 @@ public extension MiniAppID {
 
 #if os(iOS)
 public enum CounterMiniApp {
+    @MainActor
     public static let definition = MiniAppDefinition(
         id: .counter,
         title: "カウンター",

@@ -7,6 +7,7 @@ public extension MiniAppID {
 
 #if os(iOS)
 public enum ReminderMiniApp {
+    @MainActor
     public static let definition = MiniAppDefinition(
         id: .reminder,
         title: "リマインダー",

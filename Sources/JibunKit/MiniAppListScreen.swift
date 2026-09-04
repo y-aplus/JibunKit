@@ -17,7 +17,7 @@ struct MiniAppListScreen: View {
             }
             .navigationTitle("ミニアプリ")
             .navigationDestination(for: MiniAppID.self) { miniAppID in
-                if let miniApp = MiniAppRegistry.descriptor(for: miniAppID) {
+                if let miniApp = MiniAppRegistry.definition(for: miniAppID) {
                     miniApp.makeDestination()
                 } else {
                     ContentUnavailableView(

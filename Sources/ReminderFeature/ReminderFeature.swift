@@ -5,6 +5,18 @@ public extension MiniAppID {
     static let reminder = MiniAppID("reminder")
 }
 
+#if os(iOS)
+public enum ReminderMiniApp {
+    public static let definition = MiniAppDefinition(
+        id: .reminder,
+        title: "リマインダー",
+        systemImage: "bell"
+    ) { context in
+        ReminderRootView(context: context)
+    }
+}
+#endif
+
 public actor ReminderStore {
     public static let shared = ReminderStore(context: MiniAppContext(id: .reminder))
 

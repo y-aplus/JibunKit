@@ -2,7 +2,7 @@
 
 更新日: 2026-09-04
 
-**状態: レビュー用設計案。`codex/simplify-mini-app-integration`上の`c0b5847`は候補実装だが、Contextの実利用とFeature側Root Viewが不足している。外部エージェントは差分を本書へ照合し、不足または過剰な変更だけを直す。この改修については本書を優先し、実装完了時に`docs/mini-apps.md`と`docs/updating.md`を本書へ合わせる。**
+**状態: 実装済み・自動検証合格。不足5点の修正と再検証での指摘2件までを`codex/simplify-mini-app-integration`上のlocal commitへ反映し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。利用者向け更新としての実機検証は未完了である。**
 
 ## 1. 利用者が得る結果
 

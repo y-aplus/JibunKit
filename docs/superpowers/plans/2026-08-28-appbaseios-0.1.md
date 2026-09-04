@@ -253,12 +253,24 @@ WSLではcore、両feature、衝突・独立保存を単体テストする。xto
 
 **成果物:** Git管理されたプロジェクト、ライセンス、運用文書、自動チェック、承認された公開先。
 
-- [ ] 既存のGitリポジトリ、remote、既定ブランチ`main`、GitHubの非公開設定と公開切替手順を確認する。再初期化や新しいブランチ作成を前提にせず、ブランチが必要な場合は事前に説明する。この工程の達成には公開・運用の成果物も必要。
-- [ ] `LICENSE`、`THIRD_PARTY_NOTICES.md`、`.gitignore`を整え、使用・配布する第三者コードとSDK・鍵の混入を確認する。
-- [ ] `README.md`、`CONTRIBUTING.md`、`SECURITY.md`、`CHANGELOG.md`と各手順文書を、実際の構成・実行方法・確認済み環境に一致させる。
-- [ ] 確定したビルド経路で実行できる自動チェックを設定する。外部からの変更提案に認証情報を渡さない。実機検証を自動チェックの合格で代用しない。
-- [ ] 各タスクの完了と検証後、そのタスクに属する変更だけをローカルコミットとしてチェックポイント化する。明示したブランチ運用とプルリクエストの手順を適用し、チェックポイントごとにはpushせず、リモート実行や外部引継ぎが必要な節目でまとめてpushする。説明だけで実施済みに数えない。
-- [ ] GitHubの非公開リポジトリ上でソース、ライセンス、文書、チェック結果を確認する。公開切替は工程6で0.1のリリースと合わせて行う。
+- [x] 既存のGitリポジトリ、remote、既定ブランチ`main`、GitHubの非公開設定と公開切替手順を確認する。再初期化や新しいブランチ作成を前提にせず、ブランチが必要な場合は事前に説明する。この工程の達成には公開・運用の成果物も必要。
+
+  `origin`は`y-aplus/AppbaseIOS`、default branchは`main`、visibilityはprivateであることをCLIとAPIで確認した。再初期化・branch作成は行わず、`docs/releasing.md`に明示的な最終承認後だけ実行するpublic切替とrelease手順を記載した。
+- [x] `LICENSE`、`THIRD_PARTY_NOTICES.md`、`.gitignore`を整え、使用・配布する第三者コードとSDK・鍵の混入を確認する。
+
+  MIT Licenseを維持し、アプリへ第三者packageを組み込んでいないこと、Xcode/iOS SDK、xtool、GitHub Actions、SideStoreは外部toolとして同梱しないことと各licenseを記録した。鍵・証明書・provisioning・SideStore pairing file・SDK・IPAをignoreし、追跡済みtreeと到達可能historyに禁止対象がないことを確認した。
+- [x] `README.md`、`CONTRIBUTING.md`、`SECURITY.md`、`CHANGELOG.md`と各手順文書を、実際の構成・実行方法・確認済み環境に一致させる。
+
+  通常IssueとPull request、非公開の脆弱性報告、変更履歴、第三者notice、公開・release gateを追加し、READMEとbuild文書から参照した。ローカルlink検査と記載内容のreviewに合格した。
+- [x] 確定したビルド経路で実行できる自動チェックを設定する。外部からの変更提案に認証情報を渡さない。実機検証を自動チェックの合格で代用しない。
+
+  workflowをmanual triggerと`contents: read`のまま維持し、GitHub Actionを固定commitへpin、checkout credentialを非保持、追跡済みのcredential・署名・pairing・SDK・IPA候補を検出するpublication boundaryを追加した。run `33825680660`はpublication boundary、全10テスト、Xcode build、IPA検査・uploadに合格した。実機結果は別のF1〜F7として扱う。
+- [x] 各タスクの完了と検証後、そのタスクに属する変更だけをローカルコミットとしてチェックポイント化する。明示したブランチ運用とプルリクエストの手順を適用し、チェックポイントごとにはpushせず、リモート実行や外部引継ぎが必要な節目でまとめてpushする。説明だけで実施済みに数えない。
+
+  security/publication hardeningと公開・保守文書を別々のlocal commitにし、checkpointごとにはpushせず、Actionsによるremote検証の節目で既存のcheckpointとまとめて`origin/main`へpushした。branchは作成していない。
+- [x] GitHubの非公開リポジトリ上でソース、ライセンス、文書、チェック結果を確認する。公開切替は工程6で0.1のリリースと合わせて行う。
+
+  privateの`main`からREADME、LICENSE、第三者notice、貢献、Security Policy、変更履歴、各手順を取得できることと、対象commitのActions run `33825680660`が全step合格したことを確認した。public切替と公開後のO1確認は工程6に残す。
 
 **完了判定:** O1〜O3の公開前の成果物が存在し、書かれた手順が実際の操作に対応している。公開リポジトリの確認を含むO1の最終達成は工程6に残す。
 

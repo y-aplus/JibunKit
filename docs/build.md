@@ -64,6 +64,8 @@ workflowは次を順に検査し、どれかが失敗した場合はartifactをu
 
 工程4の確定runは[`33465093595`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33465093595)、対象commitは`a3098ef`である。新しいクリーンな`macos-26` runner上で全10テスト、Xcode 26.6ビルド、公式App Intentsメタデータ、Widget、署名、IPA検査に合格した。同一IPAをSideStoreで上書き・署名更新し、F1〜F6を実機で確認した。
 
+工程5の公開前確認runは[`33825680660`](https://github.com/y-aplus/AppbaseIOS/actions/runs/33825680660)である。固定commit参照のGitHub Actions、checkout credentialの非保持、publication boundaryを含む全stepがprivateの`main`から合格した。取得したIPAにも、禁止対象の鍵・証明書・provisioning・pairing・SDK fileと代表的なcredential形式がないことを別途確認した。このrun後の変更が文書だけでなく製品・workflowへ及ぶ場合は、工程6で新しいrunを使う。
+
 ## 認証情報と料金
 
 workflowへApple Account、パスワード、2FA、証明書、provisioning profileを渡さない。GitHub CLIのtokenや端末情報もリポジトリへ保存しない。

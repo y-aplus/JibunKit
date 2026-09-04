@@ -42,13 +42,7 @@ public actor CounterStore {
     ) {
         self.valueKey = context.storageKey("value")
         do {
-            let identifier = try SharedGroupResolver().resolve(infoDictionary: infoDictionary)
-            guard let defaults = UserDefaults(suiteName: identifier) else {
-                throw SharedGroupResolutionError.unavailableUserDefaultsSuite(
-                    identifier: identifier
-                )
-            }
-            self.defaults = defaults
+            self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
             self.configurationError = nil
         } catch let error as SharedGroupResolutionError {
             self.defaults = nil
@@ -62,13 +56,7 @@ public actor CounterStore {
     public init(infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         self.valueKey = MiniAppContext(id: .counter).storageKey("value")
         do {
-            let identifier = try SharedGroupResolver().resolve(infoDictionary: infoDictionary)
-            guard let defaults = UserDefaults(suiteName: identifier) else {
-                throw SharedGroupResolutionError.unavailableUserDefaultsSuite(
-                    identifier: identifier
-                )
-            }
-            self.defaults = defaults
+            self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
             self.configurationError = nil
         } catch let error as SharedGroupResolutionError {
             self.defaults = nil

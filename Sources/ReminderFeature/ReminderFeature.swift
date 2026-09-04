@@ -31,13 +31,7 @@ public actor ReminderStore {
     ) {
         self.messageKey = context.storageKey("message")
         do {
-            let identifier = try SharedGroupResolver().resolve(infoDictionary: infoDictionary)
-            guard let defaults = UserDefaults(suiteName: identifier) else {
-                throw SharedGroupResolutionError.unavailableUserDefaultsSuite(
-                    identifier: identifier
-                )
-            }
-            self.defaults = defaults
+            self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
             self.configurationError = nil
         } catch let error as SharedGroupResolutionError {
             self.defaults = nil
@@ -51,13 +45,7 @@ public actor ReminderStore {
     public init(infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         self.messageKey = MiniAppContext(id: .reminder).storageKey("message")
         do {
-            let identifier = try SharedGroupResolver().resolve(infoDictionary: infoDictionary)
-            guard let defaults = UserDefaults(suiteName: identifier) else {
-                throw SharedGroupResolutionError.unavailableUserDefaultsSuite(
-                    identifier: identifier
-                )
-            }
-            self.defaults = defaults
+            self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
             self.configurationError = nil
         } catch let error as SharedGroupResolutionError {
             self.defaults = nil

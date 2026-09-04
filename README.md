@@ -8,7 +8,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 **0.1の公開準備中です。** 製品名をJibunKitへ変更し、本体`com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`へ技術識別子も変更しました。Windows上のWSLでは全11テストとJibunKit名のWidget入りIPA生成に成功しています。Shortcuts登録に必要な公式App Intentsメタデータは、GitHub ActionsのmacOS／Xcode 26.6経路で生成します。
 
-旧称・旧識別子のビルドでは、iPhone 16e／iOS 26.6／SideStore 0.6.3上でF1〜F7を確認済みです。ただしJibunKitは別のアプリ識別子を持つため、その結果を現在の版へそのまま引き継ぎません。改名後のActionsビルド、初回導入、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、上書き更新、署名更新を再確認してから最終候補とします。現在のIPAはまだ配布・導入対象として認定したリリース成果物ではありません。**0.1の完成・リリースに合わせてOSS公開し、それまでは非公開**とします。
+旧称・旧識別子のビルドでは、iPhone 16e／iOS 26.6／SideStore 0.6.3上でF1〜F7を確認済みです。改名後のJibunKitでもActionsビルドと初回導入を行い、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、両ミニアプリの独立保存を確認しました。別ビルドへの上書き更新と署名更新を再確認してから最終候補とします。現在のIPAはまだ配布・導入対象として認定したリリース成果物ではありません。**0.1の完成・リリースに合わせてOSS公開し、それまでは非公開**とします。
 
 ## 0.1で届けるもの
 

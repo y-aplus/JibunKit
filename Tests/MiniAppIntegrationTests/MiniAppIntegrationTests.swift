@@ -3,10 +3,11 @@ import JibunKitCore
 import XCTest
 @testable import CounterFeature
 @testable import ReminderFeature
+@testable import ZaikoFeature
 
 final class MiniAppIntegrationTests: XCTestCase {
     func testFeatureIdentifiersAndNamespacesDoNotCollide() {
-        let miniApps: [MiniAppID] = [.counter, .reminder]
+        let miniApps: [MiniAppID] = [.counter, .reminder, .zaiko]
 
         XCTAssertEqual(Set(miniApps.map(\.rawValue)).count, miniApps.count)
         XCTAssertEqual(Set(miniApps.map(\.storageNamespace)).count, miniApps.count)

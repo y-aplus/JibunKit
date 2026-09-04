@@ -2,12 +2,14 @@
 import CounterFeature
 import JibunKitCore
 import ReminderFeature
+import ZaikoFeature
 
 @MainActor
 enum MiniAppRegistry {
     static let all = makeRegistry([
         CounterMiniApp.definition,
         ReminderMiniApp.definition,
+        ZaikoMiniApp.definition,
     ])
 
     static let registeredIDs = Set(all.map(\.id))

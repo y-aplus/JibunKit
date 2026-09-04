@@ -6,9 +6,9 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-**0.1の公開準備中です。** 製品名をJibunKitへ変更し、本体`com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`へ技術識別子も変更しました。Windows上のWSLでは全11テストとJibunKit名のWidget入りIPA生成に成功しています。Shortcuts登録に必要な公式App Intentsメタデータは、GitHub ActionsのmacOS／Xcode 26.6経路で生成します。
+**[0.1.0を公開しました](https://github.com/y-aplus/JibunKit/releases/tag/0.1.0)。** 製品名はJibunKit、本体`com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`です。Windows上のWSLでは全11テストとWidget入りIPA生成に成功し、Shortcuts登録に必要な公式App IntentsメタデータはGitHub ActionsのmacOS／Xcode 26.6経路で生成します。
 
-改名後のJibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、両ミニアプリの独立保存を確認しました。build 2への上書き更新とSideStore署名更新後も保存値と各連携を維持し、F1〜F7は合格です。残るのは最終のsource・文書対応確認、tag、public切替、0.1 releaseです。現在のIPAはまだ公開release成果物ではありません。**0.1の完成・リリースに合わせてOSS公開し、それまでは非公開**とします。
+JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、両ミニアプリの独立保存を確認しました。build 2への上書き更新とSideStore署名更新後も保存値と各連携を維持し、F1〜F7に合格しました。source、tag、変更履歴、検査済みIPAを対応付けてpublic repositoryの0.1.0 Releaseとして公開済みです。
 
 ## 0.1で届けるもの
 
@@ -53,7 +53,7 @@ Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保�
 
 Gitの既定ブランチは`main`です。エージェントによる作業は[AGENTS.md](AGENTS.md)を確認してください。新しい作業ブランチを作成する前に、利用者へ明示します。
 
-現在は非公開リポジトリ内で公開準備を行う段階です。非公開であっても、認証情報、署名鍵、端末の識別情報、実データは、Issueやリポジトリへ投稿しないでください。通常の変更と問題報告は[CONTRIBUTING.md](CONTRIBUTING.md)、脆弱性は[SECURITY.md](SECURITY.md)に従ってください。
+リポジトリは公開されています。認証情報、署名鍵、端末の識別情報、実データは、Issueやリポジトリへ投稿しないでください。通常の変更と問題報告は[CONTRIBUTING.md](CONTRIBUTING.md)、脆弱性は[SECURITY.md](SECURITY.md)に従って非公開で報告してください。
 
 ## ライセンス
 

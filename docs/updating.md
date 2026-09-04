@@ -6,7 +6,7 @@
 
 ## 編集箇所を分ける
 
-個人用ミニアプリの処理と保存形式は`Sources/<Name>Feature`、画面は`Sources/JibunKit/<Name>Screen.swift`へ置く。通常の追加で基盤と交差する箇所は次に限定する。
+個人用ミニアプリの処理、保存形式、Root View、Feature固有の通知予約は`Sources/<Name>Feature`へ置く。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。通常の追加で基盤と交差する箇所は次に限定する。
 
 | 交差箇所 | 個人用ミニアプリで行う変更 |
 | --- | --- |

@@ -6,12 +6,12 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 
 ## 通常の画面を追加する
 
-1. `Sources/<Name>Feature`へ保存・更新処理と、JibunKitから生成できるRoot Viewを置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。
+1. `Sources/<Name>Feature`へ保存・更新処理と、`MiniAppContext`を受け取るpublicなRoot Viewを置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
 2. `Sources/JibunKit/MiniAppRegistry.swift`へ`MiniAppDescriptor`を1件追加する。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
-3. Descriptorが受け取る`MiniAppContext`から名前空間付き保存キーと通知情報を取得し、FeatureのRoot Viewや薄いadapterへ渡す。別ミニアプリのStoreやキーへ依存させない。
+3. Descriptorが受け取る`MiniAppContext`をFeatureのRoot Viewへ渡し、保存キーと通知情報は同じContextから取得する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。
 4. `JibunKitCoreTests`でID、保存namespace、通知request IDを、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
 
-通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
+通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 
 リマインダーでは、`ReminderStore`が`reminder.message`だけを扱う。カウンターの`counter.value`とは同じApp Group内でもキーが分かれ、統合テストで独立した保存と再読込みを確認している。
 
@@ -27,15 +27,15 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 - 未登録・古い・不正なpayloadは別ミニアプリへ推測で遷移させず、一覧へ戻す。
 - `UNTimeIntervalNotificationTrigger`の時刻は予約条件であり、正確な表示時刻を保証するものとして説明しない。
 
-リマインダーの`ReminderNotificationScheduler`は、画面の「10秒後に通知」からだけ許可を要求し、`reminder`をpayloadに入れる。foregroundでも通知を表示し、通知タップは同じdestination mappingでリマインダー画面を開く。
+リマインダーの`ReminderNotificationScheduler`はFeature側にあり、Root Viewから渡されたContextのrequest IDとpayloadを使う。画面の「10秒後に通知」からだけ許可を要求する。foregroundでも通知を表示し、通知タップは同じdestination mappingでリマインダー画面を開く。
 
 ## WidgetやApp Intentを追加する場合
 
 通常画面の追加だけなら、Widget extensionやApp Intentの宣言は不要である。
 
-Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。現在のカウンターWidgetが実例である。
+Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。Registryから生成されないため、Featureが所有する安定IDから同じContextを生成したshared Storeを使う。現在のカウンターWidgetが実例である。
 
-App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。現在のxtool 1.17.0ローカル経路ではこのメタデータを生成できないため、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。
+App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。現在のxtool 1.17.0ローカル経路ではこのメタデータを生成できないため、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。Intentからも同じshared Storeを使う。
 
 ## 検証
 

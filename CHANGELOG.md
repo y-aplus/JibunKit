@@ -1,8 +1,10 @@
 # Changelog
 
-このプロジェクトの利用者に影響する変更を記録します。0.1.0はまだ公開releaseではありません。
+このプロジェクトの利用者に影響する変更を記録します。
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-09-04
 
 ### Added
 
@@ -27,4 +29,5 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/AppbaseIOS/commits/main
+[Unreleased]: https://github.com/y-aplus/AppbaseIOS/compare/0.1.0...HEAD
+[0.1.0]: https://github.com/y-aplus/AppbaseIOS/releases/tag/0.1.0

@@ -26,7 +26,7 @@ gh repo view y-aplus/AppbaseIOS --json nameWithOwner,visibility,defaultBranchRef
 5. runの対象commitとrelease対象commitが一致することを確認し、取得したIPAをSideStoreで上書き導入する。
 6. 同じ版のIPAでF1〜F6を再確認し、端末、OS、SideStore版、操作結果を検証記録へ追記する。
 7. IPAを展開し、credential、個人の署名材料、provisioning profile、pairing file、実データ、Apple SDK、不要な生成物が含まれないことを確認する。
-8. `CHANGELOG.md`のUnreleasedを`0.1.0`と日付へ変更する。
+8. `CHANGELOG.md`の`0.1.0`の日付と`release-notes-0.1.0.md`が公開内容に一致することを確認する。
 
 workflowのpublication boundaryは、追跡済みの`.env`、鍵・証明書・provisioning・pairing関連file、Xcode/SDK archive、IPA/xcarchiveと、代表的なprivate key・GitHub token形式を検査する。このチェックは万能なsecret scannerではないため、差分と最終IPAの内容確認を省略しない。
 

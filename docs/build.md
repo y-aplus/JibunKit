@@ -31,7 +31,7 @@ unzip -t xtool/AppbaseIOS.ipa
 sha256sum xtool/AppbaseIOS.ipa
 ```
 
-`swift test`はカウンターの保存と並行加算、SideStore App Group解決、ミニアプリIDの衝突、カウンターとリマインダーの独立保存を検査する。工程4確定時点では全10テストである。`xtool dev build --ipa`はiOS向け本体、リマインダー通知、Widgetをコンパイルし、`xtool/AppbaseIOS.ipa`を生成する。
+`swift test`はカウンターの保存・並行加算・整数overflow、SideStore App Group解決、ミニアプリIDの衝突、カウンターとリマインダーの独立保存を検査する。現在は全11テストである。`xtool dev build --ipa`はiOS向け本体、リマインダー通知、Widgetをコンパイルし、`xtool/AppbaseIOS.ipa`を生成する。
 
 このIPAで確認できるのは、iOS向けコンパイル、Widgetの組込み、IPAのZIP整合性までである。`Metadata.appintents/extract.actionsdata`がないため、Shortcutsを含むSideStore実機検証には使わない。
 

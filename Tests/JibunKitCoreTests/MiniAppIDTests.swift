@@ -66,4 +66,30 @@ final class MiniAppIDTests: XCTestCase {
             "zaiko"
         )
     }
+
+    func testValidatorAcceptsRegisteredIdentifiers() {
+        let issues = MiniAppValidator.validate(ids: [
+            MiniAppID("counter"),
+            MiniAppID("reminder"),
+        ])
+
+        XCTAssertTrue(issues.isEmpty)
+    }
+
+    func testValidatorReportsInvalidAndCollidingIdentifiers() {
+        let issues = MiniAppValidator.validate(ids: [
+            MiniAppID("counter"),
+            MiniAppID("counter"),
+            MiniAppID("Bad ID"),
+        ])
+
+        XCTAssertTrue(issues.contains(.invalidID(rawValue: "Bad ID")))
+        XCTAssertTrue(issues.contains(.duplicateID(rawValue: "counter")))
+        XCTAssertTrue(issues.contains(.duplicateStorageNamespace(namespace: "counter")))
+        XCTAssertTrue(issues.contains(
+            .duplicateNotificationRequestIdentifier(
+                identifier: "jibunkit.counter.notification"
+            )
+        ))
+    }
 }

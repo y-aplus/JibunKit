@@ -671,8 +671,4 @@ struct ItemEditorContext: Identifiable {
     }
 }
 
-#Preview {
-    ZaikoRootView(context: MiniAppContext(id: .zaiko))
-}
-
 #endif

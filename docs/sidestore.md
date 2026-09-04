@@ -2,7 +2,7 @@
 
 更新日: 2026-09-04
 
-この手順の操作は、旧称・旧識別子の版をiPhone 16e／iOS 26.6／SideStore 0.6.3と無料Appleアカウントで確認した。JibunKit識別子での再確認は公開前に行う。別の端末、OS、SideStore版、Appleアカウントまで同じ結果を保証するものではない。
+この手順は、JibunKit 0.1.0のbuild 1からbuild 2への上書きと署名更新を、iPhone 16e／iOS 26.6／SideStore 0.6.3と無料Appleアカウントで確認した。別の端末、OS、SideStore版、Appleアカウントまで同じ結果を保証するものではない。
 
 SideStore自体の導入とpairing fileの準備は[SideStore公式の導入手順](https://docs.sidestore.io/docs/installation/install)に従う。JibunKitのインストール、更新、署名更新を行うときはLocalDevVPNを接続する。
 
@@ -30,7 +30,7 @@ SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`
 - App Group: `group.com.jibunkit.shared`
 - 既存の保存キー: `counter.value`、`reminder.message`
 
-旧称・旧識別子では、工程2のIPAから工程3のIPAへ上書きし、カウンター値、Widget、Shortcutsを維持したままリマインダーを追加できることを確認済みである。JibunKitでは初回導入後に別のJibunKitビルドを上書きして再確認する。
+JibunKitのbuild 1からbuild 2へ上書きし、カウンター値、リマインダー文面、Widget、Shortcuts、通知を維持できることを確認済みである。
 
 旧称のアプリとJibunKitはbundle IDとApp Groupが異なる別アプリである。旧アプリの保存値はJibunKitへ自動移行せず、JibunKitの更新確認にも旧アプリへの上書きを使わない。
 
@@ -44,7 +44,7 @@ SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`
 
 残り日数はアプリの有効期限を表し、その表示をタップすると対象アプリを手動更新できる。[SideStore公式手順](https://docs.sidestore.io/docs/installation/install)も同じ操作を案内している。
 
-旧称・旧識別子の署名更新後は、次を確認した。JibunKitでも公開前に同じ項目を再確認する。
+JibunKitの署名更新後は、次を確認した。
 
 - カウンター値とリマインダー内容が残る。
 - Widgetが共有値を表示する。
@@ -59,7 +59,7 @@ JibunKitのIPAには本体1つとWidget extension 1つが入る。Widgetは別�
 
 ## 保証しない境界
 
-保証対象にするのは、同じ端末・Appleアカウント・JibunKitの論理bundle IDで行う初回導入、上書き更新、署名更新である。改名後の再確認が終わるまでは合格扱いにしない。次は別の移行として扱う。
+確認済みなのは、同じ端末・Appleアカウント・JibunKitの論理bundle IDで行う初回導入、上書き更新、署名更新である。次は別の移行として扱う。
 
 - AppleアカウントやTeamの変更。
 - bundle IDやApp Groupの変更。

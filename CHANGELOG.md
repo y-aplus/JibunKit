@@ -21,7 +21,7 @@
 
 ### Verified
 
-- 旧称・旧識別子では、iPhone 16e、iOS 26.6、SideStore 0.6.3で、導入、上書き更新、署名更新後の保存値・Shortcuts・Widget・通知を確認。JibunKit識別子での再確認はリリース前に行う。
+- iPhone 16e、iOS 26.6、SideStore 0.6.3で、JibunKitの初回導入、build 2への上書き、署名更新後の保存値・Shortcuts・Widget・通知を確認。
 - クリーンなGitHub-hosted macOS runnerで、全テスト、App Intentsメタデータ、本体・Widget、署名構造、IPA整合性を確認。
 
 ### Security

@@ -68,6 +68,8 @@ workflowは次を順に検査し、どれかが失敗した場合はartifactをu
 
 改名後の確認runは[`33844972938`](https://github.com/y-aplus/JibunKit/actions/runs/33844972938)である。privateの`main`から全11テスト、Xcode 26.6ビルド、公式App Intentsメタデータ、本体・Widget、JibunKitのbundle ID・App Group、署名構造、IPA整合性、`JibunKit-ad-hoc`のuploadに合格した。取得した`JibunKit.ipa`も別途展開し、同じ名称・識別子・メタデータと禁止対象fileの不在を確認した。実機合格前なのでrelease成果物にはしない。
 
+更新確認用runは[`33846023791`](https://github.com/y-aplus/JibunKit/actions/runs/33846023791)である。0.1.0／build 2について同じ全stepと取得後のIPA再検査に合格し、既存のJibunKitへ上書きした後とSideStore署名更新後にF1〜F6を確認した。公開承認まではrelease成果物にしない。
+
 ## 認証情報と料金
 
 workflowへApple Account、パスワード、2FA、証明書、provisioning profileを渡さない。GitHub CLIのtokenや端末情報もリポジトリへ保存しない。

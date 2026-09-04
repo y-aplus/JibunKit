@@ -2,11 +2,11 @@
 
 更新日: 2026-09-04
 
-**状態: レビュー用設計案。`codex/simplify-mini-app-integration`上の`c0b5847`は、この設計案に対する候補実装として存在する。外部エージェントは実装をやり直すのではなく、差分を本書へ照合し、不足または過剰な変更だけを直す。**
+**状態: レビュー用設計案。`codex/simplify-mini-app-integration`上の`c0b5847`は候補実装だが、Contextの実利用とFeature側Root Viewが不足している。外部エージェントは差分を本書へ照合し、不足または過剰な変更だけを直す。この改修については本書を優先し、実装完了時に`docs/mini-apps.md`と`docs/updating.md`を本書へ合わせる。**
 
 ## 1. 利用者が得る結果
 
-Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、一覧、画面遷移を個別に書き換えず、Featureのビルド宣言と1件の登録で一覧から起動できる。
+Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、画面、一覧、画面遷移を個別に書き換えず、Featureのビルド宣言と1件の登録で一覧から起動できる。
 
 ## 2. 判断
 
@@ -21,6 +21,8 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、一覧
 - ミニアプリID、表示名、SF Symbol名、Root View生成処理の一元登録。
 - 一覧表示と画面遷移を同じ登録情報から生成。
 - Featureへ保存キーと通知情報を渡すContext。
+- CounterとReminderのRoot ViewをFeature側へ移し、Contextを使う基準実装にする。
+- Reminderの通知予約処理をFeature側へ移し、Contextのrequest IDとpayloadを使う。
 - 不正または重複したIDの検出。
 - 未登録の通知遷移先を開かない安全なfallback。
 - カウンターとリマインダーの既存保存値、通知、Widget、App Intentの維持。
@@ -54,7 +56,7 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、一覧
 通常の画面を持つFeatureの追加手順は次のとおりとする。
 
 1. FeatureライブラリtargetとJibunKitからの依存を`Package.swift`へ追加する。
-2. 必要なら、Featureを表示可能にする薄いRoot ViewまたはAdapterを追加する。
+2. Feature targetから`MiniAppContext`を受け取るpublicなRoot Viewを公開する。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
 3. `MiniAppRegistry.swift`へDescriptorを1件追加する。
 4. Feature固有処理と、既存Featureとの保存・ID衝突を検証する。
 
@@ -64,6 +66,8 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、一覧
 - `Sources/JibunKit/MiniAppListScreen.swift`
 - `Sources/JibunKit/AppNavigation.swift`
 - `Sources/JibunKit/NotificationAppDelegate.swift`
+
+ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKit targetは、Registry、navigation、通知応答などホスト全体の処理だけを持つ。
 
 Widget、App Intent、通知、URLなどを新たに使うFeatureには、そのsystem surface固有の宣言と検証を追加してよい。それらを通常画面の追加と同じ変更量に見せない。
 
@@ -75,7 +79,7 @@ Featureが所有する安定ID
           ▼
 MiniAppDescriptor ──► 一覧の表示名・アイコン
           │
-          ├────────► Root View生成
+          ├────────► Feature Root View生成
           │
           ├────────► 登録済みID集合 ──► 通知遷移の検証
           │
@@ -112,13 +116,19 @@ jibunkit.reminder.notification
 
 ### 7.2 MiniAppContext
 
-`MiniAppContext`はDescriptorのIDから生成し、Root ViewまたはAdapterへ渡す。
+`MiniAppContext`はDescriptorのIDから生成し、FeatureのRoot ViewまたはAdapterへ渡す。受け取ったFeatureは、保存キーと通知情報を同じContextから取得する。
 
 提供する情報は、現在必要な次の3点に限定する。
 
 - `storageKey(_:)`
 - `notificationRequestIdentifier`
 - `notificationUserInfo`
+
+CounterとReminderもこの経路を使う。ReminderのRoot ViewはContextを通知予約処理へ渡し、通知予約処理はrequest IDとpayloadを直接`MiniAppID.reminder`から再生成しない。
+
+CounterとReminderのRoot ViewはContextをStoreへ渡し、Storeは`storageKey(_:)`から保存キーを得る。Storeの保存キーはstatic定数ではなく、Contextから初期化したinstance値にする。
+
+WidgetやApp IntentはRegistryから生成されないため、Featureが所有する安定IDから同じContextを生成してStoreへ渡してよい。既存のshared Storeもこのdefault Contextから構成し、`counter.value`を維持する。Contextを受け取れる画面や処理が、同じ値を別経路で再生成することは認めない。
 
 汎用service containerにはしない。新しい共通機能は、複数の実例で同じ問題が確認されてから追加する。
 
@@ -140,6 +150,18 @@ MiniAppDescriptor(
     systemImage: "shippingbox"
 ) { context in
     InventoryRootView(context: context)
+}
+```
+
+CounterとReminderの登録も同じ形にする。
+
+```swift
+MiniAppDescriptor(
+    id: .reminder,
+    title: "リマインダー",
+    systemImage: "bell"
+) { context in
+    ReminderRootView(context: context)
 }
 ```
 
@@ -166,12 +188,14 @@ MiniAppDescriptor(
 | file | 責務 |
 | --- | --- |
 | `Sources/JibunKitCore/MiniAppID.swift` | 開いたID型、ID検証、Context、通知payload解決 |
-| `Sources/<Name>Feature` | Feature固有ID、処理、保存形式 |
+| `Sources/<Name>Feature` | Feature固有ID、Root ViewまたはAdapter、処理、保存形式、Feature固有の通知予約 |
 | `Sources/JibunKit/MiniAppRegistry.swift` | Descriptor定義と全Featureの登録 |
 | `Sources/JibunKit/MiniAppListScreen.swift` | Registryから一覧とdestinationを生成 |
 | `Sources/JibunKit/AppNavigation.swift` | 登録済みIDだけを開く |
 | `Sources/JibunKit/NotificationAppDelegate.swift` | 通知payloadを登録済みIDへ解決してnavigationへ渡す |
 | `Package.swift` | Feature targetと依存の明示 |
+
+移行完了後、`Sources/JibunKit/CounterScreen.swift`、`Sources/JibunKit/ReminderScreen.swift`、`Sources/JibunKit/ReminderNotificationScheduler.swift`は残さない。iOS専用のViewと通知処理はFeature target内で`#if os(iOS)`により囲み、Linux上のSwift Packageテストを維持する。
 
 ## 9. 互換性と安全条件
 
@@ -190,7 +214,13 @@ MiniAppDescriptor(
 - `MiniAppListScreen`にFeatureごとのswitchがない。
 - ID、表示名、アイコン、destinationが1件のDescriptorにまとまっている。
 - 各Featureが自身のIDを所有する。
+- CounterとReminderが、`MiniAppContext`を受け取るFeature側Root Viewを公開する。
+- RegistryがContextをCounterとReminderのRoot Viewへ渡す。
+- CounterとReminderのRoot ViewがContextをStoreへ渡し、Storeが保存キーをContextから得る。
+- Reminderの通知予約が、受け取ったContextのrequest IDとpayloadを使う。
+- ミニアプリ固有の画面と通知予約処理が`Sources/JibunKit`に残っていない。
 - Registryが不正IDと重複IDを受け入れない。
+- `docs/mini-apps.md`と`docs/updating.md`が、Feature側Root ViewとContextの実利用を追加手順として説明する。
 
 ### 10.2 自動検証
 
@@ -229,19 +259,28 @@ unzip -t xtool/JibunKit.ipa
 - `c0b5847 refactor: simplify mini-app registration`
 - `e20c9ae docs: clarify standalone app feature goal`
 
-`c0b5847`では、2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。実機検証は未実施である。
+`c0b5847`では、2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。ただし、次の設計差分が残っている。
+
+- RegistryはContextを生成するが、CounterとReminderの画面が受け取っていない。
+- CounterとReminderのStoreが保存キーをContextではなくFeature IDから直接生成している。
+- Reminderの通知予約がrequest IDとpayloadを`MiniAppID.reminder`から直接生成している。
+- CounterとReminderの画面、およびReminderの通知予約処理がJibunKit targetに残っている。
+- `docs/updating.md`がミニアプリ固有画面をJibunKit targetへ置くよう説明している。
+
+したがって、`c0b5847`を本書への適合済み実装として扱わない。実機検証も未実施である。
 
 外部エージェントは、最初に次を行う。
 
 1. `AGENTS.md`と本書を最後まで読む。
 2. `git status --short`、現在branch、上記2 commitを確認する。
-3. `c0b5847`の実装を本書の受入条件へ照合する。
-4. 過剰な抽象化や本書の対象外機能を追加しない。
-5. 不足修正がある場合だけ変更し、自動検証を再実行する。
-6. 独立した作業単位ごとに、その変更だけをlocal commitへまとめる。
+3. 上記5点を解消し、`c0b5847`の残りの実装を本書の受入条件へ照合する。
+4. Contextを受け取るだけで使わない形式的な移行にしない。
+5. 過剰な抽象化や本書の対象外機能を追加しない。
+6. 不足修正後に自動検証を再実行する。
+7. 独立した作業単位ごとに、その変更だけをlocal commitへまとめる。
 
 新しいbranchを無断で作らない。checkpointごとにはpushしない。remote検証が必要な節目では、リポジトリの`AGENTS.md`とユーザーの指示に従う。
 
 ## 12. 未完了と次の判断
 
-本書の自動検証は候補実装で合格済みだが、利用者向け更新としての実機検証は未完了である。外部エージェントへ依頼する作業は、コードレビュー、自動検証の再現、不足修正のいずれかを明示する。Feature化支援や特定アプリの移植を、この依頼へ暗黙に追加しない。
+候補実装は従来構造のまま自動検証へ合格しただけで、本書の構造上の受入条件には未達である。外部エージェントへは、Contextの実利用とFeature側Root Viewへの移行を含む不足修正、および自動検証の再実行を依頼する。利用者向け更新としての実機検証も未完了である。Feature化支援や特定アプリの移植を、この依頼へ暗黙に追加しない。

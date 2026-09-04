@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- 在庫管理(Zaiko)を3つ目のミニアプリとして組み込み。独立ZaikoAppからFeatureライブラリとRoot Viewへ分離し、保存キーと通知を`MiniAppContext`由来に統一。JSON export/import形式は不変でPWA互換を維持。
+
 ### Changed
 
 - ミニアプリのID、表示情報、遷移先を1件のDescriptorへ統合し、通常の追加でホストのID enumや画面遷移switchを編集しない登録方式へ変更。

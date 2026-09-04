@@ -2,14 +2,36 @@
 
 JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。
 
-リマインダーが、保存・画面・通知を持つ最小の実例である。ID、表示名、アイコン、遷移先は`MiniAppRegistry.swift`の1件のDescriptorへまとめ、ホストの一覧や画面遷移へ個別のswitchを増やさない。
+リマインダーが、保存・画面・通知を持つ最小の実例である。ID、表示名、アイコン、遷移先はFeature側の1件の定義へまとめ、ホストの一覧や画面遷移へ個別のswitchを増やさない。
 
 ## 通常の画面を追加する
 
-1. `Sources/<Name>Feature`へ保存・更新処理と、`MiniAppContext`を受け取るpublicなRoot Viewを置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
-2. `Sources/JibunKit/MiniAppRegistry.swift`へ`MiniAppDescriptor`を1件追加する。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
-3. Descriptorが受け取る`MiniAppContext`をFeatureのRoot Viewへ渡し、保存キーと通知情報は同じContextから取得する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。
+1. `Sources/<Name>Feature`へ保存・更新処理、`MiniAppContext`を受け取るpublicなRoot View、ID・表示名・アイコン・Root Viewをまとめたpublicな定義を置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。StoreのUserDefaults解決は`MiniAppStorage.sharedDefaults`を使い、保存キーはContextから取る。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
+2. `Sources/JibunKit/MiniAppRegistry.swift`の`all`へ定義を1件列挙する。ID・表示名・アイコン・destinationをRegistry側に書かない。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
+3. `MiniAppValidator.validate(ids:)`をテストから呼び、ID・保存namespace・通知request IDの不正と衝突を事前確認する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。
 4. `JibunKitCoreTests`でID、保存namespace、通知request IDを、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
+
+最小構成の例:
+
+```swift
+public enum InventoryMiniApp {
+    public static let definition = MiniAppDefinition(
+        id: MiniAppID("zaiko"),
+        title: "在庫管理",
+        systemImage: "shippingbox"
+    ) { context in
+        InventoryRootView(context: context)
+    }
+}
+```
+
+```swift
+static let all = makeRegistry([
+    CounterMiniApp.definition,
+    ReminderMiniApp.definition,
+    InventoryMiniApp.definition,
+])
+```
 
 通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 
@@ -21,7 +43,7 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 
 通知を予約する側では、次を守る。
 
-- request IDとpayloadはDescriptorから渡された`MiniAppContext.notificationRequestIdentifier`と`notificationUserInfo`を使う。
+- request IDとpayloadは定義から渡された`MiniAppContext.notificationRequestIdentifier`と`notificationUserInfo`を使う。
 - 通知許可は、通知を使うと利用者が選んだ操作の中で確認・要求する。アプリ起動時には要求しない。
 - 拒否はクラッシュや全画面エラーにせず、そのミニアプリの通常操作を続けられる結果として扱う。
 - 未登録・古い・不正なpayloadは別ミニアプリへ推測で遷移させず、一覧へ戻す。

@@ -23,4 +23,8 @@
 - GitHub Actionsの外部actionを固定commitへ変更し、checkout credentialを保持しないようにした。
 - credential、署名・pairing材料、Apple SDK、IPAを追跡しない公開境界チェックを追加した。
 
+### Fixed
+
+- App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
+
 [Unreleased]: https://github.com/y-aplus/AppbaseIOS/commits/main

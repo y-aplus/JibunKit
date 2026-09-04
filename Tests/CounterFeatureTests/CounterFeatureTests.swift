@@ -61,4 +61,10 @@ final class CounterFeatureTests: XCTestCase {
         XCTAssertEqual(persistedValue, additionCount)
     }
 
+    func testOverflowReturnsError() {
+        XCTAssertThrowsError(try CounterStore.updatedValue(Int.max, adding: 1)) { error in
+            XCTAssertEqual(error as? CounterStoreError, .valueOutOfRange)
+        }
+    }
+
 }

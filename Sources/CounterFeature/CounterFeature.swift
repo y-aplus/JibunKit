@@ -1,6 +1,17 @@
 import AppbaseCore
 import Foundation
 
+public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
+    case valueOutOfRange
+
+    public var errorDescription: String? {
+        switch self {
+        case .valueOutOfRange:
+            "カウンターの値が範囲を超えます。"
+        }
+    }
+}
+
 public actor CounterStore {
     public static let shared = CounterStore()
 
@@ -47,8 +58,19 @@ public actor CounterStore {
     @discardableResult
     public func add(_ amount: Int) throws -> Int {
         let defaults = try configuredDefaults()
-        let updatedValue = defaults.integer(forKey: Self.valueKey) + amount
+        let updatedValue = try Self.updatedValue(
+            defaults.integer(forKey: Self.valueKey),
+            adding: amount
+        )
         defaults.set(updatedValue, forKey: Self.valueKey)
+        return updatedValue
+    }
+
+    static func updatedValue(_ currentValue: Int, adding amount: Int) throws -> Int {
+        let (updatedValue, overflow) = currentValue.addingReportingOverflow(amount)
+        guard !overflow else {
+            throw CounterStoreError.valueOutOfRange
+        }
         return updatedValue
     }
 

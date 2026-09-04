@@ -175,7 +175,7 @@ jobs:
             "0.1.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "1"
+            "2"
 
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements JibunKitWidget.entitlements "$widget"

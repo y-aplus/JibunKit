@@ -16,7 +16,7 @@ JibunKitは、Windows上のWSLで行う高速なローカル確認と、GitHub A
 | iOS deployment target | iOS 26.0 |
 | app / Widget | `com.jibunkit.app` / `com.jibunkit.app.Widget` |
 | App Group | `group.com.jibunkit.shared` |
-| 版 | 0.1.0、build 1 |
+| 版 | 0.1.0、build 2 |
 
 アプリの構成は`Package.swift`、`xtool.yml`、本体とWidgetのInfo.plist・entitlementsに置く。workflowや生成物を手作業で書き換えて設定差を吸収しない。
 
@@ -57,7 +57,7 @@ workflowは次を順に検査し、どれかが失敗した場合はartifactをu
 - `swift test`の全テスト。
 - `JibunKit-App` schemeのRelease／実機向けXcodeビルド。
 - Xcode公式processorが生成した非空の`Metadata.appintents/extract.actionsdata`。
-- 本体とWidgetのarm64実行ファイル、bundle ID、0.1.0／build 1。
+- 本体とWidgetのarm64実行ファイル、bundle ID、0.1.0／build 2。
 - 本体とWidgetの論理App Group、アドホック署名、IPAのZIP整合性。
 
 成功時のartifact名は`JibunKit-ad-hoc`、中身は`JibunKit.ipa`、保持期間は7日である。これはSideStoreで再署名するための検証物であり、0.1のrelease成果物ではない。

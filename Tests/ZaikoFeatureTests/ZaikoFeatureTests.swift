@@ -259,4 +259,23 @@ final class ZaikoFeatureTests: XCTestCase {
         XCTAssertEqual(item?.name, "醤油")
         XCTAssertEqual(item?.currentStock ?? -1, 2, accuracy: 0.001)
     }
+
+    func testSkipRescheduleRequiresPendingRequest() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let imminent = now.addingTimeInterval(5)
+        let distant = now.addingTimeInterval(3_600)
+
+        XCTAssertTrue(InventoryDomain.shouldSkipReschedule(
+            hasRecord: true, isPending: true, fireDate: imminent, now: now
+        ))
+        XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
+            hasRecord: true, isPending: false, fireDate: imminent, now: now
+        ))
+        XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
+            hasRecord: false, isPending: true, fireDate: imminent, now: now
+        ))
+        XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
+            hasRecord: true, isPending: true, fireDate: distant, now: now
+        ))
+    }
 }

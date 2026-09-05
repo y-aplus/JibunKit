@@ -432,8 +432,8 @@ final class ZaikoStore: ObservableObject {
 
         let itemIdentifiers = Set(items.map { notificationPrefix + String($0.id) })
         let pending = await notificationCenter.pendingNotificationRequests()
-        let staleIdentifiers = pending
-            .map(\.identifier)
+        let pendingIDs = Set(pending.map(\.identifier))
+        let staleIdentifiers = pendingIDs
             .filter { $0.hasPrefix(notificationPrefix) && !itemIdentifiers.contains($0) }
 
         if !staleIdentifiers.isEmpty {
@@ -457,8 +457,13 @@ final class ZaikoStore: ObservableObject {
             }
 
             let cycleKey = item.notificationCycleKey
-            let hasRecord = nextRecords[String(item.id)] == cycleKey
-            if fireDate <= now.addingTimeInterval(6), hasRecord {
+            let skip = InventoryDomain.shouldSkipReschedule(
+                hasRecord: nextRecords[String(item.id)] == cycleKey,
+                isPending: pendingIDs.contains(identifier),
+                fireDate: fireDate,
+                now: now
+            )
+            if skip {
                 continue
             }
 

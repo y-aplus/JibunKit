@@ -509,6 +509,18 @@ enum InventoryDomain {
         }
     }
 
+    /// Whether an existing schedule record suppresses a new reservation.
+    /// A record only counts while its request is still pending: disabling
+    /// notifications removes pending requests, so re-enabling reschedules them.
+    static func shouldSkipReschedule(
+        hasRecord: Bool,
+        isPending: Bool,
+        fireDate: Date,
+        now: Date = .now
+    ) -> Bool {
+        hasRecord && isPending && fireDate <= now.addingTimeInterval(6)
+    }
+
     static func normalize(_ legacyItem: LegacyInventoryItem, now: Date = .now) -> InventoryItem? {
         guard let rawName = legacyItem.name?.trimmed, !rawName.isEmpty else {
             return nil

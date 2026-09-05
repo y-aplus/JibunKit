@@ -245,11 +245,12 @@ struct ItemDraft {
         )
     }
 
-    init(item: InventoryItem, mode: DisplayMode) {
+    init(item: InventoryItem, mode: DisplayMode, pauseState: GlobalPauseState, now: Date = .now) {
         name = item.name
         category = item.category == InventoryDomain.defaultCategory ? "" : item.category
         unit = item.unit
-        stock = item.currentStock.formattedNumber(maximumFractionDigits: 4)
+        stock = InventoryDomain.remainingStock(for: item, pauseState: pauseState, now: now)
+            .map { max(0, $0).formValue(maximumFractionDigits: 4) } ?? ""
         speed = InventoryDomain.speedToFormValue(rate: item.consumptionRatePerDay, mode: mode)
         displayMode = mode
     }
@@ -342,9 +343,9 @@ enum InventoryDomain {
 
         switch mode {
         case .perDayAmount:
-            return rate.formattedNumber(maximumFractionDigits: 4)
+            return rate.formValue(maximumFractionDigits: 4)
         case .perUnitTime:
-            return (1 / rate).formattedNumber(maximumFractionDigits: 4)
+            return (1 / rate).formValue(maximumFractionDigits: 4)
         }
     }
 
@@ -497,12 +498,13 @@ enum InventoryDomain {
         }
 
         return items.map { item in
-            guard item.lastPurchased <= pauseStartedAt else {
+            guard item.lastPurchased < resumedAt else {
                 return item
             }
 
+            let pausedDuration = resumedAt.timeIntervalSince(max(pauseStartedAt, item.lastPurchased))
             var shifted = item
-            shifted.lastPurchased = item.lastPurchased.addingTimeInterval(duration)
+            shifted.lastPurchased = item.lastPurchased.addingTimeInterval(pausedDuration)
             return shifted
         }
     }
@@ -574,5 +576,16 @@ extension Double {
         formatter.maximumFractionDigits = maximumFractionDigits
         formatter.minimumFractionDigits = 0
         return formatter.string(from: NSNumber(value: self)) ?? String(self)
+    }
+
+    /// Plain form value without grouping separators, mirroring the web
+    /// `String(Number(value.toFixed(n)))` so parsed input round-trips.
+    func formValue(maximumFractionDigits: Int) -> String {
+        let factor = pow(10.0, Double(maximumFractionDigits))
+        let rounded = (self * factor).rounded() / factor
+        if rounded.truncatingRemainder(dividingBy: 1) == 0, abs(rounded) < 1e15 {
+            return String(Int64(rounded))
+        }
+        return String(rounded)
     }
 }

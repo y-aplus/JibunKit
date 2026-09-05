@@ -303,7 +303,11 @@ public struct ZaikoRootView: View {
                             remainingDays: store.remainingDays(for: item),
                             isAlert: store.isAlertItem(item),
                             onEdit: {
-                                itemEditorContext = .edit(item: item, mode: store.displayMode(for: item))
+                                itemEditorContext = .edit(
+                                    item: item,
+                                    mode: store.displayMode(for: item),
+                                    pauseState: store.appState.globalPause
+                                )
                             },
                             onDelete: {
                                 pendingDeleteItem = item
@@ -661,12 +665,12 @@ struct ItemEditorContext: Identifiable {
         )
     }
 
-    static func edit(item: InventoryItem, mode: DisplayMode) -> ItemEditorContext {
+    static func edit(item: InventoryItem, mode: DisplayMode, pauseState: GlobalPauseState, now: Date = .now) -> ItemEditorContext {
         ItemEditorContext(
             itemID: item.id,
             title: "アイテム編集",
             commitLabel: "更新",
-            draft: ItemDraft(item: item, mode: mode)
+            draft: ItemDraft(item: item, mode: mode, pauseState: pauseState, now: now)
         )
     }
 }

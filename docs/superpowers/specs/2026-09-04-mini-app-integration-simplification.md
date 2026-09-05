@@ -2,7 +2,7 @@
 
 更新日: 2026-09-04
 
-**状態: 実装済み・自動検証合格。不足5点の修正と再検証での指摘2件までを`codex/simplify-mini-app-integration`上のlocal commitへ反映し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。利用者向け更新としての実機検証は未完了である。**
+**状態: 実装済み・自動検証合格。不足5点の修正と再検証での指摘2件までを`codex/simplify-mini-app-integration`上のlocal commitへ反映し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。その後、定義のFeature所有化とZaiko分離までを反映し、2026-09-05にWSLの全29テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。利用者向け更新としての実機検証は未完了である。**
 
 ## 1. 利用者が得る結果
 
@@ -10,7 +10,7 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、画面
 
 ## 2. 判断
 
-**Rethink:** 従来の追加手順は、1つのミニアプリ情報を複数fileへ分散させ、利用者へJibunKit内部のswitch編集を要求していた。ID、表示情報、遷移先を1件のDescriptorへ統合し、保存と通知に必要な名前空間をContextとして渡す。
+**Rethink:** 従来の追加手順は、1つのミニアプリ情報を複数fileへ分散させ、利用者へJibunKit内部のswitch編集を要求していた。ID、表示情報、遷移先を1件のDefinitionへ統合し、保存と通知に必要な名前空間をContextとして渡す。
 
 この変更は、公開済み0.1.0を捨てる再設計ではない。現在のcompile-time登録、Swift Package構成、保存形式、通知経路を維持したまま、追加時の交差箇所を減らす。
 
@@ -57,7 +57,7 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、画面
 
 1. FeatureライブラリtargetとJibunKitからの依存を`Package.swift`へ追加する。
 2. Feature targetから`MiniAppContext`を受け取るpublicなRoot Viewを公開する。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
-3. `MiniAppRegistry.swift`へDescriptorを1件追加する。
+3. `MiniAppRegistry.swift`の`all`へFeatureの定義を1件列挙する。
 4. Feature固有処理と、既存Featureとの保存・ID衝突を検証する。
 
 通常追加では、次の基盤fileを編集しない。
@@ -77,7 +77,7 @@ Widget、App Intent、通知、URLなどを新たに使うFeatureには、その
 Featureが所有する安定ID
           │
           ▼
-MiniAppDescriptor ──► 一覧の表示名・アイコン
+MiniAppDefinition ──► 一覧の表示名・アイコン
           │
           ├────────► Feature Root View生成
           │
@@ -116,7 +116,7 @@ jibunkit.reminder.notification
 
 ### 7.2 MiniAppContext
 
-`MiniAppContext`はDescriptorのIDから生成し、FeatureのRoot ViewまたはAdapterへ渡す。受け取ったFeatureは、保存キーと通知情報を同じContextから取得する。
+`MiniAppContext`は定義のIDから生成し、FeatureのRoot ViewまたはAdapterへ渡す。受け取ったFeatureは、保存キーと通知情報を同じContextから取得する。
 
 提供する情報は、現在必要な次の3点に限定する。
 
@@ -132,9 +132,9 @@ WidgetやApp IntentはRegistryから生成されないため、Featureが所有�
 
 汎用service containerにはしない。新しい共通機能は、複数の実例で同じ問題が確認されてから追加する。
 
-### 7.3 MiniAppDescriptor
+### 7.3 MiniAppDefinition
 
-Descriptorは次を1件にまとめる。
+定義は次を1件にまとめる。
 
 - `id`
 - `title`
@@ -144,25 +144,21 @@ Descriptorは次を1件にまとめる。
 登録例:
 
 ```swift
-MiniAppDescriptor(
-    id: InventoryFeature.miniAppID,
-    title: "在庫管理",
-    systemImage: "shippingbox"
-) { context in
-    InventoryRootView(context: context)
+public enum ZaikoMiniApp {
+    public static let definition = MiniAppDefinition(
+        id: .zaiko,
+        title: "在庫管理",
+        systemImage: "shippingbox"
+    ) { context in
+        ZaikoRootView(context: context)
+    }
 }
 ```
 
 CounterとReminderの登録も同じ形にする。
 
 ```swift
-MiniAppDescriptor(
-    id: .reminder,
-    title: "リマインダー",
-    systemImage: "bell"
-) { context in
-    ReminderRootView(context: context)
-}
+ReminderMiniApp.definition // id: .reminder、title: "リマインダー"
 ```
 
 型の異なるSwiftUI Viewを同じ配列へ格納するため、型消去はRegistry境界だけで行う。Feature内部へ`AnyView`を広げない。
@@ -172,9 +168,9 @@ MiniAppDescriptor(
 `MiniAppRegistry.all`を登録の唯一のsource of truthとする。
 
 - 一覧は`all`から生成する。
-- navigation destinationはIDからDescriptorを検索して生成する。
+- navigation destinationはIDから定義を検索して生成する。
 - 通知遷移は`all`から生成した登録済みID集合で検証する。
-- 不正IDはDescriptorまたはContext生成時に停止させる。
+- 不正IDは定義またはContext生成時に停止させる。
 - 重複IDはRegistry生成時に停止させる。
 
 ### 7.5 Navigationと通知
@@ -188,8 +184,11 @@ MiniAppDescriptor(
 | file | 責務 |
 | --- | --- |
 | `Sources/JibunKitCore/MiniAppID.swift` | 開いたID型、ID検証、Context、通知payload解決 |
-| `Sources/<Name>Feature` | Feature固有ID、Root ViewまたはAdapter、処理、保存形式、Feature固有の通知予約 |
-| `Sources/JibunKit/MiniAppRegistry.swift` | Descriptor定義と全Featureの登録 |
+| `Sources/JibunKitCore/MiniAppDefinition.swift` | Feature所有の定義(ID・表示名・アイコン・Root View生成) |
+| `Sources/JibunKitCore/MiniAppStorage.swift` | App Group解決の集約 |
+| `Sources/JibunKitCore/MiniAppValidator.swift` | ID・保存namespace・通知IDの事前検査 |
+| `Sources/<Name>Feature` | Feature固有ID、定義、Root ViewまたはAdapter、処理、保存形式、Feature固有の通知予約 |
+| `Sources/JibunKit/MiniAppRegistry.swift` | Featureの定義の列挙 |
 | `Sources/JibunKit/MiniAppListScreen.swift` | Registryから一覧とdestinationを生成 |
 | `Sources/JibunKit/AppNavigation.swift` | 登録済みIDだけを開く |
 | `Sources/JibunKit/NotificationAppDelegate.swift` | 通知payloadを登録済みIDへ解決してnavigationへ渡す |
@@ -212,12 +211,13 @@ MiniAppDescriptor(
 
 - `MiniAppID`が`CaseIterable`な閉じたenumではない。
 - `MiniAppListScreen`にFeatureごとのswitchがない。
-- ID、表示名、アイコン、destinationが1件のDescriptorにまとまっている。
+- ID、表示名、アイコン、destinationが1件の定義にまとまっている。
 - 各Featureが自身のIDを所有する。
-- CounterとReminderが、`MiniAppContext`を受け取るFeature側Root Viewを公開する。
-- RegistryがContextをCounterとReminderのRoot Viewへ渡す。
-- CounterとReminderのRoot ViewがContextをStoreへ渡し、Storeが保存キーをContextから得る。
+- Counter・Reminder・Zaikoが、`MiniAppContext`を受け取るFeature側Root Viewを公開する。
+- RegistryがContextを各FeatureのRoot Viewへ渡す。
+- 各FeatureのRoot ViewがContextをStoreへ渡し、Storeが保存キーをContextから得る。
 - Reminderの通知予約が、受け取ったContextのrequest IDとpayloadを使う。
+- Zaikoの通知予約が、Context由来のrequest ID prefixとpayloadを使う。
 - ミニアプリ固有の画面と通知予約処理が`Sources/JibunKit`に残っていない。
 - Registryが不正IDと重複IDを受け入れない。
 - `docs/mini-apps.md`と`docs/updating.md`が、Feature側Root ViewとContextの実利用を追加手順として説明する。
@@ -244,10 +244,11 @@ unzip -t xtool/JibunKit.ipa
 
 本変更を利用者向け更新として配布する前に、既存JibunKitを削除せず上書きする。
 
-- 一覧にカウンターとリマインダーが表示され、両方を開ける。
+- 一覧にカウンター・リマインダー・在庫管理が表示され、すべて開ける。
 - `counter.value`と`reminder.message`が更新前から維持される。
 - Counterの画面、App Shortcut、Widgetが同じ値を扱う。
 - リマインダー通知を予約でき、foregroundと終了状態の通知タップからリマインダーを開ける。
+- 在庫管理の通知タップから在庫管理を開ける。
 - SideStoreの署名更新後も同じ項目を確認できる。
 
 ビルド成功だけで実機合格としない。
@@ -263,6 +264,9 @@ unzip -t xtool/JibunKit.ipa
 - Context経路の保存キー一致テストの追加
 - 再検証で指摘された2件の修正(テストの`await`位置、`ReminderNotificationScheduler`の`Sendable`対応)
 - `73736d5 docs: record implementation and auto verification pass`
+- 定義のFeature所有化・`MiniAppStorage`集約・`MiniAppValidator`追加(計3 commit)
+- Zaiko分離(計4 commit: Domain、Store・Root View移植、Preview除去、文書記録)
+- web版整合と通知再予約修正(計2 commit)
 
 `c0b5847`時点では2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功したが、次の設計差分が残っていた。
 
@@ -272,7 +276,7 @@ unzip -t xtool/JibunKit.ipa
 - CounterとReminderの画面、およびReminderの通知予約処理がJibunKit targetに残っている。
 - `docs/updating.md`がミニアプリ固有画面をJibunKit targetへ置くよう説明している。
 
-上記5点は解消済みである。再検証で指摘された2件も修正し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。実機検証は未実施である。
+上記5点は解消済みである。再検証で指摘された2件も修正し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。その後、定義のFeature所有化・Zaiko分離・web版整合・通知再予約修正を反映し、2026-09-05にWSLの全29テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。実機検証は未実施である。
 
 ## 12. 未完了と次の判断
 

@@ -113,6 +113,8 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["まだ在庫がありません"].waitForExistence(timeout: 5))
         tap(app.buttons["zaiko.settings"])
         tap(app.buttons["JSONバックアップを読み込む"])
+        tap(app.buttons["ブラウズ"])
+        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         let backup = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "migration-backup")).firstMatch
         XCTAssertTrue(backup.waitForExistence(timeout: 10))
         capture("05-backup-import-picker")
@@ -148,7 +150,19 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["miniapp.reminder"])
         XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
         capture("07-reminder-independent-save")
+    }
 
+    func testNotificationDeliveryAndRouting() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        tap(app.buttons["miniapp.reminder"])
+        let message = app.textFields["例: 水を飲む"]
+        tap(message)
+        let previous = message.value as? String ?? ""
+        if !previous.isEmpty && previous != message.placeholderValue {
+            message.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
+        }
+        message.typeText("Migration reminder")
         tap(app.buttons["10秒後に通知"])
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let allow = springboard.buttons.matching(

@@ -11,13 +11,14 @@ public struct ZaikoRootView: View {
     @State private var restockItem: InventoryItem?
     @State private var pendingDeleteItem: InventoryItem?
     @State private var isSettingsPresented = false
+    @State private var backupError: String?
     @State private var isImporting = false
     @State private var isExporting = false
     @State private var exportDocument = InventoryBackupDocument(text: "")
     @State private var pendingSettingsAction: SettingsAction?
 
     private enum SettingsAction {
-        case importBackup, exportBackup, enableNotifications, requestPermission
+        case enableNotifications, requestPermission
     }
 
     public init(context: MiniAppContext) {
@@ -105,8 +106,11 @@ public struct ZaikoRootView: View {
         .sheet(isPresented: $isSettingsPresented, onDismiss: { completeSettingsAction() }) {
             SettingsSheet(
                 isPresented: $isSettingsPresented,
-                onImport: { dismissSettingsThen(.importBackup) },
-                onExport: { dismissSettingsThen(.exportBackup) },
+                onImport: { isImporting = true },
+                onExport: {
+                    exportDocument = InventoryBackupDocument(text: store.exportBackupJSON())
+                    isExporting = true
+                },
                 onNotificationToggle: { isEnabled in
                     if isEnabled {
                         dismissSettingsThen(.enableNotifications)
@@ -121,44 +125,51 @@ public struct ZaikoRootView: View {
                 }
             )
             .environmentObject(store)
-        }
-        .fileImporter(
-            isPresented: $isImporting,
-            allowedContentTypes: [.json, .plainText, .data],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                guard let url = urls.first else {
-                    return
-                }
-
-                do {
-                    let accessGranted = url.startAccessingSecurityScopedResource()
-                    defer {
-                        if accessGranted {
-                            url.stopAccessingSecurityScopedResource()
-                        }
+            .alert("バックアップ", isPresented: Binding(
+                get: { backupError != nil },
+                set: { if !$0 { backupError = nil } }
+            )) {
+                Button("OK") { backupError = nil }
+            } message: {
+                Text(backupError ?? "")
+            }
+            .fileImporter(
+                isPresented: $isImporting,
+                allowedContentTypes: [.json, .plainText, .data],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else {
+                        return
                     }
 
-                    let data = try Data(contentsOf: url)
-                    try store.importBackup(data: data)
-                    isSettingsPresented = false
-                } catch {
-                    store.present(error: error)
+                    do {
+                        let accessGranted = url.startAccessingSecurityScopedResource()
+                        defer {
+                            if accessGranted {
+                                url.stopAccessingSecurityScopedResource()
+                            }
+                        }
+
+                        let data = try Data(contentsOf: url)
+                        try store.importBackup(data: data)
+                    } catch {
+                        backupError = error.localizedDescription
+                    }
+                case .failure(let error):
+                    backupError = error.localizedDescription
                 }
-            case .failure(let error):
-                store.present(error: error)
             }
-        }
-        .fileExporter(
-            isPresented: $isExporting,
-            document: exportDocument,
-            contentType: .json,
-            defaultFilename: store.exportFilename
-        ) { result in
-            if case .failure(let error) = result {
-                store.present(error: error)
+            .fileExporter(
+                isPresented: $isExporting,
+                document: exportDocument,
+                contentType: .json,
+                defaultFilename: store.exportFilename
+            ) { result in
+                if case .failure(let error) = result {
+                    backupError = error.localizedDescription
+                }
             }
         }
         .confirmationDialog(
@@ -521,11 +532,6 @@ private extension ZaikoRootView {
         let action = pendingSettingsAction
         pendingSettingsAction = nil
         switch action {
-        case .importBackup:
-            isImporting = true
-        case .exportBackup:
-            exportDocument = InventoryBackupDocument(text: store.exportBackupJSON())
-            isExporting = true
         case .enableNotifications:
             Task { await store.setNotificationsEnabled(true) }
         case .requestPermission:

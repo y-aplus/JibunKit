@@ -99,14 +99,14 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["閉じる"])
         XCTAssertFalse(app.staticTexts["全体停止中"].exists)
 
-        // File flows must open after settings dismissal, without a second modal
-        // trying to present on top of the closing settings sheet.
+        // Files is presented from the stable settings sheet and returns to it.
         tap(app.buttons["zaiko.settings"])
         tap(app.buttons["JSONバックアップを書き出す"])
         XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForExistence(timeout: 30))
         capture("04-backup-export-picker")
         enter("DOCPicker.filenameTextField", "migration-backup")
         tap(app.buttons["保存"])
+        tap(app.buttons["閉じる"])
         XCTAssertTrue(app.buttons["zaiko.settings"].waitForExistence(timeout: 10))
         tap(app.buttons["削除"])
         tap(app.sheets.buttons["削除"])
@@ -119,7 +119,8 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(backup.waitForExistence(timeout: 10))
         capture("05-backup-import-picker")
         XCTAssertTrue(backup.isEnabled)
-        backup.doubleTap()
+        backup.tap()
+        tap(app.buttons["閉じる"])
         XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 30))
 
         // State must survive leaving the Feature and a full process restart.

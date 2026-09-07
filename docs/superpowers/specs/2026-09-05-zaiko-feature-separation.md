@@ -7,13 +7,13 @@
 ## 分離点
 
 - Feature側へ移したもの: `InventoryDomain`・モデル・バックアップ互換処理(`ZaikoDomain.swift`、FoundationのみでLinuxテスト可)、`ZaikoStore`・`InventoryBackupDocument`(`ZaikoStore.swift`)、`ContentView`派生の`ZaikoRootView`。`fileImporter`/`fileExporter`や設定画面遷移はView層の機能としてそのまま動く。
-- App Shellに残るもの: `@main`と単独版の`NotificationAppDelegate`(foreground表示のみ)。ホスト側delegateは`[.banner, .sound]`で表示し、tapは登録ID検証を経て遷移する。
+- App Shellに残るもの: `@main`と単独版の`NotificationAppDelegate`(foreground表示のみ)。ホスト側delegateは`[.banner, .list, .sound]`で表示し、tapは登録ID検証を経て遷移する。
 
 ## 基盤側の判断
 
 - 保存: `UserDefaults.standard`+固定キーから、App Group suite(`MiniAppStorage`)とContext名前空間(`zaiko.state`/`zaiko.backup.latest`/`zaiko.backup.prev`)へ。JibunKit内では新規キーであり、単独版からの移行はJSON export/importで行う。JSON形式自体は不変でPWA互換を保つ。
 - 通知: アイテム毎の複数予約型のため、単一request ID想定にはそのまま乗らない。request IDを`jibunkit.zaiko.notification.<itemID>`のprefix運用とし、各通知へ`MiniAppContext.notificationUserInfo`を付加してtap遷移を解決する。古い`zaiko.alert.` prefixの通知はJibunKit側の整理対象外(単独版の領域であり共有しない)。
-- `ZaikoRootView`は単独版 parity のため自前の`NavigationStack`を保持する。ホストのstackとの二重化は既知の負債であり、実機確認時に見直す。
+- 2026-09-07に`ZaikoRootView`の最外層`NavigationStack`を除去し、JibunKitが持つstackを利用する構成へ変更した。設定・編集・補充のsheetは各sheet内でstackを持つ。単独版で再利用する場合はApp Shell側でRoot Viewをstackに包む。
 - ついでに直したもの: `DateCoding`の共有`ISO8601DateFormatter`を都度生成へ(Swift 6の`MutableGlobalVariable`エラー対応)。
 
 ## 検証
@@ -41,3 +41,7 @@ Zaikoは移植の試験例として残す。基盤の先行設計・実装を許
 - 識別子と排他処理はJibunKitCoreが担当し、在庫形式・補充サイクル・通知する条件はZaikoFeatureが担当する。
 
 検証結果は[レビュー修正の検証記録](../../verification/2026-09-07-review-fixes.md)を参照。過去のWSL検証と今回のActions検証は区別する。
+
+## 実機前の操作確認
+
+移植元の画面・データ処理・App entry pointと照合し、[実機前の移植確認](../../verification/2026-09-07-zaiko-migration.md)へ機能ごとの対応と検証結果を記録する。実機で確認できるという理由だけで、シミュレーターや自動テストで検証できる項目を未実施のまま渡さない。

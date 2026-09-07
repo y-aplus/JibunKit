@@ -77,3 +77,11 @@ App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphr
 同じ保存値を複数のStoreから更新する場合、読み取り・計算・書き込み全体を`MiniAppStorage.withExclusiveAccess { ... }`へ入れる。CounterStoreが使用例。これはプロセス内の全利用者に共通する同期的な排他処理であり、各Storeのactorが別でも更新を直列化する。全writerがこの境界を使う必要がある。closureは短い同期処理にし、入れ子に呼び出さない。失敗時のrollbackやプロセス間の排他は提供しない。現在のWidgetは読取り専用であり、別プロセスからの書込みを追加する場合は保存方式も再設計する。
 
 JibunKitはFeature同士の識別・保存先の分離と共通APIの契約を担当する。Featureの入力検証、バックアップ形式、通知する条件など、そのFeature固有の正しさはFeature側で担保する。基盤が不正な実装を自動補正する契約にはしない。
+
+## 画面とホストの境界
+
+一覧からFeatureを開く最外層の`NavigationStack`、一覧へ戻る操作、標準の画面タイトルはJibunKitが所有する。FeatureのRoot Viewはそのstackの内容を返し、もう1つのroot stackを入れない。Feature固有のpush先は固有のroute型で宣言してよい。設定・編集など別のsheet内には、そのsheet用の`NavigationStack`を持てる。
+
+同じRoot Viewを単独アプリでも使う場合、単独版のApp Shellが`NavigationStack { FeatureRootView(context: ...) }`で包む。JibunKit内のためだけに独立版の起動・画面構成をFeatureへ埋め込まない。
+
+foregroundの通知はホストがbanner・通知センターのlist・soundを指定する。表示内容や予約条件はFeatureが持ち、タップ後の入口はContextのpayloadを使う。システム設定による実際の表示・音の可否は別に検証する。

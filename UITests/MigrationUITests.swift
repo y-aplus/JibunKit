@@ -99,31 +99,6 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["閉じる"])
         XCTAssertFalse(app.staticTexts["全体停止中"].exists)
 
-        // Files is presented from the stable settings sheet and returns to it.
-        tap(app.buttons["zaiko.settings"])
-        tap(app.buttons["JSONバックアップを書き出す"])
-        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 30))
-        capture("04-backup-export-picker")
-        tap(app.buttons["保存"])
-        XCTAssertTrue(app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].waitForNonExistence(timeout: 15))
-        tap(app.buttons["閉じる"])
-        XCTAssertTrue(app.buttons["zaiko.settings"].waitForExistence(timeout: 10))
-        tap(app.buttons["削除"])
-        tap(app.sheets.buttons["削除"])
-        XCTAssertTrue(app.staticTexts["まだ在庫がありません"].waitForExistence(timeout: 5))
-        tap(app.buttons["zaiko.settings"])
-        tap(app.buttons["JSONバックアップを読み込む"])
-        tap(app.buttons["ブラウズ"])
-        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "zaiko_backup_")).firstMatch
-        XCTAssertTrue(backup.waitForExistence(timeout: 10))
-        capture("05-backup-import-picker")
-        XCTAssertTrue(backup.isEnabled)
-        backup.tap()
-        XCTAssertTrue(backup.waitForNonExistence(timeout: 15))
-        tap(app.buttons["閉じる"])
-        XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 30))
-
         // State must survive leaving the Feature and a full process restart.
         returnToList()
         tap(app.buttons["miniapp.counter"])
@@ -153,6 +128,47 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["miniapp.reminder"])
         XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
         capture("07-reminder-independent-save")
+    }
+
+    func testZBackupRoundTrip() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        tap(app.buttons["miniapp.zaiko"])
+        tap(app.buttons["zaiko.add"])
+        enter("zaiko.editor.name", "Backup Rice")
+        enter("zaiko.editor.stock", "10")
+        enter("zaiko.editor.speed", "2")
+        tap(app.navigationBars.buttons["保存"])
+        XCTAssertTrue(app.staticTexts["Backup Rice"].waitForExistence(timeout: 5))
+        tap(app.buttons["編集モードへ"])
+        // Files is presented from the stable settings sheet and returns to it.
+        tap(app.buttons["zaiko.settings"])
+        tap(app.buttons["JSONバックアップを書き出す"])
+        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 30))
+        capture("04-backup-export-picker")
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].waitForNonExistence(timeout: 15))
+        tap(app.buttons["閉じる"])
+        XCTAssertTrue(app.buttons["zaiko.settings"].waitForExistence(timeout: 10))
+        tap(app.buttons["削除"])
+        tap(app.sheets.buttons["削除"])
+        XCTAssertTrue(app.staticTexts["まだ在庫がありません"].waitForExistence(timeout: 5))
+        tap(app.buttons["zaiko.settings"])
+        tap(app.buttons["JSONバックアップを読み込む"])
+        tap(app.buttons["ブラウズ"])
+        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
+        let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "zaiko_backup_")).firstMatch
+        XCTAssertTrue(backup.waitForExistence(timeout: 10))
+        capture("05-backup-import-picker")
+        XCTAssertTrue(backup.isEnabled)
+        backup.tap()
+        XCTAssertTrue(backup.waitForNonExistence(timeout: 15))
+        tap(app.buttons["閉じる"])
+        XCTAssertTrue(app.staticTexts["Backup Rice"].waitForExistence(timeout: 30))
+
+        tap(app.buttons["削除"])
+        tap(app.sheets.buttons["削除"])
+        XCTAssertTrue(app.staticTexts["まだ在庫がありません"].waitForExistence(timeout: 5))
     }
 
     func testNotificationDeliveryAndRouting() throws {

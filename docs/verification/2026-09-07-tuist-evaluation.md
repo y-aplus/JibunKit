@@ -1,6 +1,6 @@
 # Tuist / TMA移行検証（Issue #1）
 
-検証ブランチ: `codex/tuist-evaluation`。mainへのマージ・正式採用は未実施。バックアップ画面開発は止め、開発基盤の責務を優先して見直す。
+検証ブランチ: `codex/tuist-evaluation`。利用者の承認後、移行CIの成功を確認しmainへ取り込む。以下の初回評価・修正履歴は当時の状態を記録する。バックアップ画面開発は止め、開発基盤の責務を優先して見直す。
 
 ## 比較と方針
 
@@ -87,3 +87,16 @@ mainへのマージ、正式リリース、Issue完了扱いは行っていな�
 本体bundle ID、App Group、保存キーは変更しない。移行後の実機確認は引き続き未実施であり、今回のmain統合は正式Release公開を含まない。
 
 移行CI [34125388232](https://github.com/y-aplus/JibunKit/actions/runs/34125388232)はPackage.swiftの編集ミスでmanifestコンパイルに失敗。Integration targetの定義をproductのtarget名配列にも挿入していた2か所を修正した。template・iOS検証へ進む前の失敗である。
+
+## 移行完了時の検証
+
+[run 34125611924](https://github.com/y-aplus/JibunKit/actions/runs/34125611924)、source `03b37657d8b6ad05898269fc4303bab7f9c9dc2a`で全step成功。
+
+- Foundationテスト32件成功。
+- Tuist標準templateから生成した独立Featureの単独appと、ホストへの追加後のappを両方ビルドできた。
+- Integration分離後の本体・Widgetビルド、metadata・署名・IPA検査が成功。
+- UIテスト3件（本体の保存・再起動、通知配信・遷移、単独Counterの加算・再起動・本体との独立）が成功。
+
+Tuistを標準経路として採用し、旧生成処理を削除した状態をmainへ取り込む。実機でのTuist版への上書き更新・SideStore再署名・Widget／Shortcuts確認は残る。Issue #1はこれらの検証項目が未完了のため閉じない。正式Release公開も行わない。
+
+生成templateはJibunKit非依存、既存Counter／Reminderは定義をIntegrationへ分けたが共通保存APIへの依存は維持する。任意のFeatureの完全独立性を一律に保証するものではない。検証後の変更は文書のみ。

@@ -6,7 +6,7 @@
 
 ### Added
 
-- 在庫管理(Zaiko)を3つ目のミニアプリとして組み込み。独立ZaikoAppからFeatureライブラリとRoot Viewへ分離し、保存キーと通知を`MiniAppContext`由来に統一。JSON export/import形式は不変でPWA互換を維持。
+- 在庫管理(Zaiko)を3つ目のミニアプリとして組み込み。独立ZaikoAppからFeatureライブラリとRoot Viewへ分離し、保存キーと通知を`MiniAppContext`由来に統一。JSON出力形式は維持し、検証済みのPWA形式・旧形式を読込み可能。
 
 ### Changed
 
@@ -15,6 +15,14 @@
 - カウンターとリマインダーのRoot View・保存処理・通知予約をFeature側へ移し、`MiniAppContext`から保存キーと通知情報を取得する基準実装へ変更。保存キーと通知先は従来通り。
 - ミニアプリの定義(ID・表示名・アイコン・Root View)をFeature側が所有する`MiniAppDefinition`へまとめ、Registryは定義の列挙だけにする。App Group解決は`MiniAppStorage`へ集約し、ID・保存namespace・通知IDの事前検査を`MiniAppValidator`で行う。
 - 1.0の目標候補を、ソースコードがある独立Swift／SwiftUIアプリからFeatureライブラリと薄いAdapterへの分離支援として明確化。
+
+### Fixed
+
+- Storeごとのactorだけに依存していたカウンター加算を、JibunKitCoreの共通排他処理へ接続。画面とShortcutsなど複数Storeの同時加算による更新喪失を防止。
+- ドットを含むミニアプリIDの保存namespace・通知IDをエスケープし、他Featureのキーや通知prefixとの衝突を防止。既存3アプリのキーは維持。ドット入りIDを使用した派生の移行方法は`docs/updating.md`を参照。
+- ZaikoのJSON読込みを全件検証してから適用する方式へ変更。無関係なJSON、不正項目を含む配列、不明な版、重複・範囲外IDを拒否し、読込み失敗時は現在の在庫を維持。
+- Zaikoの配信済み通知記録を保持し、通知オフ・停止で取り消した未配信予約だけを再有効化時に再予約。停止再開による日時補正でも配信済みサイクルを維持。
+- macOSでのFeatureテストの最低OS条件と、iOS通知取消しのコレクション型を修正。
 
 ## [0.1.0] - 2026-09-04
 

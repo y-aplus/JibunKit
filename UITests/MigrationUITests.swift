@@ -123,6 +123,7 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.navigationBars.count, 1)
         capture("06-restored-inventory")
+        tap(app.buttons["編集モードへ"])
         tap(app.buttons["削除"])
         tap(app.buttons["キャンセル"])
         XCTAssertTrue(app.staticTexts["Rice Edited"].exists)

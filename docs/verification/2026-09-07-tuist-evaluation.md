@@ -100,3 +100,9 @@ mainへのマージ、正式リリース、Issue完了扱いは行っていな�
 Tuistを標準経路として採用し、旧生成処理を削除した状態をmainへ取り込む。実機でのTuist版への上書き更新・SideStore再署名・Widget／Shortcuts確認は残る。Issue #1はこれらの検証項目が未完了のため閉じない。正式Release公開も行わない。
 
 生成templateはJibunKit非依存、既存Counter／Reminderは定義をIntegrationへ分けたが共通保存APIへの依存は維持する。任意のFeatureの完全独立性を一律に保証するものではない。検証後の変更は文書のみ。
+
+## 2026-09-08 実機での簡易確認
+
+利用者へ渡した対象は[run 34125611924のIPA artifact](https://github.com/y-aplus/JibunKit/actions/runs/34125611924/artifacts/10020042143)内の`JibunKit.ipa`（上記source、Zaikoなし）。利用者から、上書き後の保存値、Widget、ショートカット、通知、SideStore再署名について「軽く試した範囲では大丈夫そう」と報告を受けた。
+
+これらは利用者による実機の簡易確認で問題が見つからなかったという証拠として扱う。今回の端末・OS版、個々の操作手順・回数は追加確認しておらず、長期利用や網羅的な回帰検証の完了は主張しない。上記の実機未実施という記述は、この報告前の状態である。

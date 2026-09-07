@@ -25,9 +25,24 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
     }
 
-    func testBackupRequiresSelectionAndOpensFileExporter() throws {
+    func testBackupRoundTripRestoresOnlySelectedCounter() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
+        tap(app.buttons["miniapp.counter"])
+        tap(app.buttons["1を追加"])
+        let original = app.staticTexts["counter.value"].label
+        returnToList()
+        tap(app.buttons["miniapp.reminder"])
+        let message = app.textFields["例: 水を飲む"]
+        tap(message)
+        let previous = message.value as? String ?? ""
+        if !previous.isEmpty && previous != message.placeholderValue {
+            message.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
+        }
+        message.typeText("Keep during restore")
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.staticTexts["保存しました"].waitForExistence(timeout: 5))
+        returnToList()
         tap(app.buttons["backup.open"])
         let export = app.buttons["backup.export"]
         XCTAssertTrue(export.waitForExistence(timeout: 5))
@@ -39,11 +54,54 @@ final class MigrationUITests: XCTestCase {
         tap(export)
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
         capture("backup-file-exporter")
-        let cancel = app.buttons.matching(NSPredicate(format: "label IN %@", ["キャンセル", "Cancel"])).firstMatch
-        tap(cancel)
-        XCTAssertTrue(app.buttons["backup.import"].waitForExistence(timeout: 10))
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.staticTexts["バックアップを書き出しました。"].waitForExistence(timeout: 20))
         tap(app.buttons["閉じる"])
-        XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
+        tap(app.buttons["miniapp.counter"])
+        tap(app.buttons["1を追加"])
+        let changed = app.staticTexts["counter.value"].label
+        XCTAssertNotEqual(changed, original)
+        returnToList()
+        tap(app.buttons["backup.open"])
+        tap(app.buttons["backup.import"])
+        tap(app.buttons["ブラウズ"])
+        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
+        let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "JibunKit-backup")).firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10))
+        capture("backup-file-importer")
+        tap(file)
+        let restore = app.buttons["backup.restore"]
+        XCTAssertTrue(restore.waitForExistence(timeout: 20))
+        XCTAssertFalse(restore.isEnabled)
+        XCTAssertFalse(app.switches["backup.restore.reminder"].exists)
+        let selection = app.switches["backup.restore.counter"]
+        XCTAssertTrue(selection.waitForExistence(timeout: 5))
+        selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        tap(restore)
+        tap(app.alerts.buttons["キャンセル"])
+        tap(app.buttons["閉じる"])
+        tap(app.buttons["miniapp.counter"])
+        XCTAssertEqual(app.staticTexts["counter.value"].label, changed)
+        returnToList()
+        // Read again because closing the screen intentionally discards the imported file.
+        tap(app.buttons["backup.open"])
+        tap(app.buttons["backup.import"])
+        XCTAssertTrue(file.waitForExistence(timeout: 15))
+        tap(file)
+        XCTAssertTrue(selection.waitForExistence(timeout: 20))
+        selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        tap(restore)
+        tap(app.alerts.buttons["置き換えて復元"])
+        XCTAssertTrue(app.staticTexts["カウンターを復元しました。"].waitForExistence(timeout: 10))
+        capture("backup-restored-counter")
+        tap(app.buttons["閉じる"])
+        app.terminate()
+        app.launch()
+        tap(app.buttons["miniapp.counter"])
+        XCTAssertEqual(app.staticTexts["counter.value"].label, original)
+        returnToList()
+        tap(app.buttons["miniapp.reminder"])
+        XCTAssertEqual(message.value as? String, "Keep during restore")
     }
 
     func testPersistenceAndHostIntegration() throws {

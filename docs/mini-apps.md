@@ -14,13 +14,13 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 最小構成の例:
 
 ```swift
-public enum ZaikoMiniApp {
+public enum ReminderMiniApp {
     public static let definition = MiniAppDefinition(
-        id: .zaiko,
-        title: "在庫管理",
-        systemImage: "shippingbox"
+        id: .reminder,
+        title: "リマインダー",
+        systemImage: "bell"
     ) { context in
-        ZaikoRootView(context: context)
+        ReminderRootView(context: context)
     }
 }
 ```
@@ -29,7 +29,6 @@ public enum ZaikoMiniApp {
 static let all = makeRegistry([
     CounterMiniApp.definition,
     ReminderMiniApp.definition,
-    ZaikoMiniApp.definition,
 ])
 ```
 

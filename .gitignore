@@ -30,3 +30,7 @@ SDKs/
 Thumbs.db
 xcuserdata/
 *.xcuserstate
+
+# Local-only migration experiment
+/Sources/ZaikoFeature/
+/Tests/ZaikoFeatureTests/

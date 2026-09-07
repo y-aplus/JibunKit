@@ -2,7 +2,7 @@
 
 更新日: 2026-09-04
 
-**状態: 実装済み・自動検証合格。不足5点の修正と再検証での指摘2件までを`codex/simplify-mini-app-integration`上のlocal commitへ反映し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。その後、定義のFeature所有化とZaiko分離までを反映し、2026-09-05にWSLの全29テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。利用者向け更新としての実機検証は未完了である。**
+**状態: 共通基盤を実装済み。2026-09-07にZaikoをmainへの統合対象から外し、カウンターとリマインダーで再検証する。試験移植は元の作業ブランチとローカルのignore対象に保存する。**
 
 ## 1. 利用者が得る結果
 
@@ -144,13 +144,13 @@ WidgetやApp IntentはRegistryから生成されないため、Featureが所有�
 登録例:
 
 ```swift
-public enum ZaikoMiniApp {
+public enum ReminderMiniApp {
     public static let definition = MiniAppDefinition(
-        id: .zaiko,
-        title: "在庫管理",
-        systemImage: "shippingbox"
+        id: .reminder,
+        title: "リマインダー",
+        systemImage: "bell"
     ) { context in
-        ZaikoRootView(context: context)
+        ReminderRootView(context: context)
     }
 }
 ```
@@ -213,11 +213,10 @@ ReminderMiniApp.definition // id: .reminder、title: "リマインダー"
 - `MiniAppListScreen`にFeatureごとのswitchがない。
 - ID、表示名、アイコン、destinationが1件の定義にまとまっている。
 - 各Featureが自身のIDを所有する。
-- Counter・Reminder・Zaikoが、`MiniAppContext`を受け取るFeature側Root Viewを公開する。
+- Counter・Reminderが、`MiniAppContext`を受け取るFeature側Root Viewを公開する。
 - RegistryがContextを各FeatureのRoot Viewへ渡す。
 - 各FeatureのRoot ViewがContextをStoreへ渡し、Storeが保存キーをContextから得る。
 - Reminderの通知予約が、受け取ったContextのrequest IDとpayloadを使う。
-- Zaikoの通知予約が、Context由来のrequest ID prefixとpayloadを使う。
 - ミニアプリ固有の画面と通知予約処理が`Sources/JibunKit`に残っていない。
 - Registryが不正IDと重複IDを受け入れない。
 - `docs/mini-apps.md`と`docs/updating.md`が、Feature側Root ViewとContextの実利用を追加手順として説明する。
@@ -244,40 +243,16 @@ unzip -t xtool/JibunKit.ipa
 
 本変更を利用者向け更新として配布する前に、既存JibunKitを削除せず上書きする。
 
-- 一覧にカウンター・リマインダー・在庫管理が表示され、すべて開ける。
+- 一覧にカウンター・リマインダーが表示され、すべて開ける。
 - `counter.value`と`reminder.message`が更新前から維持される。
 - Counterの画面、App Shortcut、Widgetが同じ値を扱う。
 - リマインダー通知を予約でき、foregroundと終了状態の通知タップからリマインダーを開ける。
-- 在庫管理の通知タップから在庫管理を開ける。
 - SideStoreの署名更新後も同じ項目を確認できる。
 
 ビルド成功だけで実機合格としない。
 
-## 11. 実装の状態
+## 11. 実装と検証の状態
 
-`codex/simplify-mini-app-integration`には次のlocal commitがある。
+Feature所有の定義、Root View、Context由来の保存・通知、共通保存排他、通知delegateの修正をmainへの統合対象とする。基盤の先行実装に個別アプリの完成は要求しない。
 
-- `c0b5847 refactor: simplify mini-app registration`
-- `e20c9ae docs: clarify standalone app feature goal`
-- `32241e7 docs: require feature-owned mini-app roots`
-- Feature側Root ViewとContext実利用への移行(計4 commit: Counter移行、Reminder移行、Registry切替とJibunKit側削除、文書更新)
-- Context経路の保存キー一致テストの追加
-- 再検証で指摘された2件の修正(テストの`await`位置、`ReminderNotificationScheduler`の`Sendable`対応)
-- `73736d5 docs: record implementation and auto verification pass`
-- 定義のFeature所有化・`MiniAppStorage`集約・`MiniAppValidator`追加(計3 commit)
-- Zaiko分離(計4 commit: Domain、Store・Root View移植、Preview除去、文書記録)
-- web版整合と通知再予約修正(計2 commit)
-
-`c0b5847`時点では2026-09-04にWSLの全15テスト、`xtool dev build --ipa`、IPAのZIP検査が成功したが、次の設計差分が残っていた。
-
-- RegistryはContextを生成するが、CounterとReminderの画面が受け取っていない。
-- CounterとReminderのStoreが保存キーをContextではなくFeature IDから直接生成している。
-- Reminderの通知予約がrequest IDとpayloadを`MiniAppID.reminder`から直接生成している。
-- CounterとReminderの画面、およびReminderの通知予約処理がJibunKit targetに残っている。
-- `docs/updating.md`がミニアプリ固有画面をJibunKit targetへ置くよう説明している。
-
-上記5点は解消済みである。再検証で指摘された2件も修正し、2026-09-04にWSLの全16テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。その後、定義のFeature所有化・Zaiko分離・web版整合・通知再予約修正を反映し、2026-09-05にWSLの全29テスト、`xtool dev build --ipa`、IPAのZIP検査が成功した。実機検証は未実施である。
-
-## 12. 未完了と次の判断
-
-構造上の受入条件と自動検証は満たした。残る作業は、利用者向け更新としての実機検証(§10.3)のみである。Feature化支援や特定アプリの移植を、この依頼へ暗黙に追加しない。
+現在の検証範囲と結果は[レビュー修正の検証](../../verification/2026-09-07-review-fixes.md)へ記録する。今回の統合はリリース公開を含まない。

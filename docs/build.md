@@ -82,7 +82,7 @@ workflowへApple Account、パスワード、2FA、証明書、provisioning prof
 
 採用判断には、コミットSHA、Actions run URL、job結果、IPAのbyte数とSHA-256、実機の機種・OS・SideStore版、実際の操作結果を[0.1検証記録](verification/0.1.md)へ残す。ローカルテスト、クラウド生成、SideStore導入、実機動作は別々の証拠として扱う。
 
-## シミュレーターで移植操作を確認する
+## シミュレーターで統合操作を確認する
 
 既存workflowへ`simulator_tests=true`を渡すと、IPA検査に続けてiOS 26のiPhone SimulatorでUIテストを実行する。
 

@@ -1,17 +1,24 @@
 #if os(iOS)
-import CounterFeature
+import JibunKitCore
 import SwiftUI
 
-struct CounterScreen: View {
+public struct CounterRootView: View {
+    private let store: CounterStore
+
     @Environment(\.scenePhase) private var scenePhase
     @State private var value = 0
     @State private var errorMessage: String?
 
-    var body: some View {
+    public init(context: MiniAppContext) {
+        store = CounterStore(context: context)
+    }
+
+    public var body: some View {
         VStack(spacing: 16) {
             Text("カウンター")
                 .font(.headline)
             Text(value, format: .number)
+                .accessibilityIdentifier("counter.value")
                 .font(.largeTitle)
                 .monospacedDigit()
             Button("1を追加") {
@@ -42,7 +49,7 @@ struct CounterScreen: View {
     @MainActor
     private func loadValue() async {
         do {
-            value = try await CounterStore.shared.currentValue()
+            value = try await store.currentValue()
             errorMessage = nil
         } catch {
             errorMessage = "共有値を読み込めません"
@@ -52,7 +59,7 @@ struct CounterScreen: View {
     @MainActor
     private func addOne() async {
         do {
-            value = try await CounterStore.shared.add(1)
+            value = try await store.add(1)
             errorMessage = nil
         } catch {
             errorMessage = "共有値を更新できません"

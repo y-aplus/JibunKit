@@ -1,13 +1,21 @@
 #if os(iOS)
-import ReminderFeature
+import JibunKitCore
 import SwiftUI
 
-struct ReminderScreen: View {
+public struct ReminderRootView: View {
+    private let store: ReminderStore
+    private let scheduler: ReminderNotificationScheduler
+
     @State private var message = ""
     @State private var statusMessage: String?
     @State private var isError = false
 
-    var body: some View {
+    public init(context: MiniAppContext) {
+        store = ReminderStore(context: context)
+        scheduler = ReminderNotificationScheduler(context: context)
+    }
+
+    public var body: some View {
         Form {
             Section("通知内容") {
                 TextField("例: 水を飲む", text: $message)
@@ -44,7 +52,7 @@ struct ReminderScreen: View {
     @MainActor
     private func load() async {
         do {
-            message = try await ReminderStore.shared.currentMessage()
+            message = try await store.currentMessage()
             statusMessage = nil
             isError = false
         } catch {
@@ -72,7 +80,7 @@ struct ReminderScreen: View {
     private func scheduleNotification() async {
         do {
             let savedMessage = try await saveCurrentMessage()
-            let result = try await ReminderNotificationScheduler().schedule(
+            let result = try await scheduler.schedule(
                 message: savedMessage
             )
             switch result {
@@ -98,7 +106,7 @@ struct ReminderScreen: View {
         guard !trimmedMessage.isEmpty else {
             throw ReminderInputError.emptyMessage
         }
-        message = try await ReminderStore.shared.saveMessage(trimmedMessage)
+        message = try await store.saveMessage(trimmedMessage)
         return message
     }
 }

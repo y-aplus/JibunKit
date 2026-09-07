@@ -9,41 +9,26 @@ struct MiniAppListScreen: View {
     var body: some View {
         NavigationStack(path: $navigation.path) {
             List {
-                ForEach(MiniAppID.allCases, id: \.self) { miniAppID in
-                    NavigationLink(value: miniAppID) {
-                        Label(miniAppID.title, systemImage: miniAppID.systemImage)
+                ForEach(MiniAppRegistry.all) { miniApp in
+                    NavigationLink(value: miniApp.id) {
+                        Label(miniApp.title, systemImage: miniApp.systemImage)
                     }
+                    .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
                 }
             }
             .navigationTitle("ミニアプリ")
             .navigationDestination(for: MiniAppID.self) { miniAppID in
-                switch miniAppID {
-                case .counter:
-                    CounterScreen()
-                case .reminder:
-                    ReminderScreen()
+                if let miniApp = MiniAppRegistry.definition(for: miniAppID) {
+                    miniApp.makeDestination()
+                        .navigationTitle(miniApp.title)
+                        .navigationBarTitleDisplayMode(.inline)
+                } else {
+                    ContentUnavailableView(
+                        "ミニアプリを開けません",
+                        systemImage: "questionmark.app"
+                    )
                 }
             }
-        }
-    }
-}
-
-private extension MiniAppID {
-    var title: String {
-        switch self {
-        case .counter:
-            "カウンター"
-        case .reminder:
-            "リマインダー"
-        }
-    }
-
-    var systemImage: String {
-        switch self {
-        case .counter:
-            "number"
-        case .reminder:
-            "bell"
         }
     }
 }

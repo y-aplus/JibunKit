@@ -1,18 +1,17 @@
 # 基盤を更新する
 
-更新日: 2026-09-01
+更新日: 2026-09-04
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。0.1は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
 ## 編集箇所を分ける
 
-個人用ミニアプリの処理と保存形式は`Sources/<Name>Feature`、画面は`Sources/JibunKit/<Name>Screen.swift`へ置く。通常の追加で基盤と交差する箇所は次に限定する。
+個人用ミニアプリの処理、保存形式、Root View、Feature固有の通知予約は`Sources/<Name>Feature`へ置く。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。通常の追加で基盤と交差する箇所は次に限定する。
 
 | 交差箇所 | 個人用ミニアプリで行う変更 |
 | --- | --- |
-| `Sources/JibunKitCore/MiniAppID.swift` | 安定したcaseを1つ追加する |
 | `Package.swift` | feature targetと本体からの依存を追加する |
-| `Sources/JibunKit/MiniAppListScreen.swift` | 表示名、アイコン、destinationを1件登録する |
+| `Sources/JibunKit/MiniAppRegistry.swift` | Featureの定義を`all`へ1件列挙する |
 
 通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。WidgetやApp Intentを追加する場合だけ、extension、entitlements、App Shortcuts、Actionsの検査対象を追加する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。
 
@@ -38,12 +37,12 @@ git merge upstream/main
 
 ## 競合を解消する
 
-`Package.swift`、`MiniAppID.swift`、`MiniAppListScreen.swift`は、基盤と個人用ミニアプリの両方が触れやすい。単純に`ours`または`theirs`を選ばず、次をすべて残す。
+`Package.swift`と`MiniAppRegistry.swift`は、基盤と個人用ミニアプリの両方が触れやすい。単純に`ours`または`theirs`を選ばず、次をすべて残す。
 
 - 基盤側が追加・変更したtargetsと依存。
 - 個人用feature targetと本体からの依存。
-- 既存と新規の`MiniAppID` case、およびID・namespace・通知IDの一意性。
-- すべての画面の表示名、アイコン、destination mapping。
+- 既存と新規の定義、およびID・namespace・通知IDの一意性。
+- 各定義の表示名、アイコン、destination。
 - 既存のbundle ID、App Group、保存キー。変更が必要なら移行を別タスクとして設計する。
 
 通知payloadの古いIDは未知値として一覧へ戻し、別ミニアプリへ推測で割り当てない。保存形式を変更する場合は、旧値を残すか移行するかを明示し、0.xであることを理由に黙って破棄しない。
@@ -61,3 +60,9 @@ git merge upstream/main
 ## 対応範囲
 
 この更新手順が扱うのは、同じAppleアカウント、bundle ID、App Groupを維持したソース更新と上書きインストールである。Appleアカウント変更、bundle ID変更、App Group変更、削除後の再導入は自動移行の対象ではない。必要になった時点で、データのexport/importまたはキー移行を別仕様として決める。
+
+## 2026-09-07のnamespace修正
+
+組込み済みの`counter`、`reminder`の保存キーと通知IDは変わらない。新たに導入された文字列IDのうち、ドットを含むIDだけは、保存namespaceと通知ID内のドットを`%2E`へ変換する。元のIDと通知payloadは維持する。
+
+未公開ブランチの旧方式でドット入りIDを使った派生がある場合、更新前にバックアップし、該当Featureが所有するキーを明示して旧キーから新キーへ移す。旧方式では他Featureと同じキーになり得るため、基盤は所有者を推測した一括移行・削除をしない。旧通知はそのFeatureが予約したIDを明示して取り消し、新IDで再予約する。

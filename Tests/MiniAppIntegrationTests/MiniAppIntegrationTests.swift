@@ -1,9 +1,21 @@
 import Foundation
+import JibunKitCore
 import XCTest
 @testable import CounterFeature
 @testable import ReminderFeature
 
 final class MiniAppIntegrationTests: XCTestCase {
+    func testFeatureIdentifiersAndNamespacesDoNotCollide() {
+        let miniApps: [MiniAppID] = [.counter, .reminder]
+
+        XCTAssertEqual(Set(miniApps.map(\.rawValue)).count, miniApps.count)
+        XCTAssertEqual(Set(miniApps.map(\.storageNamespace)).count, miniApps.count)
+        XCTAssertEqual(
+            Set(miniApps.map(\.notificationRequestIdentifier)).count,
+            miniApps.count
+        )
+    }
+
     func testCounterAndReminderPersistWithoutChangingEachOther() async throws {
         let suiteName = "MiniAppIntegrationTests.\(UUID().uuidString)"
         try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -34,5 +46,33 @@ final class MiniAppIntegrationTests: XCTestCase {
 
         XCTAssertEqual(finalCounterValue, 4)
         XCTAssertEqual(finalReminderMessage, "出発する")
+    }
+
+    func testContextDerivedStoresShareDefaultStorageKeys() async throws {
+        let suiteName = "MiniAppIntegrationTests.\(UUID().uuidString)"
+        try XCTUnwrap(UserDefaults(suiteName: suiteName))
+            .removePersistentDomain(forName: suiteName)
+        defer {
+            UserDefaults(suiteName: suiteName)?
+                .removePersistentDomain(forName: suiteName)
+        }
+
+        let counterViaContext = CounterStore(
+            context: MiniAppContext(id: .counter),
+            suiteName: suiteName
+        )
+        let counterDefault = CounterStore(suiteName: suiteName)
+        _ = try await counterViaContext.add(7)
+        let counterValue = try await counterDefault.currentValue()
+        XCTAssertEqual(counterValue, 7)
+
+        let reminderViaContext = ReminderStore(
+            context: MiniAppContext(id: .reminder),
+            suiteName: suiteName
+        )
+        let reminderDefault = ReminderStore(suiteName: suiteName)
+        _ = try await reminderViaContext.saveMessage("コンテキスト経由")
+        let reminderMessage = try await reminderDefault.currentMessage()
+        XCTAssertEqual(reminderMessage, "コンテキスト経由")
     }
 }

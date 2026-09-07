@@ -6,6 +6,9 @@ let package = Package(
     name: "JibunKit",
     platforms: [
         .iOS("26.0"),
+        // Foundation-only tests run on the macOS CI host (Date.now: macOS 12).
+        // App and Widget entry points remain iOS-only.
+        .macOS(.v12),
     ],
     products: [
         .library(
@@ -51,7 +54,7 @@ let package = Package(
         ),
         .testTarget(
             name: "MiniAppIntegrationTests",
-            dependencies: ["CounterFeature", "ReminderFeature"]
+            dependencies: ["JibunKitCore", "CounterFeature", "ReminderFeature"]
         ),
     ]
 )

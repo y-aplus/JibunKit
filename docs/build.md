@@ -81,3 +81,15 @@ workflowへApple Account、パスワード、2FA、証明書、provisioning prof
 ## 証拠の残し方
 
 採用判断には、コミットSHA、Actions run URL、job結果、IPAのbyte数とSHA-256、実機の機種・OS・SideStore版、実際の操作結果を[0.1検証記録](verification/0.1.md)へ残す。ローカルテスト、クラウド生成、SideStore導入、実機動作は別々の証拠として扱う。
+
+## シミュレーターで統合操作を確認する
+
+既存workflowへ`simulator_tests=true`を渡すと、IPA検査に続けてiOS 26のiPhone SimulatorでUIテストを実行する。
+
+```bash
+gh workflow run build-ios.yml --ref YOUR_BRANCH -f simulator_tests=true
+```
+
+`YOUR_BRANCH`は検証したいpush済みブランチへ置き換える。Xcodeproj 1.27.0でxtoolの一時生成projectにだけUIテストtargetを追加する。アプリの実装を置き換えるmock画面やテスト用保存先は使わず、組込み済みFeatureの画面・保存処理を実行する。既存IPAはテストtarget追加前に生成するため、テストコードは配布物へ入らない。
+
+結果は`JibunKit-simulator-evidence` artifactへ、xcresult、スクリーンショット、実行ログ、利用可能Simulator一覧として保存する。実行結果が失敗した場合も可能な範囲の証拠を残す。SideStoreの再署名・実端末のApp Group共有・実端末通知設定の検証は別である。

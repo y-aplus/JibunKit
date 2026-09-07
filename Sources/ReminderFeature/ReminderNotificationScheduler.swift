@@ -2,13 +2,19 @@
 import JibunKitCore
 import UserNotifications
 
-enum ReminderScheduleResult {
+public enum ReminderScheduleResult {
     case scheduled
     case denied
 }
 
-struct ReminderNotificationScheduler {
-    func schedule(message: String) async throws -> ReminderScheduleResult {
+public struct ReminderNotificationScheduler: Sendable {
+    private let context: MiniAppContext
+
+    public init(context: MiniAppContext) {
+        self.context = context
+    }
+
+    public func schedule(message: String) async throws -> ReminderScheduleResult {
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
 
@@ -28,12 +34,10 @@ struct ReminderNotificationScheduler {
         content.title = "リマインダー"
         content.body = message
         content.sound = .default
-        content.userInfo = [
-            MiniAppNotificationRoute.miniAppIDUserInfoKey: MiniAppID.reminder.rawValue,
-        ]
+        content.userInfo = context.notificationUserInfo
 
         let request = UNNotificationRequest(
-            identifier: MiniAppID.reminder.notificationRequestIdentifier,
+            identifier: context.notificationRequestIdentifier,
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
         )

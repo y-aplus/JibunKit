@@ -52,3 +52,11 @@ CIで画面のコンパイル、未選択時の書出し不可、対象選択後
 [run 34146926618](https://github.com/y-aplus/JibunKit/actions/runs/34146926618)、source `097e21a`。書出し完了表示と保存したファイルの一覧表示まで成功。選択直後のDocumentManagerログはFileProvider -1005 / resolver -1012、続いて `didPickDocumentURLs:` へ空の配列を渡そうとした旨を記録している。アプリへURLが届く前で停止しており、復元確認以降は未検証。既存UI3件・ビルド・IPA検査は成功。
 
 同一テストを別のインストール済みiOSランタイムでも実行して環境依存を切り分ける。CIに任意のランタイム指定を追加した。既定の最新ランタイム選択とテストの合否条件は維持する。
+
+## iOS 26.4での再検証
+
+[run 34148070341](https://github.com/y-aplus/JibunKit/actions/runs/34148070341)、source `773095d`。別ランタイムでも同じUIテストの74行目で失敗。17:46:04の `simulator-app.log` にFileProvider -1005、resolver -1012、DocumentManagerの空URL配列が連続して記録された。最新ランタイムだけの問題ではない。書出し・ファイル一覧までは動作するが、選択後にURLをアプリへ渡せていない。
+
+共通ロジック33件、既存UI3件、生成Featureビルド、通常アプリ・WidgetビルドとIPA検査は成功。Counterのみ／Reminderのみの復元、他方の保存値維持、不正な選択payloadで全件無変更、未知schema拒否はロジックテストで検証済み。一方、実際のFiles読込み後の対象選択・上書き確認・キャンセル・再起動後の復元値はUIでは未検証である。テストをスキップして完了扱いにはしない。
+
+[確認用IPAを含むZIP](https://github.com/y-aplus/JibunKit/actions/runs/34148070341/artifacts/10028428752)。実機で確認する場合はCounterのみを書き出し、Counterを変更してから読込み、復元キャンセルで値が維持されること、再読込み・確定後に元の値へ戻りReminderが変わらないことを確認する。以前の実機簡易確認はTuist移行版についてのもので、このバックアップ画面の確認を兼ねない。

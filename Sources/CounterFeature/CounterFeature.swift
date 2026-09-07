@@ -1,5 +1,8 @@
 import JibunKitCore
 import Foundation
+#if os(iOS)
+import WidgetKit
+#endif
 
 public extension MiniAppID {
     static let counter = MiniAppID("counter")
@@ -11,7 +14,8 @@ public enum CounterMiniApp {
     public static let definition = MiniAppDefinition(
         id: .counter,
         title: "カウンター",
-        systemImage: "number"
+        systemImage: "number",
+        backup: CounterStore.shared.backupProvider
     ) { context in
         CounterRootView(context: context)
     }
@@ -32,6 +36,7 @@ public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
 public actor CounterStore {
     public static let shared = CounterStore(context: MiniAppContext(id: .counter))
 
+    private let miniAppID: MiniAppID
     private let valueKey: String
 
     private let defaults: UserDefaults?
@@ -41,6 +46,7 @@ public actor CounterStore {
         context: MiniAppContext,
         infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]
     ) {
+        self.miniAppID = context.id
         self.valueKey = context.storageKey("value")
         do {
             self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
@@ -55,6 +61,7 @@ public actor CounterStore {
     }
 
     public init(infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
+        self.miniAppID = .counter
         self.valueKey = MiniAppContext(id: .counter).storageKey("value")
         do {
             self.defaults = try MiniAppStorage.sharedDefaults(infoDictionary: infoDictionary)
@@ -69,6 +76,7 @@ public actor CounterStore {
     }
 
     init(context: MiniAppContext, suiteName: String) {
+        self.miniAppID = context.id
         self.valueKey = context.storageKey("value")
         if let defaults = UserDefaults(suiteName: suiteName) {
             self.defaults = defaults
@@ -82,6 +90,7 @@ public actor CounterStore {
     }
 
     init(suiteName: String) {
+        self.miniAppID = .counter
         self.valueKey = MiniAppContext(id: .counter).storageKey("value")
         if let defaults = UserDefaults(suiteName: suiteName) {
             self.defaults = defaults
@@ -117,6 +126,31 @@ public actor CounterStore {
             throw CounterStoreError.valueOutOfRange
         }
         return updatedValue
+    }
+
+    private struct BackupState: Codable, Sendable {
+        let value: Int
+    }
+
+    public nonisolated var backupProvider: MiniAppBackupProvider {
+        MiniAppBackupProvider(id: miniAppID, export: {
+            let state = BackupState(value: try await self.currentValue())
+            return MiniAppBackupEntry(id: self.miniAppID, schemaVersion: 1,
+                                      payload: try JSONEncoder().encode(state))
+        }, prepare: { entry in
+            let state = try entry.decodePayload(BackupState.self, supportedSchema: 1)
+            return MiniAppPreparedRestore { try await self.restoreBackup(state) }
+        })
+    }
+
+    private func restoreBackup(_ state: BackupState) throws {
+        let defaults = try configuredDefaults()
+        MiniAppStorage.withExclusiveAccess {
+            defaults.set(state.value, forKey: valueKey)
+        }
+        #if os(iOS)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     private func configuredDefaults() throws -> UserDefaults {

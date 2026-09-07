@@ -47,6 +47,8 @@ final class ZaikoStore: ObservableObject {
     private let defaults: UserDefaults?
     private let notificationCenter: UNUserNotificationCenter
     private let configurationError: SharedGroupResolutionError?
+    private var isRescheduling = false
+    private var rescheduleRequested = false
 
     init(
         context: MiniAppContext,
@@ -255,39 +257,23 @@ final class ZaikoStore: ObservableObject {
             items: items,
             app: persistedAppState()
         )
-        let encoder = Self.makeEncoder(prettyPrinted: true)
+        let encoder = ZaikoBackup.makeEncoder(prettyPrinted: true)
         let data = (try? encoder.encode(envelope)) ?? Data()
         return String(decoding: data, as: UTF8.self)
     }
 
     func importBackup(data: Data) throws {
-        let decoder = Self.makeDecoder()
-
-        if let envelope = try? decoder.decode(BackupEnvelope.self, from: data) {
-            items = envelope.items
-            appState = envelope.app.mergedWithDefaults()
-            currentCategory = InventoryDomain.allCategories
-            persistAndSchedule()
-            return
+        let envelope = try ZaikoBackup.decode(data)
+        // Check the destination before replacing the in-memory inventory.
+        guard defaults != nil else {
+            throw configurationError ?? SharedGroupResolutionError.missingLogicalIdentifier
         }
-
-        if let legacyEnvelope = try? decoder.decode(LegacyBackupEnvelope.self, from: data) {
-            items = legacyEnvelope.items.compactMap { InventoryDomain.normalize($0) }
-            appState = Self.makeAppState(from: legacyEnvelope.app)
-            currentCategory = InventoryDomain.allCategories
-            persistAndSchedule()
-            return
-        }
-
-        if let legacyArray = try? decoder.decode([LegacyInventoryItem].self, from: data) {
-            items = legacyArray.compactMap { InventoryDomain.normalize($0) }
-            appState = AppState.makeDefault().mergedWithDefaults()
-            currentCategory = InventoryDomain.allCategories
-            persistAndSchedule()
-            return
-        }
-
-        throw ZaikoError.importFailed
+        items = envelope.items
+        appState = envelope.app.mergedWithDefaults()
+        // Imported reservation records belong to the source installation.
+        appState.notificationRecords = [:]
+        currentCategory = InventoryDomain.allCategories
+        persistAndSchedule()
     }
 
     func present(error: Error) {
@@ -363,7 +349,7 @@ final class ZaikoStore: ObservableObject {
         }
         let appToSave = persistedAppState()
         let envelope = BackupEnvelope(version: 3, items: items, app: appToSave)
-        let encoder = Self.makeEncoder(prettyPrinted: false)
+        let encoder = ZaikoBackup.makeEncoder(prettyPrinted: false)
 
         guard let data = try? encoder.encode(envelope) else {
             transientMessage = "データ保存に失敗しました。"
@@ -428,6 +414,19 @@ final class ZaikoStore: ObservableObject {
     }
 
     func rescheduleNotifications() async {
+        // Settings and inventory changes can interleave at the notification
+        // center awaits. Run one pass at a time and then apply the latest state.
+        rescheduleRequested = true
+        guard !isRescheduling else { return }
+        isRescheduling = true
+        defer { isRescheduling = false }
+        while rescheduleRequested {
+            rescheduleRequested = false
+            await performReschedule()
+        }
+    }
+
+    private func performReschedule() async {
         await refreshNotificationAuthorization()
 
         let itemIdentifiers = Set(items.map { notificationPrefix + String($0.id) })
@@ -440,8 +439,20 @@ final class ZaikoStore: ObservableObject {
             notificationCenter.removePendingNotificationRequests(withIdentifiers: staleIdentifiers)
         }
 
-        guard appState.notificationsEnabled, notificationsAuthorized else {
+        guard appState.notificationsEnabled, notificationsAuthorized,
+              !appState.globalPause.active else {
             notificationCenter.removePendingNotificationRequests(withIdentifiers: Array(itemIdentifiers))
+            // Only cancellation invalidates a record. A delivered request is
+            // absent from pending but must remain handled for this stock cycle.
+            let records = InventoryDomain.recordsAfterCancellingPending(
+                appState.notificationRecords,
+                pendingIDs: pendingIDs,
+                notificationPrefix: notificationPrefix
+            )
+            if records != appState.notificationRecords {
+                appState.notificationRecords = records
+                persist()
+            }
             return
         }
 
@@ -459,7 +470,6 @@ final class ZaikoStore: ObservableObject {
             let cycleKey = item.notificationCycleKey
             let skip = InventoryDomain.shouldSkipReschedule(
                 hasRecord: nextRecords[String(item.id)] == cycleKey,
-                isPending: pendingIDs.contains(identifier),
                 fireDate: fireDate,
                 now: now
             )
@@ -487,53 +497,10 @@ final class ZaikoStore: ObservableObject {
             return BackupEnvelope(version: 3, items: [], app: AppState.makeDefault())
         }
 
-        let decoder = makeDecoder()
+        let decoder = ZaikoBackup.makeDecoder()
         return (try? decoder.decode(BackupEnvelope.self, from: data))
             ?? BackupEnvelope(version: 3, items: [], app: AppState.makeDefault())
     }
 
-    private static func makeEncoder(prettyPrinted: Bool) -> JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .custom { date, encoder in
-            var container = encoder.singleValueContainer()
-            try container.encode(DateCoding.string(from: date))
-        }
-        if prettyPrinted {
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        }
-        return encoder
-    }
-
-    private static func makeDecoder() -> JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let container = try decoder.singleValueContainer()
-            let rawValue = try container.decode(String.self)
-
-            if let parsed = DateCoding.date(from: rawValue) {
-                return parsed
-            }
-
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Unsupported ISO8601 date: \(rawValue)"
-            )
-        }
-        return decoder
-    }
-
-    private static func makeAppState(from legacyApp: LegacyAppState?) -> AppState {
-        guard let legacyApp else {
-            return AppState.makeDefault()
-        }
-
-        var state = AppState.makeDefault()
-        state.globalPause = legacyApp.globalPause ?? state.globalPause
-        state.unitPreferences = state.unitPreferences.merging(legacyApp.unitPreferences ?? [:]) { _, new in new }
-        state.installMarker = legacyApp.installMarker ?? state.installMarker
-        state.firstSavedAt = legacyApp.firstSavedAt
-        state.alertThresholdDays = legacyApp.alertThresholdDays ?? state.alertThresholdDays
-        return state
-    }
 }
 #endif

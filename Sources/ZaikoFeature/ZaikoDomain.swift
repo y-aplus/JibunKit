@@ -509,16 +509,23 @@ enum InventoryDomain {
         }
     }
 
-    /// Whether an existing schedule record suppresses a new reservation.
-    /// A record only counts while its request is still pending: disabling
-    /// notifications removes pending requests, so re-enabling reschedules them.
+    static func recordsAfterCancellingPending(
+        _ records: [String: String],
+        pendingIDs: Set<String>,
+        notificationPrefix: String
+    ) -> [String: String] {
+        records.filter { !pendingIDs.contains(notificationPrefix + $0.key) }
+    }
+
+    /// A recorded cycle stays handled after delivery, even if the user clears
+    /// Notification Center. Explicitly cancelled pending requests have their
+    /// records removed by the Store and can be scheduled again.
     static func shouldSkipReschedule(
         hasRecord: Bool,
-        isPending: Bool,
         fireDate: Date,
         now: Date = .now
     ) -> Bool {
-        hasRecord && isPending && fireDate <= now.addingTimeInterval(6)
+        hasRecord && fireDate <= now.addingTimeInterval(6)
     }
 
     static func normalize(_ legacyItem: LegacyInventoryItem, now: Date = .now) -> InventoryItem? {

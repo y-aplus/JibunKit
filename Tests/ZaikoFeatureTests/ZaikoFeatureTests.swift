@@ -260,22 +260,46 @@ final class ZaikoFeatureTests: XCTestCase {
         XCTAssertEqual(item?.currentStock ?? -1, 2, accuracy: 0.001)
     }
 
-    func testSkipRescheduleRequiresPendingRequest() {
+    func testDeliveredCycleStaysHandledAndCancelledCycleCanBeScheduledAgain() {
         let now = Date(timeIntervalSince1970: 1_000_000)
         let imminent = now.addingTimeInterval(5)
         let distant = now.addingTimeInterval(3_600)
 
+        // Delivery does not invalidate a cycle's record.
         XCTAssertTrue(InventoryDomain.shouldSkipReschedule(
-            hasRecord: true, isPending: true, fireDate: imminent, now: now
+            hasRecord: true, fireDate: imminent, now: now
+        ))
+        // Explicit cancellation removes the record; re-enable can reserve again.
+        XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
+            hasRecord: false, fireDate: imminent, now: now
         ))
         XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
-            hasRecord: true, isPending: false, fireDate: imminent, now: now
+            hasRecord: true, fireDate: distant, now: now
+        ))
+    }
+
+    func testDisableOrPauseOnlyInvalidatesPendingCycles() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let prefix = "jibunkit.zaiko.notification."
+        let records = ["1": "delivered-cycle", "2": "pending-cycle"]
+        let afterCancellation = InventoryDomain.recordsAfterCancellingPending(
+            records,
+            pendingIDs: [prefix + "2", "jibunkit.reminder.notification"],
+            notificationPrefix: prefix
+        )
+        XCTAssertEqual(afterCancellation, ["1": "delivered-cycle"])
+        // On re-enable/resume, the delivered cycle stays silent while the
+        // explicitly cancelled cycle gets a replacement reservation.
+        XCTAssertTrue(InventoryDomain.shouldSkipReschedule(
+            hasRecord: afterCancellation["1"] == records["1"],
+            fireDate: now.addingTimeInterval(5), now: now
         ))
         XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
-            hasRecord: false, isPending: true, fireDate: imminent, now: now
+            hasRecord: afterCancellation["2"] == records["2"],
+            fireDate: now.addingTimeInterval(5), now: now
         ))
-        XCTAssertFalse(InventoryDomain.shouldSkipReschedule(
-            hasRecord: true, isPending: true, fireDate: distant, now: now
-        ))
+        XCTAssertEqual(InventoryDomain.recordsAfterCancellingPending(
+            records, pendingIDs: [], notificationPrefix: prefix
+        ), records)
     }
 }

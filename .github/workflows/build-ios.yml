@@ -257,7 +257,13 @@ jobs:
             xcrun xcresulttool export attachments \
               --path "$RUNNER_TEMP/Migration.xcresult" \
               --output-path "$RUNNER_TEMP/simulator-screenshots"
+            xcrun xcresulttool export diagnostics \
+              --path "$RUNNER_TEMP/Migration.xcresult" \
+              --output-path "$RUNNER_TEMP/simulator-diagnostics"
           fi
+          mkdir -p "$RUNNER_TEMP/simulator-crashes"
+          find "$HOME/Library/Logs/DiagnosticReports" -type f -name '*JibunKit*' \
+            -exec cp {} "$RUNNER_TEMP/simulator-crashes/" \; || true
 
       - name: Upload simulator evidence
         if: always() && inputs.simulator_tests
@@ -267,6 +273,8 @@ jobs:
           path: |
             ${{ runner.temp }}/Migration.xcresult
             ${{ runner.temp }}/simulator-screenshots
+            ${{ runner.temp }}/simulator-diagnostics
+            ${{ runner.temp }}/simulator-crashes
             ${{ runner.temp }}/simulator-tests.log
             ${{ runner.temp }}/simulators.json
           retention-days: 7

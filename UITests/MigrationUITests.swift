@@ -115,10 +115,10 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["JSONバックアップを読み込む"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let backup = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "migration-backup")).firstMatch
+        let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "migration-backup")).firstMatch
         XCTAssertTrue(backup.waitForExistence(timeout: 10))
         capture("05-backup-import-picker")
-        tap(backup)
+        backup.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
         XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 10))
 
         // State must survive leaving the Feature and a full process restart.

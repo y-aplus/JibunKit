@@ -141,5 +141,26 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["miniapp.reminder"])
         XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
         capture("07-reminder-independent-save")
+
+        tap(app.buttons["10秒後に通知"])
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons.matching(
+            NSPredicate(format: "label IN %@", ["許可", "Allow"])
+        ).firstMatch
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        XCTAssertTrue(app.staticTexts["10秒後の通知を予約しました"].waitForExistence(timeout: 5))
+        returnToList()
+        tap(app.buttons["miniapp.counter"])
+        XCUIDevice.shared.press(.home)
+        let notification = springboard.staticTexts["Migration reminder"].firstMatch
+        XCTAssertTrue(notification.waitForExistence(timeout: 20))
+        let delivered = XCTAttachment(screenshot: springboard.screenshot())
+        delivered.name = "08-delivered-notification"
+        delivered.lifetime = .keepAlways
+        add(delivered)
+        notification.tap()
+        XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
+        capture("09-notification-routed-to-reminder")
     }
 }

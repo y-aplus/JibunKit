@@ -101,12 +101,14 @@ public actor CounterStore {
     @discardableResult
     public func add(_ amount: Int) throws -> Int {
         let defaults = try configuredDefaults()
-        let updatedValue = try Self.updatedValue(
-            defaults.integer(forKey: valueKey),
-            adding: amount
-        )
-        defaults.set(updatedValue, forKey: valueKey)
-        return updatedValue
+        return try MiniAppStorage.withExclusiveAccess {
+            let updatedValue = try Self.updatedValue(
+                defaults.integer(forKey: valueKey),
+                adding: amount
+            )
+            defaults.set(updatedValue, forKey: valueKey)
+            return updatedValue
+        }
     }
 
     static func updatedValue(_ currentValue: Int, adding amount: Int) throws -> Int {

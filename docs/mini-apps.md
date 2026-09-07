@@ -69,3 +69,11 @@ App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphr
 4. SideStoreで更新インストールし、一覧からの起動、保存値の独立、通知許可の拒否、通知予約、foregroundと終了状態からの通知タップを実機で確認する。
 
 ビルド成功、SideStore導入成功、各system surfaceの動作成功は別々の証拠として記録する。
+
+## 基盤が保証する保存の境界
+
+`MiniAppContext.storageKey(_:)`はID中のドットを`%2E`へ変換してからキーを連結する。例えば`zaiko.backup`の`latest`は`zaiko%2Ebackup.latest`となり、`zaiko`の`backup.latest`と衝突しない。通知request IDにも同じnamespaceを使う。通知payloadには元のIDを使う。
+
+同じ保存値を複数のStoreから更新する場合、読み取り・計算・書き込み全体を`MiniAppStorage.withExclusiveAccess { ... }`へ入れる。CounterStoreが使用例。これはプロセス内の全利用者に共通する同期的な排他処理であり、各Storeのactorが別でも更新を直列化する。全writerがこの境界を使う必要がある。closureは短い同期処理にし、入れ子に呼び出さない。失敗時のrollbackやプロセス間の排他は提供しない。現在のWidgetは読取り専用であり、別プロセスからの書込みを追加する場合は保存方式も再設計する。
+
+JibunKitはFeature同士の識別・保存先の分離と共通APIの契約を担当する。Featureの入力検証、バックアップ形式、通知する条件など、そのFeature固有の正しさはFeature側で担保する。基盤が不正な実装を自動補正する契約にはしない。

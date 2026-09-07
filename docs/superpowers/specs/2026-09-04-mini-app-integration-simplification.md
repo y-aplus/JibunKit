@@ -37,7 +37,7 @@ Swift FeatureをJibunKitへ追加するとき、基盤内部のID定義、画面
 - source解析、コード変換、雛形生成、Package.swiftの自動編集。
 - 動的plugin、ミニアプリストア、ビルド不要の追加。
 - Info.plist、entitlements、Widget、App Intent、URL schemeの自動統合。
-- 使用例のないStorage、Networking、Permissionなどの共通service。
+- 本設計時点で具体化していないStorage、Networking、Permissionなどの追加service。これは将来の先行実装を禁止する意味ではない。
 
 ## 5. 変更前の負担
 
@@ -98,12 +98,12 @@ IDは次を満たす。
 - Registry内で一意である。
 - 公開後は、保存データと外部経路の移行なしに変更しない。
 
-IDから生成する値は従来どおりとする。
+ID中の`.`を`%2E`へ変換したnamespaceを使う。`%`はIDに許可しないため、区切り文字との混同や他Featureのキー・通知prefixとの衝突がない。ドットのない既存IDは従来どおりとする。
 
 ```text
-storage namespace: <id>
-storage key:       <id>.<key>
-notification ID:   jibunkit.<id>.notification
+storage namespace: <idのドットを%2Eに変換>
+storage key:       <namespace>.<key>
+notification ID:   jibunkit.<namespace>.notification
 ```
 
 既存値は必ず維持する。
@@ -130,7 +130,7 @@ CounterとReminderのRoot ViewはContextをStoreへ渡し、Storeは`storageKey(
 
 WidgetやApp IntentはRegistryから生成されないため、Featureが所有する安定IDから同じContextを生成してStoreへ渡してよい。既存のshared Storeもこのdefault Contextから構成し、`counter.value`を維持する。Contextを受け取れる画面や処理が、同じ値を別経路で再生成することは認めない。
 
-汎用service containerにはしない。新しい共通機能は、複数の実例で同じ問題が確認されてから追加する。
+共通機能は目指す開発体験と運用上の要求から先行設計・実装してよい。複数の実例や個別アプリの完成を着手条件にしない。2026-09-07の[設計原則](2026-08-28-jibunkit-1.0-direction.md)を優先し、基盤が保証する境界とFeature自身の責任を明確にする。
 
 ### 7.3 MiniAppDefinition
 

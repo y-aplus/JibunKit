@@ -28,11 +28,13 @@ public struct MiniAppID: RawRepresentable, Hashable, Sendable {
     }
 
     public var storageNamespace: String {
-        rawValue
+        // '%' is not a valid ID character, so this is unambiguous. Escaping
+        // only the separator keeps all shipped undotted IDs byte-compatible.
+        rawValue.replacingOccurrences(of: ".", with: "%2E")
     }
 
     public var notificationRequestIdentifier: String {
-        "jibunkit.\(rawValue).notification"
+        "jibunkit.\(storageNamespace).notification"
     }
 
     public func storageKey(_ key: String) -> String {

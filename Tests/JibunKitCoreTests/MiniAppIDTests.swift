@@ -2,6 +2,23 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppIDTests: XCTestCase {
+    func testDottedIDsCannotAliasAnotherFeaturesStorageOrNotifications() {
+        let parent = MiniAppID("zaiko")
+        let child = MiniAppID("zaiko.backup")
+        XCTAssertNotEqual(parent.storageKey("backup.latest"), child.storageKey("latest"))
+        XCTAssertEqual(child.storageKey("latest"), "zaiko%2Ebackup.latest")
+        XCTAssertFalse(MiniAppID("zaiko%2Ebackup").isValid)
+        let notificationChild = MiniAppID("zaiko.notification.extra")
+        XCTAssertFalse(notificationChild.notificationRequestIdentifier.hasPrefix(
+            parent.notificationRequestIdentifier + "."
+        ))
+        XCTAssertEqual(parent.storageKey("backup.latest"), "zaiko.backup.latest")
+        XCTAssertEqual(MiniAppID("counter").storageKey("value"), "counter.value")
+        XCTAssertEqual(MiniAppID("reminder").storageKey("message"), "reminder.message")
+        XCTAssertEqual(MiniAppID("reminder").notificationRequestIdentifier,
+                       "jibunkit.reminder.notification")
+    }
+
     func testMiniAppIdentifiersAndNamespacesDoNotCollide() {
         let miniApps = [MiniAppID("counter"), MiniAppID("reminder")]
 

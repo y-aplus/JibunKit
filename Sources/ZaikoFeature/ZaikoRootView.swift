@@ -481,7 +481,7 @@ private struct SettingsSheet: View {
 
                     Toggle("ローカル通知を有効にする", isOn: Binding(
                         get: { store.appState.notificationsEnabled },
-                        set: onNotificationToggle
+                        set: { value in onNotificationToggle(value) }
                     ))
 
                     Text(store.notificationStatusText)

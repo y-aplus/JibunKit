@@ -3,14 +3,17 @@ import Foundation
 /// Zaiko owns its backup schema and migration rules. Decode and validate the
 /// entire candidate before the Store replaces any live inventory.
 enum ZaikoBackup {
+    private struct Header: Decodable {
+        let version: Int?
+    }
+
     static func decode(_ data: Data) throws -> BackupEnvelope {
         let object = try JSONSerialization.jsonObject(with: data)
         let decoder = makeDecoder()
         let envelope: BackupEnvelope
-        if let dictionary = object as? [String: Any] {
-            if dictionary["version"] != nil {
-                guard let version = dictionary["version"] as? Int,
-                      (1...3).contains(version) else {
+        if object is [String: Any] {
+            if let version = try decoder.decode(Header.self, from: data).version {
+                guard (1...3).contains(version) else {
                     throw ZaikoError.importFailed
                 }
                 if version == 3 {
@@ -21,7 +24,9 @@ enum ZaikoBackup {
                     envelope = try migrate(decoder.decode(LegacyBackupEnvelope.self, from: data))
                 }
             } else {
-                envelope = try migrate(decoder.decode(LegacyBackupEnvelope.self, from: data))
+                let legacy = try decoder.decode(LegacyBackupEnvelope.self, from: data)
+                guard !legacy.items.isEmpty else { throw ZaikoError.importFailed }
+                envelope = try migrate(legacy)
             }
         } else {
             let items = try decoder.decode([LegacyInventoryItem].self, from: data)

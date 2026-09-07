@@ -34,7 +34,8 @@ final class ZaikoBackupTests: XCTestCase {
 
     func testUnrelatedAndPartiallyInvalidJSONAreRejectedAsAWhole() {
         for json in [
-            "[{}]", "[]", "{}", "{\"items\":[{}]}",
+            "[{}]", "[]", "{}", "{\"items\":[{}]}", "{\"items\":[]}",
+            "{\"version\":true,\"items\":[]}",
             "[{\"name\":\"水\",\"currentStock\":2},{}]",
             "[{\"name\":\"水\"}]",
             "[{\"name\":\"水\",\"currentStock\":-1}]",

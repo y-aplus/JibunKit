@@ -30,6 +30,17 @@ final class MigrationUITests: XCTestCase {
         add(attachment)
     }
 
+    private func setPause(_ enabled: Bool) {
+        let control = app.switches["全体停止"]
+        XCTAssertTrue(control.waitForExistence(timeout: 5))
+        // SwiftUI exposes the whole Form row as a switch; its centre can be
+        // the inert label area. Tap the visible switch at the trailing edge.
+        control.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        let expected = enabled ? "1" : "0"
+        XCTAssertTrue(control.waitForExistence(timeout: 5))
+        XCTAssertEqual(control.value as? String, expected)
+    }
+
     private func returnToList() {
         tap(app.navigationBars.buttons["ミニアプリ"])
         XCTAssertTrue(app.buttons["miniapp.zaiko"].waitForExistence(timeout: 5))
@@ -79,12 +90,12 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 5))
 
         tap(app.buttons["zaiko.settings"])
-        tap(app.switches["全体停止"])
+        setPause(true)
         tap(app.buttons["閉じる"])
         XCTAssertTrue(app.staticTexts["全体停止中"].waitForExistence(timeout: 5))
         capture("03-paused-inventory")
         tap(app.buttons["zaiko.settings"])
-        tap(app.switches["全体停止"])
+        setPause(false)
         tap(app.buttons["閉じる"])
         XCTAssertFalse(app.staticTexts["全体停止中"].exists)
 

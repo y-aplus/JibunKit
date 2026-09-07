@@ -46,3 +46,9 @@ CIで画面のコンパイル、未選択時の書出し不可、対象選択後
 [run 34145260295](https://github.com/y-aplus/JibunKit/actions/runs/34145260295)、source `6b8ba6d`。画面のコンパイル・IPA検査・既存UI3件は成功。追加UIテストはFiles画面にCancelラベルのボタンを想定して失敗。回収したUI hierarchyでは保存・ブラウズ・その他とファイル名欄があり、Cancelはない。未選択時の書出し無効と対象選択・Files表示までは成功している。
 
 検証を実際の保存→Counter変更→読込み→復元キャンセルで無変更→再読込み・復元→再起動後のCounter復元とReminder不変へ拡張した。表示されていないCancelボタンの探索は除いた。
+
+## 保存・再読込みCIの切り分け
+
+[run 34146926618](https://github.com/y-aplus/JibunKit/actions/runs/34146926618)、source `097e21a`。書出し完了表示と保存したファイルの一覧表示まで成功。選択直後のDocumentManagerログはFileProvider -1005 / resolver -1012、続いて `didPickDocumentURLs:` へ空の配列を渡そうとした旨を記録している。アプリへURLが届く前で停止しており、復元確認以降は未検証。既存UI3件・ビルド・IPA検査は成功。
+
+同一テストを別のインストール済みiOSランタイムでも実行して環境依存を切り分ける。CIに任意のランタイム指定を追加した。既定の最新ランタイム選択とテストの合否条件は維持する。

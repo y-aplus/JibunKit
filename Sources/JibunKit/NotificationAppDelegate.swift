@@ -17,21 +17,30 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping @Sendable (UNNotificationPresentationOptions) -> Void
+    ) {
+        Task { @MainActor in
+            completionHandler([.banner, .list, .sound])
+        }
     }
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        let registeredIDs = await MiniAppRegistry.registeredIDs
-        let miniAppID = MiniAppNotificationRoute.resolve(
-            userInfo: response.notification.request.content.userInfo,
-            registeredIDs: registeredIDs
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping @Sendable () -> Void
+    ) {
+        let candidate = MiniAppNotificationRoute.candidate(
+            userInfo: response.notification.request.content.userInfo
         )
-        await AppNavigation.shared.openNotificationTarget(miniAppID)
+        // UIKit performs snapshot/state restoration work from this callback.
+        // The synthesized async delegate thunk can complete on a cooperative
+        // executor, causing UIKit's main-thread assertion on notification taps.
+        Task { @MainActor in
+            // AppNavigation also rejects IDs absent from the registry.
+            AppNavigation.shared.openNotificationTarget(candidate)
+            completionHandler()
+        }
     }
 }
 #endif

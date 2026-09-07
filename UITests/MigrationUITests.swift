@@ -96,4 +96,30 @@ final class MigrationUITests: XCTestCase {
         XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
         capture("09-notification-routed-to-reminder")
     }
+
+    func testStandaloneCounterUsesIndependentStorage() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        tap(app.buttons["miniapp.counter"])
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
+        let original = app.staticTexts["counter.value"].label
+        let standalone = XCUIApplication(bundleIdentifier: "com.jibunkit.counterexample")
+        standalone.launchArguments = app.launchArguments
+        standalone.launch()
+        XCTAssertTrue(standalone.staticTexts["counter.value"].waitForExistence(timeout: 10))
+        let before = standalone.staticTexts["counter.value"].label
+        tap(standalone.buttons["1を追加"])
+        let changed = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label != %@", before),
+            object: standalone.staticTexts["counter.value"])
+        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
+        let after = standalone.staticTexts["counter.value"].label
+        standalone.terminate()
+        standalone.launch()
+        XCTAssertTrue(standalone.staticTexts["counter.value"].waitForExistence(timeout: 10))
+        XCTAssertEqual(standalone.staticTexts["counter.value"].label, after)
+        app.activate()
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["counter.value"].label, original)
+    }
 }

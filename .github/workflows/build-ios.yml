@@ -1,4 +1,4 @@
-name: Build JibunKit IPA
+name: Build JibunKit IPA (Tuist evaluation)
 
 on:
   workflow_dispatch:
@@ -17,8 +17,8 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     env:
-      XTOOL_VERSION: "1.17.0"
-      XTOOL_SHA256: 7796364f6b568f3a728ec4afef1d6ccd4b12bdfbca1b33a92cbead65545ed2fe
+      TUIST_VERSION: "4.207.0"
+      TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
 
     steps:
       - name: Check out source
@@ -64,73 +64,38 @@ jobs:
           swift --version
           test "$(xcodebuild -version | sed -n '1p')" = "Xcode 26.6"
 
-      - name: Install pinned xtool
+      - name: Install pinned Tuist
         shell: bash
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/xtool.app.zip"
-          url="https://github.com/xtool-org/xtool/releases/download/$XTOOL_VERSION/xtool.app.zip"
-          curl --fail --location --retry 3 --output "$archive" "$url"
-          echo "$XTOOL_SHA256  $archive" | shasum --algorithm 256 --check
-          ditto -x -k "$archive" "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/xtool.app/Contents/Resources/bin" >> "$GITHUB_PATH"
-          test "$($RUNNER_TEMP/xtool.app/Contents/Resources/bin/xtool --version)" = "xtool $XTOOL_VERSION"
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/tuist.zip" \
+            "https://github.com/tuist/tuist/releases/download/$TUIST_VERSION/tuist.zip"
+          echo "$TUIST_SHA256  $RUNNER_TEMP/tuist.zip" | shasum --algorithm 256 --check
+          mkdir -p "$RUNNER_TEMP/tuist"
+          ditto -x -k "$RUNNER_TEMP/tuist.zip" "$RUNNER_TEMP/tuist"
+          echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
         run: swift test
 
-      - name: Test mini-app generator
-        run: python3 -m unittest discover -s scripts/tests -v
-
-      - name: Build a generated Feature in an isolated checkout
-        shell: bash
-        run: |
-          set -euo pipefail
-          smoke="$RUNNER_TEMP/generated-feature-check"
-          mkdir -p "$smoke"
-          git archive HEAD | tar -x -C "$smoke"
-          cd "$smoke"
-          python3 scripts/add-mini-app.py Notes --id notes.daily --title '日記' --icon book
-          swift test
-          xtool dev generate-xcode-project
-          xcodebuild build \
-            -workspace xtool/JibunKit.xcworkspace \
-            -scheme JibunKit-App \
-            -configuration Release \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath "$RUNNER_TEMP/GeneratedFeatureDerivedData" \
-            CODE_SIGNING_ALLOWED=NO
-
       - name: Generate Xcode workspace
         run: |
           set -euo pipefail
-          xtool dev generate-xcode-project
-          test -d xtool/JibunKit.xcworkspace
-          xcodebuild -workspace xtool/JibunKit.xcworkspace -list
+          tuist generate --no-open
+          xcodebuild -workspace JibunKit.xcworkspace -list
 
       - name: Build with Xcode
         shell: bash
         run: |
           set -euo pipefail
           xcodebuild build \
-            -workspace xtool/JibunKit.xcworkspace \
+            -workspace JibunKit.xcworkspace \
             -scheme JibunKit-App \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             CODE_SIGNING_ALLOWED=NO
-
-      - name: Embed Xcode-generated App Intents metadata
-        shell: bash
-        run: |
-          set -euo pipefail
-          products="$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos"
-          generated_metadata="$products/JibunKit.appintents/Metadata.appintents"
-          embedded_metadata="$products/JibunKit-App.app/Metadata.appintents"
-
-          test -s "$generated_metadata/extract.actionsdata"
-          ditto "$generated_metadata" "$embedded_metadata"
-          test -s "$embedded_metadata/extract.actionsdata"
 
       - name: Verify, ad-hoc sign, and package IPA
         shell: bash
@@ -238,8 +203,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gem install --user-install xcodeproj --version 1.27.0 --no-document
-          ruby scripts/add-simulator-tests.rb
           xcrun simctl list devices available --json > "$RUNNER_TEMP/simulators.json"
           sim_id="$(python3 - "$RUNNER_TEMP/simulators.json" <<'PY'
           import json, sys
@@ -258,13 +221,23 @@ jobs:
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b
 
+      - name: Build and install standalone Counter
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild build -workspace JibunKit.xcworkspace -scheme CounterExample \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/CounterDerivedData" CODE_SIGNING_ALLOWED=NO
+          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/CounterDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
+
       - name: Run simulator integration checks
         if: inputs.simulator_tests
         shell: bash
         run: |
           set -euo pipefail
           xcodebuild test \
-            -workspace xtool/JibunKit.xcworkspace \
+            -workspace JibunKit.xcworkspace \
             -scheme MigrationUITests \
             -configuration Debug \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \

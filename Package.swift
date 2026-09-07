@@ -11,6 +11,9 @@ let package = Package(
         .macOS(.v12),
     ],
     products: [
+        .library(name: "JibunKitCore", targets: ["JibunKitCore"]),
+        .library(name: "CounterFeature", targets: ["CounterFeature"]),
+        .library(name: "ReminderFeature", targets: ["ReminderFeature"]),
         .library(
             name: "JibunKit",
             targets: ["JibunKit"]

@@ -75,7 +75,7 @@ public actor CounterStore {
         }
     }
 
-    init(context: MiniAppContext, suiteName: String) {
+    public init(context: MiniAppContext, suiteName: String) {
         self.miniAppID = context.id
         self.valueKey = context.storageKey("value")
         if let defaults = UserDefaults(suiteName: suiteName) {

@@ -13,6 +13,10 @@ public struct CounterRootView: View {
         store = CounterStore(context: context)
     }
 
+    public init(store: CounterStore) {
+        self.store = store
+    }
+
     public var body: some View {
         VStack(spacing: 16) {
             Text("カウンター")

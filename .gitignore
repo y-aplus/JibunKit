@@ -31,6 +31,9 @@ Thumbs.db
 xcuserdata/
 *.xcuserstate
 __pycache__/
+/JibunKit.xcodeproj/
+/JibunKit.xcworkspace/
+/Derived/
 
 # Local-only migration experiment
 /Sources/ZaikoFeature/

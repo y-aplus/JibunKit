@@ -2,6 +2,11 @@ name: Build JibunKit IPA
 
 on:
   workflow_dispatch:
+    inputs:
+      simulator_tests:
+        description: Run migration UI checks on an iOS simulator
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -204,4 +209,64 @@ jobs:
           name: JibunKit-ad-hoc
           path: artifacts/JibunKit.ipa
           if-no-files-found: error
+          retention-days: 7
+
+      - name: Prepare simulator tests
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          gem install --user-install xcodeproj --version 1.27.0 --no-document
+          ruby scripts/add-simulator-tests.rb
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/simulators.json"
+          sim_id="$(python3 - "$RUNNER_TEMP/simulators.json" <<'PY'
+          import json, sys
+          devices = json.load(open(sys.argv[1]))['devices']
+          candidates = [d for runtime, values in devices.items() if 'iOS-26' in runtime
+                        for d in values if d['name'].startswith('iPhone') and d['isAvailable']]
+          if not candidates:
+              raise SystemExit('No available iOS 26 iPhone simulator')
+          candidates.sort(key=lambda d: (d['name'] != 'iPhone 16e', d['name']))
+          print(candidates[0]['udid'])
+          PY
+          )"
+          echo "SIMULATOR_ID=$sim_id" >> "$GITHUB_ENV"
+          xcrun simctl boot "$sim_id"
+          xcrun simctl bootstatus "$sim_id" -b
+
+      - name: Run simulator migration checks
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -workspace xtool/JibunKit.xcworkspace \
+            -scheme MigrationUITests \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/Migration.xcresult" \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
+
+      - name: Export simulator screenshots
+        if: always() && inputs.simulator_tests
+        shell: bash
+        run: |
+          if [[ -d "$RUNNER_TEMP/Migration.xcresult" ]]; then
+            xcrun xcresulttool export attachments \
+              --path "$RUNNER_TEMP/Migration.xcresult" \
+              --output-path "$RUNNER_TEMP/simulator-screenshots"
+          fi
+
+      - name: Upload simulator evidence
+        if: always() && inputs.simulator_tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JibunKit-simulator-evidence
+          path: |
+            ${{ runner.temp }}/Migration.xcresult
+            ${{ runner.temp }}/simulator-screenshots
+            ${{ runner.temp }}/simulator-tests.log
+            ${{ runner.temp }}/simulators.json
           retention-days: 7

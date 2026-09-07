@@ -13,12 +13,15 @@ struct MiniAppListScreen: View {
                     NavigationLink(value: miniApp.id) {
                         Label(miniApp.title, systemImage: miniApp.systemImage)
                     }
+                    .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
                 }
             }
             .navigationTitle("ミニアプリ")
             .navigationDestination(for: MiniAppID.self) { miniAppID in
                 if let miniApp = MiniAppRegistry.definition(for: miniAppID) {
                     miniApp.makeDestination()
+                        .navigationTitle(miniApp.title)
+                        .navigationBarTitleDisplayMode(.inline)
                 } else {
                     ContentUnavailableView(
                         "ミニアプリを開けません",

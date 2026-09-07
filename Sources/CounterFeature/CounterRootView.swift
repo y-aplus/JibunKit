@@ -18,6 +18,7 @@ public struct CounterRootView: View {
             Text("カウンター")
                 .font(.headline)
             Text(value, format: .number)
+                .accessibilityIdentifier("counter.value")
                 .font(.largeTitle)
                 .monospacedDigit()
             Button("1を追加") {

@@ -298,7 +298,7 @@ final class ZaikoStore: ObservableObject {
         if authorizationStatus == .denied {
             appState.notificationsEnabled = false
             persist()
-            transientMessage = "iPhoneの設定 > 通知 > 在庫管理 から通知を許可してください。"
+            transientMessage = "iPhoneの設定 > 通知 > JibunKit から通知を許可してください。"
             return
         }
 

@@ -5,6 +5,7 @@ import UIKit
 import UniformTypeIdentifiers
 
 public struct ZaikoRootView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var store: ZaikoStore
     @State private var itemEditorContext: ItemEditorContext?
     @State private var restockItem: InventoryItem?
@@ -13,13 +14,19 @@ public struct ZaikoRootView: View {
     @State private var isImporting = false
     @State private var isExporting = false
     @State private var exportDocument = InventoryBackupDocument(text: "")
+    @State private var pendingSettingsAction: SettingsAction?
+
+    private enum SettingsAction {
+        case importBackup, exportBackup, enableNotifications, requestPermission
+    }
 
     public init(context: MiniAppContext) {
         _store = StateObject(wrappedValue: ZaikoStore(context: context))
     }
 
     public var body: some View {
-        NavigationStack {
+        // The host (or a standalone App Shell) owns the navigation stack.
+        Group {
             ZStack {
                 Color(.systemGroupedBackground)
                 .ignoresSafeArea()
@@ -52,12 +59,13 @@ public struct ZaikoRootView: View {
             .navigationTitle("在庫管理")
             .tint(.black)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         isSettingsPresented = true
                     } label: {
                         Label("設定", systemImage: "slider.horizontal.3")
                     }
+                    .accessibilityIdentifier("zaiko.settings")
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -66,6 +74,7 @@ public struct ZaikoRootView: View {
                     } label: {
                         Label("追加", systemImage: "plus.circle.fill")
                     }
+                    .accessibilityIdentifier("zaiko.add")
                 }
             }
         }
@@ -93,23 +102,14 @@ public struct ZaikoRootView: View {
                 }
             }
         }
-        .sheet(isPresented: $isSettingsPresented) {
+        .sheet(isPresented: $isSettingsPresented, onDismiss: completeSettingsAction) {
             SettingsSheet(
                 isPresented: $isSettingsPresented,
-                onImport: { dismissSettingsThen { isImporting = true } },
-                onExport: {
-                    dismissSettingsThen {
-                        exportDocument = InventoryBackupDocument(text: store.exportBackupJSON())
-                        isExporting = true
-                    }
-                },
+                onImport: { dismissSettingsThen(.importBackup) },
+                onExport: { dismissSettingsThen(.exportBackup) },
                 onNotificationToggle: { isEnabled in
                     if isEnabled {
-                        dismissSettingsThen {
-                            Task {
-                                await store.setNotificationsEnabled(true)
-                            }
-                        }
+                        dismissSettingsThen(.enableNotifications)
                     } else {
                         Task {
                             await store.setNotificationsEnabled(false)
@@ -117,11 +117,7 @@ public struct ZaikoRootView: View {
                     }
                 },
                 onNotificationRequest: {
-                    dismissSettingsThen {
-                        Task {
-                            await store.requestNotificationPermission()
-                        }
-                    }
+                    dismissSettingsThen(.requestPermission)
                 }
             )
             .environmentObject(store)
@@ -203,6 +199,10 @@ public struct ZaikoRootView: View {
             Text(store.transientMessage ?? "")
         }
         .preferredColorScheme(.light)
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await store.rescheduleNotifications() }
+        }
     }
 
     private func statusBanner(title: String, body: String, tint: Color) -> some View {
@@ -512,10 +512,26 @@ private struct SettingsSheet: View {
 }
 
 private extension ZaikoRootView {
-    func dismissSettingsThen(_ action: @escaping () -> Void) {
+    func dismissSettingsThen(_ action: SettingsAction) {
+        pendingSettingsAction = action
         isSettingsPresented = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-            action()
+    }
+
+    func completeSettingsAction() {
+        let action = pendingSettingsAction
+        pendingSettingsAction = nil
+        switch action {
+        case .importBackup:
+            isImporting = true
+        case .exportBackup:
+            exportDocument = InventoryBackupDocument(text: store.exportBackupJSON())
+            isExporting = true
+        case .enableNotifications:
+            Task { await store.setNotificationsEnabled(true) }
+        case .requestPermission:
+            Task { await store.requestNotificationPermission() }
+        case nil:
+            break
         }
     }
 }
@@ -539,13 +555,17 @@ private struct ItemEditorSheet: View {
             Form {
                 Section("基本情報") {
                     TextField("名前", text: $draft.name)
+                        .accessibilityIdentifier("zaiko.editor.name")
                     TextField("カテゴリー", text: $draft.category)
+                        .accessibilityIdentifier("zaiko.editor.category")
                     TextField("単位", text: $draft.unit)
+                        .accessibilityIdentifier("zaiko.editor.unit")
                 }
 
                 Section("在庫と消費速度") {
                     TextField("現在の在庫量", text: $draft.stock)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("zaiko.editor.stock")
 
                     Picker("入力モード", selection: $draft.displayMode) {
                         Text("日/単位").tag(DisplayMode.perUnitTime)
@@ -555,6 +575,7 @@ private struct ItemEditorSheet: View {
 
                     TextField(draft.displayMode.placeholderText, text: $draft.speed)
                         .keyboardType(.decimalPad)
+                        .accessibilityIdentifier("zaiko.editor.speed")
 
                     Text(draft.displayMode.helpText(for: draft.unit))
                         .font(.footnote)

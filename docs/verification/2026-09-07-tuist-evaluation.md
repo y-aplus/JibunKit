@@ -85,3 +85,5 @@ mainへのマージ、正式リリース、Issue完了扱いは行っていな�
 - 現行ビルド・追加・更新手順とnoticeを更新。過去の検証記録は当時の経路として保持。
 
 本体bundle ID、App Group、保存キーは変更しない。移行後の実機確認は引き続き未実施であり、今回のmain統合は正式Release公開を含まない。
+
+移行CI [34125388232](https://github.com/y-aplus/JibunKit/actions/runs/34125388232)はPackage.swiftの編集ミスでmanifestコンパイルに失敗。Integration targetの定義をproductのtarget名配列にも挿入していた2か所を修正した。template・iOS検証へ進む前の失敗である。

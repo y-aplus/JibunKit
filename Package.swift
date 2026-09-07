@@ -18,15 +18,11 @@ let package = Package(
         .library(name: "ReminderFeature", targets: ["ReminderFeature"]),
         .library(
             name: "JibunKit",
-            targets: [
-        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
-        .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),"JibunKit"]
+            targets: ["JibunKit"]
         ),
         .library(
             name: "JibunKitWidget",
-            targets: [
-        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
-        .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),"JibunKitWidget"]
+            targets: ["JibunKitWidget"]
         ),
     ],
     targets: [

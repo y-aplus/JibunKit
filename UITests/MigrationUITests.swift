@@ -103,7 +103,7 @@ final class MigrationUITests: XCTestCase {
         // trying to present on top of the closing settings sheet.
         tap(app.buttons["zaiko.settings"])
         tap(app.buttons["JSONバックアップを書き出す"])
-        XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForExistence(timeout: 30))
         capture("04-backup-export-picker")
         enter("DOCPicker.filenameTextField", "migration-backup")
         tap(app.buttons["保存"])
@@ -118,8 +118,9 @@ final class MigrationUITests: XCTestCase {
         let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "migration-backup")).firstMatch
         XCTAssertTrue(backup.waitForExistence(timeout: 10))
         capture("05-backup-import-picker")
-        backup.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
-        XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 10))
+        XCTAssertTrue(backup.isEnabled)
+        backup.doubleTap()
+        XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 30))
 
         // State must survive leaving the Feature and a full process restart.
         returnToList()

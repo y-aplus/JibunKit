@@ -6,7 +6,7 @@ import SwiftUI
 struct CounterExampleApp: App {
     private let store = CounterStore(
         context: MiniAppContext(id: .counter),
-        suiteName: "com.jibunkit.counterexample"
+        suiteName: nil
     )
 
     var body: some Scene {

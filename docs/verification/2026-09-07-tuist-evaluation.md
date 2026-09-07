@@ -43,3 +43,9 @@ Zaikoのローカルignoreファイルは変更しない。
 [run 34115636765](https://github.com/y-aplus/JibunKit/actions/runs/34115636765)、source `55eb566`。Tuist生成、Foundation 32テスト、app・WidgetのiOS Releaseビルド成功。IPA検査で旧生成物パスを参照して停止した。
 
 Tuistが生成した実際のproduct名は`JibunKit_App.app`と`JibunKitWidget_Extension.appex`。検査・梱包のパスと診断ログのprocess名を一致させる。bundle IDや保存キーは変更しない。App Intents抽出stepの実行は確認できたが、IPA内のmetadata検査はまだ通過していない。単独版とSimulatorも後続stepのため未実行。
+
+## 2回目結果と単独版修正
+
+[run 34115937620](https://github.com/y-aplus/JibunKit/actions/runs/34115937620)、source `cc7e397`。IPAのmetadata・識別子・署名・ZIP検査、単独版ビルドとインストール、本体保存・通知UIテストまで成功。単独版の加算後の値確認だけ失敗した。
+
+単独shellでsuite名に自身のbundle IDを渡していた。[AppleのAPI契約](https://developer.apple.com/documentation/foundation/userdefaults/init(suitename:))はこれを禁止している。単独版はnilを指定してアプリ固有のstandard defaultsを使うよう修正する。JibunKit本体のApp Group経路は変更しない。UIテストで再起動後の保存と本体側の不変を再検証する。

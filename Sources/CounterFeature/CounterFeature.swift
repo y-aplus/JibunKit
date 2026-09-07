@@ -75,9 +75,16 @@ public actor CounterStore {
         }
     }
 
-    public init(context: MiniAppContext, suiteName: String) {
+    /// Pass nil for a standalone app's own defaults; named suites must not
+    /// equal that app's bundle identifier.
+    public init(context: MiniAppContext, suiteName: String?) {
         self.miniAppID = context.id
         self.valueKey = context.storageKey("value")
+        guard let suiteName else {
+            self.defaults = .standard
+            self.configurationError = nil
+            return
+        }
         if let defaults = UserDefaults(suiteName: suiteName) {
             self.defaults = defaults
             self.configurationError = nil

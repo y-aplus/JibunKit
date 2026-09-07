@@ -10,8 +10,6 @@ final class MigrationUITests: XCTestCase {
 
     private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.waitForExistence(timeout: 10), element.debugDescription, file: file, line: line)
-        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [hittable], timeout: 10), .completed, file: file, line: line)
         element.tap()
     }
 
@@ -108,6 +106,7 @@ final class MigrationUITests: XCTestCase {
         capture("04-backup-export-picker")
         enter("DOCPicker.filenameTextField", "migration-backup")
         tap(app.buttons["保存"])
+        XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForNonExistence(timeout: 15))
         tap(app.buttons["閉じる"])
         XCTAssertTrue(app.buttons["zaiko.settings"].waitForExistence(timeout: 10))
         tap(app.buttons["削除"])

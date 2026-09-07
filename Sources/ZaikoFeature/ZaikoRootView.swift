@@ -102,7 +102,7 @@ public struct ZaikoRootView: View {
                 }
             }
         }
-        .sheet(isPresented: $isSettingsPresented, onDismiss: completeSettingsAction) {
+        .sheet(isPresented: $isSettingsPresented, onDismiss: { completeSettingsAction() }) {
             SettingsSheet(
                 isPresented: $isSettingsPresented,
                 onImport: { dismissSettingsThen(.importBackup) },
@@ -374,7 +374,7 @@ private struct InventoryCard: View {
                     } else if let remainingDays {
                         compactInfoBlock(
                             title: "残日数",
-                            value: "約 \(max(0, Int(ceil(remainingDays)))) 日",
+                            value: "約 \(max(0, remainingDays.rounded(.up)).formattedNumber(maximumFractionDigits: 0)) 日",
                             accent: isAlert ? .red : .primary
                         )
                     }
@@ -512,7 +512,7 @@ private struct SettingsSheet: View {
 }
 
 private extension ZaikoRootView {
-    func dismissSettingsThen(_ action: SettingsAction) {
+    private func dismissSettingsThen(_ action: SettingsAction) {
         pendingSettingsAction = action
         isSettingsPresented = false
     }

@@ -60,6 +60,9 @@ final class MigrationUITests: XCTestCase {
         enter("zaiko.editor.speed", "2")
         tap(app.navigationBars.buttons["保存"])
         XCTAssertTrue(app.staticTexts["Rice"].waitForExistence(timeout: 5))
+        tap(app.buttons["Food"])
+        XCTAssertTrue(app.staticTexts["Rice"].exists)
+        tap(app.buttons["すべて"])
         capture("02-created-inventory")
 
         tap(app.buttons["補充"])

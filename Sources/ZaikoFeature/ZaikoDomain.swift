@@ -293,7 +293,8 @@ enum InventoryDomain {
     ]
 
     static func parseNumber(_ rawValue: String, fieldName: String) throws -> Double {
-        guard let value = Double(rawValue.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+        guard let value = Double(rawValue.trimmingCharacters(in: .whitespacesAndNewlines)),
+              value.isFinite else {
             throw ZaikoError.validation("\(fieldName)は数値で入力してください。")
         }
         return value
@@ -332,7 +333,11 @@ enum InventoryDomain {
         case .perDayAmount:
             return speed
         case .perUnitTime:
-            return 1 / speed
+            let rate = 1 / speed
+            guard rate.isFinite, rate > 0 else {
+                throw ZaikoError.validation("消費速度が扱える数値の範囲を超えています。")
+            }
+            return rate
         }
     }
 

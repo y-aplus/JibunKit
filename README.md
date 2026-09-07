@@ -40,9 +40,13 @@ JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター
 | [公開・release](docs/releasing.md) | 公開前check、tag、公開切替、release後の対応確認 |
 | [元の検討メモ](personal-swiftui-superapp-plan.md) | ChatGPTが作成した参考資料。現在の仕様は上記の設計文書を優先 |
 
+## 現在の開発基盤
+
+TuistとSwift Packageを標準にする。Featureの単独開発・実行と、JibunKitへの薄い接続層を分ける。xtool生成・Ruby後加工・独自Python雛形生成は廃止した。手順は[ビルド](docs/build.md)と[ミニアプリ追加](docs/mini-apps.md)を参照する。0.1.0公開時の実機実績は、Tuist移行後の実機実績とは区別する。
+
 ## 開発・導入の前提
 
-無料のAppleアカウントとSideStoreを最低条件にします。Windows上のWSLは単体テストと補助的なiOS buildに使い、Shortcutsを含むSideStore向けIPAはGitHub Actionsが提供するmacOS／Xcode環境で作ります。Macの購入は前提にしません。
+無料のAppleアカウントとSideStoreを最低条件にします。Windows上のWSLは単体テストに使い、Shortcutsを含むSideStore向けIPAはGitHub Actionsが提供するmacOS／Xcode環境で作ります。Macの購入は前提にしません。
 
 Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保存、更新インストール、署名更新後の維持は、旧称・旧識別子の構成で実証済みです。JibunKitとしての確認対象もiPhone 16e／iOS 26.6／SideStore 0.6.3とし、改名後の実機結果は[検証記録](docs/verification/0.1.md)へ追記します。ビルド環境や署名の制約は技術確認文書に記録しています。
 

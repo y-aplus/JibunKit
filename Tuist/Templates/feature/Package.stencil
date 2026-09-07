@@ -1,0 +1,9 @@
+// swift-tools-version: 6.0
+import PackageDescription
+
+let package = Package(
+    name: "{{ name }}",
+    platforms: [.iOS("26.0")],
+    products: [.library(name: "{{ name }}Feature", targets: ["{{ name }}Feature"])],
+    targets: [.target(name: "{{ name }}Feature")]
+)

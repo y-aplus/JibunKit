@@ -8,19 +8,7 @@ public extension MiniAppID {
     static let counter = MiniAppID("counter")
 }
 
-#if os(iOS)
-public enum CounterMiniApp {
-    @MainActor
-    public static let definition = MiniAppDefinition(
-        id: .counter,
-        title: "カウンター",
-        systemImage: "number",
-        backup: CounterStore.shared.backupProvider
-    ) { context in
-        CounterRootView(context: context)
-    }
-}
-#endif
+
 
 public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
     case valueOutOfRange

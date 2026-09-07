@@ -14,6 +14,8 @@
 
 ### Changed
 
+- iOS project生成をTuistへ移行。xtool・Ruby後加工と独自Python生成を廃止し、独立Swift Package／単独appのTuist templateを追加。Counter／Reminderのホスト定義をIntegration targetへ分離。
+
 - ミニアプリのID、表示情報、遷移先を1件のDescriptorへ統合し、通常の追加でホストのID enumや画面遷移switchを編集しない登録方式へ変更。
 - Featureへ安定した保存・通知namespaceを渡す`MiniAppContext`を追加し、独立アプリの`@main`をFeatureから分離する組み込み境界を明文化。
 - カウンターとリマインダーのRoot View・保存処理・通知予約をFeature側へ移し、`MiniAppContext`から保存キーと通知情報を取得する基準実装へ変更。保存キーと通知先は従来通り。

@@ -1,15 +1,13 @@
 #if os(iOS)
-import CounterFeature
+import CounterIntegration
 import JibunKitCore
-import ReminderFeature
-// jibunkit:feature-imports
+import ReminderIntegration
 
 @MainActor
 enum MiniAppRegistry {
     static let all = makeRegistry([
         CounterMiniApp.definition,
         ReminderMiniApp.definition,
-        // jibunkit:feature-definitions
     ])
 
     static let registeredIDs = Set(all.map(\.id))

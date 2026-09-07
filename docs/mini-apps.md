@@ -8,18 +8,23 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 
 ### 雛形から始める
 
-Python 3.9以降で、リポジトリ内の次のコマンドを実行する（Windowsで`python3`がない場合は`python`）。追加ライブラリは不要。
+macOSのTuist 4.207.0で次を実行する。Windowsでは同じファイルを手動作成してActionsで検証できる。
 
 ```bash
-python3 scripts/add-mini-app.py Notes --id notes.daily --title "日記" --icon book --dry-run
-python3 scripts/add-mini-app.py Notes --id notes.daily --title "日記" --icon book
+tuist scaffold feature --name Notes
+tuist generate --path Modules/Notes --no-open
 ```
 
-1行目は差分を表示するだけで書き込まない。2行目は`Sources/NotesFeature`へID・定義とRoot Viewを作り、Packageのtarget・本体依存とRegistryのimport・定義一覧へ登録する。`Notes`はSwift型名の接頭辞、`notes.daily`は公開後に維持するID。画面はタイトルのTextだけなので、ここから必要な処理を実装する。保存、通知、Widget、Shortcutsの機能は以下の手順で明示的に追加する。
+`Modules/Notes`へ独立したSwift Package・Root View・薄いExample App・Project.swiftを生成する。`NotesExample` schemeだけで試用でき、JibunKitCoreに依存しない。名前はSwift型名として使える英数字（先頭大文字）にする。既存フォルダには生成しない。これは雛形生成であり、既存アプリの自動変換やホストへの自動登録ではない。独自Pythonのdry-run／衝突検査は廃止し、差分確認と以下の明示登録へ移行した。
 
-既存Featureのディレクトリ（ignore中も含む）、target名、生成する型名、直接記述された同一IDが見つかると、書込み前に停止する。ID検査は`MiniAppID("...")`と`MiniAppID(rawValue: "...")`の文字列リテラルを対象にし、Swiftを実行して計算されるIDや外部Packageまでは解釈しない。`MiniAppValidator`とビルドによる確認は引き続き必要。SF Symbol名は文字の形式だけを検査するので、実際の表示も確認する。
+JibunKitに組み込むには次を行う。
 
-PackageとRegistryの`jibunkit:feature-*`コメントが挿入位置である。コメントが欠落・重複した派生では推測で書き換えず停止する。手動追加も継続して使える。既存ファイルを並行編集しながら生成を実行しない。生成後はGit差分を確認し、不要なら登録行と生成ディレクトリを取り除く。
+1. ルート`Project.swift`のpackagesへ`.package(path: "Modules/Notes")`を追加。
+2. JibunKit-Appのdependenciesへ`.package(product: "NotesFeature")`を追加。
+3. ホスト側の薄い接続ファイルで`import NotesFeature`し、`MiniAppDefinition(id: MiniAppID("notes"), title: "日記", systemImage: "book") { _ in NotesRootView() }`を定義してRegistryへ列挙する。
+4. `tuist generate`とビルドで確認する。FeatureのテストはそのPackageで実行する。
+
+Featureをroot Package内に置く方式も使える。その場合はPackageのtarget・library productと、Projectのproduct依存を明示する。既存Counter／ReminderはFeatureとIntegrationのtargetを分け、IntegrationがMiniAppDefinitionとbackup登録を所有する。単独appはFeatureだけを参照する。既存StoreはJibunKitCoreの保存APIを使うが、新しいFeatureへこの依存を強制しない。
 
 ### 手動で追加する・生成後の内容を実装する
 
@@ -28,7 +33,7 @@ PackageとRegistryの`jibunkit:feature-*`コメントが挿入位置である。
 3. `MiniAppValidator.validate(ids:)`をテストから呼び、ID・保存namespace・通知request IDの不正と衝突を事前確認する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。
 4. `JibunKitCoreTests`でID、保存namespace、通知request IDを、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。
 
-最小構成の例:
+接続層（Integration targetまたはホスト側の接続ファイル）に置く定義の例:
 
 ```swift
 public enum ReminderMiniApp {
@@ -73,14 +78,14 @@ static let all = makeRegistry([
 
 Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。Registryから生成されないため、Featureが所有する安定IDから同じContextを生成したshared Storeを使う。現在のカウンターWidgetが実例である。
 
-App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。現在のxtool 1.17.0ローカル経路ではこのメタデータを生成できないため、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。Intentからも同じshared Storeを使う。
+App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。Tuistのapp target内で宣言してXcodeに生成させ、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。Intentからも同じshared Storeを使う。
 
 ## 検証
 
 変更後は次を分けて確認する。
 
 1. WSLの`swift test`でfeature処理、ID衝突、独立保存を確認する。
-2. `xtool dev build --ipa`でiOSフレームワークを含むコンパイル、Widget組込み、IPAのZIP整合性を確認する。
+2. Tuistで生成したworkspaceをXcode／Actionsでビルドし、WidgetとIPAを検査する。
 3. App Intentを含む場合はGitHub Actionsで公式メタデータ入りIPAを生成する。
 4. SideStoreで更新インストールし、一覧からの起動、保存値の独立、通知許可の拒否、通知予約、foregroundと終了状態からの通知タップを実機で確認する。
 

@@ -74,3 +74,14 @@ Tuistをproject構成管理の標準にする方向を推奨する。今回の�
 主な負担はTuistの版固定・追従と、Swift Package／Project.swift間のproduct宣言の対応管理である。Tuistの導入だけではこの二重管理は解消しない。構成のsource of truthをさらに増やす独自manifestは今回追加しない。
 
 mainへのマージ、正式リリース、Issue完了扱いは行っていない。検証後の変更はこの文書のみ。
+
+## 採用・移行作業
+
+利用者がTuistへの移行を承認。検証ブランチで以下を実施し、CI成功後にmainへ取り込む。
+
+- xtool.yml、旧Info.plist、Ruby後加工、Python生成スクリプトとその専用テストを削除。
+- Tuist templateで独立したSwift Packageと単独appを生成。ホスト依存・Registryは明示的に登録する。CIの隔離checkoutで単独版とホスト組込みの両方をビルドする。
+- Counter／ReminderのMiniAppDefinitionをIntegration targetへ分離。Store・Root Viewと単独shellの接続は維持。
+- 現行ビルド・追加・更新手順とnoticeを更新。過去の検証記録は当時の経路として保持。
+
+本体bundle ID、App Group、保存キーは変更しない。移行後の実機確認は引き続き未実施であり、今回のmain統合は正式Release公開を含まない。

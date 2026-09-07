@@ -1,0 +1,17 @@
+import ProjectDescription
+
+let project = Project(
+    name: "{{ name }}Example",
+    packages: [.package(path: ".")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
+    targets: [
+        .target(
+            name: "{{ name }}Example", destinations: .iOS, product: .app,
+            bundleId: "com.jibunkit.example.{{ name | lowercase }}",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+            sources: ["Example/**"],
+            dependencies: [.package(product: "{{ name }}Feature")]
+        ),
+    ]
+)

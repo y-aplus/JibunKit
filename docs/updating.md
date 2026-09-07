@@ -50,7 +50,7 @@ git merge upstream/main
 ## 取り込み後に確認する
 
 1. `swift test`でID衝突、App Group解決、各feature、独立保存を確認する。
-2. `xtool dev build --ipa`でiOS向けコンパイルとWidget入りIPAの整合性を確認する。
+2. Tuist／XcodeのビルドでiOS向けコンパイルとWidget入りIPAの整合性を確認する。
 3. Shortcutsを含む場合はGitHub ActionsのXcode経路で公式App Intentsメタデータ入りIPAを生成する。
 4. 既存アプリを削除せずSideStoreで上書きし、保存値、一覧、各画面、Shortcuts、Widget、通知を確認する。
 5. SideStoreで署名更新し、同じ項目を再確認する。

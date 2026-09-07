@@ -16,7 +16,8 @@ let project = Project(
             sources: ["Sources/JibunKit/**"],
             entitlements: "JibunKit.entitlements",
             dependencies: [.package(product: "JibunKitCore"), .package(product: "CounterFeature"),
-                           .package(product: "ReminderFeature"), .target(name: "JibunKitWidget-Extension")]
+                           .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
+                           .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension")]
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,

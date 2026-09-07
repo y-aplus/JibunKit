@@ -1,4 +1,4 @@
-name: Build JibunKit IPA (Tuist evaluation)
+name: Build JibunKit IPA
 
 on:
   workflow_dispatch:
@@ -78,6 +78,33 @@ jobs:
 
       - name: Test shared feature logic
         run: swift test
+
+      - name: Verify native Feature template
+        shell: bash
+        run: |
+          set -euo pipefail
+          smoke="$RUNNER_TEMP/template-check"
+          mkdir -p "$smoke"
+          git archive HEAD | tar -x -C "$smoke"
+          cd "$smoke"
+          tuist scaffold feature --name Notes
+          tuist generate --path Modules/Notes --no-open
+          xcodebuild build -workspace Modules/Notes/NotesExample.xcworkspace -scheme NotesExample \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/TemplateDerivedData" CODE_SIGNING_ALLOWED=NO
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('Project.swift')
+          s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes")]')
+          s = s.replace('dependencies: [.package(product: "JibunKitCore")', 'dependencies: [.package(product: "NotesFeature"), .package(product: "JibunKitCore")', 1)
+          p.write_text(s)
+          p = Path('Sources/JibunKit/MiniAppRegistry.swift')
+          p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
+          PY
+          tuist generate --no-open
+          xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/TemplateHostDerivedData" CODE_SIGNING_ALLOWED=NO
 
       - name: Generate Xcode workspace
         run: |

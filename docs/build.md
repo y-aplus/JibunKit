@@ -1,97 +1,40 @@
-# ビルド手順
+# ビルドと検証
 
-更新日: 2026-09-04
+標準のiOSビルドはTuist 4.207.0とXcode 26.6を使う。WindowsからはGitHub Actionsを実行でき、Mac購入は前提にしない。SwiftのあるmacOS／Linux／WSLでは`swift test`でFoundationロジックを確認できる。xtoolによるIPA生成経路は廃止した。
 
-JibunKitは、Windows上のWSLで行う高速なローカル確認と、GitHub Actions上のXcodeで行うSideStore向けIPA生成を分ける。WSLのxtool 1.17.0だけではShortcuts登録に必要な公式App Intentsメタデータを生成できないため、ローカルIPAを実機導入用成果物として扱わない。
+## 構成の所有場所
 
-固定版と経路を選んだ理由、実測したrun、料金上の注意は[ビルド経路の判断記録](decisions/build-route.md)を参照する。
+- `Package.swift`: 共通ロジック・Feature・Integrationのlibrary productsとテスト。
+- `Project.swift`: app・Widget・UI tests・CounterExample、Info.plist値、iOS build settings。
+- 本体とWidgetのentitlements: App Groupの宣言。
+- `Tuist/Templates/feature`: 独立Featureと単独appの標準雛形。
 
-## 使用する構成
+生成されるxcodeproj・workspace・Derivedは編集・commitしない。旧Info.plistとxtool.ymlは削除済み。
 
-| 対象 | 固定値 |
-| --- | --- |
-| ローカル環境 | WSL 2、Ubuntu 24.04、Swift 6.3.3、xtool 1.17.0 |
-| ローカルApple SDK | Xcode 26.6 Universal由来のDarwin Swift SDK |
-| クラウド環境 | GitHub Actions `macos-26`、Xcode 26.6、xtool 1.17.0 |
-| iOS deployment target | iOS 26.0 |
-| app / Widget | `com.jibunkit.app` / `com.jibunkit.app.Widget` |
-| App Group | `group.com.jibunkit.shared` |
-| 版 | 0.1.0、build 2 |
+## macOSで実行
 
-アプリの構成は`Package.swift`、`xtool.yml`、本体とWidgetのInfo.plist・entitlementsに置く。workflowや生成物を手作業で書き換えて設定差を吸収しない。
-
-## WSLでテストする
-
-SwiftとxtoolへPATHが通ったUbuntu 24.04上で、リポジトリ直下から実行する。
+Tuistの版をCIと揃え、Xcode 26.6を選択する。
 
 ```bash
 swift test
-xtool dev build --ipa
-unzip -t xtool/JibunKit.ipa
-sha256sum xtool/JibunKit.ipa
+tuist generate --no-open
+xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO
 ```
 
-`swift test`はカウンターの保存・並行加算・整数overflow、SideStore App Group解決、ミニアプリIDの衝突、カウンターとリマインダーの独立保存を検査する。現在は全11テストである。`xtool dev build --ipa`はiOS向け本体、リマインダー通知、Widgetをコンパイルし、`xtool/JibunKit.ipa`を生成する。
+単独カウンターは`CounterExample` schemeで起動できる。本体のApp Groupではなく単独appのstandard defaultsを使う。
 
-このIPAで確認できるのは、iOS向けコンパイル、Widgetの組込み、IPAのZIP整合性までである。`Metadata.appintents/extract.actionsdata`がないため、Shortcutsを含むSideStore実機検証には使わない。
-
-## GitHub ActionsでIPAを作る
-
-`.github/workflows/build-ios.yml`は`workflow_dispatch`だけで起動する。pushやpull requestでは自動実行されない。実行対象のコミットを`origin/main`へpushした後、GitHub CLIで起動・監視・取得する。
-
-```bash
-git push origin main
-gh workflow run build-ios.yml --ref main
-gh run list --workflow build-ios.yml --limit 1 \
-  --json databaseId,url,status,conclusion,headSha
-gh run watch RUN_ID --exit-status
-gh run download RUN_ID --name JibunKit-ad-hoc --dir actions-run-RUN_ID
-```
-
-`RUN_ID`は`gh run list`が返す`databaseId`へ置き換える。複数のrunが近接している場合は、`headSha`が今回pushしたコミットと一致することを確認する。
-
-workflowは次を順に検査し、どれかが失敗した場合はartifactをuploadしない。
-
-- 追跡済みのcredential・署名・pairing・SDK・IPA候補がないこと。外部GitHub Actionは固定commitを使い、checkout credentialを保持しない。
-- Xcode 26.6とxtool 1.17.0の版、およびxtool archiveのSHA-256。
-- `swift test`の全テスト。
-- `JibunKit-App` schemeのRelease／実機向けXcodeビルド。
-- Xcode公式processorが生成した非空の`Metadata.appintents/extract.actionsdata`。
-- 本体とWidgetのarm64実行ファイル、bundle ID、0.1.0／build 2。
-- 本体とWidgetの論理App Group、アドホック署名、IPAのZIP整合性。
-
-成功時のartifact名は`JibunKit-ad-hoc`、中身は`JibunKit.ipa`、保持期間は7日である。これはSideStoreで再署名するための検証物であり、0.1のrelease成果物ではない。
-
-工程4の確定runは[`33465093595`](https://github.com/y-aplus/JibunKit/actions/runs/33465093595)、対象commitは`a3098ef`である。これは旧称・旧識別子の履歴で、新しいクリーンな`macos-26` runner上で全10テスト、Xcode 26.6ビルド、公式App Intentsメタデータ、Widget、署名、IPA検査に合格した。同一IPAをSideStoreで上書き・署名更新し、F1〜F6を実機で確認した。
-
-工程5の公開前確認runは[`33825680660`](https://github.com/y-aplus/JibunKit/actions/runs/33825680660)である。これも旧称・旧識別子の履歴で、固定commit参照のGitHub Actions、checkout credentialの非保持、publication boundaryを含む全stepがprivateの`main`から合格した。JibunKitへの改名は製品・workflowの変更を含むため、リリース候補には改名後の新しいrunを使う。
-
-改名後の確認runは[`33844972938`](https://github.com/y-aplus/JibunKit/actions/runs/33844972938)である。privateの`main`から全11テスト、Xcode 26.6ビルド、公式App Intentsメタデータ、本体・Widget、JibunKitのbundle ID・App Group、署名構造、IPA整合性、`JibunKit-ad-hoc`のuploadに合格した。取得した`JibunKit.ipa`も別途展開し、同じ名称・識別子・メタデータと禁止対象fileの不在を確認した。実機合格前なのでrelease成果物にはしない。
-
-更新確認用runは[`33846023791`](https://github.com/y-aplus/JibunKit/actions/runs/33846023791)である。0.1.0／build 2について同じ全stepと取得後のIPA再検査に合格し、既存のJibunKitへ上書きした後とSideStore署名更新後にF1〜F6を確認した。公開承認まではrelease成果物にしない。
-
-## 認証情報と料金
-
-workflowへApple Account、パスワード、2FA、証明書、provisioning profileを渡さない。GitHub CLIのtokenや端末情報もリポジトリへ保存しない。
-
-公開境界チェックの対象と限界、およびrelease前に必要な追加確認は[公開・release手順](releasing.md)を参照する。
-
-非公開リポジトリの標準runnerはGitHub Actionsの利用枠を消費し、契約状態によっては超過料金が発生する。必要な節目だけ手動実行し、現在の料金・残量はGitHubのBilling画面で確認する。公開を前倒しして利用料を避ける運用はしない。
-
-## 証拠の残し方
-
-採用判断には、コミットSHA、Actions run URL、job結果、IPAのbyte数とSHA-256、実機の機種・OS・SideStore版、実際の操作結果を[0.1検証記録](verification/0.1.md)へ残す。ローカルテスト、クラウド生成、SideStore導入、実機動作は別々の証拠として扱う。
-
-## シミュレーターで統合操作を確認する
-
-IPA workflowでは、Pythonの雛形生成テストに加え、隔離したcheckoutへNotes Featureを生成し、SwiftテストとiOS Releaseビルドを行う。検証用Notesは配布IPAやリポジトリ本体には追加しない。生成スクリプトだけのローカル確認は`python3 -m unittest discover -s scripts/tests -v`で実行できる。
-
-既存workflowへ`simulator_tests=true`を渡すと、IPA検査に続けてiOS 26のiPhone SimulatorでUIテストを実行する。
+## WindowsからIPAを生成
 
 ```bash
 gh workflow run build-ios.yml --ref YOUR_BRANCH -f simulator_tests=true
 ```
 
-`YOUR_BRANCH`は検証したいpush済みブランチへ置き換える。Xcodeproj 1.27.0でxtoolの一時生成projectにだけUIテストtargetを追加する。アプリの実装を置き換えるmock画面やテスト用保存先は使わず、組込み済みFeatureの画面・保存処理を実行する。既存IPAはテストtarget追加前に生成するため、テストコードは配布物へ入らない。
+workflowは固定SHA-256でTuistを導入し、Swiftテスト、Tuist templateの生成・単独ビルド・ホスト組込み、通常app／Widgetビルド、App Intents metadata、識別子・版・App Group・ad-hoc署名・IPAの整合性を検査する。`JibunKit-ad-hoc` artifactからIPAを取得する。SideStoreで最終署名して導入する。templateの検証用Notesは隔離checkoutだけに存在する。
 
-結果は`JibunKit-simulator-evidence` artifactへ、xcresult、スクリーンショット、実行ログ、利用可能Simulator一覧として保存する。実行結果が失敗した場合も可能な範囲の証拠を残す。SideStoreの再署名・実端末のApp Group共有・実端末通知設定の検証は別である。
+`simulator_tests=true`では本体の保存・通知と、単独Counterの加算・再起動・保存先分離をUIで検証する。UI targetはTuistが生成する。Rubyによる後加工やmetadata手動コピーは行わない。結果・画面・診断ログは`JibunKit-simulator-evidence` artifactへ保存する。
+
+長時間のCIは`gh run watch RUN_ID --exit-status`で完了を待つ。エージェントの継続には同じ会話への`codex queue`を使い、時刻ごとの手動pollは行わない。
+
+## 検証の境界
+
+ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。Tuist移行の結果と残る実機確認は[検証記録](verification/2026-09-07-tuist-evaluation.md)を参照する。

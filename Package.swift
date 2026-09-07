@@ -11,20 +11,27 @@ let package = Package(
         .macOS(.v12),
     ],
     products: [
+        .library(name: "CounterIntegration", targets: ["CounterIntegration"]),
+        .library(name: "ReminderIntegration", targets: ["ReminderIntegration"]),
         .library(name: "JibunKitCore", targets: ["JibunKitCore"]),
         .library(name: "CounterFeature", targets: ["CounterFeature"]),
         .library(name: "ReminderFeature", targets: ["ReminderFeature"]),
         .library(
             name: "JibunKit",
-            targets: ["JibunKit"]
+            targets: [
+        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
+        .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),"JibunKit"]
         ),
         .library(
             name: "JibunKitWidget",
-            targets: ["JibunKitWidget"]
+            targets: [
+        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
+        .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),"JibunKitWidget"]
         ),
     ],
     targets: [
-        // jibunkit:feature-targets
+        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
+        .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),
         .target(
             name: "JibunKitCore"
         ),
@@ -42,7 +49,8 @@ let package = Package(
                 "JibunKitCore",
                 "CounterFeature",
                 "ReminderFeature",
-                // jibunkit:feature-dependencies
+                "CounterIntegration",
+                "ReminderIntegration",
             ]
         ),
         .target(

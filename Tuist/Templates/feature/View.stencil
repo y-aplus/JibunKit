@@ -1,0 +1,11 @@
+#if os(iOS)
+import SwiftUI
+
+public struct {{ name }}RootView: View {
+    public init() {}
+
+    public var body: some View {
+        Text("{{ name }}")
+    }
+}
+#endif

@@ -10,6 +10,8 @@ final class MigrationUITests: XCTestCase {
 
     private func tap(_ element: XCUIElement, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.waitForExistence(timeout: 10), element.debugDescription, file: file, line: line)
+        let hittable = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: element)
+        XCTAssertEqual(XCTWaiter.wait(for: [hittable], timeout: 10), .completed, file: file, line: line)
         element.tap()
     }
 
@@ -120,6 +122,7 @@ final class MigrationUITests: XCTestCase {
         capture("05-backup-import-picker")
         XCTAssertTrue(backup.isEnabled)
         backup.tap()
+        XCTAssertTrue(backup.waitForNonExistence(timeout: 15))
         tap(app.buttons["閉じる"])
         XCTAssertTrue(app.staticTexts["Rice Edited"].waitForExistence(timeout: 30))
 

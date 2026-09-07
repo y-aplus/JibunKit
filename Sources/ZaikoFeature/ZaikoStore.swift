@@ -237,11 +237,16 @@ final class ZaikoStore: ObservableObject {
 
     func togglePause() {
         if appState.globalPause.active {
-            items = InventoryDomain.shiftItemsForPause(
+            let shifted = InventoryDomain.shiftItemsForPause(
                 items,
                 pauseStartedAt: appState.globalPause.startedAt,
                 resumedAt: .now
             )
+            // Moving the consumption clock does not start a new stock cycle.
+            appState.notificationRecords = InventoryDomain.recordsAfterPauseShift(
+                appState.notificationRecords, before: items, after: shifted
+            )
+            items = shifted
             appState.globalPause = GlobalPauseState(active: false, startedAt: nil)
             persistAndSchedule()
             return
@@ -436,7 +441,7 @@ final class ZaikoStore: ObservableObject {
             .filter { $0.hasPrefix(notificationPrefix) && !itemIdentifiers.contains($0) }
 
         if !staleIdentifiers.isEmpty {
-            notificationCenter.removePendingNotificationRequests(withIdentifiers: staleIdentifiers)
+            notificationCenter.removePendingNotificationRequests(withIdentifiers: Array(staleIdentifiers))
         }
 
         guard appState.notificationsEnabled, notificationsAuthorized,

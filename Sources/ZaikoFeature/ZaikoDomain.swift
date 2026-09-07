@@ -517,6 +517,20 @@ enum InventoryDomain {
         records.filter { !pendingIDs.contains(notificationPrefix + $0.key) }
     }
 
+    static func recordsAfterPauseShift(
+        _ records: [String: String],
+        before: [InventoryItem],
+        after: [InventoryItem]
+    ) -> [String: String] {
+        var updated = records
+        for (old, shifted) in zip(before, after) where old.id == shifted.id {
+            if records[String(old.id)] == old.notificationCycleKey {
+                updated[String(old.id)] = shifted.notificationCycleKey
+            }
+        }
+        return updated
+    }
+
     /// A recorded cycle stays handled after delivery, even if the user clears
     /// Notification Center. Explicitly cancelled pending requests have their
     /// records removed by the Store and can be scheduled again.

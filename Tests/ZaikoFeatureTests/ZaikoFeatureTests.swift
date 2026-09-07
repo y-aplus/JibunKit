@@ -302,4 +302,21 @@ final class ZaikoFeatureTests: XCTestCase {
             records, pendingIDs: [], notificationPrefix: prefix
         ), records)
     }
+
+    func testResumingPauseDoesNotNotifyAnAlreadyDeliveredStockCycle() throws {
+        let item = try InventoryDomain.makeItem(from: ItemDraft(
+            name: "水", category: "", unit: "本", stock: "2", speed: "1", displayMode: .perDayAmount
+        ), now: Date(timeIntervalSince1970: 0))
+        let shifted = InventoryDomain.shiftItemsForPause(
+            [item], pauseStartedAt: Date(timeIntervalSince1970: 86_400),
+            resumedAt: Date(timeIntervalSince1970: 3 * 86_400)
+        )
+        let records = InventoryDomain.recordsAfterPauseShift(
+            [String(item.id): item.notificationCycleKey], before: [item], after: shifted
+        )
+        XCTAssertEqual(records[String(item.id)], shifted[0].notificationCycleKey)
+        XCTAssertTrue(InventoryDomain.recordsAfterPauseShift(
+            [:], before: [item], after: shifted
+        ).isEmpty)
+    }
 }

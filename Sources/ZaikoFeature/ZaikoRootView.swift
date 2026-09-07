@@ -444,7 +444,7 @@ private struct SettingsSheet: View {
     @Binding var isPresented: Bool
     let onImport: () -> Void
     let onExport: () -> Void
-    let onNotificationToggle: (Bool) -> Void
+    let onNotificationToggle: @MainActor @Sendable (Bool) -> Void
     let onNotificationRequest: () -> Void
 
     var body: some View {

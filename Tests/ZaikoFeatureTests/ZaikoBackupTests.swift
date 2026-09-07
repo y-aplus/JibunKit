@@ -3,6 +3,21 @@ import XCTest
 @testable import ZaikoFeature
 
 final class ZaikoBackupTests: XCTestCase {
+    func testPWAEnvelopeWithoutNativeNotificationFieldsIsSupported() throws {
+        // Synthetic fixture matching zaiko/js/domain.js serializeData v3.
+        let json = """
+        {"version":3,"items":[{"id":1,"name":"水","category":"飲料","unit":"本",
+        "lastPurchased":"2026-09-05T00:00:00.000Z","currentStock":2,
+        "consumptionRatePerDay":1,"count":1,"needsConsumptionSetup":false}],
+        "app":{"globalPause":{"active":false,"startedAt":null},
+        "unitPreferences":{},"installMarker":"test","firstSavedAt":null,"alertThresholdDays":7}}
+        """
+        let result = try ZaikoBackup.decode(Data(json.utf8))
+        XCTAssertEqual(result.items.first?.name, "水")
+        XCTAssertTrue(result.app.notificationsEnabled)
+        XCTAssertTrue(result.app.notificationRecords.isEmpty)
+    }
+
     func testCurrentBackupRoundTripsAndAllowsExplicitlyEmptyInventory() throws {
         let item = try InventoryDomain.makeItem(from: ItemDraft(
             name: "水", category: "飲料", unit: "本", stock: "10", speed: "1", displayMode: .perDayAmount

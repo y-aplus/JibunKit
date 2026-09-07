@@ -37,3 +37,9 @@ Tuistを標準経路へ追加しただけでxtool/Rubyも実行する方式に�
 - [Tuist 4.207.0](https://github.com/tuist/tuist/releases/tag/4.207.0)
 
 Zaikoのローカルignoreファイルは変更しない。
+
+## 初回結果と修正
+
+[run 34115636765](https://github.com/y-aplus/JibunKit/actions/runs/34115636765)、source `55eb566`。Tuist生成、Foundation 32テスト、app・WidgetのiOS Releaseビルド成功。IPA検査で旧生成物パスを参照して停止した。
+
+Tuistが生成した実際のproduct名は`JibunKit_App.app`と`JibunKitWidget_Extension.appex`。検査・梱包のパスと診断ログのprocess名を一致させる。bundle IDや保存キーは変更しない。App Intents抽出stepの実行は確認できたが、IPA内のmetadata検査はまだ通過していない。単独版とSimulatorも後続stepのため未実行。

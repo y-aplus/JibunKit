@@ -102,11 +102,10 @@ final class MigrationUITests: XCTestCase {
         // Files is presented from the stable settings sheet and returns to it.
         tap(app.buttons["zaiko.settings"])
         tap(app.buttons["JSONバックアップを書き出す"])
-        XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 30))
         capture("04-backup-export-picker")
-        enter("DOCPicker.filenameTextField", "migration-backup")
         tap(app.buttons["保存"])
-        XCTAssertTrue(app.textFields["DOCPicker.filenameTextField"].waitForNonExistence(timeout: 15))
+        XCTAssertTrue(app.navigationBars["FullDocumentManagerViewControllerNavigationBar"].waitForNonExistence(timeout: 15))
         tap(app.buttons["閉じる"])
         XCTAssertTrue(app.buttons["zaiko.settings"].waitForExistence(timeout: 10))
         tap(app.buttons["削除"])
@@ -116,7 +115,7 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["JSONバックアップを読み込む"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "migration-backup")).firstMatch
+        let backup = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "zaiko_backup_")).firstMatch
         XCTAssertTrue(backup.waitForExistence(timeout: 10))
         capture("05-backup-import-picker")
         XCTAssertTrue(backup.isEnabled)

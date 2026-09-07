@@ -25,6 +25,27 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
     }
 
+    func testBackupRequiresSelectionAndOpensFileExporter() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        tap(app.buttons["backup.open"])
+        let export = app.buttons["backup.export"]
+        XCTAssertTrue(export.waitForExistence(timeout: 5))
+        XCTAssertFalse(export.isEnabled)
+        let counter = app.switches["backup.export.counter"]
+        XCTAssertTrue(counter.waitForExistence(timeout: 5))
+        counter.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        XCTAssertTrue(export.isEnabled)
+        tap(export)
+        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
+        capture("backup-file-exporter")
+        let cancel = app.buttons.matching(NSPredicate(format: "label IN %@", ["キャンセル", "Cancel"])).firstMatch
+        tap(cancel)
+        XCTAssertTrue(app.buttons["backup.import"].waitForExistence(timeout: 10))
+        tap(app.buttons["閉じる"])
+        XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
+    }
+
     func testPersistenceAndHostIntegration() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

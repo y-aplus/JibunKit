@@ -2,6 +2,17 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestorePlanTests: XCTestCase {
+    func testExportRejectsAnEntryForAnotherFeature() async throws {
+        let provider = MiniAppBackupProvider(id: MiniAppID("a"), export: {
+            MiniAppBackupEntry(id: MiniAppID("b"), schemaVersion: 1, payload: Data())
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await provider.exportEntry()
+            XCTFail("Wrong Feature must not be exported")
+        } catch {
+            XCTAssertEqual(error as? MiniAppBackupError, .invalidEntry)
+        }
+    }
     private actor Recorder {
         var values: [String] = []
         func append(_ value: String) { values.append(value) }

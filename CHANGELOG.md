@@ -6,6 +6,8 @@
 
 ### Added
 
+- 対応ミニアプリを選んでバックアップを書出し・読込み・復元する画面を追加。全選択の事前検証と上書き確認、部分失敗の報告を行う。
+
 - FeatureごとのApp Group内ファイル保存先を提供する`MiniAppFiles`を追加。任意のデータ形式・DBで使えるURLと、Dataのファイル単位のatomic書込みを提供。
 
 - ミニアプリのFeature・Root View生成とPackage／Registry登録をまとめる`add-mini-app.py`を追加。dry-run、既存ID・ファイルの衝突検査、隔離した生成物のCIビルドを用意。

@@ -29,6 +29,12 @@ public struct MiniAppBackupProvider: Sendable {
         guard entry.id == id.rawValue else { throw MiniAppBackupError.missingID(id.rawValue) }
         return try prepare(entry)
     }
+
+    public func exportEntry() async throws -> MiniAppBackupEntry {
+        let entry = try await export()
+        guard entry.id == id.rawValue else { throw MiniAppBackupError.invalidEntry }
+        return entry
+    }
 }
 
 public struct MiniAppRestoreFailure: Error, Sendable {

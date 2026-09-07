@@ -125,3 +125,9 @@ App Groupは既存のSideStore識別子解決を使い、取得できなけれ�
 既存UserDefaultsのキーと値は自動移行しない。保存形式・schema移行・バックアップ方針はFeatureが所有する。このAPIは秘密情報用の保存庫でもない。
 
 App Groupのコンテナは[Appleの公式API](https://developer.apple.com/documentation/foundation/filemanager/containerurl(forsecurityapplicationgroupidentifier:))で取得する。端末での署名・App Groupアクセスの確認はCIの一時ディレクトリによるテストと区別する。
+
+## アプリ単位のバックアップ形式（実装中）
+
+`MiniAppBackup`は、Feature ID・schema version・任意のDataを共通JSONへ包む。`decode`は外側の形式と全entryを検証し、`selecting`は明示したIDのentryだけ返す。対象のFeatureがpayloadを検証・移行してから保存状態へ適用する。Feature固有の形式には`MiniAppBackupEntry.decodePayload`によるCodable JSON読込みも選べる。
+
+この段階はcodecのみで、export／適用の登録と利用者向け画面はまだない。[作業記録](verification/2026-09-07-selective-backup.md)に継続タスクと境界を記載する。

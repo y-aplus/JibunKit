@@ -84,6 +84,8 @@ workflowへApple Account、パスワード、2FA、証明書、provisioning prof
 
 ## シミュレーターで統合操作を確認する
 
+IPA workflowでは、Pythonの雛形生成テストに加え、隔離したcheckoutへNotes Featureを生成し、SwiftテストとiOS Releaseビルドを行う。検証用Notesは配布IPAやリポジトリ本体には追加しない。生成スクリプトだけのローカル確認は`python3 -m unittest discover -s scripts/tests -v`で実行できる。
+
 既存workflowへ`simulator_tests=true`を渡すと、IPA検査に続けてiOS 26のiPhone SimulatorでUIテストを実行する。
 
 ```bash

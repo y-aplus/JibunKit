@@ -6,6 +6,8 @@
 
 ### Added
 
+- ミニアプリのFeature・Root View生成とPackage／Registry登録をまとめる`add-mini-app.py`を追加。dry-run、既存ID・ファイルの衝突検査、隔離した生成物のCIビルドを用意。
+
 - GitHub Actionsで任意実行できるiOSシミュレーターの統合操作テストと、画面・実行記録の成果物を追加。
 
 ### Changed

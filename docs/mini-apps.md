@@ -6,6 +6,23 @@ JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。�
 
 ## 通常の画面を追加する
 
+### 雛形から始める
+
+Python 3.9以降で、リポジトリ内の次のコマンドを実行する（Windowsで`python3`がない場合は`python`）。追加ライブラリは不要。
+
+```bash
+python3 scripts/add-mini-app.py Notes --id notes.daily --title "日記" --icon book --dry-run
+python3 scripts/add-mini-app.py Notes --id notes.daily --title "日記" --icon book
+```
+
+1行目は差分を表示するだけで書き込まない。2行目は`Sources/NotesFeature`へID・定義とRoot Viewを作り、Packageのtarget・本体依存とRegistryのimport・定義一覧へ登録する。`Notes`はSwift型名の接頭辞、`notes.daily`は公開後に維持するID。画面はタイトルのTextだけなので、ここから必要な処理を実装する。保存、通知、Widget、Shortcutsの機能は以下の手順で明示的に追加する。
+
+既存Featureのディレクトリ（ignore中も含む）、target名、生成する型名、直接記述された同一IDが見つかると、書込み前に停止する。ID検査は`MiniAppID("...")`と`MiniAppID(rawValue: "...")`の文字列リテラルを対象にし、Swiftを実行して計算されるIDや外部Packageまでは解釈しない。`MiniAppValidator`とビルドによる確認は引き続き必要。SF Symbol名は文字の形式だけを検査するので、実際の表示も確認する。
+
+PackageとRegistryの`jibunkit:feature-*`コメントが挿入位置である。コメントが欠落・重複した派生では推測で書き換えず停止する。手動追加も継続して使える。既存ファイルを並行編集しながら生成を実行しない。生成後はGit差分を確認し、不要なら登録行と生成ディレクトリを取り除く。
+
+### 手動で追加する・生成後の内容を実装する
+
 1. `Sources/<Name>Feature`へ保存・更新処理、`MiniAppContext`を受け取るpublicなRoot View、ID・表示名・アイコン・Root Viewをまとめたpublicな定義を置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。StoreのUserDefaults解決は`MiniAppStorage.sharedDefaults`を使い、保存キーはContextから取る。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
 2. `Sources/JibunKit/MiniAppRegistry.swift`の`all`へ定義を1件列挙する。ID・表示名・アイコン・destinationをRegistry側に書かない。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
 3. `MiniAppValidator.validate(ids:)`をテストから呼び、ID・保存namespace・通知request IDの不正と衝突を事前確認する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。

@@ -21,6 +21,7 @@ let package = Package(
         ),
     ],
     targets: [
+        // jibunkit:feature-targets
         .target(
             name: "JibunKitCore"
         ),
@@ -38,6 +39,7 @@ let package = Package(
                 "JibunKitCore",
                 "CounterFeature",
                 "ReminderFeature",
+                // jibunkit:feature-dependencies
             ]
         ),
         .target(

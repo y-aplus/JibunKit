@@ -79,6 +79,28 @@ jobs:
       - name: Test shared feature logic
         run: swift test
 
+      - name: Test mini-app generator
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      - name: Build a generated Feature in an isolated checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          smoke="$RUNNER_TEMP/generated-feature-check"
+          mkdir -p "$smoke"
+          git archive HEAD | tar -x -C "$smoke"
+          cd "$smoke"
+          python3 scripts/add-mini-app.py Notes --id notes.daily --title '日記' --icon book
+          swift test
+          xtool dev generate-xcode-project
+          xcodebuild build \
+            -workspace xtool/JibunKit.xcworkspace \
+            -scheme JibunKit-App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/GeneratedFeatureDerivedData" \
+            CODE_SIGNING_ALLOWED=NO
+
       - name: Generate Xcode workspace
         run: |
           set -euo pipefail

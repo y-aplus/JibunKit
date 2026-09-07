@@ -30,6 +30,7 @@ SDKs/
 Thumbs.db
 xcuserdata/
 *.xcuserstate
+__pycache__/
 
 # Local-only migration experiment
 /Sources/ZaikoFeature/

@@ -26,7 +26,7 @@ JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター
 | --- | --- |
 | [0.1の設計・完成条件](docs/superpowers/specs/2026-08-28-jibunkit-foundation-design.md) | 製品像、必須機能、対象外、Git・OSS運用 |
 | [技術確認](docs/superpowers/specs/2026-08-28-jibunkit-technical-review.md) | 一次資料・公開ソースの確認結果と、実機で確かめること |
-| [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-jibunkit-1.0-direction.md) | 継続利用の目標、YAGNI、将来の検討候補 |
+| [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-jibunkit-1.0-direction.md) | 継続利用の目標、共通基盤への先行投資、将来の検討候補 |
 | [0.1の作業計画](docs/superpowers/plans/2026-08-28-jibunkit-0.1.md) | 技術検証から公開までの順序と完成条件の対応 |
 | [ビルド手順](docs/build.md) | WSLでのローカル確認とGitHub ActionsによるSideStore向けIPA生成 |
 | [SideStore導入・更新](docs/sidestore.md) | IPAの導入、上書き、署名更新、確認済み条件と保証境界 |
@@ -50,7 +50,7 @@ Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保�
 
 ## 変更の扱い
 
-機能要求・完成条件・明示的な制約を維持し、変更の理由と影響を説明します。0.1を1.0へ育てる方向性とYAGNIは、具体的な技術判断に用いる指針です。
+機能要求・完成条件・明示的な制約を維持し、変更の理由と影響を説明します。0.1を継続して育て、ミニアプリの追加・変更・継続利用を容易にする共通基盤には先行投資します。個別アプリやサンプルの完成を着手条件にせず、目的への効果と複雑さ・保守負担から判断する原則を試行します。
 
 Gitの既定ブランチは`main`です。エージェントによる作業は[AGENTS.md](AGENTS.md)を確認してください。新しい作業ブランチを作成する前に、利用者へ明示します。
 

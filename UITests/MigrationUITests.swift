@@ -112,7 +112,15 @@ final class MigrationUITests: XCTestCase {
         capture("06-restored-inventory")
         tap(app.buttons["編集モードへ"])
         tap(app.buttons["削除"])
-        tap(app.buttons["キャンセル"])
+        XCTAssertTrue(app.sheets.buttons["削除"].waitForExistence(timeout: 5))
+        let cancel = app.buttons.matching(NSPredicate(format: "label IN %@", ["キャンセル", "Cancel"])).firstMatch
+        if cancel.exists {
+            tap(cancel)
+        } else {
+            // iOS 26.5 uses a popover whose cancellation is an outside tap.
+            tap(app.otherElements["PopoverDismissRegion"])
+        }
+        XCTAssertTrue(app.sheets.buttons["削除"].waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Rice Edited"].exists)
         tap(app.buttons["削除"])
         tap(app.sheets.buttons["削除"])
@@ -134,13 +142,22 @@ final class MigrationUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         tap(app.buttons["miniapp.zaiko"])
+        // Keep this test independent when an earlier operation test failed.
+        if app.buttons["編集モードへ"].exists { tap(app.buttons["編集モードへ"]) }
+        for _ in 0..<5 {
+            let delete = app.buttons["削除"].firstMatch
+            if !delete.exists { break }
+            tap(delete)
+            tap(app.sheets.buttons["削除"])
+        }
+        XCTAssertTrue(app.staticTexts["まだ在庫がありません"].waitForExistence(timeout: 5))
         tap(app.buttons["zaiko.add"])
         enter("zaiko.editor.name", "Backup Rice")
         enter("zaiko.editor.stock", "10")
         enter("zaiko.editor.speed", "2")
         tap(app.navigationBars.buttons["保存"])
         XCTAssertTrue(app.staticTexts["Backup Rice"].waitForExistence(timeout: 5))
-        tap(app.buttons["編集モードへ"])
+        if app.buttons["編集モードへ"].exists { tap(app.buttons["編集モードへ"]) }
         // Files is presented from the stable settings sheet and returns to it.
         tap(app.buttons["zaiko.settings"])
         tap(app.buttons["JSONバックアップを書き出す"])

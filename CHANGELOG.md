@@ -6,6 +6,8 @@
 
 ### Added
 
+- FeatureごとのApp Group内ファイル保存先を提供する`MiniAppFiles`を追加。任意のデータ形式・DBで使えるURLと、Dataのファイル単位のatomic書込みを提供。
+
 - ミニアプリのFeature・Root View生成とPackage／Registry登録をまとめる`add-mini-app.py`を追加。dry-run、既存ID・ファイルの衝突検査、隔離した生成物のCIビルドを用意。
 
 - GitHub Actionsで任意実行できるiOSシミュレーターの統合操作テストと、画面・実行記録の成果物を追加。

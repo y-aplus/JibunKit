@@ -101,3 +101,27 @@ JibunKitはFeature同士の識別・保存先の分離と共通APIの契約を�
 同じRoot Viewを単独アプリでも使う場合、単独版のApp Shellが`NavigationStack { FeatureRootView(context: ...) }`で包む。JibunKit内のためだけに独立版の起動・画面構成をFeatureへ埋め込まない。
 
 foregroundの通知はホストがbanner・通知センターのlist・soundを指定する。表示内容や予約条件はFeatureが持ち、タップ後の入口はContextのpayloadを使う。システム設定による実際の表示・音の可否は別に検証する。
+
+## ファイル・データベースを保存する
+
+UserDefaults以外を使うFeatureは、`MiniAppFiles`から専用の保存先を得られる。
+
+```swift
+let files = try MiniAppFiles.shared(context: context)
+try files.write(encodedData, named: "state.json")
+let data = try files.read(named: "state.json")
+
+// SQLite等はFeatureが選んだライブラリで開く。
+try files.prepareDirectory()
+let databaseURL = try files.fileURL(named: "store.sqlite")
+```
+
+App Groupは既存のSideStore識別子解決を使い、取得できなければエラーにする。別の場所へ黙って保存しない。単独版やテストでは`MiniAppFiles(context:containerURL:)`へ呼出側が所有するコンテナを渡せる。保存先はコンテナ内の`Library/Application Support/JibunKit/Features/<storageNamespace>`。URLを永続保存せず、起動ごとに解決する。
+
+ファイル名は単一成分で指定する。空文字・`.`・`..`・区切り文字・制御文字は拒否する。サブディレクトリやデータベースの管理は、公開した`directoryURL`を起点にFeature側が実装できる。これは協調するFeature間の保存先整理であり、任意のSwiftコードやシンボリックリンクを隔離するセキュリティ境界ではない。
+
+`write`はDataを一つのファイルとしてatomicに置き換える。複数ファイルのtransaction、読取り→計算→書込みの排他、DBファイルの安全なバックアップを代行しない。同一プロセスの短い同期更新なら`MiniAppStorage.withExclusiveAccess`を使える。別プロセスからの更新は、利用するDBやファイル調整方式で扱う。`read`は未作成も含めてエラーを返し、不正なデータを空データに変換しない。
+
+既存UserDefaultsのキーと値は自動移行しない。保存形式・schema移行・バックアップ方針はFeatureが所有する。このAPIは秘密情報用の保存庫でもない。
+
+App Groupのコンテナは[Appleの公式API](https://developer.apple.com/documentation/foundation/filemanager/containerurl(forsecurityapplicationgroupidentifier:))で取得する。端末での署名・App Groupアクセスの確認はCIの一時ディレクトリによるテストと区別する。

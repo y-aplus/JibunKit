@@ -28,7 +28,7 @@ Featureをroot Package内に置く方式も使える。その場合はPackageの
 
 ### 手動で追加する・生成後の内容を実装する
 
-1. `Sources/<Name>Feature`へ保存・更新処理、`MiniAppContext`を受け取るpublicなRoot View、ID・表示名・アイコン・Root Viewをまとめたpublicな定義を置き、`Package.swift`へライブラリtargetと本体からの依存を追加する。StoreのUserDefaults解決は`MiniAppStorage.sharedDefaults`を使い、保存キーはContextから取る。独立版も維持する場合、独立版の`@main`は別のapp targetへ残し、Feature targetへ含めない。既存コードとの変換が必要な場合は、Feature側に薄いAdapterを置き、そのRoot Viewから呼ぶ。
+1. Featureのライブラリtargetへ保存・更新処理とpublicなRoot Viewを置き、Packageのlibrary productとホストの依存を追加する。ID・表示名・アイコン・Root ViewをまとめるMiniAppDefinitionはIntegration側に置く。FeatureはCore非依存でもよく、必要なら接続層から保存先や依存を注入する。Coreの共有UserDefaultsを使う場合はMiniAppStorage.sharedDefaultsで解決し、保存キーはContextから取る。独立版の@mainは別のApp targetへ残す。
 2. `Sources/JibunKit/MiniAppRegistry.swift`の`all`へ定義を1件列挙する。ID・表示名・アイコン・destinationをRegistry側に書かない。IDは小文字英字で始め、小文字英数字、`.`、`-`、`_`だけを使う。IDは保存namespace、通知request ID、通知payloadの遷移先になるため、公開後に安易に変更しない。
 3. `MiniAppValidator.validate(ids:)`をテストから呼び、ID・保存namespace・通知request IDの不正と衝突を事前確認する。Storeの保存キーはstatic定数ではなくContextから初期化したinstance値にし、通知予約のrequest IDとpayloadもContextから取る。別ミニアプリのStoreやキーへ依存させない。
 4. `JibunKitCoreTests`でID、保存namespace、通知request IDを、統合テストで同じUserDefaults suite内の保存値が互いを変えないことを確認する。

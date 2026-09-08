@@ -3,6 +3,37 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testRecordsUsesIndependentHostStorage() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ element: XCUIElement) {
+            XCTAssertTrue(element.waitForExistence(timeout: 10))
+            element.tap()
+        }
+        tap(app.buttons["miniapp.counter"])
+        let counterValue = app.staticTexts["counter.value"].label
+        tap(app.navigationBars.buttons["ミニアプリ"])
+        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["records.add"])
+        let title = "Hosted-" + UUID().uuidString.prefix(8)
+        tap(app.textFields["records.title"])
+        app.textFields["records.title"].typeText(String(title))
+        tap(app.textViews["records.editor.body"])
+        app.textViews["records.editor.body"].typeText("Host record")
+        tap(app.buttons["records.save"])
+        app.terminate()
+        app.launch()
+        tap(app.buttons["miniapp.records"])
+        let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "records.row.", String(title))).firstMatch
+        tap(row)
+        XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
+        tap(app.navigationBars.buttons["記録"])
+        tap(app.navigationBars.buttons["ミニアプリ"])
+        tap(app.buttons["miniapp.counter"])
+        XCTAssertEqual(app.staticTexts["counter.value"].label, counterValue)
+    }
+
     func testGeneratedFeatureCoexistsAndRoutesInHost() throws {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

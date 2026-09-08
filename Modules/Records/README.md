@@ -23,3 +23,13 @@ CI 34183544808（source cec44bb）は全step成功。Recordsの作成・編集�
 添付のUIを追加した。Filesから通常ファイルを選んで取り込み、Quick Look用の独立コピーを作って表示し、確認後に削除する。取り込みと表示用コピーはFileManagerのファイルコピーを使い、全量Data読込みを行わない。Security-scopedアクセスは取り込み完了まで維持する。Quick Lookへライブの保存ファイルを渡さず、表示終了時に一時コピーを整理する。クラッシュ等で残った一時コピーはOSの一時領域に留まる。
 
 テストへ外部ファイルの取り込み、元ファイル変更後の独立性、表示用コピー変更後の保存内容維持、拡張子保持、ディレクトリ拒否を追加した。添付UIのFiles受渡し・Quick Look表示・削除操作はまだ実行結果を得ていないため、APIテストやiOSビルドだけで完了としない。
+
+CI 34184927254（source 232d7fb）は成功。ファイルコピーによる取り込みとプレビュー用コピーの独立性を含む保存テスト、独立iOSビルド、既存編集UI回帰が通った。添付UIの実操作はこの成功からは推定しない。
+
+## JibunKitへの接続
+
+`Integration/RecordsMiniApp.swift`が薄いホスト接続例。ルートProjectのpackagesへ`.package(path: "Modules/Records")`、JibunKit-Appの依存へ`.package(product: "RecordsFeature")`を追加し、この接続ファイルをホストsourceへ含め、Registryへ`RecordsMiniApp.definition`を列挙する。単独PackageにはIntegrationを含めない。
+
+単独版は自身のApplication Support、ホスト版はMiniAppFilesのrecords領域を使用する。接続層が保存先と単一store actorを所有し、Feature内は変更しない。保存先を開けない場合に別の場所へ黙って保存しない。単独版からホスト版へ既存データを自動転送する機能はまだない。バックアップ経由の移行は次段階で接続する。
+
+CIの一時構成にだけRecordsを登録し、作成・再起動後の詳細読込み・Counter保存値の維持を追加検証する。通常の製品Registryは変更しない。

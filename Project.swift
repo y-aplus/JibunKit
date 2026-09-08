@@ -2,7 +2,7 @@ import ProjectDescription
 
 let project = Project(
     name: "JibunKit",
-    packages: [.package(path: ".")],
+    packages: [.package(path: "."), .package(path: "Modules/Records")],
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
         .target(
@@ -26,7 +26,7 @@ let project = Project(
             ]),
             sources: ["Sources/JibunKit/**"],
             entitlements: "JibunKit.entitlements",
-            dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
+            dependencies: [.package(product: "RecordsFeature"), .package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension")]
         ),

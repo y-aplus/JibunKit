@@ -92,3 +92,5 @@ CI [34218612906](https://github.com/y-aplus/JibunKit/actions/runs/34218612906)�
 記録の作成日時を保存・表示するためindexとfile providerのschemaを2へ更新。既存schema 1は日時不明(nil)として読み、ID・本文・添付を維持する。読込みだけではディスクを書き換えず、正常な編集保存またはsnapshot書き出し・復元でschema 2へ移る。新規記録には作成時刻を記録する。旧schema snapshotもprepare/applyで受け付ける。未来のschemaは本文をdecodeする前にversionで拒否する。
 
 schema 1の実JSON・添付fixtureからの通常読込み、元bytes維持、別store復元、編集後のschema 2化、日時不明の維持、新規日時の保存をテストする。未来schemaが別のrecords表現を持っていてもunsupportedSchemaで拒否し、元bytesを維持することを確認する。旧版Recordsへ戻す方向の互換性は提供しない。Counter/Reminderや共通ZIP/JSON envelopeのversionは変更しない。
+
+34221667275（source fd42d0a）は成功。旧schema移行・未来schema拒否のテスト、既存の大容量/バックアップ回帰、独立Records・生成Featureホスト・通常IPAのビルドを確認した。Simulatorはこのrunでは実行していないため、作成日時追加後のUI回帰は次の全検証で確認する。

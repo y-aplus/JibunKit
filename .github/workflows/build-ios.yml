@@ -100,7 +100,13 @@ jobs:
           from pathlib import Path
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes")]')
-          s = s.replace('dependencies: [.package(product: "JibunKitCore")', 'dependencies: [.package(product: "NotesFeature"), .package(product: "JibunKitCore")', 1)
+          app_marker = 'name: "JibunKit-App", destinations:'
+          assert s.count(app_marker) == 1, 'Expected exactly one host app target'
+          before_app, marker, app_and_rest = s.partition(app_marker)
+          dependency_marker = 'dependencies: [.package(product: "JibunKitCore")'
+          assert dependency_marker in app_and_rest, 'Expected host Core dependency'
+          app_and_rest = app_and_rest.replace(dependency_marker, 'dependencies: [.package(product: "NotesFeature"), .package(product: "JibunKitCore")', 1)
+          s = before_app + marker + app_and_rest
           p.write_text(s)
           p = Path('Sources/JibunKit/MiniAppRegistry.swift')
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))

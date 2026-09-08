@@ -80,3 +80,9 @@ CounterとReminderの本物のprovider/storeを、製品とは別のテストsui
 この経路はFilesの受渡しを検証したとは扱わない。元のファイル往復テストは残す。差分検査は成功、iOSビルドと新規UI4件はCIへ送る。
 
 CI表示を改善するため、通常UI回帰（復元harnessを含む）とFiles往復を別step・別xcresultへ分離した。前者ではFilesの1件だけを除外し、後者で同じ1件を必ず実行する。通常UIが失敗しても実行可能な場合はFilesを実行し、どちらの失敗もrunのfailureとして残す。continue-on-errorやテスト内容の弱化は行わない。証拠artifactには両方のxcresult・ログ・画面・診断を含める。
+
+### 初回harness CIの修正
+
+[run 34175867945](https://github.com/y-aplus/JibunKit/actions/runs/34175867945)、source `de243e2`は雛形のホスト組込み検証で失敗した。CI内でNotesFeature依存を最初のCore依存リストへ追加していたため、先頭へ加えたBackupHarnessが対象になり、JibunKit本体でNotesFeatureをimportできなくなっていた。ターゲット名JibunKit-Appを明示して依存追加箇所を選ぶよう修正した。ローカルの変換検証でNotesFeatureが本体にだけ1件追加され、手前のharnessが変化しないことを確認。復元UIテストはこのrunでは未実行。
+
+後続run 34175980737も同じ修正前の雛形処理を含む。製品のFeature依存や復元機能の失敗と混同しない。

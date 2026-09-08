@@ -19,3 +19,11 @@ Widgetや外部リンクから対象のミニアプリを直接開ける共通�
 ## 共通ロジック・ビルドのCI結果
 
 [run 34173854527](https://github.com/y-aplus/JibunKit/actions/runs/34173854527)、source `66807e402091fbfc19adefa01c22a6552d06e335`でURL生成・解析を含むFoundation全37件、Tuist雛形検証、通常アプリ・Widgetビルド、IPA検査・生成が成功。今回のrunはSimulator UIテストなし。URL受信・画面遷移のUI検証はrun 34173767891の結果で別に判断する。
+
+## 初回UI検証とテスト経路の修正
+
+[run 34173767891](https://github.com/y-aplus/JibunKit/actions/runs/34173767891)、source `21c9179`。Counter・ReminderへURL起動する確認は成功したが、不明ID受信後にReminderを維持する確認で失敗した。テストログでは各`XCUIApplication.open`の後にLaunchとautomation session再設定があり、起動中の受信を確認するつもりで再起動経路を使っていた。
+
+URL送信を`XCUIDevice.shared.system.open`に変更し、OSのscheme登録と起動中のURL受信を通して再検証する。ホストの実装と画面維持の合否条件は変更しない。[Appleのsystem API](https://developer.apple.com/documentation/xcuiautomation/xcuidevice/system)を参照。
+
+既存UI3件は成功。バックアップUIは既知のFiles障害で失敗し、回収したログにもFileProvider -1005 / resolver -1012と空URL配列を確認した。URLテストの失敗と区別する。後続の検索CI `34174278333`は修正前のテストを含むため、そのURL結果も同じ観点で扱う。

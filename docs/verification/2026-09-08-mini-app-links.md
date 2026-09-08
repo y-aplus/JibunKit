@@ -15,3 +15,7 @@ Widgetや外部リンクから対象のミニアプリを直接開ける共通�
 - CI結果待ち。Swiftを実行できないこのWindows環境では差分検査まで実施。
 - Widgetの実際のタップは実機の確認範囲。URL受信テストとWidget本体のタップは区別する。
 - バックアップFilesのSimulator障害は別件として継続記録する。今回のUIテストはFilesを経由しない。
+
+## 共通ロジック・ビルドのCI結果
+
+[run 34173854527](https://github.com/y-aplus/JibunKit/actions/runs/34173854527)、source `66807e402091fbfc19adefa01c22a6552d06e335`でURL生成・解析を含むFoundation全37件、Tuist雛形検証、通常アプリ・Widgetビルド、IPA検査・生成が成功。今回のrunはSimulator UIテストなし。URL受信・画面遷移のUI検証はrun 34173767891の結果で別に判断する。

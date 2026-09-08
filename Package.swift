@@ -17,14 +17,6 @@ let package = Package(
         .library(name: "JibunKitCore", targets: ["JibunKitCore"]),
         .library(name: "CounterFeature", targets: ["CounterFeature"]),
         .library(name: "ReminderFeature", targets: ["ReminderFeature"]),
-        .library(
-            name: "JibunKit",
-            targets: ["JibunKit"]
-        ),
-        .library(
-            name: "JibunKitWidget",
-            targets: ["JibunKitWidget"]
-        ),
     ],
     dependencies: [
         .package(path: "Modules/Records"),
@@ -56,21 +48,6 @@ let package = Package(
         .target(
             name: "ReminderFeature",
             dependencies: ["JibunKitCore"]
-        ),
-        .target(
-            name: "JibunKit",
-            dependencies: [
-                "JibunKitCore",
-                "JibunKitBackup",
-                "CounterFeature",
-                "ReminderFeature",
-                "CounterIntegration",
-                "ReminderIntegration",
-            ]
-        ),
-        .target(
-            name: "JibunKitWidget",
-            dependencies: ["CounterFeature", "JibunKitCore"]
         ),
         .testTarget(
             name: "CounterFeatureTests",

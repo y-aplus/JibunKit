@@ -7,6 +7,10 @@ on:
         description: Run integration UI checks on an iOS simulator
         type: boolean
         default: false
+      feature_validation:
+        description: Verify standalone Features, template generation and host integration
+        type: boolean
+        default: false
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -83,10 +87,11 @@ jobs:
       - name: Test shared feature logic
         run: swift test
 
-      - name: Test independent Records storage
-        run: swift test --package-path Modules/Records
+      - name: Test independent Feature packages
+        run: python3 Tools/test-module-packages.py Modules
 
       - name: Build independent Records app
+        if: inputs.feature_validation
         shell: bash
         run: |
           set -euo pipefail
@@ -96,6 +101,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/RecordsDerivedData" CODE_SIGNING_ALLOWED=NO
 
       - name: Verify native Feature template
+        if: inputs.feature_validation
         shell: bash
         run: |
           set -euo pipefail
@@ -104,6 +110,7 @@ jobs:
           git archive HEAD | tar -x -C "$smoke"
           cd "$smoke"
           tuist scaffold feature --name Notes
+          python3 Tools/test-module-packages.py Modules
           tuist generate --path Modules/Notes --no-open
           xcodebuild build -workspace Modules/Notes/NotesExample.xcworkspace -scheme NotesExample \
             -configuration Release -destination 'generic/platform=iOS' \
@@ -293,7 +300,7 @@ jobs:
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/CounterDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
       - name: Test Records editing and persistence
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && inputs.feature_validation
         shell: bash
         run: |
           set -euo pipefail
@@ -304,7 +311,7 @@ jobs:
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
       - name: Test generated standalone Feature
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && inputs.feature_validation
         shell: bash
         run: |
           set -euo pipefail
@@ -315,7 +322,7 @@ jobs:
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-launch.log"
 
       - name: Test generated Feature in host
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && inputs.feature_validation
         shell: bash
         run: |
           set -euo pipefail

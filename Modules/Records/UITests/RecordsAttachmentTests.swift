@@ -18,37 +18,44 @@ final class RecordsAttachmentTests: XCTestCase {
         func attachment() -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "records.attachment.")).firstMatch
         }
+        func selectFixture() {
+            tap(app.tabBars["DOC.browsingModeTabBar"].buttons["ブラウズ"])
+            tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
+            let fixture = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch
+            XCTAssertTrue(fixture.waitForExistence(timeout: 15), app.debugDescription)
+            // Files icon cells include the filename and metadata below the thumbnail.
+            // Their center can land outside the file's opening hit target.
+            let thumbnail = fixture.images.firstMatch
+            XCTAssertTrue(thumbnail.waitForExistence(timeout: 15))
+            // The thumbnail is a decorative accessibility child, so isHittable can
+            // be false even though its frame is visible inside the interactive cell.
+            let thumbnailFrame = thumbnail.frame
+            XCTAssertFalse(thumbnailFrame.isEmpty)
+            XCTAssertTrue(app.frame.contains(thumbnailFrame), app.debugDescription)
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: thumbnailFrame.midX - app.frame.minX,
+                                     dy: thumbnailFrame.midY - app.frame.minY)).tap()
+            let selectionScreenshot = XCTAttachment(screenshot: app.screenshot())
+            selectionScreenshot.name = "records-files-after-thumbnail-tap"
+            selectionScreenshot.lifetime = .keepAlways
+            add(selectionScreenshot)
+            XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15),
+                          "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
+        }
         tap(app.buttons["records.fixture.export"])
         tap(app.buttons["保存"])
         XCTAssertTrue(app.buttons["records.fixture.saved"].waitForExistence(timeout: 15), app.debugDescription)
+        tap(app.buttons["records.fixture.import"])
+        selectFixture()
+        XCTAssertTrue(app.staticTexts["records.fixture.result"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertEqual(app.staticTexts["records.fixture.result"].label, "Fixture imported")
         tap(app.buttons["records.add"])
         tap(app.textFields["records.title"])
         app.textFields["records.title"].typeText(String(title))
         tap(app.buttons["records.save"])
         tap(row())
         tap(app.buttons["records.attach"])
-        tap(app.tabBars["DOC.browsingModeTabBar"].buttons["ブラウズ"])
-        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let fixture = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch
-        XCTAssertTrue(fixture.waitForExistence(timeout: 15), app.debugDescription)
-        // Files icon cells include the filename and metadata below the thumbnail.
-        // Their center can land outside the file's opening hit target.
-        let thumbnail = fixture.images.firstMatch
-        XCTAssertTrue(thumbnail.waitForExistence(timeout: 15))
-        // The thumbnail is a decorative accessibility child, so isHittable can
-        // be false even though its frame is visible inside the interactive cell.
-        let thumbnailFrame = thumbnail.frame
-        XCTAssertFalse(thumbnailFrame.isEmpty)
-        XCTAssertTrue(app.frame.contains(thumbnailFrame), app.debugDescription)
-        app.coordinate(withNormalizedOffset: .zero)
-            .withOffset(CGVector(dx: thumbnailFrame.midX - app.frame.minX,
-                                 dy: thumbnailFrame.midY - app.frame.minY)).tap()
-        let selectionScreenshot = XCTAttachment(screenshot: app.screenshot())
-        selectionScreenshot.name = "records-files-after-thumbnail-tap"
-        selectionScreenshot.lifetime = .keepAlways
-        add(selectionScreenshot)
-        XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15),
-                      "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
+        selectFixture()
         XCTAssertTrue(attachment().waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(attachment().label.contains("attachment-fixture.txt"))
         tap(attachment())

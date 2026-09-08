@@ -304,18 +304,6 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" CODE_SIGNING_ALLOWED=NO
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
-      - name: Test Records editing and persistence
-        if: inputs.simulator_tests && inputs.feature_validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          xcodebuild test -workspace Modules/Records/RecordsExample.xcworkspace -scheme RecordsExample \
-            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath "$RUNNER_TEMP/RecordsSimulatorDerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/Records.xcresult" \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
-            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
-
       - name: Test generated standalone Feature
         if: inputs.simulator_tests && inputs.feature_validation
         shell: bash
@@ -382,6 +370,18 @@ jobs:
             -only-testing:MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/files-round-trip.log"
+
+      - name: Test Records editing and persistence
+        if: inputs.simulator_tests && inputs.feature_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test -workspace Modules/Records/RecordsExample.xcworkspace -scheme RecordsExample \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/RecordsSimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/Records.xcresult" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
       - name: Export simulator screenshots
         if: always() && inputs.simulator_tests

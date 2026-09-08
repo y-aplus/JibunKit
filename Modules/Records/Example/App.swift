@@ -8,6 +8,8 @@ struct RecordsExampleApp: App {
     @State private var error: String?
     @State private var exportingFixture = false
     @State private var fixtureSaved = false
+    @State private var importingFixture = false
+    @State private var fixtureImportResult = ""
 
     var body: some Scene {
         WindowGroup {
@@ -19,12 +21,30 @@ struct RecordsExampleApp: App {
                                 if ProcessInfo.processInfo.arguments.contains("--attachment-fixture") {
                                     Button(fixtureSaved ? "Fixture saved" : "Export fixture") { exportingFixture = true }
                                         .accessibilityIdentifier(fixtureSaved ? "records.fixture.saved" : "records.fixture.export")
+                                    Button("Import control") { importingFixture = true }
+                                        .accessibilityIdentifier("records.fixture.import")
                                 }
                             }
                     }
                 }
                 else if let error { Text(error) }
                 else { ProgressView() }
+            }
+            .overlay(alignment: .bottom) {
+                if !fixtureImportResult.isEmpty {
+                    Text(fixtureImportResult).accessibilityIdentifier("records.fixture.result")
+                }
+            }
+            .background {
+                Color.clear.fileImporter(isPresented: $importingFixture, allowedContentTypes: [.data]) { result in
+                    do {
+                        let url = try result.get()
+                        let access = url.startAccessingSecurityScopedResource()
+                        defer { if access { url.stopAccessingSecurityScopedResource() } }
+                        let data = try Data(contentsOf: url)
+                        fixtureImportResult = data == Data("Attachment preview fixture".utf8) ? "Fixture imported" : "Fixture content mismatch"
+                    } catch { fixtureImportResult = "Control import failed: \(error)" }
+                }
             }
             .fileExporter(isPresented: $exportingFixture, document: AttachmentFixtureDocument(),
                           contentType: .plainText, defaultFilename: "attachment-fixture") { result in

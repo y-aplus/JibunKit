@@ -27,6 +27,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.buttons["miniapp.records"])
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "records.row.", String(title))).firstMatch
         tap(row)
+        XCTAssertTrue(app.staticTexts["records.body"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
         tap(app.navigationBars.buttons["記録"])
         tap(app.navigationBars.buttons["ミニアプリ"])

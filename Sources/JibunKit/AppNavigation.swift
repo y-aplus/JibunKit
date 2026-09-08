@@ -2,13 +2,14 @@
 import JibunKitCore
 import Foundation
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable
 final class AppNavigation {
     static let shared = AppNavigation()
 
-    var path: [MiniAppID] = []
+    var path = NavigationPath()
 
     func openURL(_ url: URL) {
         guard let id = MiniAppLink.resolve(url, registeredIDs: MiniAppRegistry.registeredIDs) else { return }
@@ -17,15 +18,15 @@ final class AppNavigation {
 
     func open(_ miniAppID: MiniAppID) {
         guard MiniAppRegistry.registeredIDs.contains(miniAppID) else {
-            path = []
+            path = NavigationPath()
             return
         }
-        path = [miniAppID]
+        path = NavigationPath([miniAppID])
     }
 
     func openNotificationTarget(_ miniAppID: MiniAppID?) {
         guard let miniAppID else {
-            path = []
+            path = NavigationPath()
             return
         }
         open(miniAppID)

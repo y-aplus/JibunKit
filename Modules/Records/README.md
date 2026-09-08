@@ -35,3 +35,5 @@ CI 34184927254（source 232d7fb）は成功。ファイルコピーによる取�
 CIの一時構成にだけRecordsを登録し、作成・再起動後の詳細読込み・Counter保存値の維持を追加検証する。通常の製品Registryは変更しない。
 
 CI 34186422551（source 64abf97）はRecordsのホスト保存先初期化で失敗した。回収したsimulator-app.logの04:38:45に、group.com.jibunkit.sharedの検索と `client is not entitled` が記録されている。CIのホストSimulatorテストでCODE_SIGNING_ALLOWED=NOとしていたため、App Groupのentitlementを伴う実行になっていなかった。ホスト共存テストをSimulator用アドホック署名（CODE_SIGNING_ALLOWED=YES / CODE_SIGN_IDENTITY=- / CODE_SIGN_STYLE=Manual）へ変更して再検証する。製品の保存先やエラー時の挙動は変更しない。単独RecordsとNotesのテスト、生成Notesのホスト遷移はこのrunでも成功。
+
+CI 34187973451（source 0a3a0f5）では署名付きのApp Groupアクセス、Records作成、再起動後の一覧表示まで成功した。詳細リンクを押した後のrecords.bodyが見つからず失敗。ホストのNavigationStackが[MiniAppID]に固定されている一方、Recordsは詳細にUUIDを使うため、Feature固有の遷移を格納できない構成だった。ホストをSwiftUI.NavigationPathへ変更し、MiniAppIDとFeature固有のHashableな遷移値を同じ履歴で扱う。通知・外部URLは従来どおり入口のMiniAppIDだけを持つ履歴へ置き換える。Recordsにホスト都合の遷移型や追加NavigationStackを要求しない。詳細表示の待機もテストへ明示した。

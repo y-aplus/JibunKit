@@ -41,6 +41,10 @@ final class RecordsAttachmentTests: XCTestCase {
         app.coordinate(withNormalizedOffset: .zero)
             .withOffset(CGVector(dx: thumbnailFrame.midX - app.frame.minX,
                                  dy: thumbnailFrame.midY - app.frame.minY)).tap()
+        let selectionScreenshot = XCTAttachment(screenshot: app.screenshot())
+        selectionScreenshot.name = "records-files-after-thumbnail-tap"
+        selectionScreenshot.lifetime = .keepAlways
+        add(selectionScreenshot)
         XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15),
                       "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
         XCTAssertTrue(attachment().waitForExistence(timeout: 15), app.debugDescription)

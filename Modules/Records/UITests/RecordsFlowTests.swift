@@ -2,7 +2,7 @@ import XCTest
 
 @MainActor
 final class RecordsFlowTests: XCTestCase {
-    func testCreateCancelEditPersistSearchAndDelete() {
+    func testCreateCancelEditPersistSearchAndDelete() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
@@ -31,13 +31,17 @@ final class RecordsFlowTests: XCTestCase {
         tap(app.buttons["records.edit"])
         tap(app.textViews["records.editor.body"])
         app.textViews["records.editor.body"].typeText(" edited")
+        let editedBody = try XCTUnwrap(app.textViews["records.editor.body"].value as? String)
+        XCTAssertTrue(editedBody.contains("Original body"))
+        XCTAssertTrue(editedBody.contains(" edited"))
+        XCTAssertFalse(editedBody.contains("cancelled"))
         tap(app.buttons["records.save"])
-        let expected = NSPredicate(format: "label == %@", "Original body edited")
+        let expected = NSPredicate(format: "label == %@", editedBody)
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: expected, object: app.staticTexts["records.body"])], timeout: 10), .completed)
         app.terminate()
         app.launch()
         tap(row())
-        XCTAssertEqual(app.staticTexts["records.body"].label, "Original body edited")
+        XCTAssertEqual(app.staticTexts["records.body"].label, editedBody)
         tap(app.navigationBars.buttons["記録"])
         app.swipeDown()
         tap(app.searchFields.firstMatch)

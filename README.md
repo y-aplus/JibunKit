@@ -32,6 +32,7 @@ JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター
 | [SideStore導入・更新](docs/sidestore.md) | IPAの導入、上書き、署名更新、確認済み条件と保証境界 |
 | [ミニアプリの追加](docs/mini-apps.md) | feature、画面、通知、Widget、App Intentを追加する手順と検証境界 |
 | [ミニアプリ組み込み簡素化の設計](docs/superpowers/specs/2026-09-04-mini-app-integration-simplification.md) | 0.1時点のRegistry、Context、互換性、受入条件、外部エージェントへの引継ぎ |
+| [互換性方針](docs/compatibility.md) | 公開API、保存識別子、バックアップschema、Featureの責任境界 |
 | [基盤の更新](docs/updating.md) | 個人用ミニアプリとの編集境界、更新取り込み、競合解消後の検証 |
 | [貢献手順](CONTRIBUTING.md) | 変更の範囲、確認方法、通常の問題報告、Pull request |
 | [Security Policy](SECURITY.md) | 脆弱性の非公開報告と公開前の安全境界 |

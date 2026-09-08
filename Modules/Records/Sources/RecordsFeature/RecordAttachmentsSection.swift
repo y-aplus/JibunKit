@@ -2,6 +2,7 @@
 import SwiftUI
 import QuickLook
 import UniformTypeIdentifiers
+import OSLog
 
 struct RecordAttachmentsSection: View {
     let store: RecordStore
@@ -38,7 +39,9 @@ struct RecordAttachmentsSection: View {
             if let error { Text(error).accessibilityIdentifier("records.attachment.error") }
         }
         .disabled(busy)
-        .fileImporter(isPresented: $importing, allowedContentTypes: [.data]) { result in
+        .background {
+            Color.clear.fileImporter(isPresented: $importing, allowedContentTypes: [.data]) { result in
+            Logger(subsystem: "com.jibunkit.records", category: "attachments").notice("File importer completion received")
             switch result {
             case .failure(let error): self.error = "読み込めませんでした: \(error.localizedDescription)"
             case .success(let url):
@@ -51,9 +54,11 @@ struct RecordAttachmentsSection: View {
                     do {
                         try await store.importAttachment(to: record.id, from: url)
                         try await refreshRecord()
+                        Logger(subsystem: "com.jibunkit.records", category: "attachments").notice("Attachment import saved and refreshed")
                     } catch { self.error = "添付できませんでした: \(error.localizedDescription)" }
                 }
             }
+        }
         }
         .quickLookPreview($preview)
         .onChange(of: preview) { old, new in

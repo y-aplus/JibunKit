@@ -33,14 +33,34 @@ struct RecordAttachmentsSection: View {
                     Button("削除", role: .destructive) { deleting = attachment; confirming = true }
                 }
             }
-            Button("ファイルを添付", systemImage: "paperclip") { importing = true }
-                .accessibilityIdentifier("records.attach")
+            attachmentPicker
             if busy { ProgressView() }
             if let error { Text(error).accessibilityIdentifier("records.attachment.error") }
         }
         .disabled(busy)
-        .background {
-            Color.clear.fileImporter(isPresented: $importing, allowedContentTypes: [.data]) { result in
+        .quickLookPreview($preview)
+        .onChange(of: preview) { old, new in
+            if let old, old != new { try? FileManager.default.removeItem(at: old) }
+        }
+        .alert("添付ファイルを削除しますか？", isPresented: $confirming, presenting: deleting) { attachment in
+            Button("キャンセル", role: .cancel) { deleting = nil }
+            Button("削除", role: .destructive) {
+                busy = true
+                Task {
+                    defer { busy = false; deleting = nil }
+                    do {
+                        try await store.removeAttachment(recordID: record.id, attachmentID: attachment.id)
+                        try await refreshRecord()
+                    } catch { self.error = "削除できませんでした: \(error.localizedDescription)" }
+                }
+            }
+        } message: { attachment in Text(attachment.name) }
+    }
+
+    private var attachmentPicker: some View {
+        Button("ファイルを添付", systemImage: "paperclip") { importing = true }
+            .accessibilityIdentifier("records.attach")
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.data]) { result in
             Logger(subsystem: "com.jibunkit.records", category: "attachments").notice("File importer completion received")
             switch result {
             case .failure(let error): self.error = "読み込めませんでした: \(error.localizedDescription)"
@@ -59,24 +79,6 @@ struct RecordAttachmentsSection: View {
                 }
             }
         }
-        }
-        .quickLookPreview($preview)
-        .onChange(of: preview) { old, new in
-            if let old, old != new { try? FileManager.default.removeItem(at: old) }
-        }
-        .alert("添付ファイルを削除しますか？", isPresented: $confirming, presenting: deleting) { attachment in
-            Button("キャンセル", role: .cancel) { deleting = nil }
-            Button("削除", role: .destructive) {
-                busy = true
-                Task {
-                    defer { busy = false; deleting = nil }
-                    do {
-                        try await store.removeAttachment(recordID: record.id, attachmentID: attachment.id)
-                        try await refreshRecord()
-                    } catch { self.error = "削除できませんでした: \(error.localizedDescription)" }
-                }
-            }
-        } message: { attachment in Text(attachment.name) }
     }
 
     private func refreshRecord() async throws {

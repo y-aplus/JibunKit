@@ -9,8 +9,7 @@ let project = Project(
             name: "RecordsExample", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.example.records",
             deploymentTargets: .iOS("26.0"),
-            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:], "UIFileSharingEnabled": true,
-                                               "LSSupportsOpeningDocumentsInPlace": true]),
+            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
             sources: ["Example/**"],
             dependencies: [.package(product: "RecordsFeature")]
         ),

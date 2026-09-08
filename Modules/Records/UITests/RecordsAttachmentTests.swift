@@ -19,11 +19,6 @@ final class RecordsAttachmentTests: XCTestCase {
             app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "records.attachment.")).firstMatch
         }
         tap(app.buttons["records.fixture.export"])
-        // File sharing makes this app's Documents the exporter's initial folder.
-        // Navigate to the shared location explicitly instead of assuming a default.
-        tap(app.navigationBars.buttons["このiPhone内"])
-        XCTAssertTrue(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "RecordsExample"))
-            .firstMatch.waitForExistence(timeout: 15), app.debugDescription)
         tap(app.buttons["保存"])
         XCTAssertTrue(app.buttons["records.fixture.saved"].waitForExistence(timeout: 15), app.debugDescription)
         tap(app.buttons["records.add"])

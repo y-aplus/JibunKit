@@ -6,6 +6,9 @@ final class BackupRestoreUITests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
+    }
+
+    private func launchHarness() {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         expectValues("9|keep")
@@ -29,6 +32,7 @@ final class BackupRestoreUITests: XCTestCase {
     }
 
     func testCancelThenRestoreOnlyCounterAndPersist() {
+        launchHarness()
         tap(app.buttons["harness.valid"])
         XCTAssertFalse(app.buttons["backup.restore"].isEnabled)
         select("counter")
@@ -50,6 +54,7 @@ final class BackupRestoreUITests: XCTestCase {
     }
 
     func testRestoreOnlyReminderLeavesCounterUnchanged() {
+        launchHarness()
         tap(app.buttons["harness.valid"])
         select("reminder")
         tap(app.buttons["backup.restore"])
@@ -60,6 +65,7 @@ final class BackupRestoreUITests: XCTestCase {
     }
 
     func testInvalidSelectedPayloadPreservesBothStores() {
+        launchHarness()
         tap(app.buttons["harness.invalid"])
         select("counter")
         select("reminder")
@@ -73,6 +79,7 @@ final class BackupRestoreUITests: XCTestCase {
     }
 
     func testApplyFailureReportsCompletedFeature() {
+        launchHarness()
         tap(app.buttons["harness.failure"])
         select("counter")
         select("reminder")

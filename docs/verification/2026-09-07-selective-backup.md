@@ -88,3 +88,7 @@ CI表示を改善するため、通常UI回帰（復元harnessを含む）とFil
 後続run 34175980737も同じ修正前の雛形処理を含む。製品のFeature依存や復元機能の失敗と混同しない。
 
 run 34175980737（source `e6da91c`）も、雛形検証のNotesFeature依存解決エラーだけで停止したことをログで確認した。`fccd7e0`の修正対象と一致する。修正済みrun 34176089108を送付済みのため、同じ修正・再実行を重複して追加しない。
+
+### Swift 6 UIテスト初期化の修正
+
+[run 34176089108](https://github.com/y-aplus/JibunKit/actions/runs/34176089108)、source `fccd7e0`では雛形検証、製品ビルド・IPA検査、BackupHarnessのビルド・インストールまで成功した。UIテストのコンパイルはsetUpWithErrorからMainActorのexpectValuesを呼ぶ箇所で `sending self risks causing data races` となり停止。起動・初期値確認をMainActor上の各テストから呼ぶlaunchHarnessへ移した。setUpWithErrorは従来のテスト同様にcontinueAfterFailureの設定だけにする。復元4件の合否条件と製品コードは変更しない。

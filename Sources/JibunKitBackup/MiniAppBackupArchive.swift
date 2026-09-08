@@ -170,6 +170,9 @@ public enum MiniAppBackupArchive {
     }
 
     private static func writeZIP(from root: URL, to url: URL) throws {
+        // macOS may enumerate /var temporary directories as /private/var.
+        // Resolve the base once rather than slicing paths with unequal prefixes.
+        let root = root.resolvingSymlinksInPath()
         let archive = try Archive(url: url, accessMode: .create)
         var traversalError: Error?
         var seen = Set<String>()
@@ -181,10 +184,13 @@ public enum MiniAppBackupArchive {
             try Task.checkCancellation()
             let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
             guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else { throw MiniAppBackupError.invalidEntry }
-            let path = String(file.path.dropFirst(root.path.count + 1))
+            let components = file.pathComponents
+            let base = root.pathComponents
+            guard components.starts(with: base), components.count > base.count else { throw MiniAppBackupError.invalidEntry }
+            let path = components.dropFirst(base.count).joined(separator: "/")
             _ = try safePath(path, directory: values.isDirectory == true)
             guard seen.insert(path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw MiniAppBackupError.invalidEntry }
-            try archive.addEntry(with: path, relativeTo: root, compressionMethod: .none, bufferSize: 64 * 1024)
+            try archive.addEntry(with: path, fileURL: file, compressionMethod: .none, bufferSize: 64 * 1024)
         }
         if let traversalError { throw traversalError }
     }

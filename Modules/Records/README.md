@@ -7,3 +7,11 @@
 同じ保存先は1つのRecordStore actorで扱う。別プロセス・別actorによる同時更新を保証しない。大量データのDBとしての効率、ファイルベースsnapshot、旧schema移行は後続の検証・実装範囲。現時点で1.0の実用Feature条件を完了とはしない。
 
 次に一覧・詳細・編集画面、単独App Shell、ホストIntegration、バックアップとschema移行を接続する。個々の処理のテストは `swift test --package-path Modules/Records` で実行する。
+
+## 保存処理の検証と画面接続
+
+CI 34182293224（source f88020c）は成功。Recordsの保存・添付・再読込み・別保存先の独立性・不正編集・破損index・実際の添付書込み失敗を含むテストが通った。
+
+RecordsRootViewへ一覧・本文を含む検索・詳細・新規作成・編集・削除確認を接続した。編集は保存までドラフトに留め、キャンセルで保存値を変更しない。単独RecordsExampleがNavigationStackとApplication Supportの保存先を供給する。製品Registryへは未登録。UIテストは作成、編集キャンセル、保存、再起動、検索、削除キャンセルと確定を通す。CIで独立iOSビルドとUIテストを実行する。
+
+添付ファイルはこの段階では名前表示まで。追加・プレビュー・削除の画面操作、ホストIntegration、バックアップ・schema移行は引き続き未完了。

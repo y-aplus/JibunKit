@@ -22,8 +22,7 @@ final class BackupRestoreUITests: XCTestCase {
 
     private func tap(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 10))
-        if !element.isHittable { app.swipeUp() }
-        expectation(for: NSPredicate(format: "enabled == true AND hittable == true"), evaluatedWith: element)
+        expectation(for: NSPredicate(format: "enabled == true"), evaluatedWith: element)
         waitForExpectations(timeout: 10)
         element.tap()
     }
@@ -130,7 +129,10 @@ final class BackupRestoreUITests: XCTestCase {
         launchHarness()
         tap(app.buttons["harness.files"])
         let export = app.switches["backup.export.files"]
-        tap(export)
+        XCTAssertTrue(export.waitForExistence(timeout: 10))
+        export.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: export)
+        waitForExpectations(timeout: 10)
         tap(app.buttons["backup.export"])
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
         let filename = "JibunKit-ZIP-test-" + UUID().uuidString

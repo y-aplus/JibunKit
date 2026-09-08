@@ -72,3 +72,5 @@ CI 34198837117（source 5b27a47）はジョブの30分上限でキャンセル�
 CI 34206702845（source 681d194）は全検証成功。JSON Files往復stepは09:21:28–09:24:31 UTCに成功し、fileExporter表示先分離後の既存JSON書き出し・読込み・選択復元の回帰を確認できた。添付fixtureの選択復元UIも成功。ZIPの実Files往復と大容量計測は別途必要。
 
 34211874205（source ecaa190）は短縮した通常CIでも成功。今回、製品BackupScreenでZIPをFilesへ保存し、一意の名前で読み戻し、変更した添付を保存時の内容へ戻すUIテストを追加した（結果待ち）。Counter/Reminderの維持も確認する。fixture注入だけでファイル受渡しの成功を推定しない。
+
+34214151940（source 8f752ea）はUI操作で2件失敗。ZIPテストはexportスイッチへの通常tap後に書き出しボタンが有効にならず、保存ダイアログへ到達していない。既存の座標指定スイッチ操作とvalue=1確認へ統一する。既存キャンセルテストでは閉じるボタンのhittable待ちに失敗。共通tapヘルパーの一律swipeUpはsheet遷移中やtoolbarにも作用するため除去し、存在・enabledを待ってXCUIElement.tapに任せる。これらはテスト操作の修正であり、ZIP実受渡しの成功はまだ未確認。

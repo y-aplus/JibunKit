@@ -123,3 +123,7 @@ Filesのセルframeは(10,212,122,189.7)、サムネイルimageは(39.7,216,63,8
 34235446337（source e09e46a）はthumbnail.isHittableのassertで失敗し、変更後のタップはまだ実行されていない。UI階層のImageは(39.7,216,63,84)で画面内にある。装飾Imageの直接操作可否を前提にせず、frameが非空かつアプリ画面内であることを確認して、その中央座標をタップする。Files消失・添付名・プレビュー・再起動後保存・削除の検証は維持する。選択操作の解消は次runで確認する。
 
 34237861631（source aa3dba5）は中央座標タップを実行したが、File View消失のassertで失敗。タップ位置のみが原因という仮説は支持されなかった。選択未完了の理由は未確定。既存ログの起動記録からFilesの実プロセスがcom.apple.DocumentManagerUICore.Serviceであることを確認したが、収集条件はprocess == DocumentManagerであり別プロセスを取りこぼしていた。process/subsystemのDocumentManager部分一致へ変更し、操作直後の画面を保存する。巨大なxcresult/診断一式のダウンロードを待たず調査できるよう、ログ・画像・indexの専用artifactを追加。今回プロダクト動作は変更しない。
+
+34239715261（source dc2a16a）のfocused artifactで選択の到達先を確認した。14:57:01にDocumentManager.Serviceがattachment-fixture.txtのselection/did pick urlsを記録し、14:57:01.787にRecordsExample側がbookmarkableStringからのURL生成をNSFileProviderErrorDomain -1005 / NSFileProviderResolverErrorDomain -1012で失敗。その直後にdidPickDocumentURLsへの空配列を記録している。したがってタップ未到達やFeature保存処理の失敗ではなく、OSのFileProvider URL解決で止まっている。
+
+Records Simulatorだけが署名なしで実行されている条件を切り分けるため、既存の生成Featureホスト検証と同じアドホック署名（CODE_SIGNING_ALLOWED=YES / CODE_SIGN_IDENTITY=- / CODE_SIGN_STYLE=Manual）で再実行する。端末用IPAの署名やプロダクトコードは変更しない。署名が原因かは未確定で、同じFiles操作・取込み・再起動・削除の検証とサービスログで判断する。

@@ -313,7 +313,8 @@ jobs:
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/RecordsSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/Records.xcresult" \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
       - name: Test generated standalone Feature
         if: inputs.simulator_tests && inputs.feature_validation

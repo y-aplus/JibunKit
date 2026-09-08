@@ -48,13 +48,14 @@ public struct RecordsRootView: View {
             RecordEditor(store: store, record: record)
         }
         .navigationDestination(for: UUID.self) { id in
-            if let record = records.first(where: { $0.id == id }) {
+            if let index = records.firstIndex(where: { $0.id == id }) {
+                let record = records[index]
                 List {
                     Section("本文") { Text(record.body).accessibilityIdentifier("records.body") }
                     Section {
                         LabeledContent("作成日時", value: record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "不明")
                     }
-                    RecordAttachmentsSection(store: store, record: record) { await reload() }
+                    RecordAttachmentsSection(store: store, record: $records[index])
                 }
                 .navigationTitle(record.title)
                 .toolbar { Button("編集") { editing = record }.accessibilityIdentifier("records.edit") }

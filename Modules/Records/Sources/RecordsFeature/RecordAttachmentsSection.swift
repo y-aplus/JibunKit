@@ -5,8 +5,7 @@ import UniformTypeIdentifiers
 
 struct RecordAttachmentsSection: View {
     let store: RecordStore
-    let record: Record
-    let refresh: @MainActor () async -> Void
+    @Binding var record: Record
     @State private var importing = false
     @State private var busy = false
     @State private var preview: URL?
@@ -51,7 +50,7 @@ struct RecordAttachmentsSection: View {
                     defer { if access { url.stopAccessingSecurityScopedResource() } }
                     do {
                         try await store.importAttachment(to: record.id, from: url)
-                        await refresh()
+                        try await refreshRecord()
                     } catch { self.error = "添付できませんでした: \(error.localizedDescription)" }
                 }
             }
@@ -68,11 +67,19 @@ struct RecordAttachmentsSection: View {
                     defer { busy = false; deleting = nil }
                     do {
                         try await store.removeAttachment(recordID: record.id, attachmentID: attachment.id)
-                        await refresh()
+                        try await refreshRecord()
                     } catch { self.error = "削除できませんでした: \(error.localizedDescription)" }
                 }
             }
         } message: { attachment in Text(attachment.name) }
     }
+
+    private func refreshRecord() async throws {
+        guard let updated = try await store.records().first(where: { $0.id == record.id }) else {
+            throw RecordStoreError.missingRecord
+        }
+        record = updated
+    }
+
 }
 #endif

@@ -12,7 +12,9 @@ CI [34190686473](https://github.com/y-aplus/JibunKit/actions/runs/34190686473)�
 
 snapshotの寿命と不変性は呼出側の責任。確認画面の表示中から適用完了まで保持し、終了後に作業ファイルを片付ける。書き出し途中の失敗で残ったファイルは成功したバックアップとして扱わない。
 
-## 追加テスト（CI結果待ち）
+## 接続点のテスト（成功）
+
+CI [34191511510](https://github.com/y-aplus/JibunKit/actions/runs/34191511510)、source `b4309fde6022ea16814201367f9712df2712fdb5` で以下を含む共通41件、Records7件が成功。独立版・生成Feature組込み・通常IPAビルドも成功。このrunではSimulator UIは実行していない。
 
 - 実ファイルの書き出し、schema保持、既存保存先への上書き拒否。
 - 通常ファイルをsnapshotディレクトリとして返すproviderの拒否。
@@ -21,4 +23,12 @@ snapshotの寿命と不変性は呼出側の責任。確認画面の表示中か
 
 ## 残る作業
 
-Recordsのprepare/apply adapter、持ち運び形式、共通画面のファイル入出力と寿命管理、旧JSONの読込み共存、大容量メモリ計測、schema移行は未完了。新しい接続点だけをV3の完成とはしない。Recordsは引き続きCore非依存で、接続はIntegration層に置く。
+持ち運び形式、共通画面のファイル入出力と寿命管理、旧JSONの読込み共存、大容量メモリ計測、schema移行は未完了。新しい接続点だけをV3の完成とはしない。Recordsは引き続きCore非依存で、接続はIntegration層に置く。
+
+## Records adapter（今回追加、CI結果待ち）
+
+`RecordsBackup.provider(store:id:)`をIntegration層に追加。exportはstore actorで整合したsnapshotを作り、prepareはschema・index・全参照添付の存在と通常ファイルであることを検証する。snapshot rootとattachmentsディレクトリのsymlinkも拒否する。applyでも再検証してからstagingを作り、ライブ保存先を置き換える。
+
+`MiniAppDefinition.fileBackup`を任意の接続点として追加し、Recordsの一時ホスト構成へ登録した。既存のバックアップ画面はまだこのproviderを表示・操作しない。ここで画面対応完了とはしない。
+
+実storeを使うIntegrationテストで、prepareだけでは変更しないこと、apply後のID・添付内容と再起動時の維持、選択外storeの維持、不明schema・欠落添付のprepare時拒否、prepare後に添付が失われた場合のライブデータ維持、添付ディレクトリsymlinkの拒否を検証する。root PackageのRecords依存はこの接続テスト用で、製品Registryへの追加ではない。

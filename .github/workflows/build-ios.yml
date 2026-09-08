@@ -113,6 +113,7 @@ jobs:
           import shutil
           shutil.copyfile('Tests/TemplateIntegration/GeneratedFeatureUITests.swift', 'UITests/GeneratedFeatureUITests.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
+          shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'

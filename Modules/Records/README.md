@@ -49,3 +49,5 @@ restoreSnapshot(from:)はindexを検証し、すべての添付が通常ファ�
 このAPIはFeature所有のsnapshotディレクトリを扱う。共通バックアップ画面との接続、持ち運べるファイル形式、旧schema移行、大容量の計測はまだ残る。CIで別storeへの復旧・再起動後の内容とID維持・元storeの独立性・欠落添付の拒否を検証する。
 
 CI 34190686473（source f23311b）は成功。snapshot復旧・欠落添付時の保存維持とiOSビルドを確認した。このrunはSimulator UIを実行していない。
+
+`Integration/RecordsBackup.swift`は共通のfile providerへの接続例。ホストへRecordsMiniApp.swiftと一緒に含める。`RecordStore.validateSnapshot(at:)`でライブデータを変更せず全参照を検証し、明示的な上書き確認後にrestoreSnapshotを実行する。読み込んだsnapshotは呼出側が適用終了まで変更せず保持する。共通画面のfile provider対応と持ち運べる形式はまだ実装途中である。

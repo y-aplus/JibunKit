@@ -25,7 +25,19 @@ let package = Package(
             targets: ["JibunKitWidget"]
         ),
     ],
+    dependencies: [.package(path: "Modules/Records")],
     targets: [
+        .target(
+            name: "RecordsBackupIntegration",
+            dependencies: ["JibunKitCore", .product(name: "RecordsFeature", package: "Records")],
+            path: "Modules/Records/Integration",
+            exclude: ["RecordsMiniApp.swift"],
+            sources: ["RecordsBackup.swift"]
+        ),
+        .testTarget(
+            name: "RecordsBackupIntegrationTests",
+            dependencies: ["RecordsBackupIntegration", "JibunKitCore", .product(name: "RecordsFeature", package: "Records")]
+        ),
         .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
         .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),
         .target(

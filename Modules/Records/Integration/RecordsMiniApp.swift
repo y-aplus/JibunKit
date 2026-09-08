@@ -12,7 +12,12 @@ enum RecordsMiniApp {
         return try RecordStore(directory: files.directoryURL)
     }
 
-    static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text") { _ in
+    private static let backup: MiniAppFileBackupProvider? = {
+        guard case .success(let store) = store else { return nil }
+        return RecordsBackup.provider(store: store, id: id)
+    }()
+
+    static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text", fileBackup: backup) { _ in
         RecordsDestination(store: store)
     }
 }

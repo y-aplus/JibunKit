@@ -10,6 +10,7 @@ public struct MiniAppDefinition: Identifiable {
     public let title: String
     public let systemImage: String
     public let backup: MiniAppBackupProvider?
+    public let fileBackup: MiniAppFileBackupProvider?
     private let rootView: @MainActor (MiniAppContext) -> AnyView
 
     public init<Root: View>(
@@ -17,6 +18,7 @@ public struct MiniAppDefinition: Identifiable {
         title: String,
         systemImage: String,
         backup: MiniAppBackupProvider? = nil,
+        fileBackup: MiniAppFileBackupProvider? = nil,
         makeRootView: @escaping @MainActor (MiniAppContext) -> Root
     ) {
         precondition(id.isValid, "Mini-app IDs must start with a-z and contain only a-z, 0-9, '.', '-', or '_'.")
@@ -25,6 +27,8 @@ public struct MiniAppDefinition: Identifiable {
         self.systemImage = systemImage
         precondition(backup == nil || backup?.id == id, "Backup provider must belong to this Feature.")
         self.backup = backup
+        precondition(fileBackup == nil || fileBackup?.id == id, "File backup provider must belong to this Feature.")
+        self.fileBackup = fileBackup
         self.rootView = { context in
             AnyView(makeRootView(context))
         }

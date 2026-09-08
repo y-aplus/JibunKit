@@ -53,8 +53,10 @@ struct BackupScreen: View {
                 }
             }
             .fileExporter(isPresented: $exporting, document: document, contentType: .json,
-                          defaultFilename: exportFilename, onCompletion: exportCompleted,
-                          onCancellation: { document = nil })
+                          defaultFilename: exportFilename, onCompletion: exportCompleted)
+            .onChange(of: exporting) { _, presented in
+                if !presented { document = nil }
+            }
             .fileExporter(isPresented: $exportingArchive, item: archive, contentTypes: [.zip],
                           defaultFilename: exportFilename, onCompletion: exportCompleted,
                           onCancellation: { archive = nil })

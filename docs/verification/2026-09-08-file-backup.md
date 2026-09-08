@@ -82,3 +82,5 @@ CI [34218612906](https://github.com/y-aplus/JibunKit/actions/runs/34218612906)�
 ## 大容量検証（今回追加、結果待ち）
 
 128 MiBの添付を1 MiBずつ生成し、Recordsへのファイル取込み、ZIP書き出し、ZIP読込み、Records復元、全chunkの内容一致と末尾を検証する。テスト自体も添付全量をDataへ読み込まない。macOS getrusageのプロセス累積最大RSSをexport前・後・import後・restore後に記録し、所要時間も出力する。この値はXCTestを含むプロセス全体の最大値で、各段階の現在使用量やiOS実機の上限保証ではない。テスト合否は復元内容で決め、runner依存のRSSを根拠なく固定閾値にしない。
+
+34221000490（source 81e32ef）は全128 chunkが一致した後、末尾確認で失敗。FileHandle.read(upToCount:)のEOF戻り値nilに対して空Dataを期待していたテストをXCTAssertNilへ修正する。参考計測はbefore-export 59,408,384 bytes、after-export 59,965,440、after-import 60,014,592、after-restore 60,080,128（累積最大RSSの増加671,744 bytes、約0.64 MiB）。テスト全体0.874秒、export開始以降の計測区間約0.387秒。macOSのファイルコピー・キャッシュの効果を含むためiOS実機の性能とは扱わず、修正後runで正常終了を確認する。

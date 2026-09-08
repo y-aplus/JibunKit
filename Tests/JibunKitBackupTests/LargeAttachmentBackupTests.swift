@@ -51,7 +51,7 @@ final class LargeAttachmentBackupTests: XCTestCase, @unchecked Sendable {
                 XCTAssertEqual(data, Data(repeating: UInt8(index), count: chunkSize), "Chunk \(index)")
             }
         }
-        XCTAssertEqual(try reader.read(upToCount: 1), Data())
+        XCTAssertNil(try reader.read(upToCount: 1))
         print("LARGE_BACKUP bytes=\(chunkCount * chunkSize) elapsedSeconds=\(Date().timeIntervalSince(started))")
     }
 

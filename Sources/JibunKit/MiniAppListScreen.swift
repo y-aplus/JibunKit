@@ -40,7 +40,7 @@ struct MiniAppListScreen: View {
                         .accessibilityIdentifier("backup.open")
                 }
             }
-            .sheet(isPresented: $showingBackup) { BackupScreen() }
+            .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.all) }
             .navigationDestination(for: MiniAppID.self) { miniAppID in
                 if let miniApp = MiniAppRegistry.definition(for: miniAppID) {
                     miniApp.makeDestination()

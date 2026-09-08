@@ -269,6 +269,16 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/CounterDerivedData" CODE_SIGNING_ALLOWED=NO
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/CounterDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
+      - name: Build and install backup UI harness
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild build -workspace JibunKit.xcworkspace -scheme BackupHarness \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/BackupHarnessDerivedData" CODE_SIGNING_ALLOWED=NO
+          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/BackupHarnessDerivedData/Build/Products/Debug-iphonesimulator/BackupHarness.app"
+
       - name: Run simulator integration checks
         if: inputs.simulator_tests
         shell: bash

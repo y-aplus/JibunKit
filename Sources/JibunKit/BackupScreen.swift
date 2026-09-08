@@ -17,7 +17,12 @@ struct BackupScreen: View {
     @State private var busy = false
     @State private var status: String?
 
-    private var definitions: [MiniAppDefinition] { MiniAppRegistry.all }
+    private let definitions: [MiniAppDefinition]
+
+    init(definitions: [MiniAppDefinition], importedBackup: MiniAppBackup? = nil) {
+        self.definitions = definitions
+        _imported = State(initialValue: importedBackup)
+    }
     private var providers: [MiniAppBackupProvider] { definitions.compactMap(\.backup) }
 
     var body: some View {

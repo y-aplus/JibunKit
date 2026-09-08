@@ -70,3 +70,11 @@ CIで画面のコンパイル、未選択時の書出し不可、対象選択後
 ## 保存名変更のCI
 
 [run 34173407881](https://github.com/y-aplus/JibunKit/actions/runs/34173407881)、source `b56c8caea28c00c2c55de154652054de4a18865d`は成功。共通ロジックテスト、Tuist雛形検証、通常アプリ・Widgetビルド、IPA検査・生成が成功した。このrunではSimulator UIテストを指定していないため、日時付き保存名のFiles上の表示確認まで成功したとは扱わない。後続のURL遷移・複数通知IDはこのsourceには含まれない。
+
+## Filesに依存しない復元UIの検証
+
+2026-09-08、未検証だった読込み後の復元操作を進めるため、独立したBackupHarness app targetを追加した。製品のBackupScreenとBackupDocumentをそのままコンパイルし、デコード済みのバックアップとFeature定義を渡す。製品側は従来どおりRegistryの定義を渡し、Filesから読込む。検証用の起動引数・fixture・画面はTests/BackupHarnessに置き、製品app targetのsource・依存へ含めない。
+
+CounterとReminderの本物のprovider/storeを、製品とは別のテストsuiteへ接続する。UIテストはキャンセルで両方無変更、Counterのみ復元して再起動後も維持、Reminderのみ復元してCounter維持、不正な選択payloadで両方無変更を確認する。加えてReminderの適用だけを意図的に失敗させ、完了済みCounterと失敗対象の表示、Counterだけ更新された実際の保存値を検証する。
+
+この経路はFilesの受渡しを検証したとは扱わない。元のファイル往復テストは残す。差分検査は成功、iOSビルドと新規UI4件はCIへ送る。

@@ -6,6 +6,13 @@ let project = Project(
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
         .target(
+            name: "BackupHarness", destinations: .iOS, product: .app,
+            bundleId: "com.jibunkit.backup-harness", deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+            sources: ["Tests/BackupHarness/**", "Sources/JibunKit/BackupScreen.swift", "Sources/JibunKit/BackupDocument.swift"],
+            dependencies: [.package(product: "JibunKitCore"), .package(product: "CounterFeature"), .package(product: "ReminderFeature")]
+        ),
+        .target(
             name: "JibunKit-App", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: [

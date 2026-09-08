@@ -74,3 +74,5 @@ CI 34206702845（source 681d194）は全検証成功。JSON Files往復stepは09
 34211874205（source ecaa190）は短縮した通常CIでも成功。今回、製品BackupScreenでZIPをFilesへ保存し、一意の名前で読み戻し、変更した添付を保存時の内容へ戻すUIテストを追加した（結果待ち）。Counter/Reminderの維持も確認する。fixture注入だけでファイル受渡しの成功を推定しない。
 
 34214151940（source 8f752ea）はUI操作で2件失敗。ZIPテストはexportスイッチへの通常tap後に書き出しボタンが有効にならず、保存ダイアログへ到達していない。既存の座標指定スイッチ操作とvalue=1確認へ統一する。既存キャンセルテストでは閉じるボタンのhittable待ちに失敗。共通tapヘルパーの一律swipeUpはsheet遷移中やtoolbarにも作用するため除去し、存在・enabledを待ってXCUIElement.tapに任せる。これらはテスト操作の修正であり、ZIP実受渡しの成功はまだ未確認。
+
+34216395356（source 1f1b42b）はスイッチ選択を通過したがZIP exporter表示時にBackupHarnessがクラッシュした。回収したxcresult diagnosticsのStandardOutputAndStandardErrorに `NSInvalidArgumentException`、`-[NSFileWrapper setPreferredFilename:] *** preferredFilename cannot be empty.` を確認。FileRepresentationにsuggestedFileNameを明示する。ダイアログのdefaultFilenameには従来通り日時入り名を渡す。ZIPはDataへ読み戻さず、Files往復で再検証する。

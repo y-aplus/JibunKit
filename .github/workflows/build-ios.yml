@@ -98,6 +98,8 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateDerivedData" CODE_SIGNING_ALLOWED=NO
           python3 - <<'PY'
           from pathlib import Path
+          import shutil
+          shutil.copyfile('Tests/TemplateIntegration/GeneratedFeatureUITests.swift', 'UITests/GeneratedFeatureUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -286,6 +288,18 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/TemplateLaunch.xcresult" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-launch.log"
 
+      - name: Test generated Feature in host
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TemplateHost.xcresult" \
+            -only-testing:MigrationUITests/GeneratedFeatureUITests \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-host.log"
+
       - name: Build and install backup UI harness
         if: inputs.simulator_tests
         shell: bash
@@ -366,6 +380,8 @@ jobs:
           path: |
             ${{ runner.temp }}/Migration.xcresult
             ${{ runner.temp }}/TemplateLaunch.xcresult
+            ${{ runner.temp }}/TemplateHost.xcresult
+            ${{ runner.temp }}/template-host.log
             ${{ runner.temp }}/template-launch.log
             ${{ runner.temp }}/FilesRoundTrip.xcresult
             ${{ runner.temp }}/files-screenshots

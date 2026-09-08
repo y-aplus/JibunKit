@@ -7,3 +7,9 @@
 CIでは一時checkoutに生成したNotesExampleを同じSimulatorで起動し、初期画面が表示されることを検証する。ホスト組込みビルドと単独版の起動を区別する。TemplateLaunch.xcresultと実行ログを既存artifactへ含める。
 
 差分検査は成功。Tuistでの生成、iOSビルド、新しい起動テスト、製品回帰はCIで検証する。
+
+## 単独版のCI結果と組込み後の実行検証
+
+[run 34179709036](https://github.com/y-aplus/JibunKit/actions/runs/34179709036)、source `6e2abddb65648db20e31c0d57d329e23536a8982`は全step成功。生成されたNotesExampleの起動テスト、ホスト組込みビルド、製品UI回帰、Files往復まで通った。
+
+次の未検証範囲として、生成Featureを追加した一時ホストのUIテストを追加した。一覧にNotes・Counter・Reminderが共存し、Notesを開いて戻り、Counterへ移動した後にURLからNotesへ切り替わることを確認する。テストsourceはTests/TemplateIntegrationに置き、一時checkoutのUITestsへだけコピーする。製品Registry・IPAへNotesを追加しない。専用xcresultとログを回収する。CI結果待ち。

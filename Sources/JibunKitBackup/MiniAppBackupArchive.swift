@@ -170,28 +170,25 @@ public enum MiniAppBackupArchive {
     }
 
     private static func writeZIP(from root: URL, to url: URL) throws {
-        // macOS may enumerate /var temporary directories as /private/var.
-        // Resolve the base once rather than slicing paths with unequal prefixes.
-        let root = root.resolvingSymlinksInPath()
         let archive = try Archive(url: url, accessMode: .create)
-        var traversalError: Error?
         var seen = Set<String>()
-        guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey], errorHandler: { _, error in
-            traversalError = error
-            return false
-        }) else { throw MiniAppBackupError.invalidEntry }
-        for case let file as URL in enumerator {
-            try Task.checkCancellation()
-            let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
-            guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else { throw MiniAppBackupError.invalidEntry }
-            let components = file.pathComponents
-            let base = root.pathComponents
-            guard components.starts(with: base), components.count > base.count else { throw MiniAppBackupError.invalidEntry }
-            let path = components.dropFirst(base.count).joined(separator: "/")
-            _ = try safePath(path, directory: values.isDirectory == true)
-            guard seen.insert(path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw MiniAppBackupError.invalidEntry }
-            try archive.addEntry(with: path, fileURL: file, compressionMethod: .none, bufferSize: 64 * 1024)
+        var directories = [""]
+        // Construct archive names from directory entries, never by subtracting
+        // absolute URL prefixes (/var and /private/var can name the same place).
+        while let relativeDirectory = directories.popLast() {
+            let directory = relativeDirectory.isEmpty ? root : root.appendingPathComponent(relativeDirectory)
+            let children = try FileManager.default.contentsOfDirectory(at: directory,
+                includingPropertiesForKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+            for file in children {
+                try Task.checkCancellation()
+                let values = try file.resourceValues(forKeys: [.isDirectoryKey, .isRegularFileKey, .isSymbolicLinkKey])
+                guard values.isSymbolicLink != true, values.isDirectory == true || values.isRegularFile == true else { throw MiniAppBackupError.invalidEntry }
+                let path = relativeDirectory.isEmpty ? file.lastPathComponent : relativeDirectory + "/" + file.lastPathComponent
+                _ = try safePath(path, directory: values.isDirectory == true)
+                guard seen.insert(path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw MiniAppBackupError.invalidEntry }
+                try archive.addEntry(with: path, fileURL: file, compressionMethod: .none, bufferSize: 64 * 1024)
+                if values.isDirectory == true { directories.append(path) }
+            }
         }
-        if let traversalError { throw traversalError }
     }
 }

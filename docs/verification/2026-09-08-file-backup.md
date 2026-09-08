@@ -48,3 +48,5 @@ ZIP内は`manifest.json`と`features/<連番>/`で構成する。manifestの形�
 テストはRecordsの添付と旧payloadの混在ZIP、個別復元と選択外維持、旧JSON復元、import/exportの寿命、パス逸脱・symlink・名前衝突・CRC破損拒否を対象とする。共通画面への接続と大容量の計測は次段階。ファイル書き出しには[AppleのTransferable対応fileExporter](https://developer.apple.com/documentation/swiftui/view/fileexporter(ispresented:item:contenttypes:defaultfilename:oncompletion:oncancellation:))を使用する予定で、従来のDataを持つFileDocumentへZIPを読み戻さない。
 
 CI 34194302220（source 60d7357）はコンパイル成功後、混在ZIP往復の書き出しで失敗した。macOSの一時ディレクトリが基準URLでは/var、enumeratorでは/private/varとなり、文字数で切り出した相対パスがcontents/ontents/featuresになった。基準URLをresolvingSymlinksInPathで正規化し、pathComponentsの包含を確認して相対名を作る。ZIPへ渡す読み取り元も列挙したfileURLを直接使用する。旧JSON・CRC破損・不正パス拒否のテストはこのrunでも成功。混在ZIP往復と寿命管理は再実行で確認する。
+
+CI 34194545595（source e5560ac）でも混在ZIPの書き出しが失敗し、絶対パスの包含検査（189行）で拒否された。基準URLだけを正規化する修正では不十分だった。最終実装はcontentsOfDirectoryで各階層を読み、項目名から相対パスを組み立てる。絶対パスの文字数やprefix表現に依存せず、列挙時のI/Oエラーはそのまま伝播する。symlink・重複・不正名の検査は維持する。

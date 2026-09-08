@@ -25,10 +25,24 @@ CI [34191511510](https://github.com/y-aplus/JibunKit/actions/runs/34191511510)�
 
 持ち運び形式、共通画面のファイル入出力と寿命管理、旧JSONの読込み共存、大容量メモリ計測、schema移行は未完了。新しい接続点だけをV3の完成とはしない。Recordsは引き続きCore非依存で、接続はIntegration層に置く。
 
-## Records adapter（今回追加、CI結果待ち）
+## Records adapter（成功）
+
+CI [34192071473](https://github.com/y-aplus/JibunKit/actions/runs/34192071473)、source `7c5b02a` は成功。Records接続テスト、独立iOSビルド、生成Feature組込み、通常IPAに加え、Records編集・ホスト共存・既存バックアップ画面・Files往復のSimulator回帰も成功した。
 
 `RecordsBackup.provider(store:id:)`をIntegration層に追加。exportはstore actorで整合したsnapshotを作り、prepareはschema・index・全参照添付の存在と通常ファイルであることを検証する。snapshot rootとattachmentsディレクトリのsymlinkも拒否する。applyでも再検証してからstagingを作り、ライブ保存先を置き換える。
 
 `MiniAppDefinition.fileBackup`を任意の接続点として追加し、Recordsの一時ホスト構成へ登録した。既存のバックアップ画面はまだこのproviderを表示・操作しない。ここで画面対応完了とはしない。
 
 実storeを使うIntegrationテストで、prepareだけでは変更しないこと、apply後のID・添付内容と再起動時の維持、選択外storeの維持、不明schema・欠落添付のprepare時拒否、prepare後に添付が失われた場合のライブデータ維持、添付ディレクトリsymlinkの拒否を検証する。root PackageのRecords依存はこの接続テスト用で、製品Registryへの追加ではない。
+
+## ZIP transport（今回追加、CI結果待ち）
+
+`JibunKitBackup`をCoreとは別のPackage targetに追加。ZIPFoundation 0.9.20をexact固定し、ZIPの読み書きに使う。Core/WidgetへZIP依存を追加しない。[公式リリース](https://github.com/weichsel/ZIPFoundation/releases/tag/0.9.20)と実装APIを確認した。
+
+ZIP内は`manifest.json`と`features/<連番>/`で構成する。manifestの形式はJibunKitFileBackup、version 1。各項目にFeature ID、Feature schema、storage（payload/files）、格納連番を持つ。既存providerのバイト列はpayloadファイル、新providerのsnapshotはディレクトリ内へそのまま格納する。同じIDが両providerを持つ場合、新しいZIP書き出しはfile providerを優先する。旧JSONは内容から識別して従来のdecoderで読み込む。
+
+添付のZIP入出力は64 KiBのバッファを使い、全量Data/Base64へ変換しない。ZIPは現時点で無圧縮とし、追加の圧縮CPU負荷を避ける。Featureのindexや旧payloadは引き続きDataとして読むため、そのメモリ制約まで解消したとはしない。
+
+読込みは全entryの相対パス・symlink・正規化後の重複を展開前に検査し、展開時にCRC32を照合する。書き出しも不正パス・symlink・重複を拒否する。展開先は毎回専用の一時領域で、元ドキュメントへのアクセス権を保持し続ける必要はない。importを破棄しても復元planが残っている間は一時ファイルを保持し、すべての参照を解放すると片付ける。エラー時も所有オブジェクトの解放で片付ける。
+
+テストはRecordsの添付と旧payloadの混在ZIP、個別復元と選択外維持、旧JSON復元、import/exportの寿命、パス逸脱・symlink・名前衝突・CRC破損拒否を対象とする。共通画面への接続と大容量の計測は次段階。ファイル書き出しには[AppleのTransferable対応fileExporter](https://developer.apple.com/documentation/swiftui/view/fileexporter(ispresented:item:contenttypes:defaultfilename:oncompletion:oncancellation:))を使用する予定で、従来のDataを持つFileDocumentへZIPを読み戻さない。

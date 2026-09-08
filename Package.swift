@@ -11,6 +11,7 @@ let package = Package(
         .macOS(.v12),
     ],
     products: [
+        .library(name: "JibunKitBackup", targets: ["JibunKitBackup"]),
         .library(name: "CounterIntegration", targets: ["CounterIntegration"]),
         .library(name: "ReminderIntegration", targets: ["ReminderIntegration"]),
         .library(name: "JibunKitCore", targets: ["JibunKitCore"]),
@@ -25,8 +26,13 @@ let package = Package(
             targets: ["JibunKitWidget"]
         ),
     ],
-    dependencies: [.package(path: "Modules/Records")],
+    dependencies: [
+        .package(path: "Modules/Records"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
+    ],
     targets: [
+        .target(name: "JibunKitBackup", dependencies: ["JibunKitCore", .product(name: "ZIPFoundation", package: "ZIPFoundation")]),
+        .testTarget(name: "JibunKitBackupTests", dependencies: ["JibunKitBackup", "JibunKitCore", "RecordsBackupIntegration", .product(name: "RecordsFeature", package: "Records"), .product(name: "ZIPFoundation", package: "ZIPFoundation")]),
         .target(
             name: "RecordsBackupIntegration",
             dependencies: ["JibunKitCore", .product(name: "RecordsFeature", package: "Records")],

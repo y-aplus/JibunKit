@@ -33,8 +33,14 @@ final class RecordsAttachmentTests: XCTestCase {
         // Their center can land outside the file's opening hit target.
         let thumbnail = fixture.images.firstMatch
         XCTAssertTrue(thumbnail.waitForExistence(timeout: 15))
-        XCTAssertTrue(thumbnail.isHittable, app.debugDescription)
-        thumbnail.tap()
+        // The thumbnail is a decorative accessibility child, so isHittable can
+        // be false even though its frame is visible inside the interactive cell.
+        let thumbnailFrame = thumbnail.frame
+        XCTAssertFalse(thumbnailFrame.isEmpty)
+        XCTAssertTrue(app.frame.contains(thumbnailFrame), app.debugDescription)
+        app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: thumbnailFrame.midX - app.frame.minX,
+                                 dy: thumbnailFrame.midY - app.frame.minY)).tap()
         XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15),
                       "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
         XCTAssertTrue(attachment().waitForExistence(timeout: 15), app.debugDescription)

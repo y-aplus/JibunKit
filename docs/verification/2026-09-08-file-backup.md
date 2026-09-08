@@ -68,3 +68,5 @@ CI 34195905457（source e194f4e）では分割後の具体的な診断として�
 CI 34196299598（source d62234f）はiOSビルド、通常IPA、Records/生成Feature、バックアップUI5件（添付のキャンセル・個別復元・再起動維持を含む）、既存ホストUI5件まで成功した。別stepのJSON Files往復で保存ボタンが20秒以内に現れず失敗。同じViewへ2つのfileExporterを重ねたことによる表示干渉を疑い、それぞれ独立したColor.clearのbackgroundへ付け直す。保存内容・選択条件は維持し、既存Files往復で再検証する。ZIPの実Files往復はまだ未確認。
 
 CI 34198837117（source 5b27a47）はジョブの30分上限でキャンセルされた。GitHubのannotationは `The job has exceeded the maximum execution time of 30m0s`。ビルド・IPA・Records/生成Feature・通常Simulator回帰まで成功し、開始29分17秒時点で最後のFiles往復stepへ入ったが完走しなかった。Filesの成功や前回不具合の解消はまだ主張しない。独立版とホスト版の検証項目を増やした実績に合わせ、ジョブ上限を45分へ変更して同じ検証を再実行する。
+
+CI 34206702845（source 681d194）は全検証成功。JSON Files往復stepは09:21:28–09:24:31 UTCに成功し、fileExporter表示先分離後の既存JSON書き出し・読込み・選択復元の回帰を確認できた。添付fixtureの選択復元UIも成功。ZIPの実Files往復と大容量計測は別途必要。

@@ -1,6 +1,8 @@
 # Issue #2: 本体構成とCIの責務
 
-[Issue #2](https://github.com/y-aplus/JibunKit/issues/2)をv1.0の残作業として扱う。今回の変更はCI結果待ち。
+[Issue #2](https://github.com/y-aplus/JibunKit/issues/2)の構成整理を実施。CI [34206702845](https://github.com/y-aplus/JibunKit/actions/runs/34206702845)、source `681d194b8afbd0be14cd6165e848c21843de8f43`で両入力trueの全検証が成功した。
+
+通常の独立Package発見でRecordsFeatureTestsを実行し、隔離template検証では生成NotesにPackageテスト未定義と明示した上でRecordsテストも実行した。app/Widget library削除後の本体・Widget・App Intents metadata・IPA生成、独立起動、ホスト共存、バックアップUI、JSON Files往復がすべて成功。任意のiOS専用ci-test.shについては実行契約を提供した段階で、実Featureの採用例はまだない。通常モードとビルド成果物共有の時間測定は別run 34209642170で確認する。
 
 ## Packageとappの定義
 

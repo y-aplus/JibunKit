@@ -32,48 +32,8 @@ struct BackupScreen: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    ForEach(definitions) { definition in
-                        if definition.backup != nil || definition.fileBackup != nil {
-                            Toggle(definition.title, isOn: selection(definition.id, in: $exportIDs))
-                                .accessibilityIdentifier("backup.export.\(definition.id.rawValue)")
-                        } else {
-                            LabeledContent(definition.title, value: "バックアップ未対応")
-                        }
-                    }
-                    Button("選択したアプリを書き出す") { exportSelected() }
-                        .disabled(exportIDs.isEmpty)
-                        .accessibilityIdentifier("backup.export")
-                } header: { Text("バックアップ") }
-                footer: { Text("選んだアプリのデータをファイルに保存します。ファイルは暗号化されません。") }
-
-                Section {
-                    Button("バックアップを読み込む") {
-                        imported = nil
-                        restoreIDs = []
-                        pending = nil
-                        status = nil
-                        importing = true
-                    }
-                    .accessibilityIdentifier("backup.import")
-                    if let imported {
-                        LabeledContent("作成日時", value: imported.createdAt.formatted(date: .abbreviated, time: .shortened))
-                        ForEach(imported.entries, id: \.id) { entry in
-                            let id = entry.id
-                            if let definition = definitions.first(where: { $0.id == id }),
-                               (entry.storage == .payload ? definition.backup != nil : definition.fileBackup != nil) {
-                                Toggle(definition.title, isOn: selection(id, in: $restoreIDs))
-                                    .accessibilityIdentifier("backup.restore.\(entry.id.rawValue)")
-                            } else {
-                                LabeledContent(title(id), value: "この構成では復元できません")
-                            }
-                        }
-                        Button("選択したアプリを復元") { prepareRestore(imported) }
-                            .disabled(restoreIDs.isEmpty)
-                            .accessibilityIdentifier("backup.restore")
-                    }
-                } header: { Text("復元") }
-                footer: { Text("選んだアプリの現在のデータを置き換えます。選ばなかったアプリは変更しません。") }
+                exportSection
+                restoreSection
 
                 if busy { ProgressView("処理中…") }
                 if let status { Section { Text(status).accessibilityIdentifier("backup.status") } }
@@ -105,6 +65,64 @@ struct BackupScreen: View {
                 Text((pending?.ids.map(title).joined(separator: "、") ?? "") +
                      "をバックアップの内容に戻します。実行中に失敗すると、一部だけ復元される場合があります。")
             }
+        }
+    }
+
+    private var exportSection: some View {
+        Section {
+            ForEach(definitions) { definition in
+                if definition.backup != nil || definition.fileBackup != nil {
+                    Toggle(definition.title, isOn: selection(definition.id, in: $exportIDs))
+                        .accessibilityIdentifier("backup.export.\(definition.id.rawValue)")
+                } else {
+                    LabeledContent(definition.title, value: "バックアップ未対応")
+                }
+            }
+            Button("選択したアプリを書き出す") { exportSelected() }
+                .disabled(exportIDs.isEmpty)
+                .accessibilityIdentifier("backup.export")
+        } header: { Text("バックアップ") }
+        footer: { Text("選んだアプリのデータをファイルに保存します。ファイルは暗号化されません。") }
+    }
+
+    private var restoreSection: some View {
+        Section {
+            Button("バックアップを読み込む") {
+                imported = nil
+                restoreIDs = []
+                pending = nil
+                status = nil
+                importing = true
+            }
+            .accessibilityIdentifier("backup.import")
+            if let imported {
+                LabeledContent("作成日時", value: imported.createdAt.formatted(date: .abbreviated, time: .shortened))
+                ForEach(imported.entries, id: \.id) { entry in
+                    restoreRow(entry)
+                }
+                Button("選択したアプリを復元") { prepareRestore(imported) }
+                    .disabled(restoreIDs.isEmpty)
+                    .accessibilityIdentifier("backup.restore")
+            }
+        } header: { Text("復元") }
+        footer: { Text("選んだアプリの現在のデータを置き換えます。選ばなかったアプリは変更しません。") }
+    }
+
+    @ViewBuilder
+    private func restoreRow(_ entry: ImportedMiniAppBackup.Entry) -> some View {
+        if let definition = restoreDefinition(for: entry) {
+            Toggle(definition.title, isOn: selection(entry.id, in: $restoreIDs))
+                .accessibilityIdentifier("backup.restore.\(entry.id.rawValue)")
+        } else {
+            LabeledContent(title(entry.id), value: "この構成では復元できません")
+        }
+    }
+
+    private func restoreDefinition(for entry: ImportedMiniAppBackup.Entry) -> MiniAppDefinition? {
+        guard let definition = definitions.first(where: { $0.id == entry.id }) else { return nil }
+        switch entry.storage {
+        case .payload: return definition.backup == nil ? nil : definition
+        case .files: return definition.fileBackup == nil ? nil : definition
         }
     }
 

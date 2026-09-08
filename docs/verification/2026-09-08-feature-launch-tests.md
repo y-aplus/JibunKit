@@ -1,0 +1,9 @@
+# 生成Featureの単独起動検証
+
+2026-09-08
+
+雛形へExample用UIテストtarget・共有test scheme・起動テストを追加した。標準のTuist生成とXcodeテスト実行を使い、独自のプロジェクト生成機構は追加しない。Featureのlibrary PackageはCore非依存のままで、テストはExample appを通じて実行する。
+
+CIでは一時checkoutに生成したNotesExampleを同じSimulatorで起動し、初期画面が表示されることを検証する。ホスト組込みビルドと単独版の起動を区別する。TemplateLaunch.xcresultと実行ログを既存artifactへ含める。
+
+差分検査は成功。Tuistでの生成、iOSビルド、新しい起動テスト、製品回帰はCIで検証する。

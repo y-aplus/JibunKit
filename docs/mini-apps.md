@@ -160,3 +160,9 @@ Counterの接続は`Sources/CounterIntegration/CounterMiniApp.swift`の`backup:`
 データ形式を更新する際は、prepareで対応するschemaを選び、旧payloadを新しい状態へ変換し、必須値や参照整合性を検証してから`MiniAppPreparedRestore`へ渡す。この時点では保存先や通知を変更しない。実際の適用は利用者が上書きを確定した後に行われる。実行失敗で途中状態を残せないFeatureは、自身の保存方式に応じてtransactionや置換処理を使う。共通基盤による全Featureのrollbackはない。
 
 新しいproviderの検証では、snapshotの往復だけでなく、不正payload・未知schemaをprepareで拒否して値を維持すること、片方の復元で他Featureを変更しないこと、実行時の失敗を成功として返さないことを確認する。既存の`Tests/MiniAppIntegrationTests/MiniAppBackupIntegrationTests.swift`がテストの参照先になる。
+
+### 独立版のUIテスト
+
+雛形は`UITests/LaunchTests.swift`とExample用UIテストtargetも生成する。生成したExample schemeで`xcodebuild test -workspace Modules/Notes/NotesExample.xcworkspace -scheme NotesExample -destination 'platform=iOS Simulator,name=<利用可能なiPhone名>'`を実行できる。最初のテストはFeatureの初期画面を確認する。実装を育てたら、利用可能になったことを示す画面要素や重要な操作へテストを更新する。
+
+これはJibunKitのRegistryやCoreに依存しない単独版の起動確認である。ホストへ組み込んだ後の共存検証とは別に行う。既存Moduleは自動更新しないため、テストtargetが必要なら生成されるProjectとUITestsを参考に追加する。CIのSimulator検証では、その場で生成したNotesExampleを起動して同じテストを実行する。

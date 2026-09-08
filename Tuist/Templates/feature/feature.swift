@@ -9,5 +9,6 @@ let template = Template(
         .file(path: "Modules/\(name)/Project.swift", templatePath: "Project.stencil"),
         .file(path: "Modules/\(name)/Sources/\(name)Feature/\(name)RootView.swift", templatePath: "View.stencil"),
         .file(path: "Modules/\(name)/Example/App.swift", templatePath: "App.stencil"),
+        .file(path: "Modules/\(name)/UITests/LaunchTests.swift", templatePath: "UITests.stencil"),
     ]
 )

@@ -275,6 +275,17 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/CounterDerivedData" CODE_SIGNING_ALLOWED=NO
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/CounterDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
+      - name: Test generated standalone Feature
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test -workspace "$RUNNER_TEMP/template-check/Modules/Notes/NotesExample.xcworkspace" -scheme NotesExample \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/TemplateSimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TemplateLaunch.xcresult" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-launch.log"
+
       - name: Build and install backup UI harness
         if: inputs.simulator_tests
         shell: bash
@@ -354,6 +365,8 @@ jobs:
           name: JibunKit-simulator-evidence
           path: |
             ${{ runner.temp }}/Migration.xcresult
+            ${{ runner.temp }}/TemplateLaunch.xcresult
+            ${{ runner.temp }}/template-launch.log
             ${{ runner.temp }}/FilesRoundTrip.xcresult
             ${{ runner.temp }}/files-screenshots
             ${{ runner.temp }}/files-diagnostics

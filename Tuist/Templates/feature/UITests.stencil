@@ -1,0 +1,11 @@
+import XCTest
+
+@MainActor
+final class LaunchTests: XCTestCase {
+    func testStandaloneFeatureLaunches() {
+        let app = XCUIApplication()
+        app.launch()
+        // Replace with the Feature's initial usable screen as it grows.
+        XCTAssertTrue(app.staticTexts["{{ name }}"].waitForExistence(timeout: 10))
+    }
+}

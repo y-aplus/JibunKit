@@ -13,5 +13,17 @@ let project = Project(
             sources: ["Example/**"],
             dependencies: [.package(product: "{{ name }}Feature")]
         ),
+        .target(
+            name: "{{ name }}ExampleUITests", destinations: .iOS, product: .uiTests,
+            bundleId: "com.jibunkit.example.{{ name | lowercase }}.uitests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default, sources: ["UITests/**"],
+            dependencies: [.target(name: "{{ name }}Example")]
+        ),
+    ],
+    schemes: [
+        .scheme(name: "{{ name }}Example", shared: true,
+                buildAction: .buildAction(targets: ["{{ name }}Example"]),
+                testAction: .targets(["{{ name }}ExampleUITests"], configuration: .debug)),
     ]
 )

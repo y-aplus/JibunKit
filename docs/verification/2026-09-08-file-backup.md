@@ -114,3 +114,8 @@ schema 1の実JSON・添付fixtureからの通常読込み、元bytes維持、�
 34229230584（source 4cf2d8d）でも同じ取込み後表示に失敗し、Binding変更だけでは解消しなかった。fileImporterをSection直付けから独立したbackground Viewへ移す。コールバック到着と保存・再読込み完了をOSLogへ記録し、CI専用SimulatorのRecords indexを成果物へ回収する。ログに添付の内容・パスは出さない。次runでコールバック未到着、保存失敗、表示不更新を区別する。
 
 34231368141（source 75c2378）の回収indexは対象記録のattachmentsが空で、diagnosticsにも追加したcompletion/savedログがなかった。保存後の表示更新ではなくコールバック到達前の問題として調査する。Sectionのbackgroundに置く方式も解消しなかったため、fileImporterを常設の添付ボタンに直接付ける。選択結果を受け取るViewをListのSection展開に依存させず、同じテストとログで再検証する。
+
+
+34233598948（source 604e003）は同じ添付行待ちで失敗。失敗時の全UI階層には背後のRecords詳細だけでなく、前面のFiles「RecordsExample」フォルダとfixtureセルが残っている。前回34231368141の録画もFilesが閉じておらず、これまでの「選択後」という解釈を訂正する。コールバック未到着だけではSwiftUIの受取り元の不具合を示さない。
+
+Filesのセルframeは(10,212,122,189.7)、サムネイルimageは(39.7,216,63,84)。セル中央はy=306.8でサムネイルの下に位置する。テストのセル全体tapを、対象セル内のimageへのtapに変更する。さらにFile View消失を先にassertし、選択未完了と取込み後の保存・表示失敗を区別する。プロダクトの取込み処理は今回変更せず、同じ取込み・Quick Look・再起動・削除テストで検証する。結果待ち。

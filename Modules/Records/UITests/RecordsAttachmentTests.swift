@@ -27,7 +27,16 @@ final class RecordsAttachmentTests: XCTestCase {
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         tap(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "RecordsExample")).firstMatch)
-        tap(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch)
+        let fixture = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch
+        XCTAssertTrue(fixture.waitForExistence(timeout: 15))
+        // Files icon cells include the filename and metadata below the thumbnail.
+        // Their center can land outside the file's opening hit target.
+        let thumbnail = fixture.images.firstMatch
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 15))
+        XCTAssertTrue(thumbnail.isHittable, app.debugDescription)
+        thumbnail.tap()
+        XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15),
+                      "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
         XCTAssertTrue(attachment().waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(attachment().label.contains("attachment-fixture.txt"))
         tap(attachment())

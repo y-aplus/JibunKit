@@ -104,6 +104,24 @@ final class MigrationUITests: XCTestCase {
         XCTAssertEqual(message.value as? String, "Keep during restore")
     }
 
+    func testMiniAppLinksOpenColdAndSwitchWarm() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        app.terminate()
+        app.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/counter")))
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10))
+        app.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/reminder")))
+        XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 10))
+        app.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/missing")))
+        XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 5))
+        app.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/counter?delete=true")))
+        XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 5))
+        app.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/counter")))
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10))
+        capture("mini-app-link-counter")
+        returnToList()
+    }
+
     func testPersistenceAndHostIntegration() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

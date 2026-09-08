@@ -12,6 +12,10 @@ let project = Project(
                 "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.1.0",
                 "CFBundleVersion": "2", "JibunKitAppGroup": "group.com.jibunkit.shared",
                 "UILaunchScreen": [:],
+                "CFBundleURLTypes": [[
+                    "CFBundleURLName": "com.jibunkit.app.mini-app",
+                    "CFBundleURLSchemes": ["jibunkit"],
+                ]],
             ]),
             sources: ["Sources/JibunKit/**"],
             entitlements: "JibunKit.entitlements",
@@ -29,7 +33,7 @@ let project = Project(
             ]),
             sources: ["Sources/JibunKitWidget/**"],
             entitlements: "JibunKitWidget.entitlements",
-            dependencies: [.package(product: "CounterFeature")]
+            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),
         .target(
             name: "MigrationUITests", destinations: .iOS, product: .uiTests,

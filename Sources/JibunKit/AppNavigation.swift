@@ -1,5 +1,6 @@
 #if os(iOS)
 import JibunKitCore
+import Foundation
 import Observation
 
 @MainActor
@@ -8,6 +9,11 @@ final class AppNavigation {
     static let shared = AppNavigation()
 
     var path: [MiniAppID] = []
+
+    func openURL(_ url: URL) {
+        guard let id = MiniAppLink.resolve(url, registeredIDs: MiniAppRegistry.registeredIDs) else { return }
+        open(id)
+    }
 
     func open(_ miniAppID: MiniAppID) {
         guard MiniAppRegistry.registeredIDs.contains(miniAppID) else {

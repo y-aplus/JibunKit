@@ -136,3 +136,11 @@ App Groupのコンテナは[Appleの公式API](https://developer.apple.com/docum
 `MiniAppBackup`は、Feature ID・schema version・任意のDataを共通JSONへ包む。`decode`は外側の形式と全entryを検証し、`selecting`は明示したIDのentryだけ返す。対象のFeatureがpayloadを検証・移行してから保存状態へ適用する。Feature固有の形式には`MiniAppBackupEntry.decodePayload`によるCodable JSON読込みも選べる。
 
 Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録できる。exportはそのFeatureの整合したsnapshotを返し、prepareはpayloadを検証・移行してから適用closureを返す。prepareでは保存値を変更しない。ホストは全選択のprepareを終えてから適用する。適用中の失敗は完了済みと失敗対象を区別し、Feature間のrollbackを保証しない。CounterとReminderが実装例で、一覧のバックアップ操作から書出し・読込み・復元対象選択・上書き確認へ進む画面を実装している。Filesからの再読込み以降のUI検証はSimulatorのURL受渡し障害で未完了である。[作業記録](verification/2026-09-07-selective-backup.md)に継続タスクと境界を記載する。
+
+## Widget・外部URLから開く
+
+`MiniAppLink.url(for: id)`で`jibunkit://mini-app/<Feature ID>`を生成できる。ホストは登録済みFeatureの入口へ遷移し、起動中ならホストの遷移先を置き換える。Counter Widgetが使用例。Widget targetにも`JibunKitCore`を依存として追加する。
+
+URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。Feature内部の詳細画面への遷移は今後の拡張範囲であり、この形式ではまだ渡さない。表示中のsheetを強制終了しないため、sheetがあるときは閉じた後に遷移先が見える。独立版ではそのApp ShellがURL登録・受信を担う。
+
+[AppleのWidget連携](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity)に従い、Widgetの`widgetURL`とホストの`onOpenURL`を接続している。カスタムschemeは認証境界ではなく、同じschemeを登録する別アプリとの競合はOSの扱いに依存する。

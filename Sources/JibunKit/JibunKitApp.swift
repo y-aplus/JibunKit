@@ -10,6 +10,7 @@ struct JibunKitApp: App {
     var body: some Scene {
         WindowGroup {
             MiniAppListScreen(navigation: navigation)
+                .onOpenURL { navigation.openURL($0) }
         }
     }
 }

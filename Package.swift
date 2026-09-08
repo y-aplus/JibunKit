@@ -51,7 +51,7 @@ let package = Package(
         ),
         .target(
             name: "JibunKitWidget",
-            dependencies: ["CounterFeature"]
+            dependencies: ["CounterFeature", "JibunKitCore"]
         ),
         .testTarget(
             name: "CounterFeatureTests",

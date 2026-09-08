@@ -1,5 +1,6 @@
 #if os(iOS)
 import CounterFeature
+import JibunKitCore
 import SwiftUI
 import WidgetKit
 
@@ -28,6 +29,7 @@ struct CounterWidget: Widget {
                 }
             }
             .containerBackground(.fill.tertiary, for: .widget)
+            .widgetURL(MiniAppLink.url(for: MiniAppID("counter")))
         }
         .configurationDisplayName("カウンター")
         .description("アプリとショートカットが更新した値を表示します。")

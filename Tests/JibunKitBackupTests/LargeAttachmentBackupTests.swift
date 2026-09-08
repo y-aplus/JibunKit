@@ -9,6 +9,20 @@ import Darwin
 #endif
 
 final class LargeAttachmentBackupTests: XCTestCase, @unchecked Sendable {
+    func testLegacyPayloadMemoryBaseline() throws {
+        reportPeak("legacy-before-payload")
+        let payload = Data(repeating: 0x5a, count: 128 * 1024 * 1024)
+        let backup = try MiniAppBackup(entries: [MiniAppBackupEntry(id: MiniAppID("large"), schemaVersion: 1, payload: payload)])
+        reportPeak("legacy-after-payload")
+        let started = Date()
+        let encoded = try backup.encoded()
+        reportPeak("legacy-after-encode")
+        let decoded = try MiniAppBackup.decode(encoded)
+        reportPeak("legacy-after-decode")
+        XCTAssertEqual(decoded.entries[0].payload, payload)
+        print("LEGACY_BACKUP payloadBytes=\(payload.count) encodedBytes=\(encoded.count) elapsedSeconds=\(Date().timeIntervalSince(started))")
+    }
+
     func testLargeAttachmentRoundTripWithoutWholeFileData() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)

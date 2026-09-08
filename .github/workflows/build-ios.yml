@@ -87,6 +87,11 @@ jobs:
       - name: Test shared feature logic
         run: swift test
 
+      - name: Measure backup memory in separate test processes
+        run: |
+          swift test --skip-build --filter LargeAttachmentBackupTests/testLargeAttachmentRoundTripWithoutWholeFileData
+          swift test --skip-build --filter LargeAttachmentBackupTests/testLegacyPayloadMemoryBaseline
+
       - name: Test independent Feature packages
         run: python3 Tools/test-module-packages.py Modules
 

@@ -52,14 +52,18 @@ struct BackupScreen: View {
                 case .failure: status = "ファイルを読み込めませんでした。保存データは変更していません。"
                 }
             }
-            .fileExporter(isPresented: $exporting, document: document, contentType: .json,
+            .background {
+                Color.clear.fileExporter(isPresented: $exporting, document: document, contentType: .json,
                           defaultFilename: exportFilename, onCompletion: exportCompleted)
+            }
             .onChange(of: exporting) { _, presented in
                 if !presented { document = nil }
             }
-            .fileExporter(isPresented: $exportingArchive, item: archive, contentTypes: [.zip],
+            .background {
+                Color.clear.fileExporter(isPresented: $exportingArchive, item: archive, contentTypes: [.zip],
                           defaultFilename: exportFilename, onCompletion: exportCompleted,
                           onCancellation: { archive = nil })
+            }
             .alert("現在のデータを置き換えますか？", isPresented: $confirming) {
                 Button("キャンセル", role: .cancel) { pending = nil }
                 Button("置き換えて復元", role: .destructive) { restore() }

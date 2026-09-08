@@ -83,6 +83,9 @@ jobs:
       - name: Test shared feature logic
         run: swift test
 
+      - name: Test independent Records storage
+        run: swift test --package-path Modules/Records
+
       - name: Verify native Feature template
         shell: bash
         run: |

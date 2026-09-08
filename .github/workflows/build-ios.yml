@@ -280,6 +280,7 @@ jobs:
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/BackupHarnessDerivedData/Build/Products/Debug-iphonesimulator/BackupHarness.app"
 
       - name: Run simulator integration checks
+        id: integration
         if: inputs.simulator_tests
         shell: bash
         run: |
@@ -291,8 +292,25 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/Migration.xcresult" \
+            -skip-testing:MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
+
+      - name: Run Files backup round trip
+        if: ${{ !cancelled() && inputs.simulator_tests && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test \
+            -workspace JibunKit.xcworkspace \
+            -scheme MigrationUITests \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/FilesRoundTrip.xcresult" \
+            -only-testing:MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/files-round-trip.log"
 
       - name: Export simulator screenshots
         if: always() && inputs.simulator_tests
@@ -305,6 +323,14 @@ jobs:
             xcrun xcresulttool export diagnostics \
               --path "$RUNNER_TEMP/Migration.xcresult" \
               --output-path "$RUNNER_TEMP/simulator-diagnostics"
+          fi
+          if [[ -d "$RUNNER_TEMP/FilesRoundTrip.xcresult" ]]; then
+            xcrun xcresulttool export attachments \
+              --path "$RUNNER_TEMP/FilesRoundTrip.xcresult" \
+              --output-path "$RUNNER_TEMP/files-screenshots"
+            xcrun xcresulttool export diagnostics \
+              --path "$RUNNER_TEMP/FilesRoundTrip.xcresult" \
+              --output-path "$RUNNER_TEMP/files-diagnostics"
           fi
           mkdir -p "$RUNNER_TEMP/simulator-crashes"
           find "$HOME/Library/Logs/DiagnosticReports" -type f -name '*JibunKit*' \
@@ -322,6 +348,10 @@ jobs:
           name: JibunKit-simulator-evidence
           path: |
             ${{ runner.temp }}/Migration.xcresult
+            ${{ runner.temp }}/FilesRoundTrip.xcresult
+            ${{ runner.temp }}/files-screenshots
+            ${{ runner.temp }}/files-diagnostics
+            ${{ runner.temp }}/files-round-trip.log
             ${{ runner.temp }}/simulator-screenshots
             ${{ runner.temp }}/simulator-diagnostics
             ${{ runner.temp }}/simulator-crashes

@@ -18,6 +18,9 @@ final class RecordsAttachmentTests: XCTestCase {
         func attachment() -> XCUIElement {
             app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "records.attachment.")).firstMatch
         }
+        tap(app.buttons["records.fixture.export"])
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.buttons["records.fixture.saved"].waitForExistence(timeout: 15), app.debugDescription)
         tap(app.buttons["records.add"])
         tap(app.textFields["records.title"])
         app.textFields["records.title"].typeText(String(title))

@@ -127,3 +127,5 @@ Filesのセルframeは(10,212,122,189.7)、サムネイルimageは(39.7,216,63,8
 34239715261（source dc2a16a）のfocused artifactで選択の到達先を確認した。14:57:01にDocumentManager.Serviceがattachment-fixture.txtのselection/did pick urlsを記録し、14:57:01.787にRecordsExample側がbookmarkableStringからのURL生成をNSFileProviderErrorDomain -1005 / NSFileProviderResolverErrorDomain -1012で失敗。その直後にdidPickDocumentURLsへの空配列を記録している。したがってタップ未到達やFeature保存処理の失敗ではなく、OSのFileProvider URL解決で止まっている。
 
 Records Simulatorだけが署名なしで実行されている条件を切り分けるため、既存の生成Featureホスト検証と同じアドホック署名（CODE_SIGNING_ALLOWED=YES / CODE_SIGN_IDENTITY=- / CODE_SIGN_STYLE=Manual）で再実行する。端末用IPAの署名やプロダクトコードは変更しない。署名が原因かは未確定で、同じFiles操作・取込み・再起動・削除の検証とサービスログで判断する。
+
+34242223024（source 2599060）は署名付きでもFile View消失に失敗。did pick urlsに続き同じbookmarkableString解決エラー(-1005/-1012)が発生し、アドホック署名では解消しなかった。次はfixtureをDocumentsへ直接生成する条件を切り分ける。テスト引数でのみ表示するExample側のボタンから標準fileExporterでtxtを書き出し、保存成功を待ってからRecords本来のfileImporterで取り込む。初期保存先はExample Documentsを指定する。Featureコードや取込み後の検証は変更せず、Files管理下で保存したファイルの解決を比較する。これは未検証の切り分けであり、OS不具合や解消を断定しない。

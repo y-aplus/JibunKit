@@ -13,3 +13,7 @@ CIでは一時checkoutに生成したNotesExampleを同じSimulatorで起動し�
 [run 34179709036](https://github.com/y-aplus/JibunKit/actions/runs/34179709036)、source `6e2abddb65648db20e31c0d57d329e23536a8982`は全step成功。生成されたNotesExampleの起動テスト、ホスト組込みビルド、製品UI回帰、Files往復まで通った。
 
 次の未検証範囲として、生成Featureを追加した一時ホストのUIテストを追加した。一覧にNotes・Counter・Reminderが共存し、Notesを開いて戻り、Counterへ移動した後にURLからNotesへ切り替わることを確認する。テストsourceはTests/TemplateIntegrationに置き、一時checkoutのUITestsへだけコピーする。製品Registry・IPAへNotesを追加しない。専用xcresultとログを回収する。CI結果待ち。
+
+## 生成Featureのホスト内実行結果
+
+[run 34180768100](https://github.com/y-aplus/JibunKit/actions/runs/34180768100)、source `e3b3fe0f200072dea07409c1ec997b992fa971e8`は全step成功。生成Notesの単独起動、ホスト内の一覧からの起動、Counter/Reminderとの共存、URLによるCounterからNotesへの切替と一覧復帰まで成功した。既存UI・Files往復・ビルド・IPA検査も成功。

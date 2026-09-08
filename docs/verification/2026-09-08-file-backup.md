@@ -50,3 +50,13 @@ ZIP内は`manifest.json`と`features/<連番>/`で構成する。manifestの形�
 CI 34194302220（source 60d7357）はコンパイル成功後、混在ZIP往復の書き出しで失敗した。macOSの一時ディレクトリが基準URLでは/var、enumeratorでは/private/varとなり、文字数で切り出した相対パスがcontents/ontents/featuresになった。基準URLをresolvingSymlinksInPathで正規化し、pathComponentsの包含を確認して相対名を作る。ZIPへ渡す読み取り元も列挙したfileURLを直接使用する。旧JSON・CRC破損・不正パス拒否のテストはこのrunでも成功。混在ZIP往復と寿命管理は再実行で確認する。
 
 CI 34194545595（source e5560ac）でも混在ZIPの書き出しが失敗し、絶対パスの包含検査（189行）で拒否された。基準URLだけを正規化する修正では不十分だった。最終実装はcontentsOfDirectoryで各階層を読み、項目名から相対パスを組み立てる。絶対パスの文字数やprefix表現に依存せず、列挙時のI/Oエラーはそのまま伝播する。symlink・重複・不正名の検査は維持する。
+
+CI [34194728524](https://github.com/y-aplus/JibunKit/actions/runs/34194728524)（source cad223d）は成功。混在ZIPの往復、選択復元、元のexportを破棄した後のimportの独立性、planによるimport寿命維持と解放を含む48件、独立Records7件と各iOSビルドが通った。このrunではSimulator UIを実行していない。
+
+## バックアップ画面への接続（今回追加、CI結果待ち）
+
+fileBackupを持つFeatureも書き出し対象に表示する。選択にfile providerが含まれる場合はZIP、既存payload providerだけの場合は従来のJSONを書き出す。ファイル名の日付時刻付与は維持。ZIPはTransferableのFileRepresentationでシステムへ渡し、完了またはキャンセルまで所有オブジェクトを保持する。ZIPをDataやFileWrapperへ読み戻さない。ZIPFoundationのMITライセンスはバックアップmoduleのresourceへ同梱する。
+
+読込みでJSONとZIPを受け付け、entryの保存方式に対応するproviderがある場合だけ復元対象を選択可能にする。全選択対象のprepare、明示的な上書き確認、途中失敗報告は共通。importしたファイルは画面とpending planが所有し、新しい読込み・成功・画面破棄に伴う参照解放で片付ける。キャンセル後も同じimportを再選択できる。
+
+テスト専用Harnessにファイルproviderと実ZIPで読み込んだfixtureを追加し、製品のBackupScreenでキャンセル時の保存維持・添付だけの復元・Counter/Reminder維持・再起動後の維持を検証する。これはFiles pickerでのZIP往復の代用とはしない。新ZIPの実Files書き出し/読込みと、大容量計測は引き続き残る。

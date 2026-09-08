@@ -1,5 +1,6 @@
 #if os(iOS)
 import JibunKitCore
+import JibunKitBackup
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -7,7 +8,9 @@ struct BackupScreen: View {
     @Environment(\.dismiss) private var dismiss
     @State private var exportIDs: Set<MiniAppID> = []
     @State private var restoreIDs: Set<MiniAppID> = []
-    @State private var imported: MiniAppBackup?
+    @State private var imported: ImportedMiniAppBackup?
+    @State private var archive: BackupArchiveDocument?
+    @State private var exportingArchive = false
     @State private var document: BackupDocument?
     @State private var exportFilename = "JibunKit-backup"
     @State private var importing = false
@@ -19,18 +22,19 @@ struct BackupScreen: View {
 
     private let definitions: [MiniAppDefinition]
 
-    init(definitions: [MiniAppDefinition], importedBackup: MiniAppBackup? = nil) {
+    init(definitions: [MiniAppDefinition], importedBackup: MiniAppBackup? = nil, importedArchive: ImportedMiniAppBackup? = nil) {
         self.definitions = definitions
-        _imported = State(initialValue: importedBackup)
+        _imported = State(initialValue: importedArchive ?? importedBackup.map { ImportedMiniAppBackup(legacy: $0) })
     }
     private var providers: [MiniAppBackupProvider] { definitions.compactMap(\.backup) }
+    private var fileProviders: [MiniAppFileBackupProvider] { definitions.compactMap(\.fileBackup) }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
                     ForEach(definitions) { definition in
-                        if definition.backup != nil {
+                        if definition.backup != nil || definition.fileBackup != nil {
                             Toggle(definition.title, isOn: selection(definition.id, in: $exportIDs))
                                 .accessibilityIdentifier("backup.export.\(definition.id.rawValue)")
                         } else {
@@ -55,10 +59,11 @@ struct BackupScreen: View {
                     if let imported {
                         LabeledContent("作成日時", value: imported.createdAt.formatted(date: .abbreviated, time: .shortened))
                         ForEach(imported.entries, id: \.id) { entry in
-                            let id = MiniAppID(entry.id)
-                            if let definition = definitions.first(where: { $0.id == id }), definition.backup != nil {
+                            let id = entry.id
+                            if let definition = definitions.first(where: { $0.id == id }),
+                               (entry.storage == .payload ? definition.backup != nil : definition.fileBackup != nil) {
                                 Toggle(definition.title, isOn: selection(id, in: $restoreIDs))
-                                    .accessibilityIdentifier("backup.restore.\(entry.id)")
+                                    .accessibilityIdentifier("backup.restore.\(entry.id.rawValue)")
                             } else {
                                 LabeledContent(title(id), value: "この構成では復元できません")
                             }
@@ -81,21 +86,18 @@ struct BackupScreen: View {
                 }
             }
             .interactiveDismissDisabled(busy)
-            .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+            .fileImporter(isPresented: $importing, allowedContentTypes: [.json, .zip]) { result in
                 switch result {
                 case .success(let url): load(url)
                 case .failure: status = "ファイルを読み込めませんでした。保存データは変更していません。"
                 }
             }
             .fileExporter(isPresented: $exporting, document: document, contentType: .json,
-                          defaultFilename: exportFilename) { result in
-                switch result {
-                case .success: status = "バックアップを書き出しました。"
-                case .failure(let error):
-                    if (error as NSError).code != NSUserCancelledError { status = "書き出せませんでした。" }
-                }
-                document = nil
-            }
+                          defaultFilename: exportFilename, onCompletion: exportCompleted,
+                          onCancellation: { document = nil })
+            .fileExporter(isPresented: $exportingArchive, item: archive, contentTypes: [.zip],
+                          defaultFilename: exportFilename, onCompletion: exportCompleted,
+                          onCancellation: { archive = nil })
             .alert("現在のデータを置き換えますか？", isPresented: $confirming) {
                 Button("キャンセル", role: .cancel) { pending = nil }
                 Button("置き換えて復元", role: .destructive) { restore() }
@@ -104,6 +106,16 @@ struct BackupScreen: View {
                      "をバックアップの内容に戻します。実行中に失敗すると、一部だけ復元される場合があります。")
             }
         }
+    }
+
+    private func exportCompleted(_ result: Result<URL, Error>) {
+        switch result {
+        case .success: status = "バックアップを書き出しました。"
+        case .failure(let error):
+            if (error as NSError).code != NSUserCancelledError { status = "書き出せませんでした。" }
+        }
+        document = nil
+        archive = nil
     }
 
     private func title(_ id: MiniAppID) -> String {
@@ -117,7 +129,9 @@ struct BackupScreen: View {
     }
 
     private func exportSelected() {
-        let selected = providers.filter { exportIDs.contains($0.id) }
+        let ids = exportIDs
+        let selected = providers.filter { ids.contains($0.id) }
+        let selectedFiles = fileProviders.filter { ids.contains($0.id) }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -129,15 +143,21 @@ struct BackupScreen: View {
         Task {
             defer { busy = false }
             do {
-                let data = try await Task.detached {
-                    var entries: [MiniAppBackupEntry] = []
-                    for provider in selected {
-                        entries.append(try await provider.exportEntry())
-                    }
-                    return try MiniAppBackup(entries: entries).encoded()
-                }.value
-                document = BackupDocument(data: data)
-                exporting = true
+                if selectedFiles.isEmpty {
+                    let data = try await Task.detached {
+                        var entries: [MiniAppBackupEntry] = []
+                        for provider in selected { entries.append(try await provider.exportEntry()) }
+                        return try MiniAppBackup(entries: entries).encoded()
+                    }.value
+                    document = BackupDocument(data: data)
+                    exporting = true
+                } else {
+                    let file = try await Task.detached {
+                        try await MiniAppBackupArchive.export(selected: ids, providers: selected, fileProviders: selectedFiles)
+                    }.value
+                    archive = BackupArchiveDocument(file: file)
+                    exportingArchive = true
+                }
             } catch { status = "バックアップを作成できませんでした。ファイルは書き出していません。" }
         }
     }
@@ -150,23 +170,24 @@ struct BackupScreen: View {
                 imported = try await Task.detached {
                     let access = url.startAccessingSecurityScopedResource()
                     defer { if access { url.stopAccessingSecurityScopedResource() } }
-                    return try MiniAppBackup.decode(Data(contentsOf: url))
+                    return try MiniAppBackupArchive.load(from: url)
                 }.value
                 status = "復元するアプリを選んでください。まだ保存データは変更していません。"
             } catch { status = "対応するバックアップを読み込めませんでした。保存データは変更していません。" }
         }
     }
 
-    private func prepareRestore(_ backup: MiniAppBackup) {
+    private func prepareRestore(_ backup: ImportedMiniAppBackup) {
         let selected = restoreIDs
         let available = providers
+        let availableFiles = fileProviders
         busy = true
         status = nil
         Task {
             defer { busy = false }
             do {
                 pending = try await Task.detached {
-                    try MiniAppRestorePlan(backup: backup, selected: selected, providers: available)
+                    try backup.prepareRestore(selected: selected, providers: available, fileProviders: availableFiles)
                 }.value
                 confirming = true
             } catch { status = "選んだデータを復元できません。内容や対応する版を確認してください。保存データは変更していません。" }

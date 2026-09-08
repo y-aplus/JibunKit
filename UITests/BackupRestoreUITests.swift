@@ -22,12 +22,14 @@ final class BackupRestoreUITests: XCTestCase {
 
     private func tap(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 10))
+        if !element.isHittable { app.swipeUp() }
         element.tap()
     }
 
     private func select(_ id: String) {
         let toggle = app.switches["backup.restore.\(id)"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        if !toggle.isHittable { app.swipeUp() }
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
     }
 
@@ -91,5 +93,32 @@ final class BackupRestoreUITests: XCTestCase {
         XCTAssertTrue(status.label.contains("リマインダーで失敗"))
         tap(app.buttons["閉じる"])
         expectValues("3|keep")
+    }
+
+    func testFileBackupCancelThenRestoreOnlyAttachmentAndPersist() {
+        launchHarness()
+        XCTAssertEqual(app.staticTexts["harness.file-value"].label, "live attachment")
+        tap(app.buttons["harness.files"])
+        select("files")
+        tap(app.buttons["backup.restore"])
+        tap(app.alerts.buttons["キャンセル"])
+        tap(app.buttons["閉じる"])
+        expectValues("9|keep")
+        XCTAssertEqual(app.staticTexts["harness.file-value"].label, "live attachment")
+        tap(app.buttons["harness.files"])
+        select("files")
+        tap(app.buttons["backup.restore"])
+        tap(app.alerts.buttons["置き換えて復元"])
+        XCTAssertTrue(app.staticTexts["添付テストを復元しました。"].waitForExistence(timeout: 10))
+        tap(app.buttons["閉じる"])
+        let predicate = NSPredicate(format: "label == %@", "restored attachment")
+        expectation(for: predicate, evaluatedWith: app.staticTexts["harness.file-value"])
+        waitForExpectations(timeout: 10)
+        expectValues("9|keep")
+        app.terminate()
+        app.launchArguments.append("--preserve")
+        app.launch()
+        expectValues("9|keep")
+        XCTAssertEqual(app.staticTexts["harness.file-value"].label, "restored attachment")
     }
 }

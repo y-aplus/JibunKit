@@ -31,7 +31,7 @@ let package = Package(
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.20"),
     ],
     targets: [
-        .target(name: "JibunKitBackup", dependencies: ["JibunKitCore", .product(name: "ZIPFoundation", package: "ZIPFoundation")]),
+        .target(name: "JibunKitBackup", dependencies: ["JibunKitCore", .product(name: "ZIPFoundation", package: "ZIPFoundation")], resources: [.copy("Resources/ZIPFoundation-LICENSE.txt")]),
         .testTarget(name: "JibunKitBackupTests", dependencies: ["JibunKitBackup", "JibunKitCore", "RecordsBackupIntegration", .product(name: "RecordsFeature", package: "Records"), .product(name: "ZIPFoundation", package: "ZIPFoundation")]),
         .target(
             name: "RecordsBackupIntegration",
@@ -61,6 +61,7 @@ let package = Package(
             name: "JibunKit",
             dependencies: [
                 "JibunKitCore",
+                "JibunKitBackup",
                 "CounterFeature",
                 "ReminderFeature",
                 "CounterIntegration",

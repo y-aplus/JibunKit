@@ -10,7 +10,7 @@ let project = Project(
             bundleId: "com.jibunkit.backup-harness", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
             sources: ["Tests/BackupHarness/**", "Sources/JibunKit/BackupScreen.swift", "Sources/JibunKit/BackupDocument.swift"],
-            dependencies: [.package(product: "JibunKitCore"), .package(product: "CounterFeature"), .package(product: "ReminderFeature")]
+            dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"), .package(product: "ReminderFeature")]
         ),
         .target(
             name: "JibunKit-App", destinations: .iOS, product: .app,
@@ -26,7 +26,7 @@ let project = Project(
             ]),
             sources: ["Sources/JibunKit/**"],
             entitlements: "JibunKit.entitlements",
-            dependencies: [.package(product: "JibunKitCore"), .package(product: "CounterFeature"),
+            dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension")]
         ),

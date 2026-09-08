@@ -296,8 +296,8 @@ jobs:
           set -euo pipefail
           xcodebuild build -workspace JibunKit.xcworkspace -scheme CounterExample \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath "$RUNNER_TEMP/CounterDerivedData" CODE_SIGNING_ALLOWED=NO
-          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/CounterDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" CODE_SIGNING_ALLOWED=NO
+          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
       - name: Test Records editing and persistence
         if: inputs.simulator_tests && inputs.feature_validation
@@ -341,8 +341,8 @@ jobs:
           set -euo pipefail
           xcodebuild build -workspace JibunKit.xcworkspace -scheme BackupHarness \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath "$RUNNER_TEMP/BackupHarnessDerivedData" CODE_SIGNING_ALLOWED=NO
-          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/BackupHarnessDerivedData/Build/Products/Debug-iphonesimulator/BackupHarness.app"
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" CODE_SIGNING_ALLOWED=NO
+          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/BackupHarness.app"
 
       - name: Run simulator integration checks
         id: integration

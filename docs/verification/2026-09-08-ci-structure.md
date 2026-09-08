@@ -22,3 +22,9 @@ iOS専用テストがあるFeatureはModules/<Name>/ci-test.shを用意する。
 template・Package/Project・Integration・ナビゲーション・共有保存先など、Feature追加や組込みへ影響する変更ではfeature_validation=trueを指定する。出荷候補も両方trueで検証する。差分を推測する独自影響解析は追加しない。通常モードが成功しただけでは重い検証の成功とは扱わない。
 
 バックアップ画面の再検証run 34205814278は変更前のworkflow/sourceで継続中であり、その結果と今回の構成変更の検証結果を区別する。
+
+## 待ち時間の短縮
+
+run 34205814278ではIPAアップロードまで約5分、Simulator準備約3分28秒、Counterビルド約3分、Records単独テスト工程約13分46秒、生成Feature単独約1分39秒、生成Featureホスト約4分26秒だった（工程時間であり純粋なテスト実行時間ではない）。待ち時間の主要因はIPA生成後の検証である。
+
+通常の画面修正はsimulator_tests=true / feature_validation=falseを使い、独立Feature検証を必要な変更・出荷時に限定する。今回さらに、同じworkspace・Debug・Simulator・署名設定のCounterExample、BackupHarness、本体UIテストのderivedDataPathをSimulatorDerivedDataへ統一する。順次実行を保ったまま共通依存の再ビルドを減らす。別checkoutや署名設定の異なる生成Featureホストの成果物は共有しない。短縮幅は新runの実績で確認し、現時点では保証しない。

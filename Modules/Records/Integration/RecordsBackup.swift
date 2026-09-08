@@ -7,9 +7,9 @@ public enum RecordsBackup {
     public static func provider(store: RecordStore, id: MiniAppID) -> MiniAppFileBackupProvider {
         MiniAppFileBackupProvider(id: id, export: { destination in
             try await store.exportSnapshot(to: destination)
-            return 1
+            return 2
         }, prepare: { entry in
-            guard entry.schemaVersion == 1 else { throw RecordStoreError.unsupportedSchema(entry.schemaVersion) }
+            guard entry.schemaVersion == 1 || entry.schemaVersion == 2 else { throw RecordStoreError.unsupportedSchema(entry.schemaVersion) }
             try RecordStore.validateSnapshot(at: entry.directory)
             return MiniAppPreparedRestore {
                 // Recheck on apply as well: a missing/replaced snapshot must not

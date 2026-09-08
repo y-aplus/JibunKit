@@ -10,12 +10,15 @@ public struct Record: Codable, Equatable, Identifiable, Sendable {
     public var title: String
     public var body: String
     public var attachments: [RecordAttachment]
+    /// Nil for records created before timestamps were stored; never invent dates.
+    public let createdAt: Date?
 
     public init(id: UUID = UUID(), title: String, body: String = "") {
         self.id = id
         self.title = title
         self.body = body
         self.attachments = []
+        self.createdAt = .now
     }
 }
 
@@ -30,7 +33,7 @@ public enum RecordStoreError: Error, Equatable {
 /// Cross-process writes require additional coordination by the application.
 public actor RecordStore {
     private struct Index: Codable {
-        var version = 1
+        var version = 2
         var records: [Record] = []
     }
 
@@ -180,7 +183,7 @@ public actor RecordStore {
         try requireDirectory(snapshot)
         let indexFile = snapshot.appendingPathComponent("records.json")
         try requireRegularFile(indexFile)
-        let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: indexFile))
+        let index = try decodeIndex(Data(contentsOf: indexFile))
         try validate(index)
         let assets = snapshot.appendingPathComponent("attachments", isDirectory: true)
         try requireDirectory(assets)
@@ -215,19 +218,32 @@ public actor RecordStore {
         let data: Data
         do { data = try Data(contentsOf: indexURL) }
         catch let error as CocoaError where error.code == .fileReadNoSuchFile { return Index() }
-        let index = try JSONDecoder().decode(Index.self, from: data)
+        let index = try Self.decodeIndex(data)
         try Self.validate(index)
         return index
     }
 
     private static func validate(_ index: Index) throws {
-        guard index.version == 1 else { throw RecordStoreError.unsupportedSchema(index.version) }
+        guard index.version == 2 else { throw RecordStoreError.unsupportedSchema(index.version) }
         let attachments = index.records.flatMap(\.attachments)
         guard Set(index.records.map(\.id)).count == index.records.count,
               Set(attachments.map(\.id)).count == attachments.count,
               index.records.allSatisfy({ !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
               attachments.allSatisfy({ !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
         else { throw RecordStoreError.invalidData }
+    }
+
+    private static func decodeIndex(_ data: Data) throws -> Index {
+        struct Header: Decodable { let version: Int }
+        let decoder = JSONDecoder()
+        let version = try decoder.decode(Header.self, from: data).version
+        guard version == 1 || version == 2 else { throw RecordStoreError.unsupportedSchema(version) }
+        var index = try decoder.decode(Index.self, from: data)
+        // Version 1 has no createdAt. Optional decoding preserves that unknown
+        // value, IDs and attachment membership. Reading alone never rewrites disk.
+        index.version = 2
+        try validate(index)
+        return index
     }
 
     private func persist(_ index: Index) throws {

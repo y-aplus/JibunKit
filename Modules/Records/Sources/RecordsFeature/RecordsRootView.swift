@@ -51,6 +51,9 @@ public struct RecordsRootView: View {
             if let record = records.first(where: { $0.id == id }) {
                 List {
                     Section("本文") { Text(record.body).accessibilityIdentifier("records.body") }
+                    Section {
+                        LabeledContent("作成日時", value: record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "不明")
+                    }
                     RecordAttachmentsSection(store: store, record: record) { await reload() }
                 }
                 .navigationTitle(record.title)

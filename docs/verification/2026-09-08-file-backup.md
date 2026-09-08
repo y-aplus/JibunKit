@@ -84,3 +84,11 @@ CI [34218612906](https://github.com/y-aplus/JibunKit/actions/runs/34218612906)�
 128 MiBの添付を1 MiBずつ生成し、Recordsへのファイル取込み、ZIP書き出し、ZIP読込み、Records復元、全chunkの内容一致と末尾を検証する。テスト自体も添付全量をDataへ読み込まない。macOS getrusageのプロセス累積最大RSSをexport前・後・import後・restore後に記録し、所要時間も出力する。この値はXCTestを含むプロセス全体の最大値で、各段階の現在使用量やiOS実機の上限保証ではない。テスト合否は復元内容で決め、runner依存のRSSを根拠なく固定閾値にしない。
 
 34221000490（source 81e32ef）は全128 chunkが一致した後、末尾確認で失敗。FileHandle.read(upToCount:)のEOF戻り値nilに対して空Dataを期待していたテストをXCTAssertNilへ修正する。参考計測はbefore-export 59,408,384 bytes、after-export 59,965,440、after-import 60,014,592、after-restore 60,080,128（累積最大RSSの増加671,744 bytes、約0.64 MiB）。テスト全体0.874秒、export開始以降の計測区間約0.387秒。macOSのファイルコピー・キャッシュの効果を含むためiOS実機の性能とは扱わず、修正後runで正常終了を確認する。
+
+34221280378（source b4367ef）は成功。128 MiBの全内容とEOFを確認し、最大RSSは59,490,304→60,096,512 bytes（増加606,208 bytes、約0.58 MiB）、export以降約0.287秒。全量添付サイズに相当するRSS増加はこのmacOS測定では生じなかった。旧payloadのData経路やiOS実機の最大容量まで保証する結果ではない。
+
+## Records schema更新（今回追加、結果待ち）
+
+記録の作成日時を保存・表示するためindexとfile providerのschemaを2へ更新。既存schema 1は日時不明(nil)として読み、ID・本文・添付を維持する。読込みだけではディスクを書き換えず、正常な編集保存またはsnapshot書き出し・復元でschema 2へ移る。新規記録には作成時刻を記録する。旧schema snapshotもprepare/applyで受け付ける。未来のschemaは本文をdecodeする前にversionで拒否する。
+
+schema 1の実JSON・添付fixtureからの通常読込み、元bytes維持、別store復元、編集後のschema 2化、日時不明の維持、新規日時の保存をテストする。未来schemaが別のrecords表現を持っていてもunsupportedSchemaで拒否し、元bytesを維持することを確認する。旧版Recordsへ戻す方向の互換性は提供しない。Counter/Reminderや共通ZIP/JSON envelopeのversionは変更しない。

@@ -32,7 +32,7 @@ final class RecordsAttachmentTests: XCTestCase {
         tap(app.buttons["records.save"])
         tap(row())
         tap(app.buttons["records.attach"])
-        tap(app.buttons["ブラウズ"])
+        tap(app.tabBars["DOC.browsingModeTabBar"].buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         let fixture = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch
         XCTAssertTrue(fixture.waitForExistence(timeout: 15), app.debugDescription)

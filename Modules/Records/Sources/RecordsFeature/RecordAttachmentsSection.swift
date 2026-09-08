@@ -1,6 +1,5 @@
 #if os(iOS)
 import SwiftUI
-import QuickLook
 import UniformTypeIdentifiers
 import OSLog
 
@@ -9,7 +8,7 @@ struct RecordAttachmentsSection: View {
     @Binding var record: Record
     @State private var importing = false
     @State private var busy = false
-    @State private var preview: URL?
+    @Binding var preview: URL?
     @State private var deleting: RecordAttachment?
     @State private var confirming = false
     @State private var error: String?
@@ -38,10 +37,6 @@ struct RecordAttachmentsSection: View {
             if let error { Text(error).accessibilityIdentifier("records.attachment.error") }
         }
         .disabled(busy)
-        .quickLookPreview($preview)
-        .onChange(of: preview) { old, new in
-            if let old, old != new { try? FileManager.default.removeItem(at: old) }
-        }
         .alert("添付ファイルを削除しますか？", isPresented: $confirming, presenting: deleting) { attachment in
             Button("キャンセル", role: .cancel) { deleting = nil }
             Button("削除", role: .destructive) {

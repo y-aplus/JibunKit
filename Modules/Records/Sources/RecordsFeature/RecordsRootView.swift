@@ -1,5 +1,6 @@
 #if os(iOS)
 import SwiftUI
+import QuickLook
 
 public struct RecordsRootView: View {
     private let store: RecordStore
@@ -9,6 +10,7 @@ public struct RecordsRootView: View {
     @State private var deleting: Record?
     @State private var confirmingDelete = false
     @State private var error: String?
+    @State private var preview: URL?
 
     public init(store: RecordStore) { self.store = store }
 
@@ -55,7 +57,11 @@ public struct RecordsRootView: View {
                     Section {
                         LabeledContent("作成日時", value: record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "不明")
                     }
-                    RecordAttachmentsSection(store: store, record: $records[index])
+                    RecordAttachmentsSection(store: store, record: $records[index], preview: $preview)
+                }
+                .quickLookPreview($preview)
+                .onChange(of: preview) { old, new in
+                    if let old, old != new { try? FileManager.default.removeItem(at: old) }
                 }
                 .navigationTitle(record.title)
                 .toolbar { Button("編集") { editing = record }.accessibilityIdentifier("records.edit") }

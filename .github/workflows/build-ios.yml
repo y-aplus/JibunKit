@@ -19,7 +19,7 @@ jobs:
   build:
     name: Xcode 26.6
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       TUIST_VERSION: "4.207.0"
       TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e

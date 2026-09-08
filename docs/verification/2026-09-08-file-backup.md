@@ -66,3 +66,5 @@ CI 34195486048（source 2442fec）はFoundationテスト後、生成Featureを�
 CI 34195905457（source e194f4e）では分割後の具体的な診断として、JSONのFileDocument版fileExporterへのonCancellationが余分な引数と報告された。ZIPのTransferable版と同じ引数を使えないため、JSON側はexportingの表示状態変更でdocumentを解放する。ZIP側は対応するonCancellationを維持する。Foundationテストは成功、iOSの画面実行結果はまだ得ていない。
 
 CI 34196299598（source d62234f）はiOSビルド、通常IPA、Records/生成Feature、バックアップUI5件（添付のキャンセル・個別復元・再起動維持を含む）、既存ホストUI5件まで成功した。別stepのJSON Files往復で保存ボタンが20秒以内に現れず失敗。同じViewへ2つのfileExporterを重ねたことによる表示干渉を疑い、それぞれ独立したColor.clearのbackgroundへ付け直す。保存内容・選択条件は維持し、既存Files往復で再検証する。ZIPの実Files往復はまだ未確認。
+
+CI 34198837117（source 5b27a47）はジョブの30分上限でキャンセルされた。GitHubのannotationは `The job has exceeded the maximum execution time of 30m0s`。ビルド・IPA・Records/生成Feature・通常Simulator回帰まで成功し、開始29分17秒時点で最後のFiles往復stepへ入ったが完走しなかった。Filesの成功や前回不具合の解消はまだ主張しない。独立版とホスト版の検証項目を増やした実績に合わせ、ジョブ上限を45分へ変更して同じ検証を再実行する。

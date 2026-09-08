@@ -9,7 +9,7 @@
 - [x] CIで共通形式と選択の回帰テストを検証。
 - [x] Featureごとのexport・復元前検証・適用の接続を追加。
 - [x] Counter／Reminderで独立した復元と失敗時の状態維持をロジックテストで検証。
-- [ ] 書出し・読込み・対象選択・上書き確認の画面を追加し、確認可能な範囲で検証。
+- [x] 書出し・読込み・対象選択・上書き確認の画面を追加し、確認可能な範囲で検証。
 
 最初の段階は保存先に一切触れないcodecであり、利用者が画面からバックアップできる状態ではない。次段階まで継続する。
 
@@ -92,3 +92,14 @@ run 34175980737（source `e6da91c`）も、雛形検証のNotesFeature依存解�
 ### Swift 6 UIテスト初期化の修正
 
 [run 34176089108](https://github.com/y-aplus/JibunKit/actions/runs/34176089108)、source `fccd7e0`では雛形検証、製品ビルド・IPA検査、BackupHarnessのビルド・インストールまで成功した。UIテストのコンパイルはsetUpWithErrorからMainActorのexpectValuesを呼ぶ箇所で `sending self risks causing data races` となり停止。起動・初期値確認をMainActor上の各テストから呼ぶlaunchHarnessへ移した。setUpWithErrorは従来のテスト同様にcontinueAfterFailureの設定だけにする。復元4件の合否条件と製品コードは変更しない。
+
+## 完了検証（2026-09-08）
+
+[run 34176691075](https://github.com/y-aplus/JibunKit/actions/runs/34176691075)、source `9ed0e0f1b7a8102a6a859086ff773907338c5537`は全step成功。
+
+- 復元UI4件: キャンセルで無変更、Counterのみ復元と再起動後の維持、Reminderのみ復元、不正payloadで両方無変更、途中失敗の完了済み・失敗対象表示と保存状態を確認。
+- 製品のFiles往復1件: 書出し、Filesから読込み、Counterだけ選択、上書き確認のキャンセル、再読込み・確定、再起動後の復元値とReminder維持まで成功。
+- その他UI5件: URL受信、一覧検索、通知、保存・ホスト連携、単独Counterの独立保存が成功。
+- Foundationテスト、Tuist雛形検証、製品・Widget・検証用アプリのビルド、IPA検査・生成が成功。
+
+これにより、上記実装順序の画面追加・確認可能な範囲の検証まで完了した。過去のFilesエラーの根本原因を解消したとは断定しない。今回は別stepとして実行したFiles往復が実際に通り、テスト省略による成功ではない。今後もそのテストを維持する。

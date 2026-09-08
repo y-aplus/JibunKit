@@ -28,6 +28,7 @@ struct RecordAttachmentsSection: View {
                         } catch { self.error = "添付ファイルを開けませんでした: \(error.localizedDescription)" }
                     }
                 }
+                .accessibilityIdentifier("records.attachment.\(attachment.id.uuidString)")
                 .swipeActions {
                     Button("削除", role: .destructive) { deleting = attachment; confirming = true }
                 }

@@ -100,3 +100,9 @@ schema 1の実JSON・添付fixtureからの通常読込み、元bytes維持、�
 ### 旧JSONとの比較（結果待ち）
 
 同じ128 MiBのpayloadについて、既存MiniAppBackupのData生成・JSON encode・decodeの最大RSSと出力サイズを記録するテストを追加。ファイル経路の検証と旧JSONの検証を、それぞれ別のswift testプロセスで再実行し、片方の最大RSSが他方へ持ち越されないようにする。バイナリの再ビルドは行わない。payload内容の一致を確認する。これはmacOS/同サイズでの経路比較であり、Featureのindex量やiOSメモリ上限の推定には使わない。
+
+34225014791（source aa70ff3）は成功。別プロセスの128 MiB比較でファイル経路の最大RSSは23,674,880→24,510,464 bytes（約23.4 MiB）、旧JSON経路は21,610,496→514,064,384 bytes（約490.2 MiB）。JSON出力は178,957,098 bytes（約170.7 MiB）。この実績は大きな添付をfile providerへ接続する根拠となる。小さな構造化payloadの既存JSON経路は引き続き利用できる。
+
+## Records添付UI（追加、結果待ち）
+
+単独ExampleのDocumentsへ起動引数指定時だけ小さなtxt fixtureを用意し、Files経由で本来のFeature画面から取り込む。Quick Lookの表示、添付保持の再起動、削除キャンセル、削除後の再起動をテストする。DocumentsのFiles公開はExampleのApp Shellだけに設定し、ライブ保存先のApplication SupportやJibunKitホストの設定は変えない。

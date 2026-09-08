@@ -37,3 +37,13 @@ CIの一時構成にだけRecordsを登録し、作成・再起動後の詳細�
 CI 34186422551（source 64abf97）はRecordsのホスト保存先初期化で失敗した。回収したsimulator-app.logの04:38:45に、group.com.jibunkit.sharedの検索と `client is not entitled` が記録されている。CIのホストSimulatorテストでCODE_SIGNING_ALLOWED=NOとしていたため、App Groupのentitlementを伴う実行になっていなかった。ホスト共存テストをSimulator用アドホック署名（CODE_SIGNING_ALLOWED=YES / CODE_SIGN_IDENTITY=- / CODE_SIGN_STYLE=Manual）へ変更して再検証する。製品の保存先やエラー時の挙動は変更しない。単独RecordsとNotesのテスト、生成Notesのホスト遷移はこのrunでも成功。
 
 CI 34187973451（source 0a3a0f5）では署名付きのApp Groupアクセス、Records作成、再起動後の一覧表示まで成功した。詳細リンクを押した後のrecords.bodyが見つからず失敗。ホストのNavigationStackが[MiniAppID]に固定されている一方、Recordsは詳細にUUIDを使うため、Feature固有の遷移を格納できない構成だった。ホストをSwiftUI.NavigationPathへ変更し、MiniAppIDとFeature固有のHashableな遷移値を同じ履歴で扱う。通知・外部URLは従来どおり入口のMiniAppIDだけを持つ履歴へ置き換える。Recordsにホスト都合の遷移型や追加NavigationStackを要求しない。詳細表示の待機もテストへ明示した。
+
+CI 34189152345（source 319c3ea）は成功。NavigationPathへの変更により、ホスト内Recordsの作成・再起動・UUIDによる詳細表示・一覧復帰・Counter値維持が通った。既存の通知・URL・検索・復元回帰も成功した。
+
+## ファイル単位のsnapshot
+
+exportSnapshot(to:)は、version付きindexと参照される添付だけを新しいディレクトリへコピーする。destinationは未作成の場所を指定する。添付の全量Data化やBase64化はしない。同じstore actor内でsnapshot作成中の編集を直列化する。複数プロセスの同時更新は引き続き保証しない。
+
+restoreSnapshot(from:)はindexを検証し、すべての添付が通常ファイルであることを確認しながら別ディレクトリへコピーしてから、FoundationのreplaceItemAtでライブ保存先を置き換える。IDと添付IDは維持する。上書き確認は呼び出すApp/Integrationの責任。欠落ファイルや不正indexで準備に失敗した場合はライブ保存先へ触れない。
+
+このAPIはFeature所有のsnapshotディレクトリを扱う。共通バックアップ画面との接続、持ち運べるファイル形式、旧schema移行、大容量の計測はまだ残る。CIで別storeへの復旧・再起動後の内容とID維持・元storeの独立性・欠落添付の拒否を検証する。

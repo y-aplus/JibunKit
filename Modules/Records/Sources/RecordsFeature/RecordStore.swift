@@ -139,6 +139,56 @@ public actor RecordStore {
 
     private func assetURL(_ id: UUID) -> URL { assets.appendingPathComponent(id.uuidString) }
 
+    /// Creates a new, independently owned directory containing only referenced
+    /// attachments. Destination must not exist. One actor keeps the index and
+    /// attachment set consistent while copying, without loading attachments as Data.
+    public func exportSnapshot(to destination: URL) throws {
+        guard destination.isFileURL else { throw RecordStoreError.invalidData }
+        let index = try load()
+        let parent = destination.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let staging = parent.appendingPathComponent(".records-export-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: staging) }
+        try copySnapshot(index, from: assets, to: staging)
+        try FileManager.default.moveItem(at: staging, to: destination)
+    }
+
+    /// Validates and stages all files before replacing the live directory.
+    /// Call only after the application has obtained overwrite confirmation.
+    public func restoreSnapshot(from snapshot: URL) throws {
+        guard snapshot.isFileURL else { throw RecordStoreError.invalidData }
+        let indexFile = snapshot.appendingPathComponent("records.json")
+        try requireRegularFile(indexFile)
+        let index = try JSONDecoder().decode(Index.self, from: Data(contentsOf: indexFile))
+        try validate(index)
+        let parent = directory.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let staging = parent.appendingPathComponent(".records-restore-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: staging) }
+        try copySnapshot(index, from: snapshot.appendingPathComponent("attachments", isDirectory: true), to: staging)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            _ = try FileManager.default.replaceItemAt(directory, withItemAt: staging)
+        } else {
+            try FileManager.default.moveItem(at: staging, to: directory)
+        }
+    }
+
+    private func requireRegularFile(_ url: URL) throws {
+        let values = try url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+        guard values.isRegularFile == true, values.isSymbolicLink != true else { throw RecordStoreError.invalidData }
+    }
+
+    private func copySnapshot(_ index: Index, from sourceAssets: URL, to destination: URL) throws {
+        let destinationAssets = destination.appendingPathComponent("attachments", isDirectory: true)
+        try FileManager.default.createDirectory(at: destinationAssets, withIntermediateDirectories: true)
+        for attachment in index.records.flatMap(\.attachments) {
+            let source = sourceAssets.appendingPathComponent(attachment.id.uuidString)
+            try requireRegularFile(source)
+            try FileManager.default.copyItem(at: source, to: destinationAssets.appendingPathComponent(attachment.id.uuidString))
+        }
+        try JSONEncoder().encode(index).write(to: destination.appendingPathComponent("records.json"), options: .atomic)
+    }
+
     private func load() throws -> Index {
         let data: Data
         do { data = try Data(contentsOf: indexURL) }

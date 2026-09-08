@@ -86,3 +86,5 @@ CI表示を改善するため、通常UI回帰（復元harnessを含む）とFil
 [run 34175867945](https://github.com/y-aplus/JibunKit/actions/runs/34175867945)、source `de243e2`は雛形のホスト組込み検証で失敗した。CI内でNotesFeature依存を最初のCore依存リストへ追加していたため、先頭へ加えたBackupHarnessが対象になり、JibunKit本体でNotesFeatureをimportできなくなっていた。ターゲット名JibunKit-Appを明示して依存追加箇所を選ぶよう修正した。ローカルの変換検証でNotesFeatureが本体にだけ1件追加され、手前のharnessが変化しないことを確認。復元UIテストはこのrunでは未実行。
 
 後続run 34175980737も同じ修正前の雛形処理を含む。製品のFeature依存や復元機能の失敗と混同しない。
+
+run 34175980737（source `e6da91c`）も、雛形検証のNotesFeature依存解決エラーだけで停止したことをログで確認した。`fccd7e0`の修正対象と一致する。修正済みrun 34176089108を送付済みのため、同じ修正・再実行を重複して追加しない。

@@ -33,16 +33,9 @@ struct RecordsExampleApp: App {
                 case .failure(let failure): error = failure.localizedDescription
                 }
             }
-            .fileDialogDefaultDirectory(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)
             .task {
                 guard store == nil else { return }
                 do {
-                    // Standalone test fixture only; the Feature and host never
-                    // depend on launch arguments or seed the user's records.
-                    if ProcessInfo.processInfo.arguments.contains("--attachment-fixture") {
-                        _ = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
-                            appropriateFor: nil, create: true)
-                    }
                     let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                                 appropriateFor: nil, create: true)
                     store = try RecordStore(directory: directory.appendingPathComponent("Records", isDirectory: true))

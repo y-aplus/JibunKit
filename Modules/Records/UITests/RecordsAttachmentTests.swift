@@ -29,7 +29,6 @@ final class RecordsAttachmentTests: XCTestCase {
         tap(app.buttons["records.attach"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        tap(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "RecordsExample")).firstMatch)
         let fixture = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch
         XCTAssertTrue(fixture.waitForExistence(timeout: 15))
         // Files icon cells include the filename and metadata below the thumbnail.

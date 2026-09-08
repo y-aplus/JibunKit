@@ -323,7 +323,8 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TemplateHost.xcresult" \
             -only-testing:MigrationUITests/GeneratedFeatureUITests \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-host.log"
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
 
       - name: Build and install backup UI harness
         if: inputs.simulator_tests

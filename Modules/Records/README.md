@@ -33,3 +33,5 @@ CI 34184927254（source 232d7fb）は成功。ファイルコピーによる取�
 単独版は自身のApplication Support、ホスト版はMiniAppFilesのrecords領域を使用する。接続層が保存先と単一store actorを所有し、Feature内は変更しない。保存先を開けない場合に別の場所へ黙って保存しない。単独版からホスト版へ既存データを自動転送する機能はまだない。バックアップ経由の移行は次段階で接続する。
 
 CIの一時構成にだけRecordsを登録し、作成・再起動後の詳細読込み・Counter保存値の維持を追加検証する。通常の製品Registryは変更しない。
+
+CI 34186422551（source 64abf97）はRecordsのホスト保存先初期化で失敗した。回収したsimulator-app.logの04:38:45に、group.com.jibunkit.sharedの検索と `client is not entitled` が記録されている。CIのホストSimulatorテストでCODE_SIGNING_ALLOWED=NOとしていたため、App Groupのentitlementを伴う実行になっていなかった。ホスト共存テストをSimulator用アドホック署名（CODE_SIGNING_ALLOWED=YES / CODE_SIGN_IDENTITY=- / CODE_SIGN_STYLE=Manual）へ変更して再検証する。製品の保存先やエラー時の挙動は変更しない。単独RecordsとNotesのテスト、生成Notesのホスト遷移はこのrunでも成功。

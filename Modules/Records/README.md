@@ -47,3 +47,5 @@ exportSnapshot(to:)は、version付きindexと参照される添付だけを新�
 restoreSnapshot(from:)はindexを検証し、すべての添付が通常ファイルであることを確認しながら別ディレクトリへコピーしてから、FoundationのreplaceItemAtでライブ保存先を置き換える。IDと添付IDは維持する。上書き確認は呼び出すApp/Integrationの責任。欠落ファイルや不正indexで準備に失敗した場合はライブ保存先へ触れない。
 
 このAPIはFeature所有のsnapshotディレクトリを扱う。共通バックアップ画面との接続、持ち運べるファイル形式、旧schema移行、大容量の計測はまだ残る。CIで別storeへの復旧・再起動後の内容とID維持・元storeの独立性・欠落添付の拒否を検証する。
+
+CI 34190686473（source f23311b）は成功。snapshot復旧・欠落添付時の保存維持とiOSビルドを確認した。このrunはSimulator UIを実行していない。

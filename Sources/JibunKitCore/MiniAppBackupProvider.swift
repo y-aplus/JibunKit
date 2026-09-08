@@ -48,6 +48,13 @@ public struct MiniAppRestorePlan: Sendable {
     public let ids: [MiniAppID]
     private let operations: [MiniAppPreparedRestore]
 
+    /// File-based adapters can reuse the same ordered execution and failure report.
+    public init(prepared: [MiniAppID: MiniAppPreparedRestore]) throws {
+        guard prepared.keys.allSatisfy(\.isValid) else { throw MiniAppBackupError.invalidEntry }
+        ids = prepared.keys.sorted { $0.rawValue < $1.rawValue }
+        operations = ids.compactMap { prepared[$0] }
+    }
+
     public init(backup: MiniAppBackup, selected: Set<MiniAppID>, providers: [MiniAppBackupProvider]) throws {
         var indexed: [MiniAppID: MiniAppBackupProvider] = [:]
         for provider in providers {

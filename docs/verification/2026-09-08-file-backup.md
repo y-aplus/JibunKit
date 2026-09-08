@@ -76,3 +76,9 @@ CI 34206702845（source 681d194）は全検証成功。JSON Files往復stepは09
 34214151940（source 8f752ea）はUI操作で2件失敗。ZIPテストはexportスイッチへの通常tap後に書き出しボタンが有効にならず、保存ダイアログへ到達していない。既存の座標指定スイッチ操作とvalue=1確認へ統一する。既存キャンセルテストでは閉じるボタンのhittable待ちに失敗。共通tapヘルパーの一律swipeUpはsheet遷移中やtoolbarにも作用するため除去し、存在・enabledを待ってXCUIElement.tapに任せる。これらはテスト操作の修正であり、ZIP実受渡しの成功はまだ未確認。
 
 34216395356（source 1f1b42b）はスイッチ選択を通過したがZIP exporter表示時にBackupHarnessがクラッシュした。回収したxcresult diagnosticsのStandardOutputAndStandardErrorに `NSInvalidArgumentException`、`-[NSFileWrapper setPreferredFilename:] *** preferredFilename cannot be empty.` を確認。FileRepresentationにsuggestedFileNameを明示する。ダイアログのdefaultFilenameには従来通り日時入り名を渡す。ZIPはDataへ読み戻さず、Files往復で再検証する。
+
+CI [34218612906](https://github.com/y-aplus/JibunKit/actions/runs/34218612906)（source a4b9191）は成功。testZIPFilesRoundTripRestoresAttachmentは110.791秒で成功し、ZIPをFilesへ実保存・名前で選択・読込み・変更後の添付復元・他store維持を確認した。旧JSONの往復も成功。suggestedFileName追加後のクラッシュ解消を、この実操作で確認できた。
+
+## 大容量検証（今回追加、結果待ち）
+
+128 MiBの添付を1 MiBずつ生成し、Recordsへのファイル取込み、ZIP書き出し、ZIP読込み、Records復元、全chunkの内容一致と末尾を検証する。テスト自体も添付全量をDataへ読み込まない。macOS getrusageのプロセス累積最大RSSをexport前・後・import後・restore後に記録し、所要時間も出力する。この値はXCTestを含むプロセス全体の最大値で、各段階の現在使用量やiOS実機の上限保証ではない。テスト合否は復元内容で決め、runner依存のRSSを根拠なく固定閾値にしない。

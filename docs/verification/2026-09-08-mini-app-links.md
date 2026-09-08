@@ -27,3 +27,9 @@ Widgetや外部リンクから対象のミニアプリを直接開ける共通�
 URL送信を`XCUIDevice.shared.system.open`に変更し、OSのscheme登録と起動中のURL受信を通して再検証する。ホストの実装と画面維持の合否条件は変更しない。[Appleのsystem API](https://developer.apple.com/documentation/xcuiautomation/xcuidevice/system)を参照。
 
 既存UI3件は成功。バックアップUIは既知のFiles障害で失敗し、回収したログにもFileProvider -1005 / resolver -1012と空URL配列を確認した。URLテストの失敗と区別する。後続の検索CI `34174278333`は修正前のテストを含むため、そのURL結果も同じ観点で扱う。
+
+## 修正後のUI検証
+
+[run 34174578083](https://github.com/y-aplus/JibunKit/actions/runs/34174578083)、source `2785761539c58e0c30a17656ef025ef7dd6e4a74`でURLテストが成功。OS経由のURL送信による終了状態からのCounter起動、起動中のReminder切替、不明ID・未対応queryで画面維持、Counterへの再遷移と一覧への復帰を確認した。
+
+検索UIと既存UI3件も成功。共通テスト・雛形検証・通常アプリ／Widgetビルド・IPA検査は成功。全体のfailureはバックアップUIのFiles選択後の74行目のみ。URL遷移に関する今回のテスト修正は検証済みで、同条件の再実行は不要。Widget自体のタップ操作の実機確認は引き続き別の確認範囲。

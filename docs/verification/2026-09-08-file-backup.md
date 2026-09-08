@@ -106,3 +106,5 @@ schema 1の実JSON・添付fixtureからの通常読込み、元bytes維持、�
 ## Records添付UI（追加、結果待ち）
 
 単独ExampleのDocumentsへ起動引数指定時だけ小さなtxt fixtureを用意し、Files経由で本来のFeature画面から取り込む。Quick Lookの表示、添付保持の再起動、削除キャンセル、削除後の再起動をテストする。DocumentsのFiles公開はExampleのApp Shellだけに設定し、ライブ保存先のApplication SupportやJibunKitホストの設定は変えない。
+
+34225576859（source 175aca7）はFilesのattachment-fixture選択後に添付行が現れず失敗。現在の証拠だけでは保存処理失敗と画面更新/要素識別の問題を区別できない。Records.xcresultのattachments/diagnosticsをCIで展開し、RecordsExample/BackupHarnessのプロセスログを回収対象へ加える。失敗時のapp.debugDescriptionも記録し、次の結果で根拠を得る。添付UI成功とは扱わない。

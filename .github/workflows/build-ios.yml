@@ -386,6 +386,10 @@ jobs:
         if: always() && inputs.simulator_tests
         shell: bash
         run: |
+          if [[ -d "$RUNNER_TEMP/Records.xcresult" ]]; then
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/Records.xcresult" --output-path "$RUNNER_TEMP/records-screenshots"
+            xcrun xcresulttool export diagnostics --path "$RUNNER_TEMP/Records.xcresult" --output-path "$RUNNER_TEMP/records-diagnostics"
+          fi
           if [[ -d "$RUNNER_TEMP/Migration.xcresult" ]]; then
             xcrun xcresulttool export attachments \
               --path "$RUNNER_TEMP/Migration.xcresult" \
@@ -407,7 +411,7 @@ jobs:
             -exec cp {} "$RUNNER_TEMP/simulator-crashes/" \; || true
           if [[ -n "${SIMULATOR_ID:-}" ]]; then
             xcrun simctl spawn "$SIMULATOR_ID" log show --last 20m --style compact \
-              --predicate 'process == "JibunKit_App" OR process == "DocumentManager" OR process == "fileproviderd"' \
+              --predicate 'process == "JibunKit_App" OR process == "RecordsExample" OR process == "BackupHarness" OR process == "DocumentManager" OR process == "fileproviderd"' \
               > "$RUNNER_TEMP/simulator-app.log" || true
           fi
 
@@ -417,6 +421,8 @@ jobs:
         with:
           name: JibunKit-simulator-evidence
           path: |
+            ${{ runner.temp }}/records-screenshots
+            ${{ runner.temp }}/records-diagnostics
             ${{ runner.temp }}/Migration.xcresult
             ${{ runner.temp }}/Records.xcresult
             ${{ runner.temp }}/records-ui.log

@@ -28,7 +28,7 @@ final class RecordsAttachmentTests: XCTestCase {
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         tap(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "RecordsExample")).firstMatch)
         tap(app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "attachment-fixture")).firstMatch)
-        XCTAssertTrue(attachment().waitForExistence(timeout: 15))
+        XCTAssertTrue(attachment().waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(attachment().label.contains("attachment-fixture.txt"))
         tap(attachment())
         XCTAssertTrue(app.buttons["完了"].waitForExistence(timeout: 15))

@@ -23,6 +23,8 @@ final class BackupRestoreUITests: XCTestCase {
     private func tap(_ element: XCUIElement) {
         XCTAssertTrue(element.waitForExistence(timeout: 10))
         if !element.isHittable { app.swipeUp() }
+        expectation(for: NSPredicate(format: "enabled == true AND hittable == true"), evaluatedWith: element)
+        waitForExpectations(timeout: 10)
         element.tap()
     }
 
@@ -31,6 +33,8 @@ final class BackupRestoreUITests: XCTestCase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         if !toggle.isHittable { app.swipeUp() }
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        expectation(for: NSPredicate(format: "value == %@", "1"), evaluatedWith: toggle)
+        waitForExpectations(timeout: 10)
     }
 
     func testCancelThenRestoreOnlyCounterAndPersist() {

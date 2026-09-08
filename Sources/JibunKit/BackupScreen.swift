@@ -9,6 +9,7 @@ struct BackupScreen: View {
     @State private var restoreIDs: Set<MiniAppID> = []
     @State private var imported: MiniAppBackup?
     @State private var document: BackupDocument?
+    @State private var exportFilename = "JibunKit-backup"
     @State private var importing = false
     @State private var exporting = false
     @State private var confirming = false
@@ -82,7 +83,7 @@ struct BackupScreen: View {
                 }
             }
             .fileExporter(isPresented: $exporting, document: document, contentType: .json,
-                          defaultFilename: "JibunKit-backup") { result in
+                          defaultFilename: exportFilename) { result in
                 switch result {
                 case .success: status = "バックアップを書き出しました。"
                 case .failure(let error):
@@ -112,6 +113,12 @@ struct BackupScreen: View {
 
     private func exportSelected() {
         let selected = providers.filter { exportIDs.contains($0.id) }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        exportFilename = "JibunKit-backup-\(formatter.string(from: Date()))"
         busy = true
         status = nil
         Task {

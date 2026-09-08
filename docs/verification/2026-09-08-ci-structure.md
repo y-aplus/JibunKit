@@ -32,3 +32,5 @@ run 34205814278ではIPAアップロードまで約5分、Simulator準備約3分
 通常の画面修正はsimulator_tests=true / feature_validation=falseを使い、独立Feature検証を必要な変更・出荷時に限定する。今回さらに、同じworkspace・Debug・Simulator・署名設定のCounterExample、BackupHarness、本体UIテストのderivedDataPathをSimulatorDerivedDataへ統一する。順次実行を保ったまま共通依存の再ビルドを減らす。別checkoutや署名設定の異なる生成Featureホストの成果物は共有しない。短縮幅は新runの実績で確認し、現時点では保証しない。
 
 短縮版34209642170は09:22:43–09:44:23 UTC（21分40秒）で終了したが、バックアップUIのキャンセル後の再選択で確認ボタンが現れず1件失敗した。ビルドは成功。ログではスイッチ操作の解決が大きく遅延しており、成果物共有が原因とは断定しない。UIテストの選択後にvalue=1、タップ前にenabled/hittableの成立を確認する。これで操作の未反映を後続画面の不在と混同せず検出する。成功runとの時間比較は再検証後に確定する。
+
+34211874205（source ecaa190）は通常回帰とJSON Files往復を含め成功。09:46:49–10:09:25 UTCの22分36秒。全検証34206702845の約34分と比べ約11分短い実績を得た。検証モードとrunner状態が異なるため、成果物共有だけの寄与や固定の短縮率は主張しない。

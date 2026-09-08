@@ -125,4 +125,43 @@ final class BackupRestoreUITests: XCTestCase {
         expectValues("9|keep")
         XCTAssertEqual(app.staticTexts["harness.file-value"].label, "restored attachment")
     }
+
+    func testZIPFilesRoundTripRestoresAttachment() {
+        launchHarness()
+        tap(app.buttons["harness.files"])
+        let export = app.switches["backup.export.files"]
+        tap(export)
+        tap(app.buttons["backup.export"])
+        XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
+        let filename = "JibunKit-ZIP-test-" + UUID().uuidString
+        let nameField = app.textFields.firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 10))
+        tap(nameField)
+        if let text = nameField.value as? String {
+            nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: text.count))
+        }
+        nameField.typeText(filename)
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.staticTexts["バックアップを書き出しました。"].waitForExistence(timeout: 20))
+        tap(app.buttons["閉じる"])
+        tap(app.buttons["harness.change-file"])
+        expectation(for: NSPredicate(format: "label == %@", "changed attachment"), evaluatedWith: app.staticTexts["harness.file-value"])
+        waitForExpectations(timeout: 10)
+        tap(app.buttons["harness.files"])
+        tap(app.buttons["backup.import"])
+        tap(app.buttons["ブラウズ"])
+        tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
+        let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", filename)).firstMatch
+        tap(file)
+        XCTAssertTrue(app.buttons["backup.restore"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.switches["backup.restore.counter"].exists)
+        select("files")
+        tap(app.buttons["backup.restore"])
+        tap(app.alerts.buttons["置き換えて復元"])
+        XCTAssertTrue(app.staticTexts["添付テストを復元しました。"].waitForExistence(timeout: 10))
+        tap(app.buttons["閉じる"])
+        expectation(for: NSPredicate(format: "label == %@", "live attachment"), evaluatedWith: app.staticTexts["harness.file-value"])
+        waitForExpectations(timeout: 10)
+        expectValues("9|keep")
+    }
 }

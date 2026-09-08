@@ -40,6 +40,12 @@ private struct HarnessScreen: View {
             Button("不正なバックアップ") { present(invalid: true) }.accessibilityIdentifier("harness.invalid")
             Button("適用時に失敗") { present(invalid: false, failReminder: true) }.accessibilityIdentifier("harness.failure")
             Button("添付バックアップ") { presentFiles() }.accessibilityIdentifier("harness.files")
+            Button("添付を変更") {
+                do {
+                    try fileStore.save(Data("changed attachment".utf8))
+                    Task { await refresh() }
+                } catch { values = "Write failed: \(error)" }
+            }.accessibilityIdentifier("harness.change-file")
         }
         .disabled(!ready)
         .task {

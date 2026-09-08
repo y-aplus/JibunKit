@@ -70,3 +70,5 @@ CI 34196299598（source d62234f）はiOSビルド、通常IPA、Records/生成Fe
 CI 34198837117（source 5b27a47）はジョブの30分上限でキャンセルされた。GitHubのannotationは `The job has exceeded the maximum execution time of 30m0s`。ビルド・IPA・Records/生成Feature・通常Simulator回帰まで成功し、開始29分17秒時点で最後のFiles往復stepへ入ったが完走しなかった。Filesの成功や前回不具合の解消はまだ主張しない。独立版とホスト版の検証項目を増やした実績に合わせ、ジョブ上限を45分へ変更して同じ検証を再実行する。
 
 CI 34206702845（source 681d194）は全検証成功。JSON Files往復stepは09:21:28–09:24:31 UTCに成功し、fileExporter表示先分離後の既存JSON書き出し・読込み・選択復元の回帰を確認できた。添付fixtureの選択復元UIも成功。ZIPの実Files往復と大容量計測は別途必要。
+
+34211874205（source ecaa190）は短縮した通常CIでも成功。今回、製品BackupScreenでZIPをFilesへ保存し、一意の名前で読み戻し、変更した添付を保存時の内容へ戻すUIテストを追加した（結果待ち）。Counter/Reminderの維持も確認する。fixture注入だけでファイル受渡しの成功を推定しない。

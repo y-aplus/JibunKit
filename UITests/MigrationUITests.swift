@@ -104,6 +104,33 @@ final class MigrationUITests: XCTestCase {
         XCTAssertEqual(message.value as? String, "Keep during restore")
     }
 
+    func testMiniAppSearchFiltersAndOpensResults() throws {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        // Reveal the standard navigation search field.
+        app.swipeDown()
+        let search = app.searchFields.firstMatch
+        tap(search)
+        search.typeText("COUNTER")
+        XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["miniapp.reminder"].exists)
+        tap(app.buttons["miniapp.counter"])
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
+        returnToList()
+        tap(search)
+        let query = search.value as? String ?? ""
+        if !query.isEmpty && query != search.placeholderValue {
+            search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: query.count))
+        }
+        search.typeText("zz-no-matching-app")
+        XCTAssertFalse(app.buttons["miniapp.counter"].exists)
+        XCTAssertFalse(app.buttons["miniapp.reminder"].exists)
+        capture("mini-app-search-no-results")
+        search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "zz-no-matching-app".count))
+        XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["miniapp.reminder"].waitForExistence(timeout: 5))
+    }
+
     func testMiniAppLinksOpenColdAndSwitchWarm() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

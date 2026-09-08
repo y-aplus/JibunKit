@@ -78,4 +78,28 @@ final class RecordStoreTests: XCTestCase, @unchecked Sendable {
         let records = try await store.records()
         XCTAssertEqual(records, [record])
     }
+
+    func testFileImportAndPreviewCopyPreserveOwnedAttachment() async throws {
+        let root = try directory()
+        let external = try directory().appendingPathComponent("report.txt")
+        try Data("source".utf8).write(to: external)
+        let store = try RecordStore(directory: root)
+        let record = Record(title: "Files")
+        try await store.save(record)
+        let attachment = try await store.importAttachment(to: record.id, from: external)
+        XCTAssertEqual(attachment.name, "report.txt")
+        try Data("changed externally".utf8).write(to: external)
+        let preview = try await store.copyAttachment(recordID: record.id, attachmentID: attachment.id, to: directory())
+        XCTAssertEqual(preview.pathExtension, "txt")
+        XCTAssertEqual(try Data(contentsOf: preview), Data("source".utf8))
+        try Data("changed preview".utf8).write(to: preview)
+        let stored = try await store.attachmentData(recordID: record.id, attachmentID: attachment.id)
+        XCTAssertEqual(stored, Data("source".utf8))
+        do {
+            try await store.importAttachment(to: record.id, from: root)
+            XCTFail("Directory accepted as attachment")
+        } catch { }
+        let records = try await store.records()
+        XCTAssertEqual(records[0].attachments, [attachment])
+    }
 }

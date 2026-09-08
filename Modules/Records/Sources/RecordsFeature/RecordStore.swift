@@ -92,6 +92,42 @@ public actor RecordStore {
         return try Data(contentsOf: assetURL(attachmentID))
     }
 
+    /// The caller holds security-scoped access for the duration of this call.
+    @discardableResult
+    public func importAttachment(to id: UUID, from source: URL) throws -> RecordAttachment {
+        guard source.isFileURL,
+              try source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true
+        else { throw RecordStoreError.invalidData }
+        var index = try load()
+        guard let position = index.records.firstIndex(where: { $0.id == id }) else { throw RecordStoreError.missingRecord }
+        let attachment = RecordAttachment(id: UUID(), name: source.lastPathComponent)
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        let destination = assetURL(attachment.id)
+        do {
+            try FileManager.default.copyItem(at: source, to: destination)
+            index.records[position].attachments.append(attachment)
+            try persist(index)
+        } catch {
+            try? FileManager.default.removeItem(at: destination)
+            throw error
+        }
+        return attachment
+    }
+
+    /// Makes an independent temporary copy. Callers own its cleanup and must not
+    /// use the live attachment as a writable document for external applications.
+    public func copyAttachment(recordID: UUID, attachmentID: UUID, to directory: URL) throws -> URL {
+        guard directory.isFileURL else { throw RecordStoreError.invalidData }
+        guard let record = try load().records.first(where: { $0.id == recordID }) else { throw RecordStoreError.missingRecord }
+        guard let attachment = record.attachments.first(where: { $0.id == attachmentID }) else { throw RecordStoreError.missingAttachment }
+        let fileExtension = (attachment.name as NSString).pathExtension
+        var destination = directory.appendingPathComponent(UUID().uuidString)
+        if !fileExtension.isEmpty { destination.appendPathExtension(fileExtension) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: assetURL(attachmentID), to: destination)
+        return destination
+    }
+
     public func removeAttachment(recordID: UUID, attachmentID: UUID) throws {
         var index = try load()
         guard let position = index.records.firstIndex(where: { $0.id == recordID }) else { throw RecordStoreError.missingRecord }

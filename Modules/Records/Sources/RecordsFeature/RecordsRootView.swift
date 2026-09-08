@@ -51,9 +51,7 @@ public struct RecordsRootView: View {
             if let record = records.first(where: { $0.id == id }) {
                 List {
                     Section("本文") { Text(record.body).accessibilityIdentifier("records.body") }
-                    if !record.attachments.isEmpty {
-                        Section("添付ファイル") { ForEach(record.attachments) { Text($0.name) } }
-                    }
+                    RecordAttachmentsSection(store: store, record: record) { await reload() }
                 }
                 .navigationTitle(record.title)
                 .toolbar { Button("編集") { editing = record }.accessibilityIdentifier("records.edit") }

@@ -144,3 +144,11 @@ Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録でき�
 URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。Feature内部の詳細画面への遷移は今後の拡張範囲であり、この形式ではまだ渡さない。表示中のsheetを強制終了しないため、sheetがあるときは閉じた後に遷移先が見える。独立版ではそのApp ShellがURL登録・受信を担う。
 
 [AppleのWidget連携](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity)に従い、Widgetの`widgetURL`とホストの`onOpenURL`を接続している。カスタムschemeは認証境界ではなく、同じschemeを登録する別アプリとの競合はOSの扱いに依存する。
+
+## Feature内に複数の通知を持つ
+
+`context.notificationRequestIdentifier(for: recordID)`はFeatureが管理する安定したキーから通知IDを生成する。同じキーで再予約すれば同じIDになり、異なるキーは別IDになる。キーには文字列化したレコードIDなどを使い、更新のたびにランダムIDを作らない。日時変更だけならキーを維持する。空文字列・日本語なども区別して扱う。
+
+通知整理では`context.ownsNotificationRequestIdentifier(request.identifier)`に一致するものだけを選び、そのIDを`removePendingNotificationRequests(withIdentifiers:)`へ渡せる。配信済み通知も同様にそのrequestのidentifierで選別できる。従来の引数なし`notificationRequestIdentifier`も自身のものとして判定し、既存予約のIDは変更しない。全アプリ分を削除するAPIは使わない。
+
+これは命名と所属判定のAPIであり、予約時刻・重複排除・再予約・通知権限の判断はFeatureが担う。予約可能な件数などOSの制約を解消するものではない。個々の通知には既存の`context.notificationUserInfo`を付けるとFeature入口へ遷移できる。レコード詳細への遷移はまだ共通化していない。

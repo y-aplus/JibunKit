@@ -1,0 +1,9 @@
+# Feature内の複数通知ID
+
+更新日: 2026-09-08
+
+実用Featureが予定・レコード単位に通知を持てるよう、MiniAppContextに安定キーからの通知ID生成と所属判定を追加した。既存の単一通知IDと通知タップのpayloadは維持する。キーはUTF-8をBase64へ変換して既存IDの後ろへ追加する。Feature IDの既存のドットescapeと組み合わせ、親子のように見えるFeature IDでも互いの通知を選別しない。
+
+テストは異なるキー・Unicode・空キー・区切り文字、同じキーの再生成、似たFeature ID間の排他性、既存Reminder IDの互換性を扱う。予約処理や一括削除は自動実行せず、Featureが対象を明示してOS APIを使う。
+
+CI実行待ち。新しいAPIはFoundationのみで、URL遷移・バックアップ保存名のUI変更とは独立している。

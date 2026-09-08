@@ -62,6 +62,19 @@ public struct MiniAppContext: Hashable, Sendable {
         id.notificationRequestIdentifier
     }
 
+    /// A stable Feature-owned key identifies one of many notifications.
+    /// Encoding keeps arbitrary keys distinct without exposing ID separators.
+    public func notificationRequestIdentifier(for key: String) -> String {
+        notificationRequestIdentifier + "." + Data(key.utf8).base64EncodedString()
+    }
+
+    /// Includes the original single-notification ID for backward compatibility.
+    /// This is namespace matching, not authorization between Features.
+    public func ownsNotificationRequestIdentifier(_ identifier: String) -> Bool {
+        identifier == notificationRequestIdentifier
+            || identifier.hasPrefix(notificationRequestIdentifier + ".")
+    }
+
     public var notificationUserInfo: [String: String] {
         [MiniAppNotificationRoute.miniAppIDUserInfoKey: id.rawValue]
     }

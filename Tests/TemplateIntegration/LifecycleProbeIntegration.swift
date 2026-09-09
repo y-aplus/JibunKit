@@ -95,7 +95,11 @@ enum LifecycleProbeIntegration {
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
                           },
                           notificationCategories: [category(context, key: "initial")],
-                          notificationPresentation: { _ in
+                          notificationPresentation: { event in
+                              // Action delivery must survive slow test navigation into background.
+                              if event.categoryIdentifier == context.notificationCategoryIdentifier(for: "initial") {
+                                  return [.list]
+                              }
                               state.foregroundCount += 1
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in

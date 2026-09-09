@@ -65,11 +65,20 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.navigationBars.buttons["ミニアプリ"].tap()
         tap("miniapp.lifecycle-b")
         XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
         springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.01))
             .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)))
         let card = springboard.buttons.matching(identifier: "ShortLook.Platter.Content.Seamless")
             .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout: 20), springboard.debugDescription)
+        let visible = card.waitForExistence(timeout: 20)
+        let evidence = XCTAttachment(screenshot: springboard.screenshot())
+        evidence.name = "custom-action-notification-center"
+        evidence.lifetime = .keepAlways
+        add(evidence)
+        guard visible else {
+            XCTFail("Action notification missing: \(springboard.debugDescription)")
+            return
+        }
         card.press(forDuration: 1)
         let action = springboard.buttons["Action"].firstMatch
         XCTAssertTrue(action.waitForExistence(timeout: 5), springboard.debugDescription)

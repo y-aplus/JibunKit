@@ -3,6 +3,41 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testNativeCategoryUpdatesPreserveOtherFeature() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func expect(_ identifiers: [String]) {
+            let text = app.staticTexts.matching(identifier: "notification.categories")
+                .matching(NSPredicate(format: "label == %@", identifiers.sorted().joined(separator: ","))).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        let a = "jibunkit.lifecycle-a.category.aW5pdGlhbA=="
+        let b = "jibunkit.lifecycle-b.category.aW5pdGlhbA=="
+        let updated = "jibunkit.lifecycle-a.category.dXBkYXRlZA=="
+        tap("miniapp.lifecycle-a")
+        tap("notification.read")
+        expect([a, b])
+        tap("notification.replace")
+        expect([updated, b])
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        tap("notification.read")
+        expect([updated, b])
+        tap("notification.remove")
+        expect([updated])
+        app.terminate()
+        app.launch()
+        tap("miniapp.lifecycle-a")
+        tap("notification.read")
+        expect([a, b])
+    }
+
     func testCancellingOneFeatureLeavesOtherFeatureTaskRunning() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

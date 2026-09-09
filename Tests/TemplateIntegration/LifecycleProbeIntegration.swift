@@ -2,12 +2,29 @@
 import SwiftUI
 import Observation
 import JibunKitCore
+import UserNotifications
 
 @MainActor
 @Observable
 final class LifecycleProbeState {
     var events: [String] = []
     var taskStatus = "idle"
+    var categories = "unread"
+
+    func readCategories() async {
+        let values = await UNUserNotificationCenter.current().notificationCategories()
+        categories = values.map(\.identifier).sorted().joined(separator: ",")
+    }
+
+    func replaceCategories(context: MiniAppContext, key: String?) async {
+        do {
+            let categories = key.map { [LifecycleProbeIntegration.category(context, key: $0)] } ?? []
+            try context.replaceNotificationCategories(with: categories)
+            await readCategories()
+        } catch {
+            categories = "error: \(error)"
+        }
+    }
     private let scope = MiniAppTaskScope()
     private var input: AsyncStream<Void>.Continuation?
 
@@ -43,12 +60,27 @@ enum LifecycleProbeIntegration {
     private static let second = LifecycleProbeState()
     static let definitions = [definition("lifecycle-a", state: first), definition("lifecycle-b", state: second)]
 
+    static func category(_ context: MiniAppContext, key: String) -> UNNotificationCategory {
+        UNNotificationCategory(identifier: context.notificationCategoryIdentifier(for: key),
+            actions: [UNNotificationAction(identifier: "same-action", title: "Action", options: [])],
+            intentIdentifiers: [], options: [.customDismissAction])
+    }
+
     private static func definition(_ id: String, state: LifecycleProbeState) -> MiniAppDefinition {
-        MiniAppDefinition(id: MiniAppID(id), title: id, systemImage: "clock",
-                          onHostPhaseChange: { state.receive($0) }) { _ in
+        let context = MiniAppContext(id: MiniAppID(id))
+        return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
+                          onHostPhaseChange: { state.receive($0) },
+                          notificationCategories: [category(context, key: "initial")]) { _ in
             VStack {
                 Text(state.events.joined(separator: ","))
                     .accessibilityIdentifier("lifecycle.events")
+                Text(state.categories).accessibilityIdentifier("notification.categories")
+                Button("Read categories") { Task { await state.readCategories() } }
+                    .accessibilityIdentifier("notification.read")
+                Button("Replace categories") { Task { await state.replaceCategories(context: context, key: "updated") } }
+                    .accessibilityIdentifier("notification.replace")
+                Button("Remove categories") { Task { await state.replaceCategories(context: context, key: nil) } }
+                    .accessibilityIdentifier("notification.remove")
                 Text(state.taskStatus).accessibilityIdentifier("lifecycle.task.status")
                 Button("Start", action: state.start).accessibilityIdentifier("lifecycle.task.start")
                 Button("Cancel", action: state.cancel).accessibilityIdentifier("lifecycle.task.cancel")

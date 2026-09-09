@@ -76,7 +76,13 @@ public struct RecordsRootView: View {
             Button("キャンセル", role: .cancel) { deleting = nil }
             Button("削除", role: .destructive) {
                 Task {
-                    do { try await store.delete(id: record.id); await reload() }
+                    do {
+                        // If cancellation fails, retain the record so the user
+                        // can retry rather than leave an unreachable reminder.
+                        if let reminders { try await reminders.cancel(record.id) }
+                        try await store.delete(id: record.id)
+                        await reload()
+                    }
                     catch { self.error = "削除できませんでした: \(error.localizedDescription)" }
                     deleting = nil
                 }

@@ -3,6 +3,32 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testRecordReminderSchedulingAndCancellation() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ element: XCUIElement) {
+            XCTAssertTrue(element.waitForExistence(timeout: 10))
+            element.tap()
+        }
+        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["records.add"])
+        let title = "Notification-" + UUID().uuidString.prefix(8)
+        tap(app.textFields["records.title"])
+        app.textFields["records.title"].typeText(String(title))
+        tap(app.buttons["records.save"])
+        tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                                            "records.row.", String(title))).firstMatch)
+        app.swipeUp()
+        tap(app.buttons["records.reminder.schedule"])
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["許可", "Allow"])).firstMatch
+        if allow.waitForExistence(timeout: 3) { allow.tap() }
+        XCTAssertTrue(app.staticTexts["通知を予約しました。"].waitForExistence(timeout: 10))
+        tap(app.buttons["records.reminder.cancel"])
+        XCTAssertTrue(app.staticTexts["この記録の通知を取り消しました。"].waitForExistence(timeout: 10))
+    }
+
     func testRecordsUsesIndependentHostStorage() throws {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

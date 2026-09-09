@@ -15,3 +15,7 @@ CI 34293895811（5ce8a94）は成功。通知payloadの互換性・不正入力�
 Records詳細へ日時指定・予約・取消を追加した。FeatureはRecordReminderActionsのschedule/cancelのみ受け取り、CoreとUserNotificationsの組立てはIntegrationが所有する。UUIDごとの通知IDで、同一記録の再予約のみ置換される。通知タップのdestinationは同じUUID。取消はそのUUIDのpending/deliveredだけを対象にする。日時不正や権限拒否は成功表示にしない。
 
 RecordsNotificationTestsで2記録のID分離・再予約のID維持・通知本文/詳細ID対応・Reminder名前空間との独立・過去/非有限日時拒否を検証する。これはrequestの検証であり、OS通知センターでの複数予約・通知タップの実機結果は未確認。Recordsの削除/復元と既存予約の扱いも出荷前に整理する。
+
+CI 34294297445（dcdb497）は成功。複数記録の通知request分離・置換・詳細payload・不正日時のunit testsと、Records単独/生成ホスト/通常IPAのビルドを確認。
+
+記録削除は通知取消を先に行い、取消が失敗した場合は記録を残してエラーを表示する。予約時は権限確認の前後で日時を検証し、許可待ちの時間を加算しない。生成ホストUIへ実際の通知予約/許可/取消のテストを追加した。結果待ち。バックアップとOS予約の整合・複数通知の配送と詳細タップは別途検証する。

@@ -31,10 +31,12 @@ public enum RecordsNotifications {
     }
 
     public static let actions = RecordReminderActions(schedule: { record, date in
-        let request = try request(for: record, at: date)
+        // Reject invalid input before asking for permission, then recalculate the
+        // delay after the user responds so the requested wall-clock time is kept.
+        _ = try request(for: record, at: date)
         let center = UNUserNotificationCenter.current()
         guard try await center.requestAuthorization(options: [.alert, .sound]) else { throw Failure.denied }
-        try await center.add(request)
+        try await center.add(request(for: record, at: date))
     }, cancel: { id in
         let identifier = context.notificationRequestIdentifier(for: id.uuidString)
         let center = UNUserNotificationCenter.current()

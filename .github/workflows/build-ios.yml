@@ -373,7 +373,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/files-round-trip.log"
 
       - name: Test Records editing and persistence
-        if: inputs.simulator_tests && inputs.feature_validation
+        if: ${{ !cancelled() && inputs.simulator_tests && inputs.feature_validation && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail

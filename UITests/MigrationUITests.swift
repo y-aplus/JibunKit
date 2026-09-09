@@ -220,7 +220,12 @@ final class MigrationUITests: XCTestCase {
         delivered.name = "08-delivered-notification"
         delivered.lifetime = .keepAlways
         add(delivered)
+        print("Notification Center before tap:\n\(springboard.debugDescription)")
+        print("Notification body frame: \(notification.frame), hittable: \(notification.isHittable)")
         notification.tap()
+        let foreground = app.wait(for: .runningForeground, timeout: 10)
+        print("Notification Center after tap:\n\(springboard.debugDescription)")
+        XCTAssertTrue(foreground, "Notification tap did not bring JibunKit to the foreground")
         XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.textFields["例: 水を飲む"].value as? String, "Migration reminder")
         capture("09-notification-routed-to-reminder")

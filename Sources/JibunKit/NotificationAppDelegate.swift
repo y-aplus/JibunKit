@@ -1,5 +1,6 @@
 #if os(iOS)
 import JibunKitCore
+import OSLog
 import UIKit
 import UserNotifications
 
@@ -30,6 +31,8 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping @Sendable () -> Void
     ) {
+        Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
+            .notice("Notification response received")
         let candidate = MiniAppNotificationRoute.candidateRoute(
             userInfo: response.notification.request.content.userInfo
         )
@@ -39,6 +42,8 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         Task { @MainActor in
             // AppNavigation also rejects IDs absent from the registry.
             AppNavigation.shared.openNotificationRoute(candidate)
+            Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
+                .notice("Notification route dispatched; parsed route: \(candidate != nil)")
             completionHandler()
         }
     }

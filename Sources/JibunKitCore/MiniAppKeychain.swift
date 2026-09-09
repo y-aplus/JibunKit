@@ -37,15 +37,17 @@ public struct MiniAppKeychain: Sendable {
         return data
     }
 
-    /// Updates in place, preserving an existing item's accessibility attributes.
-    /// New items use the standard when-unlocked accessibility default.
-    public func set(_ data: Data, for account: String) throws {
+    /// Updates in place. Omit accessibility to preserve existing protection, or
+    /// pass a native kSecAttrAccessible value to explicitly set/change it.
+    /// New items without an explicit value use the standard when-unlocked default.
+    public func set(_ data: Data, for account: String, accessibility: CFString? = nil) throws {
         let query = query(account: account)
-        let changes = [kSecValueData as String: data]
+        var changes: [String: Any] = [kSecValueData as String: data]
+        if let accessibility { changes[kSecAttrAccessible as String] = accessibility }
         var status = SecItemUpdate(query as CFDictionary, changes as CFDictionary)
         if status == errSecItemNotFound {
             var item = query
-            item[kSecValueData as String] = data
+            item.merge(changes) { _, new in new }
             status = SecItemAdd(item as CFDictionary, nil)
             // Another caller may have inserted the same item after our update.
             if status == errSecDuplicateItem {

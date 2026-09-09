@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 import JibunKitCore
 import UserNotifications
+import Security
 
 @MainActor
 @Observable
@@ -149,7 +150,13 @@ private struct KeychainProbeView: View {
             Text(result).accessibilityIdentifier("keychain.result")
             Button("Save") {
                 perform {
-                    try store.set(Data(context.id.rawValue.utf8), for: "same-account")
+                    let data = Data(context.id.rawValue.utf8)
+                    try store.set(data, for: "same-account", accessibility: kSecAttrAccessibleWhenUnlocked)
+                    guard try protection() == kSecAttrAccessibleWhenUnlocked as String else { return "wrong initial protection" }
+                    try store.set(data, for: "same-account", accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)
+                    // An ordinary data update must not reset the explicitly selected protection.
+                    try store.set(data, for: "same-account")
+                    guard try protection() == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String else { return "wrong updated protection" }
                     return "saved"
                 }
             }.accessibilityIdentifier("keychain.save")
@@ -163,6 +170,16 @@ private struct KeychainProbeView: View {
                 perform { try store.removeAll(); return "removed" }
             }.accessibilityIdentifier("keychain.remove")
         }
+    }
+
+    private func protection() throws -> String? {
+        let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: store.serviceIdentifier, kSecAttrAccount as String: "same-account",
+            kSecAttrSynchronizable as String: false, kSecReturnAttributes as String: true]
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        guard status == errSecSuccess else { return "OSStatus: \(status)" }
+        return (result as? [String: Any])?[kSecAttrAccessible as String] as? String
     }
 
     private func perform(_ operation: () throws -> String) {

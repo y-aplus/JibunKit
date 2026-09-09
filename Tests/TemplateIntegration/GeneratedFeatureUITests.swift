@@ -3,6 +3,36 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testCancellingOneFeatureLeavesOtherFeatureTaskRunning() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func status(_ value: String) {
+            let expected = app.staticTexts.matching(identifier: "lifecycle.task.status")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(expected.waitForExistence(timeout: 5))
+        }
+        for id in ["lifecycle-a", "lifecycle-b"] {
+            tap("miniapp.\(id)")
+            tap("lifecycle.task.start")
+            status("running")
+            app.navigationBars.buttons["ミニアプリ"].tap()
+        }
+        tap("miniapp.lifecycle-a")
+        tap("lifecycle.task.cancel")
+        status("cancelled")
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        status("running")
+        tap("lifecycle.task.complete")
+        status("completed")
+    }
+
     func testUnopenedFeaturesReceiveHostBackgroundAndResume() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

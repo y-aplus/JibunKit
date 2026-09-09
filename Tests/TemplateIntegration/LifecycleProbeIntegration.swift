@@ -1,5 +1,6 @@
 // Included only in the isolated CI host, never in a distributed IPA.
 import SwiftUI
+import UIKit
 import Observation
 import JibunKitCore
 import UserNotifications
@@ -10,6 +11,7 @@ import WebKit
 @Observable
 final class LifecycleProbeState {
     var events: [String] = []
+    var idleLease: MiniAppIdleTimerLease?
     var taskStatus = "idle"
     var categories = "unread"
     var foregroundCount = 0
@@ -115,6 +117,8 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             VStack {
+                NavigationLink("Idle timer") { IdleTimerProbeView(context: context, state: state) }
+                    .accessibilityIdentifier("idle.open")
                 NavigationLink("Web data") { WebDataProbeView(context: context) }
                     .accessibilityIdentifier("webdata.open")
                 NavigationLink("Keychain") { KeychainProbeView(context: context) }
@@ -249,4 +253,32 @@ private struct WebDataProbeWebView: UIViewRepresentable {
     let webView: WKWebView
     func makeUIView(context: Context) -> WKWebView { webView }
     func updateUIView(_ uiView: WKWebView, context: Context) { }
+}
+
+
+private struct IdleTimerProbeView: View {
+    let context: MiniAppContext
+    let state: LifecycleProbeState
+    @State private var result = "unread"
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("idle.result")
+            Button("Acquire") {
+                if state.idleLease == nil {
+                    state.idleLease = MiniAppIdleTimer.shared.preventSleep(for: context.id)
+                }
+                read()
+            }.accessibilityIdentifier("idle.acquire")
+            Button("Release") {
+                state.idleLease?.release()
+                state.idleLease = nil
+                read()
+            }.accessibilityIdentifier("idle.release")
+            Button("Read", action: read).accessibilityIdentifier("idle.read")
+        }
+        .navigationTitle("Idle timer")
+    }
+    private func read() {
+        result = UIApplication.shared.isIdleTimerDisabled ? "disabled" : "enabled"
+    }
 }

@@ -3,6 +3,45 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testIdleTimerKeepsOtherFeaturesRequestActive() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let result = app.staticTexts.matching(identifier: "idle.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 5), app.debugDescription)
+        }
+        func open(_ owner: String) {
+            tap("miniapp.\(owner)")
+            tap("idle.open")
+        }
+        func backToList() {
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            app.navigationBars.buttons["ミニアプリ"].tap()
+        }
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            open(owner)
+            tap("idle.acquire")
+            expect("disabled")
+            backToList()
+        }
+        open("lifecycle-a")
+        tap("idle.release")
+        expect("disabled")
+        backToList()
+        open("lifecycle-b")
+        tap("idle.read")
+        expect("disabled")
+        tap("idle.release")
+        expect("enabled")
+    }
+
     func testWebDataPersistsAndClearingPreservesOtherFeature() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

@@ -16,8 +16,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         do {
             let registrations = Dictionary(uniqueKeysWithValues:
                 MiniAppRegistry.all.map { ($0.id, $0.notificationCategories) })
-            let categories = try MiniAppNotificationCategories.merged(registrations)
-            UNUserNotificationCenter.current().setNotificationCategories(categories)
+            try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
         } catch {
             preconditionFailure("Invalid Feature notification category registration: \(error)")
         }

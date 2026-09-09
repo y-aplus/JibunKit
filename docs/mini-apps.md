@@ -202,3 +202,12 @@ IntegrationはonNotificationActionへasyncハンドラを任意登録できる�
 callback内で長時間処理をしないでください。これはhostが前面にある場合のOSへの表示指定であり、Featureの画面表示状態の判定や通知権限の分離を自動提供するものではありません。空のoption setによる抑止を含む標準動作は[AppleのwillPresent仕様](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate/usernotificationcenter(_:willpresent:withcompletionhandler:))に従います。
 
 所有者別方針・既定値の単体テストを追加しました。実通知の複数Feature表示検証は未完です。
+
+
+### 実行中の通知カテゴリ更新
+
+`try context.replaceNotificationCategories(with: categories)` は、そのFeatureの登録だけを置き換えます。空配列でそのFeatureのカテゴリだけを解除できます。hostは起動時に全Featureを`MiniAppNotificationCategoryRegistry.shared`へ登録し、更新時には他Featureのカテゴリを保った全体集合をOSに渡します。各識別子は`context.notificationCategoryIdentifier(for:)`で作成してください。所有者不一致・重複・未登録Featureの更新はthrowし、既存登録を変更しません。
+
+MainActor上で同期的に検証・合成・標準API呼出しを行います。OS側の適用完了通知は標準APIにないため、このメソッドの成功はOS内の適用完了を保証しません。動的な登録はプロセス内の状態です。次回起動時に必要なカテゴリはFeatureが定義または永続化した情報から再登録してください。カテゴリ解除は通知要求自体の取消ではありません。
+
+Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き換わるため、この経路を使用します。独立したアプリで得られていたカテゴリ登録範囲の分離を補う仕組みで、任意の直接呼出しを遮断するsandboxではありません。

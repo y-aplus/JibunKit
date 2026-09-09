@@ -10,7 +10,7 @@
 
 | 契約 | 検証 |
 | --- | --- |
-| 最初のshutdownで新規受付を閉じる | unitで終了後start/onShutdownの拒否。終了待ち途中の拒否は追加検証が残る |
+| 最初のshutdownで新規受付を閉じる | unitで終了後start/onShutdownの拒否。終了待ち途中の拒否・同時shutdownの完了待ちを追加、次のunit CI待ち |
 | 所有Taskの取消後、終了してから資源を解放する | 実行中AsyncStream Taskの終了記録とcleanup順序をunitで比較 |
 | cleanupは逆順、shutdownの重複呼出しで重複しない | 同時shutdown二呼出しの記録をunitで比較 |
 | 他runtimeの資源利用は維持する | 二ownerのidle leaseを使い、片方終了後のactiveOwnersを確認 |
@@ -29,3 +29,5 @@
 - idle timerの端末点灯動作。今回は設定値の調停を検証する。
 
 D01/D02/D05/D07全体を補完済みとは判定しない。現在状態の正本は[統合差分台帳](../coexistence-ledger.md)。
+
+[34373928804](https://github.com/y-aplus/JibunKit/actions/runs/34373928804)でRuntimeを含むCI全体成功。次のunitではTaskの取消後処理をcontinuationで止め、資源が先に解放されないことを検証する。owner解放時にもTask終了→資源解放の順序を確認する。固定sleepによる順序推定は行わない。

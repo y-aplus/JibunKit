@@ -3,6 +3,57 @@ import JibunKitCore
 
 final class MiniAppRuntimeTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testAdmissionClosesBeforeSlowTaskCleanupAndConcurrentShutdownWaits() async throws {
+        let runtime = MiniAppRuntime()
+        let events = RuntimeEvents()
+        let gate = RuntimeGate()
+        let started = expectation(description: "Running")
+        let cleaning = expectation(description: "Cancellation cleanup entered")
+        let channel = AsyncStream<Void>.makeStream()
+        try runtime.onShutdown { events.values.append("resource released") }
+        try runtime.start {
+            started.fulfill()
+            for await _ in channel.stream { }
+            await gate.wait(entered: cleaning)
+            await MainActor.run { events.values.append("task finished") }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        let shutdown = Task { await runtime.shutdown(); events.values.append("first returned") }
+        await fulfillment(of: [cleaning], timeout: 5)
+        XCTAssertTrue(runtime.isClosed)
+        XCTAssertThrowsError(try runtime.start { XCTFail("Work admitted during shutdown") })
+        XCTAssertThrowsError(try runtime.onShutdown { XCTFail("Cleanup admitted during shutdown") })
+        XCTAssertTrue(events.values.isEmpty, "Resources must remain owned while task cleanup is pending")
+        let otherShutdown = Task { await runtime.shutdown(); events.values.append("second returned") }
+        await gate.release()
+        await shutdown.value
+        await otherShutdown.value
+        XCTAssertEqual(Array(events.values.prefix(2)), ["task finished", "resource released"])
+        XCTAssertEqual(Set(events.values.suffix(2)), ["first returned", "second returned"])
+    }
+
+    @MainActor
+    func testOwnerDeinitializationCancelsWorkBeforeResourceCleanup() async throws {
+        var runtime: MiniAppRuntime? = MiniAppRuntime()
+        weak var weakRuntime = runtime
+        let started = expectation(description: "Running")
+        let cleaned = expectation(description: "Resource released")
+        let events = RuntimeEvents()
+        let channel = AsyncStream<Void>.makeStream()
+        try runtime?.onShutdown { events.values.append("resource released"); cleaned.fulfill() }
+        try runtime?.start {
+            started.fulfill()
+            for await _ in channel.stream { }
+            await MainActor.run { events.values.append("task finished") }
+        }
+        await fulfillment(of: [started], timeout: 5)
+        runtime = nil
+        XCTAssertNil(weakRuntime)
+        await fulfillment(of: [cleaned], timeout: 5)
+        XCTAssertEqual(events.values, ["task finished", "resource released"])
+    }
+
+    @MainActor
     func testShutdownClosesAdmissionWaitsForTasksAndReleasesOnlyOwnedResources() async throws {
         let first = MiniAppRuntime()
         let second = MiniAppRuntime()
@@ -37,3 +88,17 @@ final class MiniAppRuntimeTests: XCTestCase, @unchecked Sendable {
 
 @MainActor
 private final class RuntimeEvents { var values: [String] = [] }
+
+private actor RuntimeGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait(entered: XCTestExpectation) async {
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            entered.fulfill()
+        }
+    }
+    func release() {
+        continuation?.resume()
+        continuation = nil
+    }
+}

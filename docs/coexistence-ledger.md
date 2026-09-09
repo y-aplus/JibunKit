@@ -26,7 +26,7 @@
 | ID | 対象 | 状態 | 現在状態 |
 | --- | --- | --- | --- |
 | D01 | ホスト活動状態・scene・Feature表示状態 | 未対応 | host集約phase配送は補完・CI検証済み。未表示の二Featureへの実イベント配送、再入時の順序一致まで確認済み。Feature/scene/instance別の寿命契約は残る。 |
-| D02 | タスク・購読・要求の所有権と取消 | 未対応 | MiniAppTaskScopeでowner別Task取消、実行中の片方だけの取消、他owner継続、owner解放をunitで確認済み。CI隔離hostでの二Featureの起動・片方の取消・他方継続/正常完了は[34320179116](https://github.com/y-aplus/JibunKit/actions/runs/34320179116)で成功。呼出時点のTask群を取消して全完了を待つcancelAllAndWaitは[34323337796](https://github.com/y-aplus/JibunKit/actions/runs/34323337796)でunit/build成功。待機中に開始した別batchの維持とcleanup完了待ちを追加検証中。購読・要求全般の寿命は未完。 |
+| D02 | タスク・購読・要求の所有権と取消 | 未対応 | MiniAppTaskScopeでowner別Task取消、実行中の片方だけの取消、他owner継続、owner解放をunitで確認済み。CI隔離hostでの二Featureの起動・片方の取消・他方継続/正常完了は[34320179116](https://github.com/y-aplus/JibunKit/actions/runs/34320179116)で成功。呼出時点のTask群を取消して全完了を待つcancelAllAndWaitは[34323337796](https://github.com/y-aplus/JibunKit/actions/runs/34323337796)でunit/build成功。別batch維持とcleanup完了待ちも[34323800250](https://github.com/y-aplus/JibunKit/actions/runs/34323800250)で成功。購読・要求全般の寿命は未完。 |
 | D03 | クラッシュ・ハング・メモリとhelper extension | 未対応 | 協調的緩和は未対応。helperによる追加補完可能性は今回新たに発見した実装判断用の検証課題。 |
 | D04 | 画面遷移・復帰・提示と複数scene | 未調査 | AppNavigation.sharedに一つのpathがあり、open時に置換。Feature/scene別の一般的な保持機構は確認できない。 |
 | D05 | 画面外観・idle timer等のアプリ共有設定 | 未対応 | 初期台帳のUI領域に含めるべき具体的な未対応差分。 |
@@ -37,7 +37,7 @@
 | D10 | WKWebViewの永続Webデータ | 未対応 | 標準APIを再利用して補完できる候補。JibunKit側の割当・寿命契約は未対応。 |
 | D11 | Web認証セッションと返却先 | 未調査 | 一般認証は未調査。既存の標準的なsession境界を壊さず使う対象。 |
 | D12 | URL・Universal Link・外部ファイル受信 | 未対応 | 固定jibunkit URLと通知詳細routingは実装済み。一般URL callback、Universal Link、外部ファイル受信・security-scoped URL所有は未対応。 |
-| D13 | 通知カテゴリ・action・foreground・取消 | 未対応 | notification request ID namespaceとpayload routingは実装済み。category合成、actionIdentifier/文字入力action配送、所有者限定の一括取消、Feature別foreground方針は未対応。 |
+| D13 | 通知カテゴリ・action・foreground・取消 | 未対応 | notification request ID namespaceとpayload routingは実装済み。actionIdentifier/文字入力/消去を所有Featureへ配送する任意接続とdefault openのみの遷移を実装、CI待ち。category合成、所有者限定の一括取消、Feature別foreground方針は未対応。 |
 | D14 | APNs・remote pushの配送とサーバー識別 | 未調査 | 未調査。必要契約と署名可否を分け、SideStore全般で不可と一括推定しない。 |
 | D15 | BackgroundTasksの起動登録・期限・completion | 未対応 | 未対応。現在のhost phase配送とは別機構。 |
 | D16 | Background URLSessionの再接続 | 未対応 | 未対応。通常Task所有権だけではカバーしない。 |

@@ -36,15 +36,30 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         let candidate = MiniAppNotificationRoute.candidateRoute(
             userInfo: response.notification.request.content.userInfo
         )
+        let kind: MiniAppNotificationAction.Kind
+        switch response.actionIdentifier {
+        case UNNotificationDefaultActionIdentifier: kind = .open
+        case UNNotificationDismissActionIdentifier: kind = .dismiss
+        default: kind = .custom(response.actionIdentifier)
+        }
+        let action = MiniAppNotificationAction(
+            kind: kind,
+            requestIdentifier: response.notification.request.identifier,
+            destination: candidate?.destination,
+            userText: (response as? UNTextInputNotificationResponse)?.userText
+        )
         // UIKit performs snapshot/state restoration work from this callback.
         // The synthesized async delegate thunk can complete on a cooperative
         // executor, causing UIKit's main-thread assertion on notification taps.
         Task { @MainActor in
-            // AppNavigation also rejects IDs absent from the registry.
-            AppNavigation.shared.openNotificationRoute(candidate)
+            defer { completionHandler() }
+            // Opening preserves the legacy route behavior. Dismiss/custom actions
+            // must not navigate or disturb another Feature's visible screen.
+            await MiniAppNotificationActionDelivery.deliver(action, route: candidate,
+                handlerForOwner: { MiniAppRegistry.definition(for: $0)?.onNotificationAction },
+                open: { AppNavigation.shared.openNotificationRoute($0) })
             Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
                 .notice("Notification route dispatched; parsed route: \(candidate != nil)")
-            completionHandler()
         }
     }
 }

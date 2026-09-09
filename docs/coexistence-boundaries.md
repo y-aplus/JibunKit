@@ -93,3 +93,5 @@ CI 34319758973（89ff39b）は成功。実行中Taskがscopeを保持せず、�
 cancelAllAndWaitを追加し、呼出時点で所有するTask群へ取消要求を送り、全完了を待つ。途中に開始された新Taskは別batchとして扱い、runtime側が終了時の新規受付を制御する。自身のscope内operationから呼ぶと自分の完了を待つため禁止。非協調的な処理の強制停止を保証しない。複数実行中Taskの終了状態を戻り時点で確認するテストを追加、CI結果待ち。
 
 CI 34323337796（39fcea4）は成功。cancelAllAndWaitの複数所有Taskの完了待ちを確認。次に取消後のcleanupを明示的なgateで保留し、joinが先に戻らないこと、待機中に開始した新Taskを取消さず旧batch完了後も維持することをテスト。同期に固定sleepを使わず、取消要求と完了の区別・対象batch境界を検証する。
+
+D13: 標準open/明示dismiss/独自actionを区別し、文字入力と対象IDを所有者の任意ハンドラへ配送する接続を追加。独自action/消去が他Feature表示を変更しないこと、別ownerへ流れないこと、従来open互換をunitで検証する。OSのcategory合成・独自actionの実イベント検証は未完。根拠: https://developer.apple.com/documentation/usernotifications/unnotificationresponse/actionidentifier 。CI結果待ち。

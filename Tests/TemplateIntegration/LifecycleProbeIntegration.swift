@@ -195,30 +195,49 @@ private struct KeychainProbeView: View {
 private struct WebDataProbeView: View {
     let context: MiniAppContext
     @State private var result = "unread"
+    @State private var webView: WKWebView
+
+    init(context: MiniAppContext) {
+        self.context = context
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = context.websiteDataStore()
+        let view = WKWebView(frame: .zero, configuration: configuration)
+        view.loadHTMLString("<p>Persistent Web data probe</p>", baseURL: URL(string: "https://jibunkit.example"))
+        _webView = State(initialValue: view)
+    }
+
     var body: some View {
         VStack {
+            WebDataProbeWebView(webView: webView).frame(height: 80)
             Text(result).accessibilityIdentifier("webdata.result")
             Button("Save cookie") {
                 Task {
                     let cookie = HTTPCookie(properties: [.domain: "jibunkit.example", .path: "/",
                         .name: "account", .value: context.id.rawValue,
                         .expires: Date().addingTimeInterval(86400)])!
-                    await context.websiteDataStore().httpCookieStore.setCookie(cookie)
+                    await webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
                     result = "saved"
                 }
             }.accessibilityIdentifier("webdata.save")
             Button("Read cookie") {
                 Task {
-                    let cookies = await context.websiteDataStore().httpCookieStore.allCookies()
+                    let cookies = await webView.configuration.websiteDataStore.httpCookieStore.allCookies()
                     result = cookies.first { $0.name == "account" && $0.domain == "jibunkit.example" }?.value ?? "missing"
                 }
             }.accessibilityIdentifier("webdata.read")
             Button("Clear web data") {
                 Task {
-                    await context.websiteDataStore().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+                    await webView.configuration.websiteDataStore.removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
                     result = "removed"
                 }
             }.accessibilityIdentifier("webdata.remove")
         }
     }
+}
+
+
+private struct WebDataProbeWebView: UIViewRepresentable {
+    let webView: WKWebView
+    func makeUIView(context: Context) -> WKWebView { webView }
+    func updateUIView(_ uiView: WKWebView, context: Context) { }
 }

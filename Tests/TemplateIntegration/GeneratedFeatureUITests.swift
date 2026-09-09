@@ -123,7 +123,16 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTFail("Action notification missing: \(springboard.debugDescription)")
             return
         }
-        card.press(forDuration: 1)
+        // Expand the native notification container, rather than its nested seamless button.
+        let notification = springboard.descendants(matching: .any)
+            .matching(identifier: "NotificationShortLookView")
+            .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
+        XCTAssertTrue(notification.waitForExistence(timeout: 5), springboard.debugDescription)
+        notification.press(forDuration: 2)
+        let expanded = XCTAttachment(screenshot: springboard.screenshot())
+        expanded.name = "custom-action-expanded"
+        expanded.lifetime = .keepAlways
+        add(expanded)
         let action = springboard.buttons["Action"].firstMatch
         XCTAssertTrue(action.waitForExistence(timeout: 5), springboard.debugDescription)
         action.tap()

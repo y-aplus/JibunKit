@@ -37,7 +37,7 @@
 | D10 | WKWebViewの永続Webデータ | 未対応 | 標準APIを再利用して補完できる候補。JibunKit側の割当・寿命契約は未対応。 |
 | D11 | Web認証セッションと返却先 | 未調査 | 一般認証は未調査。既存の標準的なsession境界を壊さず使う対象。 |
 | D12 | URL・Universal Link・外部ファイル受信 | 未対応 | 固定jibunkit URLと通知詳細routingは実装済み。一般URL callback、Universal Link、外部ファイル受信・security-scoped URL所有は未対応。 |
-| D13 | 通知カテゴリ・action・foreground・取消 | 未対応 | notification request ID namespaceとpayload routingは実装済み。actionIdentifier/文字入力/消去の所有者配送unitと従来open実通知回帰は[34324423834](https://github.com/y-aplus/JibunKit/actions/runs/34324423834)で成功。categoryの所有者namespace・合成・衝突拒否を実装しCI待ち。独自actionのOS操作、所有者限定の一括取消、Feature別foreground方針は未完。 |
+| D13 | 通知カテゴリ・action・foreground・取消 | 未対応 | notification request ID namespaceとpayload routingは実装済み。actionIdentifier/文字入力/消去の所有者配送unitと従来open実通知回帰は[34324423834](https://github.com/y-aplus/JibunKit/actions/runs/34324423834)で成功。categoryの所有者namespace・合成・衝突拒否は[34325938194](https://github.com/y-aplus/JibunKit/actions/runs/34325938194)でunit/build成功。所有者限定のpending/delivered一括取消を共通化しRecordsへ接続、CI待ち。独自actionのOS操作・動的category更新・Feature別foreground方針は未完。 |
 | D14 | APNs・remote pushの配送とサーバー識別 | 未調査 | 未調査。必要契約と署名可否を分け、SideStore全般で不可と一括推定しない。 |
 | D15 | BackgroundTasksの起動登録・期限・completion | 未対応 | 未対応。現在のhost phase配送とは別機構。 |
 | D16 | Background URLSessionの再接続 | 未対応 | 未対応。通常Task所有権だけではカバーしない。 |

@@ -131,7 +131,8 @@ final class GeneratedFeatureUITests: XCTestCase {
             .matching(identifier: "NotificationShortLookView")
             .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
         XCTAssertTrue(notification.waitForExistence(timeout: 5), springboard.debugDescription)
-        notification.press(forDuration: 2)
+        // Use a physical touch within the card, avoiding accessibility press dispatch.
+        notification.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 2)
         let expanded = XCTAttachment(screenshot: springboard.screenshot())
         expanded.name = "custom-action-expanded"
         expanded.lifetime = .keepAlways

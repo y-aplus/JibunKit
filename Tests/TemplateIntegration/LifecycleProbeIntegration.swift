@@ -23,6 +23,14 @@ final class LifecycleProbeState {
                 scheduleStatus = "denied"
                 return
             }
+            if action {
+                let categories = await center.notificationCategories()
+                guard let category = categories.first(where: { $0.identifier == context.notificationCategoryIdentifier(for: "initial") }),
+                      category.actions.contains(where: { $0.identifier == "same-action" }) else {
+                    scheduleStatus = "missing native action registration"
+                    return
+                }
+            }
             let content = UNMutableNotificationContent()
             content.title = action ? "Action-" + context.id.rawValue : context.id.rawValue
             content.categoryIdentifier = action ? context.notificationCategoryIdentifier(for: "initial") : ""

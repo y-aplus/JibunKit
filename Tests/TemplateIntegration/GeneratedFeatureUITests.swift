@@ -123,6 +123,9 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTFail("Action notification missing: \(springboard.debugDescription)")
             return
         }
+        // The cover sheet can show a collapsed stack at the bottom. Expand the
+        // list first; a long press on the stacked card can otherwise do nothing.
+        card.swipeUp()
         // Expand the native notification container, rather than its nested seamless button.
         let notification = springboard.descendants(matching: .any)
             .matching(identifier: "NotificationShortLookView")

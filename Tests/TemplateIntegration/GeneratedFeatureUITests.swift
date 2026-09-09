@@ -59,6 +59,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         func open(_ owner: String) {
             tap("miniapp.\(owner)")
             tap("webdata.open")
+            XCTAssertTrue(app.staticTexts["page-ready"].waitForExistence(timeout: 15), app.debugDescription)
         }
         // Restart between owners also verifies native persistence, not in-memory state.
         for owner in ["lifecycle-a", "lifecycle-b"] {

@@ -223,19 +223,20 @@ private struct WebDataProbeView: View {
     let context: MiniAppContext
     @State private var result = "unread"
     @State private var webView: WKWebView
+    @State private var pageReady = false
 
     init(context: MiniAppContext) {
         self.context = context
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = context.websiteDataStore()
         let view = WKWebView(frame: .zero, configuration: configuration)
-        view.loadHTMLString("<p>Persistent Web data probe</p>", baseURL: URL(string: "https://jibunkit.example"))
         _webView = State(initialValue: view)
     }
 
     var body: some View {
         VStack {
-            WebDataProbeWebView(webView: webView).frame(height: 80)
+            WebDataProbeWebView(webView: webView, ready: $pageReady).frame(height: 80)
+            Text(pageReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
             Button("Save cookie") {
                 Task {
@@ -265,8 +266,19 @@ private struct WebDataProbeView: View {
 
 private struct WebDataProbeWebView: UIViewRepresentable {
     let webView: WKWebView
-    func makeUIView(context: Context) -> WKWebView { webView }
+    @Binding var ready: Bool
+    func makeCoordinator() -> Coordinator { Coordinator(ready: $ready) }
+    func makeUIView(context: Context) -> WKWebView {
+        webView.navigationDelegate = context.coordinator
+        webView.loadHTMLString("<p>Persistent Web data probe</p>", baseURL: URL(string: "https://jibunkit.example"))
+        return webView
+    }
     func updateUIView(_ uiView: WKWebView, context: Context) { }
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        @Binding var ready: Bool
+        init(ready: Binding<Bool>) { _ready = ready }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { ready = true }
+    }
 }
 
 

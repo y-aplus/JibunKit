@@ -2,7 +2,7 @@
 
 ## 対象
 
-実装source: `0c87765`。CI: [34371355575](https://github.com/y-aplus/JibunKit/actions/runs/34371355575)（結果待ち）。
+実装source: `0c87765`。CI: [34371355575](https://github.com/y-aplus/JibunKit/actions/runs/34371355575)（Runtime unit・idle終了接続成功、run全体はWeb Cookie再起動後読出し失敗）。
 
 独立アプリの終了では、そのプロセスのTaskや資源利用は他アプリの処理と別に終わる。単一hostへ統合したFeatureでは画面を閉じるだけでそれを得られない。今回の実装は協調的なTaskと後始末の順序を提供する。独立processの強制終了能力は提供しない。
 

@@ -82,3 +82,7 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 ## snapshot予約の終了条件
 
 34413012454（source `34f233b`）でexport対restoreの競合unitとIPAが成功。追加unitでは、不正ownerのJSON出力・ファイル出力callbackの取消エラー後に予約を再利用できること、Aの出力中でもBの出力が進むこと、Aの取消要求後もcallbackが終わるまで復元を拒否することを検証する。ZIP exportにもcoordinator引数を追加し、内部のJSON/file双方へ同じ値を転送する。CI待ち。
+
+## ZIP公開APIの結合検証
+
+34413399441（source `baf23c8`）でsnapshot予約の異常終了・取消・別owner継続のunitとIPAが成功。次の結合テストは独自coordinatorで復元を止め、ZIP exportのJSON/file両経路が同じ予約に対してConflictを返すことを検証する。解除後は両形式でZIP書出し・読込み・復元plan実行まで確認する。これを含めてiOS回帰を実行する。CI待ち。

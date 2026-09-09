@@ -7,6 +7,41 @@ import RecordsBackupIntegration
 import ZIPFoundation
 
 final class MiniAppBackupArchiveTests: XCTestCase, @unchecked Sendable {
+    func testArchiveForwardsCoordinationToBothSnapshotFormats() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("snapshot")
+        let gate = ArchiveRestoreGate()
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { await gate.block() }])
+        let restoring = Task { try await plan.apply(coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        let payload = MiniAppBackupProvider(id: owner, export: {
+            MiniAppBackupEntry(id: owner, schemaVersion: 1, payload: Data("consistent".utf8))
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let files = MiniAppFileBackupProvider(id: owner, export: { url in
+            try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+            try Data("consistent".utf8).write(to: url.appendingPathComponent("item.txt"))
+            return 1
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        for useFiles in [false, true] {
+            do {
+                _ = try await MiniAppBackupArchive.export(selected: [owner], providers: [payload],
+                    fileProviders: useFiles ? [files] : [], coordinator: coordinator)
+                XCTFail("Archive ignored shared reservation for \(useFiles ? "files" : "payload")")
+            } catch let error as MiniAppRestoreCoordinator.Conflict {
+                XCTAssertEqual(error.owners, [owner])
+            }
+        }
+        await gate.release()
+        try await restoring.value
+        for useFiles in [false, true] {
+            let archive = try await MiniAppBackupArchive.export(selected: [owner], providers: [payload],
+                fileProviders: useFiles ? [files] : [], coordinator: coordinator)
+            let loaded = try MiniAppBackupArchive.load(from: archive.url)
+            let restored = try loaded.prepareRestore(selected: [owner], providers: [payload], fileProviders: [files])
+            try await restored.apply(coordinator: coordinator)
+        }
+    }
+
     private actor Value {
         var data = Data("live".utf8)
         func set(_ data: Data) { self.data = data }
@@ -120,5 +155,27 @@ final class MiniAppBackupArchiveTests: XCTestCase, @unchecked Sendable {
         XCTAssertThrowsError(try MiniAppBackupArchive.load(from: url)) { error in
             XCTAssertEqual(error as? MiniAppBackupError, .invalidEntry)
         }
+    }
+}
+
+private actor ArchiveRestoreGate {
+    private var blocked = false
+    private var started: CheckedContinuation<Void, Never>?
+    private var finish: CheckedContinuation<Void, Never>?
+    func block() async {
+        await withCheckedContinuation { continuation in
+            finish = continuation
+            blocked = true
+            started?.resume()
+            started = nil
+        }
+    }
+    func waitUntilBlocked() async {
+        if blocked { return }
+        await withCheckedContinuation { started = $0 }
+    }
+    func release() {
+        finish?.resume()
+        finish = nil
     }
 }

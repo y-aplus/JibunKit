@@ -265,3 +265,5 @@ hook未指定のFeatureは従来どおりです。これは全Featureの処理�
 復元予約前にTaskが取消済みなら`CancellationError`で終了し、停止・適用を始めません。開始後の取消は協調的です。実際の処理が終了するまで予約を保持し、取消だけを理由に別の復元へ保存先を明け渡しません。適用開始後に発生した取消エラーは、部分変更の可能性がある`MiniAppRestoreFailure`として扱います。
 
 複数Featureを選択したplanでは、各Featureの開始前にも取消を確認します。着手済みFeatureの再開処理を終えてから次の着手を止め、`MiniAppRestoreFailure.stage == .cancelledBeforeStart`で完了済みIDと未着手のIDを返します。完了済みの復元を巻き戻す契約ではありません。
+
+JSON/file providerの`exportEntry`も同じcoordinatorを利用します。同一Featureのsnapshot作成と復元を重ねず、競合はcallbackを始める前に返します。独自coordinatorを使う場合、exportとrestoreで同じものを渡してください。生の`export` closureの直接呼出しはこの調停の対象外です。予約はsnapshot作成までで、複数Featureを同じ時点の状態として書き出す保証はありません。

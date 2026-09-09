@@ -13,13 +13,13 @@ public actor MiniAppRestoreCoordinator {
 
     public init() {}
 
-    func perform(ids: [MiniAppID], operation: @Sendable () async throws -> Void) async throws {
+    func perform<Value: Sendable>(ids: [MiniAppID], operation: @Sendable () async throws -> Value) async throws -> Value {
         try Task.checkCancellation()
         let requested = Set(ids)
         let conflicts = active.intersection(requested)
         guard conflicts.isEmpty else { throw Conflict(owners: conflicts) }
         active.formUnion(requested)
         defer { active.subtract(requested) }
-        try await operation()
+        return try await operation()
     }
 }

@@ -2,6 +2,51 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testExportBlocksRestoreAndRestoreBlocksBothExportAdapters() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let owner = MiniAppID("a")
+        let provider = MiniAppBackupProvider(id: owner, export: {
+            await gate.block()
+            return MiniAppBackupEntry(id: owner, schemaVersion: 1, payload: Data("snapshot".utf8))
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let exporting = Task { try await provider.exportEntry(coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        let forbidden = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { XCTFail("Restore overlapped export") }])
+        do {
+            try await forbidden.apply(coordinator: coordinator)
+            XCTFail("Expected export conflict")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        await gate.release()
+        let snapshot = try await exporting.value
+        XCTAssertEqual(snapshot.payload, Data("snapshot".utf8))
+
+        let restoringGate = RestoreCoordinatorGate()
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { await restoringGate.block() }])
+        let restoring = Task { try await plan.apply(coordinator: coordinator) }
+        await restoringGate.waitUntilBlocked()
+        let json = MiniAppBackupProvider(id: owner, export: {
+            XCTFail("JSON read during restore")
+            throw MiniAppBackupError.invalidEntry
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let files = MiniAppFileBackupProvider(id: owner, export: { _ in
+            XCTFail("File snapshot read during restore")
+            throw MiniAppBackupError.invalidEntry
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let destination = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        do {
+            _ = try await json.exportEntry(coordinator: coordinator)
+            XCTFail("Expected JSON conflict")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        do {
+            _ = try await files.exportEntry(to: destination, coordinator: coordinator)
+            XCTFail("Expected file conflict")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: destination.path))
+        await restoringGate.release()
+        try await restoring.value
+    }
+
     func testCancellationBetweenOwnersResumesCurrentOwnerAndPreservesCompletedReport() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let gate = RestoreCoordinatorGate()

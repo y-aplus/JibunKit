@@ -30,10 +30,12 @@ public struct MiniAppBackupProvider: Sendable {
         return try prepare(entry)
     }
 
-    public func exportEntry() async throws -> MiniAppBackupEntry {
-        let entry = try await export()
-        guard entry.id == id.rawValue else { throw MiniAppBackupError.invalidEntry }
-        return entry
+    public func exportEntry(coordinator: MiniAppRestoreCoordinator = .shared) async throws -> MiniAppBackupEntry {
+        try await coordinator.perform(ids: [id]) {
+            let entry = try await export()
+            guard entry.id == id.rawValue else { throw MiniAppBackupError.invalidEntry }
+            return entry
+        }
     }
 }
 

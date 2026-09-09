@@ -72,3 +72,9 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 ## 複数ownerの取消
 
 34412140159（source `c67e331`）で開始前取消・取消後も実処理完了まで予約保持・予約再利用のunit、通常IPAビルドが成功。次の変更では各ownerへの着手前にも取消を確認する。A適用中に取消された場合、Aのresume完了を待ち、Bのstop/apply/resumeは呼ばず、completed=[A]・failed=B・stage=cancelledBeforeStartとして返す。これはAの成功を失わず、B以降が未変更であることを区別するためである。continuationで順序を固定するunitを追加しCI待ち。最後のownerが取消を無視して正常終了した場合は引き続き成功扱い。
+
+## 書き出しと復元の競合
+
+34412585049（source `fabb6d9`）で複数owner途中取消のunitとIPAが成功。次の変更はJSON/file providerのexportEntryにも同じ予約を適用する。復元中の読み出しと、snapshot作成中の復元開始を拒否する。unitはJSON exportを停止中に復元拒否、復元を停止中にJSON/file双方のcallback未実行と出力先未作成を確認する。CI待ち。
+
+予約は各Featureのsnapshot作成完了まで。複数Feature共通の一点時刻snapshotや、Filesへの保存先選択中の予約保持は約束しない。生のexport closureを直接呼ぶ場合は調停を迂回するため、hostはexportEntryを使用する。通常の編集とのsnapshot整合性はproviderが担い、別processとの排他は引き続き未完である。

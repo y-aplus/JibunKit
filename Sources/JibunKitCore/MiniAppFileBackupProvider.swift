@@ -33,7 +33,13 @@ public struct MiniAppFileBackupProvider: Sendable {
 
     /// Caller supplies a new destination; provider writes its consistent snapshot
     /// and returns the schema version. Partial output on failure is not a backup.
-    public func exportEntry(to directory: URL) async throws -> MiniAppFileBackupEntry {
+    public func exportEntry(to directory: URL, coordinator: MiniAppRestoreCoordinator = .shared) async throws -> MiniAppFileBackupEntry {
+        try await coordinator.perform(ids: [id]) {
+            try await exportCoordinated(to: directory)
+        }
+    }
+
+    private func exportCoordinated(to directory: URL) async throws -> MiniAppFileBackupEntry {
         guard id.isValid, directory.isFileURL else { throw MiniAppBackupError.invalidEntry }
         guard !FileManager.default.fileExists(atPath: directory.path) else { throw CocoaError(.fileWriteFileExists) }
         let schema = try await write(directory)

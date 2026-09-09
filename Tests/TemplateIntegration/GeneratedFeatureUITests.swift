@@ -3,6 +3,34 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testForegroundNotificationsConsultOnlyTheirOwner() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func count(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "notification.foreground.count")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 15), app.debugDescription)
+        }
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            tap("miniapp.\(owner)")
+            count("0")
+            tap("notification.schedule")
+            let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+            let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["許可", "Allow"])).firstMatch
+            if allow.waitForExistence(timeout: 3) { allow.tap() }
+            count("1")
+            app.navigationBars.buttons["ミニアプリ"].tap()
+        }
+        tap("miniapp.lifecycle-a")
+        count("1")
+    }
+
     func testNativeCategoryUpdatesPreserveOtherFeature() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

@@ -10,6 +10,25 @@ final class LifecycleProbeState {
     var events: [String] = []
     var taskStatus = "idle"
     var categories = "unread"
+    var foregroundCount = 0
+    var scheduleStatus = "idle"
+
+    func schedule(context: MiniAppContext) async {
+        do {
+            let center = UNUserNotificationCenter.current()
+            guard try await center.requestAuthorization(options: [.alert, .sound]) else {
+                scheduleStatus = "denied"
+                return
+            }
+            let content = UNMutableNotificationContent()
+            content.title = context.id.rawValue
+            content.userInfo = context.notificationUserInfo
+            try await center.add(UNNotificationRequest(
+                identifier: context.notificationRequestIdentifier(for: "foreground"), content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)))
+            scheduleStatus = "scheduled"
+        } catch { scheduleStatus = "error: \(error)" }
+    }
 
     func readCategories() async {
         let values = await UNUserNotificationCenter.current().notificationCategories()
@@ -70,7 +89,11 @@ enum LifecycleProbeIntegration {
         let context = MiniAppContext(id: MiniAppID(id))
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
                           onHostPhaseChange: { state.receive($0) },
-                          notificationCategories: [category(context, key: "initial")]) { _ in
+                          notificationCategories: [category(context, key: "initial")],
+                          notificationPresentation: { _ in
+                              state.foregroundCount += 1
+                              return id == "lifecycle-a" ? [] : [.list]
+                          }) { _ in
             VStack {
                 Text(state.events.joined(separator: ","))
                     .accessibilityIdentifier("lifecycle.events")
@@ -81,6 +104,10 @@ enum LifecycleProbeIntegration {
                     .accessibilityIdentifier("notification.replace")
                 Button("Remove categories") { Task { await state.replaceCategories(context: context, key: nil) } }
                     .accessibilityIdentifier("notification.remove")
+                Text("\(state.foregroundCount)").accessibilityIdentifier("notification.foreground.count")
+                Text(state.scheduleStatus).accessibilityIdentifier("notification.schedule.status")
+                Button("Schedule notification") { Task { await state.schedule(context: context) } }
+                    .accessibilityIdentifier("notification.schedule")
                 Text(state.taskStatus).accessibilityIdentifier("lifecycle.task.status")
                 Button("Start", action: state.start).accessibilityIdentifier("lifecycle.task.start")
                 Button("Cancel", action: state.cancel).accessibilityIdentifier("lifecycle.task.cancel")

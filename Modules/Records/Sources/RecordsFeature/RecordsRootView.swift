@@ -4,6 +4,7 @@ import QuickLook
 
 public struct RecordsRootView: View {
     private let store: RecordStore
+    private let reminders: RecordReminderActions?
     @State private var records: [Record] = []
     @State private var query = ""
     @State private var editing: Record?
@@ -12,7 +13,10 @@ public struct RecordsRootView: View {
     @State private var error: String?
     @State private var preview: URL?
 
-    public init(store: RecordStore) { self.store = store }
+    public init(store: RecordStore, reminders: RecordReminderActions? = nil) {
+        self.store = store
+        self.reminders = reminders
+    }
 
     private var visible: [Record] {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -58,6 +62,7 @@ public struct RecordsRootView: View {
                         LabeledContent("作成日時", value: record.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "不明")
                     }
                     RecordAttachmentsSection(store: store, record: $records[index], preview: $preview)
+                    if let reminders { RecordReminderSection(record: record, actions: reminders) }
                 }
                 .quickLookPreview($preview)
                 .onChange(of: preview) { old, new in

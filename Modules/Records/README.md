@@ -41,3 +41,7 @@ RecordsBackup.providerはこれをMiniAppDefinition.fileBackupへ接続する。
 - 共通バックアップ画面のZIP Files往復は34218612906で成功。
 - Records自身の添付取込み・Quick Look・再起動後保持・削除は2026-09-09中間実機確認（e01836b）で成功。SimulatorのQuick Look待ちは未解決。作成日時追加後のUI回帰は34222295051で成功。
 - 大量レコードのDB効率、複数プロセス協調、独立Appとホスト間の自動データ転送は提供しない。
+
+## 通知の接続
+
+ホスト用RecordsMiniAppは任意のRecordReminderActionsを注入し、各詳細で日時指定・再予約・取消を提供する。単独FeatureはCoreを参照せず、独自のschedule/cancelを渡せる。RecordsNotificationsはUUID単位で通知を予約し、タップ時のUUIDをホストの詳細ルートへ渡す。バックアップは記録データを復元するもので、OSの通知予約は含めない。

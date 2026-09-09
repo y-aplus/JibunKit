@@ -32,7 +32,7 @@ private struct RecordsDestination: View {
 
     var body: some View {
         switch store {
-        case .success(let store): RecordsRootView(store: store)
+        case .success(let store): RecordsRootView(store: store, reminders: RecordsNotifications.actions)
         case .failure(let error):
             ContentUnavailableView("記録の保存先を開けません", systemImage: "exclamationmark.triangle",
                                    description: Text(error.localizedDescription))

@@ -30,7 +30,7 @@ let package = Package(
             dependencies: ["JibunKitCore", .product(name: "RecordsFeature", package: "Records")],
             path: "Modules/Records/Integration",
             exclude: ["RecordsMiniApp.swift"],
-            sources: ["RecordsBackup.swift"]
+            sources: ["RecordsBackup.swift", "RecordsNotifications.swift"]
         ),
         .testTarget(
             name: "RecordsBackupIntegrationTests",

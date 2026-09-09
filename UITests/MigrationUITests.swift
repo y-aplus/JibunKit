@@ -222,7 +222,12 @@ final class MigrationUITests: XCTestCase {
         add(delivered)
         print("Notification Center before tap:\n\(springboard.debugDescription)")
         print("Notification body frame: \(notification.frame), hittable: \(notification.isHittable)")
-        notification.tap()
+        // SpringBoard exposes the notification's action on the platter button;
+        // the nested TextContent.Primary can consume a tap without opening it.
+        let card = springboard.buttons.matching(identifier: "ShortLook.Platter.Content.Seamless")
+            .containing(.staticText, identifier: "Migration reminder").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 5), springboard.debugDescription)
+        card.tap()
         let foreground = app.wait(for: .runningForeground, timeout: 10)
         print("Notification Center after tap:\n\(springboard.debugDescription)")
         XCTAssertTrue(foreground, "Notification tap did not bring JibunKit to the foreground")

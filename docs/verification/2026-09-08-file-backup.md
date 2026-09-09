@@ -145,3 +145,7 @@ Records Simulatorだけが署名なしで実行されている条件を切り分
 34255424439（source 5c3b72b）は既存ZIP/JSON Files往復、最小import controlの全bytes照合、Records自身の添付取込みと行表示を通過。17:40:37.499にcompletion、17:40:37.618にsaved/refreshedログを確認。実行順序とcontrolの追加後にURL解決が通ったが、どちらが寄与したか未分離なので根本原因修正とは断定しない。失敗は次のQuick Look完了ボタン待ち(line 62)。録画の最後は添付行を表示した詳細画面のままで、エラー表示もない。
 
 quickLookPreviewをList内のSectionから詳細Listへ移し、URLのStateを親が所有しSectionはBindingで設定する。プレビュー終了時の一時コピー削除は維持する。取込み後のプレビュー・再起動・削除は引き続き未完了として再検証する。
+
+## 2026-09-09 中間実機確認
+
+ユーザーが確認用IPA（source e01836bf5fadcf3fd5d1d6c2767bec6eb0f19861、CI 34292423512、records-device-check-20260909）の通常操作で「取込み／プレビュー／保持／削除」すべて正常と報告。f10deb6のRecords Featureを通常ホストに接続した構成。SimulatorのQuick Look表示待ちは引き続き失敗しており、実機成功によってCI成功へ読み替えない。v1.0出荷候補の最終実機確認とは別。

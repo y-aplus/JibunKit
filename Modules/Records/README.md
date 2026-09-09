@@ -39,5 +39,5 @@ RecordsBackup.providerはこれをMiniAppDefinition.fileBackupへ接続する。
 - snapshot/ZIPの選択復元、旧JSON共存、128 MiBの添付全内容維持を確認済み。メモリ測定はmacOSのプロセス最大RSSでありiOS実機の容量保証ではない。
 - schema 1からの読込み・復元・編集後移行と未来schemaの保存維持は34221667275で成功。
 - 共通バックアップ画面のZIP Files往復は34218612906で成功。
-- Records自身の添付取込み・Quick Look・削除の一連のUI操作と、作成日時追加後のUI回帰は別途確認が必要。
+- Records自身の添付取込み・Quick Look・再起動後保持・削除は2026-09-09中間実機確認（e01836b）で成功。SimulatorのQuick Look待ちは未解決。作成日時追加後のUI回帰は34222295051で成功。
 - 大量レコードのDB効率、複数プロセス協調、独立Appとホスト間の自動データ転送は提供しない。

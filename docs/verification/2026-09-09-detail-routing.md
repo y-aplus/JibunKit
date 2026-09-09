@@ -39,3 +39,5 @@ CI 34300999754（64d0f87）は通知tap後のforeground待ちで失敗。SpringB
 同CIのRecords standaloneは2 tests完走。添付の取込み・保持・削除と通常CRUDが成功。Quick Look待ちのassertだけはXCTExpectFailureが受理しており、自動プレビュー成功ではない。実機の中間確認成功と区別する。
 
 CI 34303509967（3176116）も通知tap後のforeground待ちで失敗。カードbuttonへの変更だけでは解消しない。tap前のカードy=648.0がtap後592.8に変化し、同じ通知は残っている。通知一覧の表示変化を最初の操作が起こした可能性があるため、foregroundにならず同じカードの位置が変わった場合だけ再操作する。無条件の繰返しや直接app.activateによる合格化は行わず、実通知操作からのforeground・遷移・本文assertを維持する。
+
+CI 34305222046（605971e）は位置変化を検出して2回目のcard tapまで実行したが、foreground待ちで失敗。再操作では解消しない。次の診断は同じUI操作を保ち、SpringBoard/usernotificationsd/runningboarddのinfo logを取得してOS起動処理を調べる。ui_test_filterで通知テストだけを実行し、診断反復で無関係なUI suiteを待たない。

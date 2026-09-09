@@ -40,3 +40,7 @@ workflowは固定SHA-256でTuistを導入し、Swiftテスト、通常app／Widg
 ## 検証の境界
 
 ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。Tuist移行の結果と残る実機確認は[検証記録](verification/2026-09-07-tuist-evaluation.md)を参照する。
+
+## UI失敗の限定再現
+
+診断時は`-f simulator_tests=true -f ui_test_filter=MigrationUITests/MigrationUITests/testNotificationDeliveryAndRouting`のようにXcode test identifierを指定できる。integration suiteをその対象だけに絞り、別のFiles往復stepは実行しない。通常の全検証ではui_test_filterを空に戻す。限定実行の成功を全回帰成功として扱わない。ログのみ先に読む場合はSimulator-text-diagnostics artifactを取得できる。

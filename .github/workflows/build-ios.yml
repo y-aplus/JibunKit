@@ -15,6 +15,10 @@ on:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
         default: ''
+      ui_test_filter:
+        description: Optional Xcode test identifier for focused diagnostics (empty runs the normal suite)
+        type: string
+        default: ''
 
 permissions:
   contents: read
@@ -343,8 +347,14 @@ jobs:
         id: integration
         if: inputs.simulator_tests
         shell: bash
+        env:
+          UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
         run: |
           set -euo pipefail
+          selection=(-skip-testing:MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter)
+          if [[ -n "$UI_TEST_FILTER" ]]; then
+            selection=("-only-testing:$UI_TEST_FILTER")
+          fi
           xcodebuild test \
             -workspace JibunKit.xcworkspace \
             -scheme MigrationUITests \
@@ -352,12 +362,12 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/Migration.xcresult" \
-            -skip-testing:MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter \
+            "${selection[@]}" \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
 
       - name: Run Files backup round trip
-        if: ${{ !cancelled() && inputs.simulator_tests && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
+        if: ${{ !cancelled() && inputs.simulator_tests && inputs.ui_test_filter == '' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -418,10 +428,20 @@ jobs:
           find "$HOME/Library/Logs/DiagnosticReports" -type f -name '*JibunKit*' \
             -exec cp {} "$RUNNER_TEMP/simulator-crashes/" \; || true
           if [[ -n "${SIMULATOR_ID:-}" ]]; then
-            xcrun simctl spawn "$SIMULATOR_ID" log show --last 20m --style compact \
-              --predicate 'process == "JibunKit_App" OR process == "RecordsExample" OR process == "BackupHarness" OR process CONTAINS[c] "DocumentManager" OR subsystem CONTAINS[c] "DocumentManager" OR process == "fileproviderd"' \
+            xcrun simctl spawn "$SIMULATOR_ID" log show --last 20m --info --style compact \
+              --predicate 'process == "JibunKit_App" OR process == "RecordsExample" OR process == "BackupHarness" OR process CONTAINS[c] "DocumentManager" OR subsystem CONTAINS[c] "DocumentManager" OR process == "fileproviderd" OR process == "SpringBoard" OR process == "usernotificationsd" OR process == "runningboardd"' \
               > "$RUNNER_TEMP/simulator-app.log" || true
           fi
+
+      - name: Upload simulator text diagnostics
+        if: always() && inputs.simulator_tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Simulator-text-diagnostics
+          path: |
+            ${{ runner.temp }}/simulator-tests.log
+            ${{ runner.temp }}/simulator-app.log
+          retention-days: 14
 
       - name: Upload focused Records diagnostics
         if: always() && inputs.simulator_tests && inputs.feature_validation

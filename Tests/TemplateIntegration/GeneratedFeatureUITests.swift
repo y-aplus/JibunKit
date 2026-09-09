@@ -3,6 +3,50 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testWebDataPersistsAndClearingPreservesOtherFeature() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let result = app.staticTexts.matching(identifier: "webdata.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 5), app.debugDescription)
+        }
+        func open(_ owner: String) {
+            tap("miniapp.\(owner)")
+            tap("webdata.open")
+        }
+        // Restart between owners also verifies native persistence, not in-memory state.
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            open(owner)
+            tap("webdata.remove")
+            expect("removed")
+            tap("webdata.save")
+            expect("saved")
+            app.terminate()
+            app.launch()
+        }
+        open("lifecycle-a")
+        tap("webdata.read")
+        expect("lifecycle-a")
+        tap("webdata.remove")
+        expect("removed")
+        tap("webdata.read")
+        expect("missing")
+        app.terminate()
+        app.launch()
+        open("lifecycle-b")
+        tap("webdata.read")
+        expect("lifecycle-b")
+        tap("webdata.remove")
+        expect("removed")
+    }
+
     func testKeychainPersistsAndLogoutPreservesOtherFeature() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

@@ -4,6 +4,7 @@ import Observation
 import JibunKitCore
 import UserNotifications
 import Security
+import WebKit
 
 @MainActor
 @Observable
@@ -105,6 +106,8 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             VStack {
+                NavigationLink("Web data") { WebDataProbeView(context: context) }
+                    .accessibilityIdentifier("webdata.open")
                 NavigationLink("Keychain") { KeychainProbeView(context: context) }
                     .accessibilityIdentifier("keychain.open")
                 Text(state.events.joined(separator: ","))
@@ -185,5 +188,37 @@ private struct KeychainProbeView: View {
     private func perform(_ operation: () throws -> String) {
         do { result = try operation() }
         catch { result = "error: \(error)" }
+    }
+}
+
+
+private struct WebDataProbeView: View {
+    let context: MiniAppContext
+    @State private var result = "unread"
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("webdata.result")
+            Button("Save cookie") {
+                Task {
+                    let cookie = HTTPCookie(properties: [.domain: "jibunkit.example", .path: "/",
+                        .name: "account", .value: context.id.rawValue,
+                        .expires: Date().addingTimeInterval(86400)])!
+                    await context.websiteDataStore().httpCookieStore.setCookie(cookie)
+                    result = "saved"
+                }
+            }.accessibilityIdentifier("webdata.save")
+            Button("Read cookie") {
+                Task {
+                    let cookies = await context.websiteDataStore().httpCookieStore.allCookies()
+                    result = cookies.first { $0.name == "account" && $0.domain == "jibunkit.example" }?.value ?? "missing"
+                }
+            }.accessibilityIdentifier("webdata.read")
+            Button("Clear web data") {
+                Task {
+                    await context.websiteDataStore().removeData(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes(), modifiedSince: .distantPast)
+                    result = "removed"
+                }
+            }.accessibilityIdentifier("webdata.remove")
+        }
     }
 }

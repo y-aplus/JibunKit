@@ -223,3 +223,12 @@ Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き�
 
 
 `set(data, for: account, accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)`のように、標準のaccessibility定数を指定できます。新規保存と既存項目の変更に適用し、省略した更新では既存属性を維持します。バックグラウンド利用のためのafter-first-unlockは、[最初の端末ロック解除後に利用可能となるAppleの保護条件](https://developer.apple.com/documentation/security/ksecattraccessibleafterfirstunlockthisdeviceonly)に従います。利用可能性を事前判定して成功を保証せず、OSエラーを処理してください。端末ロック・再起動・パスコード変更の実機検証は未完です。
+
+
+### WebViewの永続データ分離
+
+WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`を設定します。必要なら`profile: "work"`などで同じFeature内のプロファイルも分けられます。返り値は標準の`WKWebsiteDataStore`なので、cookie管理・対象データ種別の削除などはそのAPIを使用できます。[Appleの識別子付き永続データストア](https://developer.apple.com/documentation/webkit/wkwebsitedatastore)を使い、非永続モードには置き換えません。
+
+識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
+
+全データ削除はそのストアの`removeData`を使います。使用中WebViewとの調停やFeature削除時のストア自体の破棄は未実装です。今回の検証対象は標準cookie storeでの分離・再起動保持・片方の削除であり、実ページの認証やlocalStorage等まで確認済みとはしません。

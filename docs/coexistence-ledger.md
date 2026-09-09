@@ -32,7 +32,7 @@
 | D05 | 画面外観・idle timer等のアプリ共有設定 | 未対応 | 初期台帳のUI領域に含めるべき具体的な未対応差分。 |
 | D06 | UserDefaults・通常ファイル・DB配置 | 未対応 | MiniAppContextのUserDefaults namespaceとMiniAppFilesは実装・限定検証済み。DB、Keychain、Web/ネットワーク状態までの一般契約は別D項目を含め未完。 |
 | D07 | 復元・移行・リセット中の処理停止 | 未調査 | 選択復元の仕組み・証拠はある。全種DBと所有者別lifetime連携までの完成は未確認。 |
-| D08 | Keychainと資格情報の削除範囲 | 未対応 | generic passwordのFeature/service別namespace、取得・更新・account削除・service内全削除を追加。native Keychainで同名accountのA/B分離と他service保持を検証するCI待ち。生体認証/アクセス制御・同期・署名変更後の継続・iOS実行確認は残る。 |
+| D08 | Keychainと資格情報の削除範囲 | 未対応 | generic passwordのFeature/service別namespace、取得・更新・account削除・service内全削除を追加。native Keychainで同名accountのA/B分離と他service保持は[34337653973](https://github.com/y-aplus/JibunKit/actions/runs/34337653973)で成功（macOS、0.230秒）。iOS隔離hostで保存・再起動・A logout後のB保持テストを追加しCI待ち。生体認証/アクセス制御・同期・署名変更後の継続は残る。 |
 | D09 | URLSessionのcookie・認証・cache | 未調査 | 未調査。単なるURLSession wrapperの有無でなく共有状態を評価する。 |
 | D10 | WKWebViewの永続Webデータ | 未対応 | 標準APIを再利用して補完できる候補。JibunKit側の割当・寿命契約は未対応。 |
 | D11 | Web認証セッションと返却先 | 未調査 | 一般認証は未調査。既存の標準的なsession境界を壊さず使う対象。 |

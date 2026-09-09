@@ -3,6 +3,50 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testKeychainPersistsAndLogoutPreservesOtherFeature() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let result = app.staticTexts.matching(identifier: "keychain.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 5), app.debugDescription)
+        }
+        func open(_ owner: String) {
+            tap("miniapp.\(owner)")
+            tap("keychain.open")
+        }
+        // Restart between owners also verifies native persistence, not in-memory state.
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            open(owner)
+            tap("keychain.remove")
+            expect("removed")
+            tap("keychain.save")
+            expect("saved")
+            app.terminate()
+            app.launch()
+        }
+        open("lifecycle-a")
+        tap("keychain.read")
+        expect("lifecycle-a")
+        tap("keychain.remove")
+        expect("removed")
+        tap("keychain.read")
+        expect("missing")
+        app.terminate()
+        app.launch()
+        open("lifecycle-b")
+        tap("keychain.read")
+        expect("lifecycle-b")
+        tap("keychain.remove")
+        expect("removed")
+    }
+
     func testNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

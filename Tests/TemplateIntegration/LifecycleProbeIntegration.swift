@@ -100,6 +100,8 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             VStack {
+                NavigationLink("Keychain") { KeychainProbeView(context: context) }
+                    .accessibilityIdentifier("keychain.open")
                 Text(state.events.joined(separator: ","))
                     .accessibilityIdentifier("lifecycle.events")
                 Text(state.categories).accessibilityIdentifier("notification.categories")
@@ -122,5 +124,39 @@ enum LifecycleProbeIntegration {
                 Button("Complete", action: state.complete).accessibilityIdentifier("lifecycle.task.complete")
             }
         }
+    }
+}
+
+
+// Uses only synthetic test credentials. This view is never distributed.
+private struct KeychainProbeView: View {
+    let context: MiniAppContext
+    @State private var result = "unread"
+    private var store: MiniAppKeychain { MiniAppKeychain(context: context, service: "ci-login") }
+
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("keychain.result")
+            Button("Save") {
+                perform {
+                    try store.set(Data(context.id.rawValue.utf8), for: "same-account")
+                    return "saved"
+                }
+            }.accessibilityIdentifier("keychain.save")
+            Button("Read") {
+                perform {
+                    guard let data = try store.data(for: "same-account") else { return "missing" }
+                    return String(decoding: data, as: UTF8.self)
+                }
+            }.accessibilityIdentifier("keychain.read")
+            Button("Logout") {
+                perform { try store.removeAll(); return "removed" }
+            }.accessibilityIdentifier("keychain.remove")
+        }
+    }
+
+    private func perform(_ operation: () throws -> String) {
+        do { result = try operation() }
+        catch { result = "error: \(error)" }
     }
 }

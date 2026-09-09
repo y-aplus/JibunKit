@@ -241,6 +241,8 @@ struct BackupScreen: View {
                 let completed = error.completed.map(title).joined(separator: "、")
                 let detail: String
                 switch error.stage {
+                case .cancelledBeforeStart:
+                    detail = "このアプリの復元を始める前に中止しました。このアプリの保存データは変更していません。"
                 case .stop:
                     detail = "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。"
                 case .apply:

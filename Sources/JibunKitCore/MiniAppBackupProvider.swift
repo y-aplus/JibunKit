@@ -38,7 +38,7 @@ public struct MiniAppBackupProvider: Sendable {
 }
 
 public struct MiniAppRestoreFailure: Error, Sendable {
-    public enum Stage: Sendable, Equatable { case stop, apply, resume, applyAndResume }
+    public enum Stage: Sendable, Equatable { case cancelledBeforeStart, stop, apply, resume, applyAndResume }
     public let completed: [MiniAppID]
     public let failed: MiniAppID
     public let reason: String
@@ -90,6 +90,10 @@ public struct MiniAppRestorePlan: Sendable {
     private func applyCoordinated(lifecycles: [MiniAppID: MiniAppRestoreLifecycle]) async throws {
         var completed: [MiniAppID] = []
         for (id, operation) in zip(ids, operations) {
+            guard !Task.isCancelled else {
+                throw MiniAppRestoreFailure(completed: completed, failed: id,
+                    reason: "Restore cancelled before starting this Feature", stage: .cancelledBeforeStart)
+            }
             do {
                 if let lifecycle = lifecycles[id] {
                     try await lifecycle.perform(operation.apply)

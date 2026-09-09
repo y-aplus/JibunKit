@@ -2,6 +2,39 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testCancellationBetweenOwnersResumesCurrentOwnerAndPreservesCompletedReport() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let a = MiniAppID("a")
+        let b = MiniAppID("b")
+        let resumed = expectation(description: "Current owner resumed")
+        let plan = try MiniAppRestorePlan(prepared: [
+            a: MiniAppPreparedRestore { await gate.block() },
+            b: MiniAppPreparedRestore { XCTFail("Unstarted owner's data must remain unchanged") }
+        ])
+        let request = Task {
+            try await plan.apply(lifecycles: [
+                a: MiniAppRestoreLifecycle(stop: {}, resume: { resumed.fulfill() }),
+                b: MiniAppRestoreLifecycle(stop: { XCTFail("Unstarted owner must keep running") },
+                                          resume: { XCTFail("Unstarted owner must not restart") })
+            ], coordinator: coordinator)
+        }
+        await gate.waitUntilBlocked()
+        request.cancel()
+        await gate.release()
+        do {
+            try await request.value
+            XCTFail("Expected interruption before second owner")
+        } catch let error as MiniAppRestoreFailure {
+            XCTAssertEqual(error.stage, .cancelledBeforeStart)
+            XCTAssertEqual(error.completed, [a])
+            XCTAssertEqual(error.failed, b)
+        }
+        await fulfillment(of: [resumed], timeout: 2)
+        let retry = try MiniAppRestorePlan(prepared: [a: MiniAppPreparedRestore {}, b: MiniAppPreparedRestore {}])
+        try await retry.apply(coordinator: coordinator)
+    }
+
     func testAlreadyCancelledRequestNeverStopsOrChangesData() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let gate = RestoreCoordinatorGate()

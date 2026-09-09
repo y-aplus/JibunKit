@@ -8,6 +8,7 @@ enum MiniAppRegistry {
     static let all = makeRegistry([
         CounterMiniApp.definition,
         ReminderMiniApp.definition,
+        RecordsMiniApp.definition,
     ])
 
     static let registeredIDs = Set(all.map(\.id))

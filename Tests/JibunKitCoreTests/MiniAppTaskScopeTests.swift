@@ -3,6 +3,35 @@ import JibunKitCore
 
 final class MiniAppTaskScopeTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testCancelAndWaitObservesEveryOwnedOperationCompletion() async {
+        let scope = MiniAppTaskScope()
+        let first = AsyncStream<Void>.makeStream()
+        let second = AsyncStream<Void>.makeStream()
+        let started = expectation(description: "Both owned operations are running")
+        started.expectedFulfillmentCount = 2
+        let firstResult = CancellationResult()
+        let secondResult = CancellationResult()
+        scope.start {
+            started.fulfill()
+            for await _ in first.stream { }
+            await firstResult.record(Task.isCancelled)
+        }
+        scope.start {
+            started.fulfill()
+            for await _ in second.stream { }
+            await secondResult.record(Task.isCancelled)
+        }
+        await fulfillment(of: [started], timeout: 5)
+        await scope.cancelAllAndWait()
+        let a = await firstResult.value
+        let b = await secondResult.value
+        XCTAssertEqual(a, true)
+        XCTAssertEqual(b, true)
+        // Joining an already completed batch must also return.
+        await scope.cancelAllAndWait()
+    }
+
+    @MainActor
     func testRunningTaskDoesNotRetainScopeAndOwnerReleaseRequestsCleanup() async {
         var scope: MiniAppTaskScope? = MiniAppTaskScope()
         weak var releasedScope = scope

@@ -26,6 +26,16 @@ public final class MiniAppTaskScope {
         for task in tasks.values { task.cancel() }
     }
 
+    /// Cancels and joins the tasks owned at entry. Work started while awaiting
+    /// belongs to a later batch and is not cancelled. Call from the runtime's
+    /// coordinator, never from one of this scope's operations (which would wait
+    /// for itself). Non-cooperative operations can prevent completion.
+    public func cancelAllAndWait() async {
+        let owned = Array(tasks.values)
+        for task in owned { task.cancel() }
+        for task in owned { await task.value }
+    }
+
     deinit {
         for task in tasks.values { task.cancel() }
     }

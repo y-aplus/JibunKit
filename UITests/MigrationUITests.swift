@@ -204,13 +204,20 @@ final class MigrationUITests: XCTestCase {
         let allow = springboard.buttons.matching(
             NSPredicate(format: "label IN %@", ["許可", "Allow"])
         ).firstMatch
-        if allow.waitForExistence(timeout: 5) { allow.tap() }
-        XCTAssertTrue(app.staticTexts["10秒後の通知を予約しました"].waitForExistence(timeout: 5))
-        returnToList()
-        tap(app.buttons["miniapp.counter"])
+        let scheduled = app.staticTexts["10秒後の通知を予約しました"]
+        if !scheduled.waitForExistence(timeout: 1), allow.waitForExistence(timeout: 5) { allow.tap() }
+        XCTAssertTrue(scheduled.waitForExistence(timeout: 5))
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/counter")))
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
         let notification = springboard.staticTexts["Migration reminder"].firstMatch
-        XCTAssertTrue(notification.waitForExistence(timeout: 20))
+        if !notification.waitForExistence(timeout: 2) {
+            // A foreground delivery or a slow UI transition can outlive the banner.
+            // Notification Center retains the delivered notification for routing.
+            springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.01))
+                .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)))
+        }
+        XCTAssertTrue(notification.waitForExistence(timeout: 20), springboard.debugDescription)
         let delivered = XCTAttachment(screenshot: springboard.screenshot())
         delivered.name = "08-delivered-notification"
         delivered.lifetime = .keepAlways

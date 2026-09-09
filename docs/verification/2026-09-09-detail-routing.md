@@ -21,3 +21,5 @@ CI 34294297445（dcdb497）は成功。複数記録の通知request分離・置�
 記録削除は通知取消を先に行い、取消が失敗した場合は記録を残してエラーを表示する。予約時は権限確認の前後で日時を検証し、許可待ちの時間を加算しない。生成ホストUIへ実際の通知予約/許可/取消のテストを追加した。結果待ち。バックアップとOS予約の整合・複数通知の配送と詳細タップは別途検証する。
 
 CI 34293693138（3ecad37）は全体failureだが、GeneratedFeatureUITests.testRecordsUsesIndependentHostStorage（不正ID拒否・正しいUUID詳細遷移）、生成Feature共存、JSON/ZIP Files往復は成功。失敗はRecords standalone Quick Look待ちのみ。詳細URL接続のUI証拠を得た。
+
+CI 34294786574（0ebb4e4）はRecords通知予約/取消UIと詳細遷移に成功。既存Reminder通知配送テストのバナー待ちで失敗。予約後に許可ボタンがない場合も5秒待ち、ホーム移動はt=24.04秒まで遅れていた。予約完了を先に確認して不要な許可待ちを避け、Counterへの切替は既存URLで行う。バナーが見えなければ通知センターを開き配信済み通知の存在とタップ後のReminder遷移を検証する。配送assertや移動先/本文の検証は維持する。

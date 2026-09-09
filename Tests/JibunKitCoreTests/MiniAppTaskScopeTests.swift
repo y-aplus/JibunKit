@@ -3,6 +3,44 @@ import JibunKitCore
 
 final class MiniAppTaskScopeTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testJoinWaitsForCleanupWithoutCancellingWorkStartedLater() async {
+        let scope = MiniAppTaskScope()
+        let oldInput = AsyncStream<Void>.makeStream()
+        let newInput = AsyncStream<Void>.makeStream()
+        let cleaning = expectation(description: "Old operation has reached cleanup")
+        let joined = expectation(description: "Original batch has finished")
+        let cleanup = CleanupGate()
+        let newResult = CancellationResult()
+        scope.start {
+            for await _ in oldInput.stream { }
+            cleaning.fulfill()
+            await cleanup.wait()
+        }
+        var joinReturned = false
+        let join = Task { @MainActor in
+            await scope.cancelAllAndWait()
+            joinReturned = true
+            joined.fulfill()
+        }
+        await fulfillment(of: [cleaning], timeout: 5)
+        XCTAssertFalse(joinReturned, "Cancellation request is not completion")
+        let later = scope.start {
+            for await _ in newInput.stream { }
+            await newResult.record(Task.isCancelled)
+        }
+        await cleanup.release()
+        await fulfillment(of: [joined], timeout: 5)
+        let pending = await newResult.value
+        XCTAssertNil(pending, "The later batch must still be running")
+        newInput.continuation.finish()
+        oldInput.continuation.finish()
+        await later.value
+        await join.value
+        let completed = await newResult.value
+        XCTAssertEqual(completed, false)
+    }
+
+    @MainActor
     func testCancelAndWaitObservesEveryOwnedOperationCompletion() async {
         let scope = MiniAppTaskScope()
         let first = AsyncStream<Void>.makeStream()
@@ -132,4 +170,18 @@ final class MiniAppTaskScopeTests: XCTestCase, @unchecked Sendable {
 private actor CancellationResult {
     private(set) var value: Bool?
     func record(_ cancelled: Bool) { value = cancelled }
+}
+
+private actor CleanupGate {
+    private var released = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async {
+        guard !released else { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+    func release() {
+        released = true
+        continuation?.resume()
+        continuation = nil
+    }
 }

@@ -26,7 +26,7 @@
 | ID | 対象 | 状態 | 現在状態 |
 | --- | --- | --- | --- |
 | D01 | ホスト活動状態・scene・Feature表示状態 | 未対応 | host集約phase配送は補完・CI検証済み。未表示の二Featureへの実イベント配送、再入時の順序一致まで確認済み。Feature/scene/instance別の寿命契約は残る。 |
-| D02 | タスク・購読・要求の所有権と取消 | 未対応 | MiniAppTaskScopeでowner別Task取消、実行中の片方だけの取消、他owner継続、owner解放をunitで確認済み。CI隔離hostでの二Featureの起動・片方の取消・他方継続/正常完了は[34320179116](https://github.com/y-aplus/JibunKit/actions/runs/34320179116)で成功。呼出時点のTask群を取消して全完了を待つcancelAllAndWaitを追加しCI待ち。購読・要求全般の寿命は未完。 |
+| D02 | タスク・購読・要求の所有権と取消 | 未対応 | MiniAppTaskScopeでowner別Task取消、実行中の片方だけの取消、他owner継続、owner解放をunitで確認済み。CI隔離hostでの二Featureの起動・片方の取消・他方継続/正常完了は[34320179116](https://github.com/y-aplus/JibunKit/actions/runs/34320179116)で成功。呼出時点のTask群を取消して全完了を待つcancelAllAndWaitは[34323337796](https://github.com/y-aplus/JibunKit/actions/runs/34323337796)でunit/build成功。待機中に開始した別batchの維持とcleanup完了待ちを追加検証中。購読・要求全般の寿命は未完。 |
 | D03 | クラッシュ・ハング・メモリとhelper extension | 未対応 | 協調的緩和は未対応。helperによる追加補完可能性は今回新たに発見した実装判断用の検証課題。 |
 | D04 | 画面遷移・復帰・提示と複数scene | 未調査 | AppNavigation.sharedに一つのpathがあり、open時に置換。Feature/scene別の一般的な保持機構は確認できない。 |
 | D05 | 画面外観・idle timer等のアプリ共有設定 | 未対応 | 初期台帳のUI領域に含めるべき具体的な未対応差分。 |

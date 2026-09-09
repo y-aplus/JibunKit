@@ -123,16 +123,17 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTFail("Action notification missing: \(springboard.debugDescription)")
             return
         }
-        // The cover sheet can show a collapsed stack at the bottom. Expand the
-        // list first; a long press on the stacked card can otherwise do nothing.
-        card.swipeUp()
-        // Expand the native notification container, rather than its nested seamless button.
-        let notification = springboard.descendants(matching: .any)
-            .matching(identifier: "NotificationShortLookView")
-            .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
-        XCTAssertTrue(notification.waitForExistence(timeout: 5), springboard.debugDescription)
-        // Use a physical touch within the card, avoiding accessibility press dispatch.
-        notification.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.5)).press(forDuration: 2)
+        card.swipeLeft()
+        let view = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["View", "表示"])).firstMatch
+        guard view.waitForExistence(timeout: 5) else {
+            let evidence = XCTAttachment(screenshot: springboard.screenshot())
+            evidence.name = "custom-action-swiped"
+            evidence.lifetime = .keepAlways
+            add(evidence)
+            XCTFail("Notification View action unavailable: \(springboard.debugDescription)")
+            return
+        }
+        view.tap()
         let expanded = XCTAttachment(screenshot: springboard.screenshot())
         expanded.name = "custom-action-expanded"
         expanded.lifetime = .keepAlways

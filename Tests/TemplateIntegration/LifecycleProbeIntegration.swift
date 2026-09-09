@@ -33,6 +33,7 @@ final class LifecycleProbeState {
             }
             let content = UNMutableNotificationContent()
             content.title = action ? "Action-" + context.id.rawValue : context.id.rawValue
+            if action { content.body = "Choose Action to deliver to the owning Feature." }
             content.categoryIdentifier = action ? context.notificationCategoryIdentifier(for: "initial") : ""
             content.userInfo = context.notificationUserInfo
             try await center.add(UNNotificationRequest(

@@ -28,6 +28,8 @@ final class MiniAppRestoreLifecycleTests: XCTestCase, @unchecked Sendable {
                 XCTAssertNotNil(failure)
                 XCTAssertEqual(error.failed, owner)
                 XCTAssertTrue(error.completed.isEmpty)
+                let expected: MiniAppRestoreFailure.Stage = failure == .stop ? .stop : failure == .resume ? .resume : .apply
+                XCTAssertEqual(error.stage, expected)
             }
             let observed = await events.values
             XCTAssertEqual(observed, failure == .stop ? ["stop"] : ["stop", "apply", "resume"])
@@ -42,6 +44,23 @@ final class MiniAppRestoreLifecycleTests: XCTestCase, @unchecked Sendable {
         } catch let error as MiniAppRestoreLifecycle.Failure {
             XCTAssertNotNil(error.restoreReason)
             XCTAssertFalse(error.resumeReason.isEmpty)
+        }
+    }
+
+    func testPlanPreservesCombinedFailureAndDoesNotRunLaterOwner() async throws {
+        let owner = MiniAppID("a")
+        let plan = try MiniAppRestorePlan(prepared: [
+            owner: MiniAppPreparedRestore { throw Fault.restore },
+            MiniAppID("b"): MiniAppPreparedRestore { XCTFail("Later owner must remain untouched") }
+        ])
+        do {
+            try await plan.apply(lifecycles: [owner: MiniAppRestoreLifecycle(stop: {}, resume: { throw Fault.resume })])
+            XCTFail("Expected failure")
+        } catch let error as MiniAppRestoreFailure {
+            XCTAssertEqual(error.stage, .applyAndResume)
+            XCTAssertEqual(error.failed, owner)
+            XCTAssertTrue(error.completed.isEmpty)
+            XCTAssertTrue(error.reason.contains("runtime resume failed"))
         }
     }
 }

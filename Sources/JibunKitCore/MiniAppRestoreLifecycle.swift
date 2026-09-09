@@ -21,8 +21,13 @@ public struct MiniAppRestoreLifecycle: Sendable {
         }
     }
 
+    struct StopFailure: LocalizedError {
+        let reason: String
+        var errorDescription: String? { reason }
+    }
+
     func perform(_ apply: @Sendable () async throws -> Void) async throws {
-        try await stop()
+        do { try await stop() } catch { throw StopFailure(reason: error.localizedDescription) }
         var restoreError: (any Error)?
         do { try await apply() } catch { restoreError = error }
         do { try await resume() } catch {

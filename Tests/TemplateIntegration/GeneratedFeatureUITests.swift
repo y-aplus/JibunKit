@@ -98,6 +98,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             let result = app.staticTexts.matching(identifier: "webdata.result")
                 .matching(NSPredicate(format: "label == %@", value)).firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 5), app.debugDescription)
+            print("WEB-PERSISTENCE expected=\(value) \(app.staticTexts["webdata.diagnostic"].label)")
         }
         func open(_ owner: String) {
             tap("miniapp.\(owner)")

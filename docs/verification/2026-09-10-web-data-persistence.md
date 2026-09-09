@@ -15,3 +15,9 @@
 [WebKitの公開ヘッダー](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/Cocoa/WKHTTPCookieStore.h)と[NetworkProcessの保存処理](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/NetworkProcess/cocoa/NetworkProcessCocoa.mm)を確認。内部flush処理は存在するが、非公開APIを製品から呼び出す対策は採らない。公開mainの実装は現在のSimulator内WebKitと完全に同じとは限らない。
 
 `feature_ui_test_filter`で生成hostの対象testを絞れるようにした。空の場合は既存の全Feature UIテストを維持する。絞ったrunの成功を全回帰成功とは扱わない。
+
+## 比較診断を含む初回run
+
+[34382453375](https://github.com/y-aplus/JibunKit/actions/runs/34382453375)（source `a037462`）は成功。Web保持・他Feature削除後の保持は92.804秒、通常host通知ルーティング44.792秒、Records添付操作102.671秒、編集保持69.406秒で成功。共有ロジック、独立Feature、IPAも成功した。generated hostはWebテストだけに絞っており、全件回帰ではない。
+
+ただしアプリ側printの比較値はActionsログおよびSimulator-text-diagnosticsに収集されていなかった。標準ストア側の保持結果はこの証拠から断定できない。次の検証ではUIテストプロセスが診断ラベルを読み、成功時にもActionsログへ記録する。識別子付きストアの不安定性は未解決として維持する。

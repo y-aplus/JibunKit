@@ -234,7 +234,18 @@ struct BackupScreen: View {
                 restoreIDs = []
             } catch let error as MiniAppRestoreFailure {
                 let completed = error.completed.map(title).joined(separator: "、")
-                status = "復元を中断しました。完了済み: \(completed.isEmpty ? "なし" : completed)。\(title(error.failed))で失敗しました。このアプリの状態を確認してください。後続のアプリは変更していません。"
+                let detail: String
+                switch error.stage {
+                case .stop:
+                    detail = "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。"
+                case .apply:
+                    detail = "保存データの復元に失敗しました。一部が変更されている可能性があります。"
+                case .resume:
+                    detail = "保存データは復元しましたが、このアプリの再開に失敗しました。"
+                case .applyAndResume:
+                    detail = "保存データの復元と、このアプリの再開に失敗しました。一部のデータが変更されている可能性があります。"
+                }
+                status = "復元を中断しました。完了済み: \(completed.isEmpty ? "なし" : completed)。\(title(error.failed)): \(detail) このアプリの状態を確認してください。後続のアプリは変更していません。"
             } catch { status = "復元に失敗しました。アプリの状態を確認してください。" }
         }
     }

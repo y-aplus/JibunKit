@@ -38,9 +38,18 @@ public struct MiniAppBackupProvider: Sendable {
 }
 
 public struct MiniAppRestoreFailure: Error, Sendable {
+    public enum Stage: Sendable, Equatable { case stop, apply, resume, applyAndResume }
     public let completed: [MiniAppID]
     public let failed: MiniAppID
     public let reason: String
+    public let stage: Stage
+
+    public init(completed: [MiniAppID], failed: MiniAppID, reason: String, stage: Stage = .apply) {
+        self.completed = completed
+        self.failed = failed
+        self.reason = reason
+        self.stage = stage
+    }
 }
 
 /// Does not promise a transaction across independent Feature stores.
@@ -82,7 +91,16 @@ public struct MiniAppRestorePlan: Sendable {
                 }
                 completed.append(id)
             } catch {
-                throw MiniAppRestoreFailure(completed: completed, failed: id, reason: error.localizedDescription)
+                let stage: MiniAppRestoreFailure.Stage
+                if error is MiniAppRestoreLifecycle.StopFailure {
+                    stage = .stop
+                } else if let failure = error as? MiniAppRestoreLifecycle.Failure {
+                    stage = failure.restoreReason == nil ? .resume : .applyAndResume
+                } else {
+                    stage = .apply
+                }
+                throw MiniAppRestoreFailure(completed: completed, failed: id,
+                                            reason: error.localizedDescription, stage: stage)
             }
         }
     }

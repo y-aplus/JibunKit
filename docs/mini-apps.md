@@ -192,3 +192,13 @@ IntegrationはonNotificationActionへasyncハンドラを任意登録できる�
 通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に全Featureの和集合を一度登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。動的category更新の調停は未対応。
 
 `await context.removeAllOwnedNotifications()`は、そのFeatureのnamespaceに属する予約中・配信済み通知のみを取り消す。従来の単一request IDも対象。他Featureや名前空間外の通知は保持する。取得したID一覧に対する操作なので、新規予約との原子的な停止は保証しない。復元・削除時に新規予約を止める必要がある場合はFeature runtimeで受付を調停する。Records復元後の取消が使用例。
+
+
+### 前面通知の表示方針
+
+`MiniAppDefinition.notificationPresentation` は通知所有Featureの同期MainActor callbackです。
+`MiniAppForegroundNotification` のrequestIdentifier / categoryIdentifier / destinationと、Feature自身の表示状態を使い、標準の`UNNotificationPresentationOptions`を返します。例えば詳細画面で既読なら`[]`、静かな一覧通知なら`[.list]`を返せます。他Featureのcallbackとの合成はしません。未指定・所有者不明は既存の`[.banner, .list, .sound]`を維持します。
+
+callback内で長時間処理をしないでください。これはhostが前面にある場合のOSへの表示指定であり、Featureの画面表示状態の判定や通知権限の分離を自動提供するものではありません。空のoption setによる抑止を含む標準動作は[AppleのwillPresent仕様](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate/usernotificationcenter(_:willpresent:withcompletionhandler:))に従います。
+
+所有者別方針・既定値の単体テストを追加しました。実通知の複数Feature表示検証は未完です。

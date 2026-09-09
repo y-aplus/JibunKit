@@ -14,6 +14,7 @@ public struct MiniAppDefinition: Identifiable {
     public let fileBackup: MiniAppFileBackupProvider?
     public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
+    public let notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)?
     public let notificationCategories: [UNNotificationCategory]
     private let rootView: @MainActor (MiniAppContext) -> AnyView
     private let appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)?
@@ -28,6 +29,7 @@ public struct MiniAppDefinition: Identifiable {
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
         notificationCategories: [UNNotificationCategory] = [],
+        notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)? = nil,
         makeRootView: @escaping @MainActor (MiniAppContext) -> Root
     ) {
         precondition(id.isValid, "Mini-app IDs must start with a-z and contain only a-z, 0-9, '.', '-', or '_'.")
@@ -42,6 +44,7 @@ public struct MiniAppDefinition: Identifiable {
         self.onHostPhaseChange = onHostPhaseChange
         self.onNotificationAction = onNotificationAction
         self.notificationCategories = notificationCategories
+        self.notificationPresentation = notificationPresentation
         self.rootView = { context in
             AnyView(makeRootView(context))
         }

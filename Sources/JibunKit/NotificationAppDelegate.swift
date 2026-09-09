@@ -29,8 +29,12 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping @Sendable (UNNotificationPresentationOptions) -> Void
     ) {
+        let route = MiniAppNotificationRoute.candidateRoute(userInfo: notification.request.content.userInfo)
+        let event = MiniAppForegroundNotification(requestIdentifier: notification.request.identifier,
+            categoryIdentifier: notification.request.content.categoryIdentifier, destination: route?.destination)
         Task { @MainActor in
-            completionHandler([.banner, .list, .sound])
+            completionHandler(MiniAppNotificationPresentation.options(for: event, route: route,
+                policyForOwner: { MiniAppRegistry.definition(for: $0)?.notificationPresentation }))
         }
     }
 

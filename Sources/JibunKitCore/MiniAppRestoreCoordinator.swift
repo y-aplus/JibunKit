@@ -14,6 +14,7 @@ public actor MiniAppRestoreCoordinator {
     public init() {}
 
     func perform(ids: [MiniAppID], operation: @Sendable () async throws -> Void) async throws {
+        try Task.checkCancellation()
         let requested = Set(ids)
         let conflicts = active.intersection(requested)
         guard conflicts.isEmpty else { throw Conflict(owners: conflicts) }

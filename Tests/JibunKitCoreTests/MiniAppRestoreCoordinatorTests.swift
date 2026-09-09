@@ -2,6 +2,48 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testAlreadyCancelledRequestNeverStopsOrChangesData() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let owner = MiniAppID("a")
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { XCTFail("Cancelled request applied") }])
+        let request = Task {
+            await gate.block()
+            try await plan.apply(lifecycles: [owner: MiniAppRestoreLifecycle(
+                stop: { XCTFail("Cancelled request stopped owner") },
+                resume: { XCTFail("Cancelled request resumed owner") })], coordinator: coordinator)
+        }
+        await gate.waitUntilBlocked()
+        request.cancel()
+        await gate.release()
+        do {
+            try await request.value
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {}
+        let retry = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
+        try await retry.apply(coordinator: coordinator)
+    }
+
+    func testCancellationDoesNotReleaseAnOperationStillUsingTheStore() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let owner = MiniAppID("a")
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { await gate.block() }])
+        let request = Task { try await plan.apply(coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        request.cancel()
+        let retry = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
+        do {
+            try await retry.apply(coordinator: coordinator)
+            XCTFail("Cancellation must not release a live operation's reservation")
+        } catch let error as MiniAppRestoreCoordinator.Conflict {
+            XCTAssertEqual(error.owners, [owner])
+        }
+        await gate.release()
+        try await request.value
+        try await retry.apply(coordinator: coordinator)
+    }
+
     func testOverlappingPlansAreRejectedBeforeMutationWhileOtherOwnersProceed() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let gate = RestoreCoordinatorGate()

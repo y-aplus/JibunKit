@@ -11,6 +11,8 @@ import WebKit
 @Observable
 final class LifecycleProbeState {
     var events: [String] = []
+    var restoredValue = "original"
+    var showingRestore = false
     var idleLease: MiniAppIdleTimerLease?
     var taskStatus = "idle"
     var categories = "unread"
@@ -59,7 +61,7 @@ final class LifecycleProbeState {
             categories = "error: \(error)"
         }
     }
-    private let runtime = MiniAppRuntime()
+    private var runtime = MiniAppRuntime()
     private var input: AsyncStream<Void>.Continuation?
 
     func start() {
@@ -83,6 +85,15 @@ final class LifecycleProbeState {
             try runtime.onShutdown { lease.release() }
             idleLease = lease
         } catch { lease.release() }
+    }
+    func resumeAfterRestore() {
+        idleLease = nil
+        runtime = MiniAppRuntime()
+        taskStatus = "idle"
+    }
+    func applyRestored(_ value: String) throws {
+        guard runtime.isClosed, taskStatus == "closed" else { throw MiniAppBackupError.invalidEntry }
+        restoredValue = value
     }
     func shutdown() async {
         await runtime.shutdown()
@@ -116,7 +127,18 @@ enum LifecycleProbeIntegration {
 
     private static func definition(_ id: String, state: LifecycleProbeState) -> MiniAppDefinition {
         let context = MiniAppContext(id: MiniAppID(id))
+        let backup = MiniAppBackupProvider(id: context.id, export: {
+            await MainActor.run { MiniAppBackupEntry(id: context.id, schemaVersion: 1, payload: Data(state.restoredValue.utf8)) }
+        }, prepare: { entry in
+            guard entry.schemaVersion == 1, let value = String(data: entry.payload, encoding: .utf8) else {
+                throw MiniAppBackupError.invalidEntry
+            }
+            return MiniAppPreparedRestore { try await MainActor.run { try state.applyRestored(value) } }
+        })
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
+                          backup: backup,
+                          restoreLifecycle: MiniAppRestoreLifecycle(stop: { await state.shutdown() },
+                              resume: { await state.resumeAfterRestore() }),
                           onHostPhaseChange: { state.receive($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
@@ -131,6 +153,9 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             VStack {
+                Button("Restore probe") { state.showingRestore = true }
+                    .accessibilityIdentifier("runtime.restore.open")
+                Text(state.restoredValue).accessibilityIdentifier("runtime.restored.value")
                 NavigationLink("Idle timer") { IdleTimerProbeView(context: context, state: state) }
                     .accessibilityIdentifier("idle.open")
                 NavigationLink("Web data") { WebDataProbeView(context: context) }
@@ -163,6 +188,11 @@ enum LifecycleProbeIntegration {
                 Button("Start", action: state.start).accessibilityIdentifier("lifecycle.task.start")
                 Button("Cancel", action: state.cancel).accessibilityIdentifier("lifecycle.task.cancel")
                 Button("Complete", action: state.complete).accessibilityIdentifier("lifecycle.task.complete")
+            }
+            .sheet(isPresented: Binding(get: { state.showingRestore }, set: { state.showingRestore = $0 })) {
+                BackupScreen(definitions: definitions, importedBackup: try! MiniAppBackup(entries: [
+                    MiniAppBackupEntry(id: context.id, schemaVersion: 1, payload: Data("restored".utf8))
+                ]))
             }
         }
     }

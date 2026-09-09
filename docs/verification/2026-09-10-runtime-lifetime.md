@@ -31,3 +31,10 @@
 D01/D02/D05/D07全体を補完済みとは判定しない。現在状態の正本は[統合差分台帳](../coexistence-ledger.md)。
 
 [34373928804](https://github.com/y-aplus/JibunKit/actions/runs/34373928804)でRuntimeを含むCI全体成功。次のunitではTaskの取消後処理をcontinuationで止め、資源が先に解放されないことを検証する。owner解放時にもTask終了→資源解放の順序を確認する。固定sleepによる順序推定は行わない。
+
+
+## 選択復元への接続
+
+34378410196でstop/apply/resumeと各失敗経路のunit成功。次のiOS検証は二つのCI専用Featureを起動し、Aだけを製品BackupScreenから上書き確認付きで復元する。providerはRuntime閉鎖・Task終了が確認できないとapplyを拒否する。resumeは新しいRuntimeへ差し替える。Aの新Taskが正常完了でき、Bの既存Taskと元データが維持されることを確認する。
+
+入力は有効なMiniAppBackupを画面の既存初期化引数で渡す。Files pickerの読込み検証とは分ける。Fixtureは通常IPAには含まれない。実FeatureのDB再接続や並行復元の排他は、このテストだけでは完了しない。

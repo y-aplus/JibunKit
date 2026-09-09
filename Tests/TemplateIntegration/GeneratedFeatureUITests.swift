@@ -3,6 +3,49 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testSelectedRestoreStopsAndRestartsOnlyItsRuntime() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        func status(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "lifecycle.task.status")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            tap("miniapp.\(owner)")
+            tap("lifecycle.task.start")
+            status("running")
+            app.navigationBars.buttons["ミニアプリ"].tap()
+        }
+        tap("miniapp.lifecycle-a")
+        tap("runtime.restore.open")
+        let selection = app.switches["backup.restore.lifecycle-a"]
+        XCTAssertTrue(selection.waitForExistence(timeout: 10))
+        selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        tap("backup.restore")
+        app.alerts.buttons["置き換えて復元"].tap()
+        XCTAssertTrue(app.staticTexts["lifecycle-aを復元しました。"].waitForExistence(timeout: 10), app.debugDescription)
+        tap("閉じる")
+        status("idle")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "restored")
+        tap("lifecycle.task.start")
+        status("running")
+        tap("lifecycle.task.complete")
+        status("completed")
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        status("running")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+        tap("lifecycle.task.complete")
+        status("completed")
+    }
+
     func testIdleTimerKeepsOtherFeaturesRequestActive() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

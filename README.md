@@ -1,3 +1,5 @@
+> 最新公開版: [0.2.0](https://github.com/y-aplus/JibunKit/releases/tag/0.2.0)。1.0は未達で、mainでは幅広いFeatureの非干渉共存を開発中です。
+
 # JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。

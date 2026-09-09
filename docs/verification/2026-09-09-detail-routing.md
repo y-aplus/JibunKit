@@ -23,3 +23,5 @@ CI 34294297445（dcdb497）は成功。複数記録の通知request分離・置�
 CI 34293693138（3ecad37）は全体failureだが、GeneratedFeatureUITests.testRecordsUsesIndependentHostStorage（不正ID拒否・正しいUUID詳細遷移）、生成Feature共存、JSON/ZIP Files往復は成功。失敗はRecords standalone Quick Look待ちのみ。詳細URL接続のUI証拠を得た。
 
 CI 34294786574（0ebb4e4）はRecords通知予約/取消UIと詳細遷移に成功。既存Reminder通知配送テストのバナー待ちで失敗。予約後に許可ボタンがない場合も5秒待ち、ホーム移動はt=24.04秒まで遅れていた。予約完了を先に確認して不要な許可待ちを避け、Counterへの切替は既存URLで行う。バナーが見えなければ通知センターを開き配信済み通知の存在とタップ後のReminder遷移を検証する。配送assertや移動先/本文の検証は維持する。
+
+CI 34296108186（1068f18）は同じ既存Reminderテストで、今回は通知existsを通過した後のtap時に要素が消失。バナーを検出できた場合にも撮影からtapまでの時間で消える競合がある。通知センターはfallback時だけでなく常に開き、配信済み通知を撮影・tapする。配送と移動先のassertは維持する。後続35dcda9のfallback方式もこの競合を残すため修正を重ねる。

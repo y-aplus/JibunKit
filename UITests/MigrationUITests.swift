@@ -211,12 +211,10 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
         let notification = springboard.staticTexts["Migration reminder"].firstMatch
-        if !notification.waitForExistence(timeout: 2) {
-            // A foreground delivery or a slow UI transition can outlive the banner.
-            // Notification Center retains the delivered notification for routing.
-            springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.01))
-                .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)))
-        }
+        // Always use Notification Center: even a visible banner can disappear
+        // between the existence check, screenshot, and tap.
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.01))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)))
         XCTAssertTrue(notification.waitForExistence(timeout: 20), springboard.debugDescription)
         let delivered = XCTAttachment(screenshot: springboard.screenshot())
         delivered.name = "08-delivered-notification"

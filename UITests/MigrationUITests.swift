@@ -227,8 +227,17 @@ final class MigrationUITests: XCTestCase {
         let card = springboard.buttons.matching(identifier: "ShortLook.Platter.Content.Seamless")
             .containing(.staticText, identifier: "Migration reminder").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 5), springboard.debugDescription)
+        let initialCardFrame = card.frame
         card.tap()
-        let foreground = app.wait(for: .runningForeground, timeout: 10)
+        var foreground = app.wait(for: .runningForeground, timeout: 5)
+        // The cover sheet can reposition a notification on the first tap.
+        // Only retry when that visible state transition actually occurred;
+        // never activate the app directly to satisfy the routing assertion.
+        if !foreground, card.exists, abs(card.frame.minY - initialCardFrame.minY) > 1 {
+            print("Notification card repositioned: \(initialCardFrame) -> \(card.frame)")
+            card.tap()
+            foreground = app.wait(for: .runningForeground, timeout: 10)
+        }
         print("Notification Center after tap:\n\(springboard.debugDescription)")
         XCTAssertTrue(foreground, "Notification tap did not bring JibunKit to the foreground")
         XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 10))

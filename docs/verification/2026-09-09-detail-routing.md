@@ -37,3 +37,5 @@ CI 34301156317（9731d7b）は成功。復元成功後の通知取消呼出順�
 CI 34300999754（64d0f87）は通知tap後のforeground待ちで失敗。SpringBoardの本文はTextContent.Primaryで、その親にShortLook.Platter.Content.Seamlessボタンがある。tap前後に通知は残り、取得したapp logにNotificationRoutingのresponse記録はない。本文へのtapでアプリに到達したとは扱わず、本文を含む通知カードbuttonへの操作に変更する。foreground・Reminder画面・本文のassertを維持する。
 
 同CIのRecords standaloneは2 tests完走。添付の取込み・保持・削除と通常CRUDが成功。Quick Look待ちのassertだけはXCTExpectFailureが受理しており、自動プレビュー成功ではない。実機の中間確認成功と区別する。
+
+CI 34303509967（3176116）も通知tap後のforeground待ちで失敗。カードbuttonへの変更だけでは解消しない。tap前のカードy=648.0がtap後592.8に変化し、同じ通知は残っている。通知一覧の表示変化を最初の操作が起こした可能性があるため、foregroundにならず同じカードの位置が変わった場合だけ再操作する。無条件の繰返しや直接app.activateによる合格化は行わず、実通知操作からのforeground・遷移・本文assertを維持する。

@@ -28,6 +28,12 @@ final class GeneratedFeatureUITests: XCTestCase {
             expect("removed")
             tap("webdata.save")
             expect("saved")
+            tap("webdata.read")
+            expect(owner)
+            // Exercise the normal background lifecycle before process recreation.
+            // Abrupt termination immediately after setCookie is a separate durability case.
+            XCUIDevice.shared.press(.home)
+            XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
             app.terminate()
             app.launch()
         }

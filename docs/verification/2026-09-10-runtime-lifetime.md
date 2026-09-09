@@ -86,3 +86,9 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 ## ZIP公開APIの結合検証
 
 34413399441（source `baf23c8`）でsnapshot予約の異常終了・取消・別owner継続のunitとIPAが成功。次の結合テストは独自coordinatorで復元を止め、ZIP exportのJSON/file両経路が同じ予約に対してConflictを返すことを検証する。解除後は両形式でZIP書出し・読込み・復元plan実行まで確認する。これを含めてiOS回帰を実行する。CI待ち。
+
+## 全体回帰の時間上限と旧表示テスト
+
+34413746215（source `d97ee2e`）は45分のjob上限でcancelled。ZIP公開API結合unit0.031秒、生成host回帰（復元失敗4経路172.115秒、選択復元63.151秒、Web保持92.670秒を含む）は成功。通常hostでBackupRestoreUITests.testApplyFailureReportsCompletedFeatureが変更前の「リマインダーで失敗」を期待して失敗した。現在の段階別表示に合わせ、対象名・適用失敗・部分変更の可能性・後続未変更を検証するよう更新。
+
+Files roundtripの後続試験は時間切れで未完、Recordsは未実行。次はfeature_validation=falseで通常hostとFiles回帰を実行し、成功済みの生成host検証を重ねずに未完部分を確認する。上限超過を全体成功とは扱わない。

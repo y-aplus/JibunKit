@@ -93,7 +93,9 @@ final class BackupRestoreUITests: XCTestCase {
         let status = app.staticTexts["backup.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 10))
         XCTAssertTrue(status.label.contains("完了済み: カウンター"))
-        XCTAssertTrue(status.label.contains("リマインダーで失敗"))
+        XCTAssertTrue(status.label.contains("リマインダー: 保存データの復元に失敗しました。"))
+        XCTAssertTrue(status.label.contains("一部が変更されている可能性があります。"))
+        XCTAssertTrue(status.label.contains("後続のアプリは変更していません。"))
         tap(app.buttons["閉じる"])
         expectValues("3|keep")
     }

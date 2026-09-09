@@ -119,6 +119,12 @@ enum LifecycleProbeIntegration {
                 Text(state.scheduleStatus).accessibilityIdentifier("notification.schedule.status")
                 Button("Schedule notification") { Task { await state.schedule(context: context) } }
                     .accessibilityIdentifier("notification.schedule")
+                Button("Clear notifications") {
+                    Task {
+                        await context.removeAllOwnedNotifications()
+                        state.scheduleStatus = "cleared"
+                    }
+                }.accessibilityIdentifier("notification.clear")
                 Text(state.lastAction).accessibilityIdentifier("notification.action.result")
                 Button("Schedule action") { Task { await state.schedule(context: context, action: true) } }
                     .accessibilityIdentifier("notification.action.schedule")

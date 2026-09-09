@@ -115,6 +115,9 @@ final class GeneratedFeatureUITests: XCTestCase {
             let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["許可", "Allow"])).firstMatch
             if allow.waitForExistence(timeout: 3) { allow.tap() }
             count("1")
+            // Do not leave B's list notification to group with the later action probe.
+            tap("notification.clear")
+            XCTAssertTrue(app.staticTexts["cleared"].waitForExistence(timeout: 5))
             app.navigationBars.buttons["ミニアプリ"].tap()
         }
         tap("miniapp.lifecycle-a")

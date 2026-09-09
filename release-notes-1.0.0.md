@@ -1,3 +1,5 @@
+> 公開保留: 2026-09-09に1.0未達と再評価。以下は旧候補の記録であり、公開承認の対象ではない。
+
 # JibunKit 1.0.0
 
 独立したSwift/SwiftUI Featureを単独アプリとJibunKitの両方で開発するための基盤です。通常IPAにはCounterとReminderを含みます。Recordsは複数画面・構造化データ・添付・個別通知を持つ参照Featureとしてソースを提供します。Zaikoは含みません。

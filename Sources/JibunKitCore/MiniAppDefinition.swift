@@ -11,6 +11,7 @@ public struct MiniAppDefinition: Identifiable {
     public let systemImage: String
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
+    public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
     private let rootView: @MainActor (MiniAppContext) -> AnyView
     private let appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)?
 
@@ -21,6 +22,7 @@ public struct MiniAppDefinition: Identifiable {
         backup: MiniAppBackupProvider? = nil,
         fileBackup: MiniAppFileBackupProvider? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
+        onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         makeRootView: @escaping @MainActor (MiniAppContext) -> Root
     ) {
         precondition(id.isValid, "Mini-app IDs must start with a-z and contain only a-z, 0-9, '.', '-', or '_'.")
@@ -32,6 +34,7 @@ public struct MiniAppDefinition: Identifiable {
         precondition(fileBackup == nil || fileBackup?.id == id, "File backup provider must belong to this Feature.")
         self.fileBackup = fileBackup
         self.appendDestination = appendDestination
+        self.onHostPhaseChange = onHostPhaseChange
         self.rootView = { context in
             AnyView(makeRootView(context))
         }

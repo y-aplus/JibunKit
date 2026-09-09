@@ -11,9 +11,10 @@ final class LifecycleProbeState {
     var taskStatus = "idle"
     var categories = "unread"
     var foregroundCount = 0
+    var lastAction = "none"
     var scheduleStatus = "idle"
 
-    func schedule(context: MiniAppContext) async {
+    func schedule(context: MiniAppContext, action: Bool = false) async {
         do {
             let center = UNUserNotificationCenter.current()
             guard try await center.requestAuthorization(options: [.alert, .sound]) else {
@@ -21,11 +22,12 @@ final class LifecycleProbeState {
                 return
             }
             let content = UNMutableNotificationContent()
-            content.title = context.id.rawValue
+            content.title = action ? "Action-" + context.id.rawValue : context.id.rawValue
+            content.categoryIdentifier = action ? context.notificationCategoryIdentifier(for: "initial") : ""
             content.userInfo = context.notificationUserInfo
             try await center.add(UNNotificationRequest(
-                identifier: context.notificationRequestIdentifier(for: "foreground"), content: content,
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)))
+                identifier: context.notificationRequestIdentifier(for: action ? "action" : "foreground"), content: content,
+                trigger: UNTimeIntervalNotificationTrigger(timeInterval: action ? 10 : 2, repeats: false)))
             scheduleStatus = "scheduled"
         } catch { scheduleStatus = "error: \(error)" }
     }
@@ -89,6 +91,9 @@ enum LifecycleProbeIntegration {
         let context = MiniAppContext(id: MiniAppID(id))
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
                           onHostPhaseChange: { state.receive($0) },
+                          onNotificationAction: { action in
+                              if case let .custom(identifier) = action.kind { state.lastAction = identifier }
+                          },
                           notificationCategories: [category(context, key: "initial")],
                           notificationPresentation: { _ in
                               state.foregroundCount += 1
@@ -108,6 +113,9 @@ enum LifecycleProbeIntegration {
                 Text(state.scheduleStatus).accessibilityIdentifier("notification.schedule.status")
                 Button("Schedule notification") { Task { await state.schedule(context: context) } }
                     .accessibilityIdentifier("notification.schedule")
+                Text(state.lastAction).accessibilityIdentifier("notification.action.result")
+                Button("Schedule action") { Task { await state.schedule(context: context, action: true) } }
+                    .accessibilityIdentifier("notification.action.schedule")
                 Text(state.taskStatus).accessibilityIdentifier("lifecycle.task.status")
                 Button("Start", action: state.start).accessibilityIdentifier("lifecycle.task.start")
                 Button("Cancel", action: state.cancel).accessibilityIdentifier("lifecycle.task.cancel")

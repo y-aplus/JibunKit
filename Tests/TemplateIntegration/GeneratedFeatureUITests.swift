@@ -3,6 +3,43 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10))
+            button.tap()
+        }
+        tap("miniapp.lifecycle-a")
+        tap("notification.action.schedule")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["許可", "Allow"])).firstMatch
+        if allow.waitForExistence(timeout: 3) { allow.tap() }
+        XCTAssertTrue(app.staticTexts["scheduled"].waitForExistence(timeout: 5))
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        XCUIDevice.shared.press(.home)
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.01))
+            .press(forDuration: 0.1, thenDragTo: springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.7)))
+        let card = springboard.buttons.matching(identifier: "ShortLook.Platter.Content.Seamless")
+            .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 20), springboard.debugDescription)
+        card.press(forDuration: 1)
+        let action = springboard.buttons["Action"].firstMatch
+        XCTAssertTrue(action.waitForExistence(timeout: 5), springboard.debugDescription)
+        action.tap()
+        app.activate()
+        XCTAssertTrue(app.navigationBars["lifecycle-b"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(app.staticTexts["notification.action.result"].label, "none")
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-a")
+        let result = app.staticTexts.matching(identifier: "notification.action.result")
+            .matching(NSPredicate(format: "label == %@", "same-action")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10), app.debugDescription)
+    }
+
     func testForegroundNotificationsConsultOnlyTheirOwner() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

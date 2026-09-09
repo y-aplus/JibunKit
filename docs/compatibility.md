@@ -1,6 +1,6 @@
 # 1.0の互換性とFeatureの責任境界
 
-更新日: 2026-09-08
+更新日: 2026-09-09
 
 1.0に向けた実装・レビューで守る基準。現時点で1.0を公開済みという意味ではない。
 
@@ -29,7 +29,7 @@ Featureはpayloadの形式・schema移行・整合性検証・保存処理を所
 
 通知の予約条件・再予約・取り消しはFeatureの責任とし、CoreはIDと遷移先の共存を支援する。Widget/App Intents/権限・entitlementsはAppまたはextensionの接続層で宣言する。Featureを追加しただけで必要な権限やextensionが自動的に有効になるとは説明しない。
 
-現在のjibunkit://mini-app/<ID>は入口を開くだけで、データ変更や任意操作を実行しない。将来詳細画面への接続を追加しても既存の入口URLを維持する。未知のURLを別Featureへ推測で転送しない。
+現在のjibunkit://mini-app/<ID>は入口を開くだけで、データ変更や任意操作を実行しない。任意のdestination queryによる詳細接続でも既存の入口URLを維持する。詳細識別子の検証とnavigation valueへの変換はIntegrationが所有し、ホストはFeature別の型を解釈しない。未知のURLを別Featureへ推測で転送しない。
 
 ## 変更時の確認
 

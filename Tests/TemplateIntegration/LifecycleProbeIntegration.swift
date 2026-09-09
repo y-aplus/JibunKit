@@ -59,7 +59,7 @@ final class LifecycleProbeState {
             categories = "error: \(error)"
         }
     }
-    private let scope = MiniAppTaskScope()
+    private let runtime = MiniAppRuntime()
     private var input: AsyncStream<Void>.Continuation?
 
     func start() {
@@ -67,13 +67,27 @@ final class LifecycleProbeState {
         let channel = AsyncStream<Void>.makeStream()
         input = channel.continuation
         taskStatus = "running"
-        scope.start { [weak self] in
-            for await _ in channel.stream { }
-            await self?.finish(cancelled: Task.isCancelled)
-        }
+        do {
+            try runtime.start { [weak self] in
+                for await _ in channel.stream { }
+                await self?.finish(cancelled: Task.isCancelled)
+            }
+        } catch { taskStatus = "closed"; input = nil }
     }
 
-    func cancel() { scope.cancelAll() }
+    func cancel() { runtime.cancelTasks() }
+    func acquireIdle(context: MiniAppContext) {
+        guard idleLease == nil else { return }
+        let lease = MiniAppIdleTimer.shared.preventSleep(for: context.id)
+        do {
+            try runtime.onShutdown { lease.release() }
+            idleLease = lease
+        } catch { lease.release() }
+    }
+    func shutdown() async {
+        await runtime.shutdown()
+        taskStatus = "closed"
+    }
     func complete() { input?.finish() }
     private func finish(cancelled: Bool) {
         taskStatus = cancelled ? "cancelled" : "completed"
@@ -265,7 +279,7 @@ private struct IdleTimerProbeView: View {
             Text(result).accessibilityIdentifier("idle.result")
             Button("Acquire") {
                 if state.idleLease == nil {
-                    state.idleLease = MiniAppIdleTimer.shared.preventSleep(for: context.id)
+                    state.acquireIdle(context: context)
                 }
                 read()
             }.accessibilityIdentifier("idle.acquire")
@@ -275,6 +289,8 @@ private struct IdleTimerProbeView: View {
                 read()
             }.accessibilityIdentifier("idle.release")
             Button("Read", action: read).accessibilityIdentifier("idle.read")
+            Button("Shutdown") { Task { await state.shutdown(); read() } }
+                .accessibilityIdentifier("idle.shutdown")
         }
         .navigationTitle("Idle timer")
     }

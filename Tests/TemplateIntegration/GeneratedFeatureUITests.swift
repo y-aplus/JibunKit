@@ -32,13 +32,13 @@ final class GeneratedFeatureUITests: XCTestCase {
             backToList()
         }
         open("lifecycle-a")
-        tap("idle.release")
+        tap("idle.shutdown")
         expect("disabled")
         backToList()
         open("lifecycle-b")
         tap("idle.read")
         expect("disabled")
-        tap("idle.release")
+        tap("idle.shutdown")
         expect("enabled")
     }
 

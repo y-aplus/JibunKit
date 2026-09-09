@@ -239,3 +239,10 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 iOSでは`MiniAppIdleTimer.shared.preventSleep(for: context.id)`の返すleaseを処理の間保持し、終了時に`lease.release()`します。複数Feature・同じFeatureの複数操作の要求を数え、最後の要求が終了したときだけ自動ロック抑止を解除します。releaseは繰返し呼べます。lease解放時にもMainActor上で後始末しますが即時とは限らないため、終了時刻が重要なら明示releaseを使ってください。
 
 hostが一つの共有調停器を保持し、Featureは`UIApplication.isIdleTimerDisabled`を直接書き換えずこの経路を使います。独自の調停器を複数作って同じOS設定へ書き込む使い方は共存できません。画面非表示・background・Feature無効化のどの時点で要求を終了するかは操作側の寿命管理に接続する必要があります。これは常時点灯のOS保証ではなく、共有設定への要求の合成です。実際の端末自動ロック動作は未検証です。
+
+
+### Runtimeの終了境界
+
+`MiniAppRuntime`はFeatureの処理単位が所有します。`try runtime.start { ... }`でTaskを登録し、`try runtime.onShutdown { ... }`で共有資源のreleaseなどを登録します。`await runtime.shutdown()`は最初に新規受付を閉じ、所有Taskへ取消を要求して完了を待ち、登録と逆順に後始末します。終了後のstart/onShutdownはthrowし、再開時は新しいruntimeを作ります。複数のshutdown呼出しは同じ終了処理を待ちます。
+
+shutdownは所有Task自身から呼ばず、外部の調整役から呼んでください。協調しないTaskを強制終了する機能ではありません。解放時にも同じ順序の後始末を試みますが、明示shutdownが待機可能な境界です。登録closureやTaskがruntime/ownerを強く保持すると循環参照になり得るため、明示終了やweak captureを使います。画面非表示、Feature無効化、復元前停止へのhost全体の接続はまだ未完です。

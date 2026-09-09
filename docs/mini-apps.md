@@ -232,3 +232,10 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
 
 全データ削除はそのストアの`removeData`を使います。使用中WebViewとの調停やFeature削除時のストア自体の破棄は未実装です。今回の検証対象は標準cookie storeでの分離・再起動保持・片方の削除であり、実ページの認証やlocalStorage等まで確認済みとはしません。
+
+
+### 自動ロック抑止の共存
+
+iOSでは`MiniAppIdleTimer.shared.preventSleep(for: context.id)`の返すleaseを処理の間保持し、終了時に`lease.release()`します。複数Feature・同じFeatureの複数操作の要求を数え、最後の要求が終了したときだけ自動ロック抑止を解除します。releaseは繰返し呼べます。lease解放時にもMainActor上で後始末しますが即時とは限らないため、終了時刻が重要なら明示releaseを使ってください。
+
+hostが一つの共有調停器を保持し、Featureは`UIApplication.isIdleTimerDisabled`を直接書き換えずこの経路を使います。独自の調停器を複数作って同じOS設定へ書き込む使い方は共存できません。画面非表示・background・Feature無効化のどの時点で要求を終了するかは操作側の寿命管理に接続する必要があります。これは常時点灯のOS保証ではなく、共有設定への要求の合成です。実際の端末自動ロック動作は未検証です。

@@ -19,6 +19,19 @@ final class LifecycleProbeState {
     var foregroundCount = 0
     var lastAction = "none"
     var scheduleStatus = "idle"
+    var restoreFault: String { ProcessInfo.processInfo.environment["JIBUNKIT_RESTORE_FAULT"] ?? "" }
+
+    func stopForRestore(owner: String) async throws {
+        if owner == "lifecycle-a", restoreFault == "stop" { throw MiniAppBackupError.invalidEntry }
+        await shutdown()
+    }
+
+    func resumeForRestore(owner: String) throws {
+        if owner == "lifecycle-a", ["resume", "both"].contains(restoreFault) {
+            throw MiniAppBackupError.invalidEntry
+        }
+        resumeAfterRestore()
+    }
 
     func schedule(context: MiniAppContext, action: Bool = false) async {
         do {
@@ -133,12 +146,20 @@ enum LifecycleProbeIntegration {
             guard entry.schemaVersion == 1, let value = String(data: entry.payload, encoding: .utf8) else {
                 throw MiniAppBackupError.invalidEntry
             }
-            return MiniAppPreparedRestore { try await MainActor.run { try state.applyRestored(value) } }
+            return MiniAppPreparedRestore {
+                try await MainActor.run {
+                    try state.applyRestored(value)
+                    // Fail after mutation to exercise the partial-application warning.
+                    if id == "lifecycle-a", ["apply", "both"].contains(state.restoreFault) {
+                        throw MiniAppBackupError.invalidEntry
+                    }
+                }
+            }
         })
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
                           backup: backup,
-                          restoreLifecycle: MiniAppRestoreLifecycle(stop: { await state.shutdown() },
-                              resume: { await state.resumeAfterRestore() }),
+                          restoreLifecycle: MiniAppRestoreLifecycle(stop: { try await state.stopForRestore(owner: id) },
+                              resume: { try await state.resumeForRestore(owner: id) }),
                           onHostPhaseChange: { state.receive($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }

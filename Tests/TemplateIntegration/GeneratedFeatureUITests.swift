@@ -3,6 +3,50 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testRestoreFailuresDescribeDataAndRuntimeStateWithoutChangingOtherFeature() {
+        let messages = [
+            "stop": "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。",
+            "apply": "保存データの復元に失敗しました。一部が変更されている可能性があります。",
+            "resume": "保存データは復元しましたが、このアプリの再開に失敗しました。",
+            "both": "保存データの復元と、このアプリの再開に失敗しました。"
+        ]
+        for fault in ["stop", "apply", "resume", "both"] {
+            let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+            app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+            app.launchEnvironment["JIBUNKIT_RESTORE_FAULT"] = fault
+            app.launch()
+            func tap(_ id: String) {
+                let button = app.buttons[id]
+                XCTAssertTrue(button.waitForExistence(timeout: 10))
+                button.tap()
+            }
+            for owner in ["lifecycle-b", "lifecycle-a"] {
+                tap("miniapp.\(owner)")
+                tap("lifecycle.task.start")
+                if owner == "lifecycle-b" { app.navigationBars.buttons["ミニアプリ"].tap() }
+            }
+            tap("runtime.restore.open")
+            let selection = app.switches["backup.restore.lifecycle-a"]
+            XCTAssertTrue(selection.waitForExistence(timeout: 10))
+            selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            tap("backup.restore")
+            app.alerts.buttons["置き換えて復元"].tap()
+            let message = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", messages[fault]!)).firstMatch
+            XCTAssertTrue(message.waitForExistence(timeout: 10), "\(fault): \(app.debugDescription)")
+            XCTAssertTrue(message.label.contains("後続のアプリは変更していません。"))
+            tap("閉じる")
+            XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, fault == "stop" ? "original" : "restored")
+            XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label,
+                           fault == "stop" ? "running" : fault == "apply" ? "idle" : "closed")
+            app.navigationBars.buttons["ミニアプリ"].tap()
+            tap("miniapp.lifecycle-b")
+            XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+            XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label, "running")
+            tap("lifecycle.task.complete")
+            app.terminate()
+        }
+    }
+
     func testSelectedRestoreStopsAndRestartsOnlyItsRuntime() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

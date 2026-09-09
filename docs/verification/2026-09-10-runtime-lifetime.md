@@ -56,3 +56,9 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 次の変更はプロセス共通のMiniAppRestoreCoordinatorをplan.applyの既定経路に接続する。全選択ownerをstop前に予約し、重複を含む要求は誰も変更せずConflictとして拒否する。成功・throwとも予約を解除する。重ならないplanは並行実行できる。unitはcontinuationでAを停止中に固定し、A+Bの拒否、B単独の進行、A完了後の再実行、失敗後の予約解除を確認する。固定sleepは使わない。CI待ち。
 
 これは同一プロセス内の復元同士の調停。通常の書込み停止はFeatureのrestoreLifecycle、extensionなど他プロセスとの排他は保存層が引き続き担う。予約はplan全体の終了まで保持する。独自coordinatorを渡す場合、その利用者同士だけが調停対象となる。
+
+## 同時復元の確認と画面失敗経路
+
+[34388749311](https://github.com/y-aplus/JibunKit/actions/runs/34388749311)（source `5991836`）で重複拒否・非重複並行実行・成功後再予約・失敗後予約解除のunitと通常IPAビルドが成功した。
+
+次のiOSテストではCI専用fixtureの起動環境から停止失敗／適用後失敗／再開失敗／適用と再開の両失敗を注入する。製品BackupScreenの確認操作とエラー表示、Aのデータと実行状態、Bの元データとTask継続を四経路とも検証する。適用失敗は変更後にthrowし、部分変更を警告する表示と実状態を照合する。環境入力はCI fixture内のみで通常IPAに含めない。実FeatureのDB復旧をこの試験で確認したとは扱わない。CI待ち。

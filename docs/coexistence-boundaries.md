@@ -95,3 +95,5 @@ cancelAllAndWaitを追加し、呼出時点で所有するTask群へ取消要求
 CI 34323337796（39fcea4）は成功。cancelAllAndWaitの複数所有Taskの完了待ちを確認。次に取消後のcleanupを明示的なgateで保留し、joinが先に戻らないこと、待機中に開始した新Taskを取消さず旧batch完了後も維持することをテスト。同期に固定sleepを使わず、取消要求と完了の区別・対象batch境界を検証する。
 
 D13: 標準open/明示dismiss/独自actionを区別し、文字入力と対象IDを所有者の任意ハンドラへ配送する接続を追加。独自action/消去が他Feature表示を変更しないこと、別ownerへ流れないこと、従来open互換をunitで検証する。OSのcategory合成・独自actionの実イベント検証は未完。根拠: https://developer.apple.com/documentation/usernotifications/unnotificationresponse/actionidentifier 。CI結果待ち。
+
+CI 34324423834（1e0c805）は成功。custom/dismissが所有者にだけ届き画面遷移しないunit testsと、従来の通知から開く実UI回帰が55.689秒で成功。カテゴリは次の段階として、ネイティブ定義の和集合をホスト一箇所で登録し、所有者namespaceと重複検査を追加。二ownerで同じlocal category/action名を使っても両定義と文字入力/optionsが残ることをunitで検証する。動的更新とOSの独自action操作はまだ未完。

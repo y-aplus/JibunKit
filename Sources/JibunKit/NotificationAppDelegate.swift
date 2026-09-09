@@ -13,6 +13,14 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        do {
+            let registrations = Dictionary(uniqueKeysWithValues:
+                MiniAppRegistry.all.map { ($0.id, $0.notificationCategories) })
+            let categories = try MiniAppNotificationCategories.merged(registrations)
+            UNUserNotificationCenter.current().setNotificationCategories(categories)
+        } catch {
+            preconditionFailure("Invalid Feature notification category registration: \(error)")
+        }
         return true
     }
 

@@ -68,6 +68,14 @@ public struct MiniAppContext: Hashable, Sendable {
         notificationRequestIdentifier + "." + Data(key.utf8).base64EncodedString()
     }
 
+    public func notificationCategoryIdentifier(for key: String) -> String {
+        "jibunkit.\(id.storageNamespace).category." + Data(key.utf8).base64EncodedString()
+    }
+
+    public func ownsNotificationCategoryIdentifier(_ identifier: String) -> Bool {
+        identifier.hasPrefix("jibunkit.\(id.storageNamespace).category.")
+    }
+
     /// Includes the original single-notification ID for backward compatibility.
     /// This is namespace matching, not authorization between Features.
     public func ownsNotificationRequestIdentifier(_ identifier: String) -> Bool {

@@ -1,6 +1,7 @@
 #if os(iOS)
 import Foundation
 import SwiftUI
+import UserNotifications
 
 /// A Feature-owned mini-app definition: identity, display info, and Root View
 /// factory in one place. The host only enumerates definitions in
@@ -13,6 +14,7 @@ public struct MiniAppDefinition: Identifiable {
     public let fileBackup: MiniAppFileBackupProvider?
     public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
+    public let notificationCategories: [UNNotificationCategory]
     private let rootView: @MainActor (MiniAppContext) -> AnyView
     private let appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)?
 
@@ -25,6 +27,7 @@ public struct MiniAppDefinition: Identifiable {
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
+        notificationCategories: [UNNotificationCategory] = [],
         makeRootView: @escaping @MainActor (MiniAppContext) -> Root
     ) {
         precondition(id.isValid, "Mini-app IDs must start with a-z and contain only a-z, 0-9, '.', '-', or '_'.")
@@ -38,6 +41,7 @@ public struct MiniAppDefinition: Identifiable {
         self.appendDestination = appendDestination
         self.onHostPhaseChange = onHostPhaseChange
         self.onNotificationAction = onNotificationAction
+        self.notificationCategories = notificationCategories
         self.rootView = { context in
             AnyView(makeRootView(context))
         }

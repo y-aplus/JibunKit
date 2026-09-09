@@ -10,14 +10,24 @@ public enum MiniAppHostPhase: Sendable, Equatable {
 public final class MiniAppLifecycleDispatcher {
     private let handlers: [@MainActor (MiniAppHostPhase) -> Void]
     private var phase: MiniAppHostPhase?
+    private var pending: [MiniAppHostPhase] = []
+    private var delivering = false
 
     public init(handlers: [@MainActor (MiniAppHostPhase) -> Void]) {
         self.handlers = handlers
     }
 
     public func update(_ next: MiniAppHostPhase) {
-        guard next != phase else { return }
-        phase = next
-        for handler in handlers { handler(next) }
+        guard next != (pending.last ?? phase) else { return }
+        pending.append(next)
+        guard !delivering else { return }
+        delivering = true
+        defer { delivering = false }
+        while !pending.isEmpty {
+            let current = pending.removeFirst()
+            phase = current
+            // Complete delivery to every owner before a handler-triggered update.
+            for handler in handlers { handler(current) }
+        }
     }
 }

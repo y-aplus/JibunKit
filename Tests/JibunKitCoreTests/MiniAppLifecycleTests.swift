@@ -3,6 +3,28 @@ import JibunKitCore
 
 final class MiniAppLifecycleTests: XCTestCase {
     @MainActor
+    func testReentrantUpdatePreservesOrderForEveryIntegration() {
+        var first: [MiniAppHostPhase] = []
+        var second: [MiniAppHostPhase] = []
+        var dispatcher: MiniAppLifecycleDispatcher?
+        dispatcher = MiniAppLifecycleDispatcher(handlers: [
+            { phase in
+                first.append(phase)
+                if phase == .active {
+                    dispatcher?.update(.inactive)
+                    dispatcher?.update(.inactive)
+                    dispatcher?.update(.background)
+                }
+            },
+            { second.append($0) },
+        ])
+        dispatcher?.update(.active)
+        XCTAssertEqual(first, [.active, .inactive, .background])
+        XCTAssertEqual(second, first)
+        dispatcher = nil
+    }
+
+    @MainActor
     func testAllIntegrationsReceiveInitialPhaseAndResumeWithoutDuplicateEvents() {
         var first: [MiniAppHostPhase] = []
         var second: [MiniAppHostPhase] = []

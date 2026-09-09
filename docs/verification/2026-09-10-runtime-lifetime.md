@@ -38,3 +38,11 @@ D01/D02/D05/D07全体を補完済みとは判定しない。現在状態の正�
 34378410196でstop/apply/resumeと各失敗経路のunit成功。次のiOS検証は二つのCI専用Featureを起動し、Aだけを製品BackupScreenから上書き確認付きで復元する。providerはRuntime閉鎖・Task終了が確認できないとapplyを拒否する。resumeは新しいRuntimeへ差し替える。Aの新Taskが正常完了でき、Bの既存Taskと元データが維持されることを確認する。
 
 入力は有効なMiniAppBackupを画面の既存初期化引数で渡す。Files pickerの読込み検証とは分ける。Fixtureは通常IPAには含まれない。実FeatureのDB再接続や並行復元の排他は、このテストだけでは完了しない。
+
+## 選択復元のiOS検証結果
+
+[34379082689](https://github.com/y-aplus/JibunKit/actions/runs/34379082689)（source `99aca5faff96121ed61bc5a006940151bc53488d`）で `testSelectedRestoreStopsAndRestartsOnlyItsRuntime` が49.466秒で成功した。実際のBackupScreenからAを選択して復元し、停止完了を必須にするproviderの適用、新しいRuntimeでのTask実行、Bの既存Taskとデータの維持を確認した。同じrunでidle要求の終了調停44.310秒、片方だけのTask取消46.383秒も成功した。
+
+generated host UIは12件中11件成功、Webデータ再起動保持の1件が失敗したためrun全体は失敗。共有ロジックテスト、独立Featureのビルド、IPA生成は成功したが、後続の通常host回帰はスキップされている。全体成功とは扱わない。
+
+選択復元の成功経路は確認済み。停止・適用・再開の失敗順序はunitで確認しているが、製品画面の失敗表示、実FeatureのDB接続解放と再接続、複数sceneから同じFeatureへ同時復元する場合の排他は未完である。現状の画面は失敗したFeatureと先行完了したFeatureを示すものの、データ適用失敗とRuntime再開失敗を区別して表示しない。この差分も以後の復元調停に含める。

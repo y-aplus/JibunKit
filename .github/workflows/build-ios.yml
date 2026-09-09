@@ -128,6 +128,7 @@ jobs:
           from pathlib import Path
           import shutil
           shutil.copyfile('Tests/TemplateIntegration/GeneratedFeatureUITests.swift', 'UITests/GeneratedFeatureUITests.swift')
+          shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsNotifications.swift', 'Sources/JibunKit/RecordsNotifications.swift')
@@ -144,6 +145,7 @@ jobs:
           p = Path('Sources/JibunKit/MiniAppRegistry.swift')
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
+          p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

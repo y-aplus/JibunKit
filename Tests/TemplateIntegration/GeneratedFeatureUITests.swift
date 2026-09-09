@@ -3,6 +3,31 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testUnopenedFeaturesReceiveHostBackgroundAndResume() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        XCTAssertTrue(app.buttons["miniapp.lifecycle-a"].waitForExistence(timeout: 10))
+        // Neither Feature's root view has been created yet.
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.activate()
+        var observed: [String] = []
+        for id in ["lifecycle-a", "lifecycle-b"] {
+            let entry = app.buttons["miniapp.\(id)"]
+            XCTAssertTrue(entry.waitForExistence(timeout: 10))
+            entry.tap()
+            let events = app.staticTexts["lifecycle.events"]
+            XCTAssertTrue(events.waitForExistence(timeout: 5))
+            let phases = events.label.split(separator: ",")
+            XCTAssertTrue(phases.contains("background"))
+            XCTAssertGreaterThanOrEqual(phases.filter { $0 == "active" }.count, 2)
+            observed.append(events.label)
+            app.navigationBars.buttons["ミニアプリ"].tap()
+        }
+        XCTAssertEqual(observed.first, observed.last)
+    }
+
     func testRecordReminderSchedulingAndCancellation() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

@@ -12,6 +12,7 @@ public struct MiniAppDefinition: Identifiable {
     public let systemImage: String
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
+    public let restoreLifecycle: MiniAppRestoreLifecycle?
     public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
     public let notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)?
@@ -25,6 +26,7 @@ public struct MiniAppDefinition: Identifiable {
         systemImage: String,
         backup: MiniAppBackupProvider? = nil,
         fileBackup: MiniAppFileBackupProvider? = nil,
+        restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
@@ -40,6 +42,7 @@ public struct MiniAppDefinition: Identifiable {
         self.backup = backup
         precondition(fileBackup == nil || fileBackup?.id == id, "File backup provider must belong to this Feature.")
         self.fileBackup = fileBackup
+        self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.onHostPhaseChange = onHostPhaseChange
         self.onNotificationAction = onNotificationAction

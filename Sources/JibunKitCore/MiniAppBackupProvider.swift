@@ -71,11 +71,15 @@ public struct MiniAppRestorePlan: Sendable {
         ids = entries.map { MiniAppID($0.id) }
     }
 
-    public func apply() async throws {
+    public func apply(lifecycles: [MiniAppID: MiniAppRestoreLifecycle] = [:]) async throws {
         var completed: [MiniAppID] = []
         for (id, operation) in zip(ids, operations) {
             do {
-                try await operation.apply()
+                if let lifecycle = lifecycles[id] {
+                    try await lifecycle.perform(operation.apply)
+                } else {
+                    try await operation.apply()
+                }
                 completed.append(id)
             } catch {
                 throw MiniAppRestoreFailure(completed: completed, failed: id, reason: error.localizedDescription)

@@ -246,3 +246,12 @@ hostが一つの共有調停器を保持し、Featureは`UIApplication.isIdleTim
 `MiniAppRuntime`はFeatureの処理単位が所有します。`try runtime.start { ... }`でTaskを登録し、`try runtime.onShutdown { ... }`で共有資源のreleaseなどを登録します。`await runtime.shutdown()`は最初に新規受付を閉じ、所有Taskへ取消を要求して完了を待ち、登録と逆順に後始末します。終了後のstart/onShutdownはthrowし、再開時は新しいruntimeを作ります。複数のshutdown呼出しは同じ終了処理を待ちます。
 
 shutdownは所有Task自身から呼ばず、外部の調整役から呼んでください。協調しないTaskを強制終了する機能ではありません。解放時にも同じ順序の後始末を試みますが、明示shutdownが待機可能な境界です。登録closureやTaskがruntime/ownerを強く保持すると循環参照になり得るため、明示終了やweak captureを使います。画面非表示、Feature無効化、復元前停止へのhost全体の接続はまだ未完です。
+
+
+### 復元前後の処理停止と再開
+
+`MiniAppDefinition.restoreLifecycle`に`MiniAppRestoreLifecycle(stop:resume:)`を登録すると、hostのJSON/ファイル復元は各対象Featureについてstop→apply→resumeの順で実行します。未選択Featureのhookは呼びません。stopでは新規受付を閉じて保存先の利用終了を待ちます。`MiniAppRuntime.shutdown()`を利用した場合、resumeでは新しいruntimeを作ってFeatureの参照先を切り替えます。
+
+stopが失敗するとapply/resumeは呼ばないため、stop自身が失敗時に利用可能な状態へ戻す必要があります。applyが失敗してもresumeを呼び、両方失敗した場合は両方の理由を保持します。resume失敗はデータ適用済みの場合もあるため、復元全体のロールバック成功とは表示しません。後続Featureへの適用は既存の失敗報告に従って停止します。
+
+hook未指定のFeatureは従来どおりです。これは全Featureの処理を自動検出して停止する機能ではなく、Feature所有者の停止・DB再接続・再開処理を共有復元経路へ接続する契約です。直接planを使う場合も`apply(lifecycles:)`へ登録を渡します。同一Featureに対する複数の復元を並行実行する調停は別途必要です。

@@ -225,7 +225,10 @@ struct BackupScreen: View {
         Task {
             defer { busy = false }
             do {
-                try await plan.apply()
+                let lifecycles = Dictionary(uniqueKeysWithValues: definitions.compactMap { definition in
+                    definition.restoreLifecycle.map { (definition.id, $0) }
+                })
+                try await plan.apply(lifecycles: lifecycles)
                 status = plan.ids.map(title).joined(separator: "、") + "を復元しました。"
                 imported = nil
                 restoreIDs = []

@@ -14,7 +14,9 @@ enum RecordsMiniApp {
 
     private static let backup: MiniAppFileBackupProvider? = {
         guard case .success(let store) = store else { return nil }
-        return RecordsBackup.provider(store: store, id: id)
+        return RecordsBackup.provider(store: store, id: id, clearReminders: {
+            await RecordsNotifications.clearReminders()
+        })
     }()
 
     static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text", fileBackup: backup,

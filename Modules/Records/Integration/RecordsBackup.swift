@@ -4,7 +4,11 @@ import RecordsFeature
 
 /// The Feature owns its snapshot schema; this adapter owns the host contract.
 public enum RecordsBackup {
-    public static func provider(store: RecordStore, id: MiniAppID) -> MiniAppFileBackupProvider {
+    public static func provider(
+        store: RecordStore,
+        id: MiniAppID,
+        clearReminders: @escaping @Sendable () async -> Void = {}
+    ) -> MiniAppFileBackupProvider {
         MiniAppFileBackupProvider(id: id, export: { destination in
             try await store.exportSnapshot(to: destination)
             return 2
@@ -15,6 +19,9 @@ public enum RecordsBackup {
                 // Recheck on apply as well: a missing/replaced snapshot must not
                 // cause a partially copied live store after confirmation.
                 try await store.restoreSnapshot(from: entry.directory)
+                // A snapshot does not contain OS reservations. Clear the old
+                // store's reminders only after its replacement succeeds.
+                await clearReminders()
             }
         })
     }

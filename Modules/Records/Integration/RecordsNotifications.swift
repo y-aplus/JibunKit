@@ -17,6 +17,18 @@ public enum RecordsNotifications {
 
     private static let context = MiniAppContext(id: MiniAppID("records"))
 
+    /// Restoration replaces the data, not OS reservations. Never clear another
+    /// Feature's notifications, including the legacy Reminder request.
+    public static func clearReminders() async {
+        let center = UNUserNotificationCenter.current()
+        let pending = await center.pendingNotificationRequests()
+        let delivered = await center.deliveredNotifications()
+        center.removePendingNotificationRequests(withIdentifiers:
+            pending.map(\.identifier).filter(context.ownsNotificationRequestIdentifier))
+        center.removeDeliveredNotifications(withIdentifiers:
+            delivered.map { $0.request.identifier }.filter(context.ownsNotificationRequestIdentifier))
+    }
+
     public static func request(for record: Record, at date: Date, now: Date = Date()) throws -> UNNotificationRequest {
         let interval = date.timeIntervalSince(now)
         guard interval.isFinite, interval > 0 else { throw Failure.invalidDate }

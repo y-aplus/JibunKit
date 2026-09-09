@@ -25,11 +25,19 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         try await other.save(Record(title: "Unselected"))
         let id = MiniAppID("records")
         let entry = try await RecordsBackup.provider(store: source, id: id).exportEntry(to: root.appendingPathComponent("snapshot"))
-        let provider = RecordsBackup.provider(store: live, id: id)
+        let reminders = ReminderCleanupProbe()
+        let provider = RecordsBackup.provider(store: live, id: id, clearReminders: {
+            let titles = (try? await live.records().map(\.title)) ?? ["read failed"]
+            await reminders.record(titles)
+        })
         let plan = try MiniAppRestorePlan(fileEntries: [entry], selected: [id], providers: [provider])
         let before = try await live.records()
         XCTAssertEqual(before.map(\.title), ["Keep until confirmed"])
+        let beforeCleanup = await reminders.observedTitles
+        XCTAssertTrue(beforeCleanup.isEmpty, "Preparation must preserve existing reminders")
         try await plan.apply()
+        let afterCleanup = await reminders.observedTitles
+        XCTAssertEqual(afterCleanup, [["Exported"]], "Clear reservations once, after the new data is committed")
         let reopened = try RecordStore(directory: liveURL)
         let restored = try await reopened.records()
         XCTAssertEqual(restored.map(\.id), [record.id])
@@ -47,7 +55,10 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         try await store.save(record)
         let attachment = try await store.addAttachment(to: record.id, name: "file", data: Data([1, 2]))
         let id = MiniAppID("records")
-        let provider = RecordsBackup.provider(store: store, id: id)
+        let reminders = ReminderCleanupProbe()
+        let provider = RecordsBackup.provider(store: store, id: id, clearReminders: {
+            await reminders.record([])
+        })
         let entry = try await provider.exportEntry(to: root.appendingPathComponent("snapshot"))
         let future = try MiniAppFileBackupEntry(id: id, schemaVersion: 99, directory: entry.directory)
         XCTAssertThrowsError(try provider.prepareRestore(future))
@@ -62,6 +73,8 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         let data = try await store.attachmentData(recordID: record.id, attachmentID: attachment.id)
         XCTAssertEqual(records.map(\.id), [record.id])
         XCTAssertEqual(data, Data([1, 2]))
+        let cleanup = await reminders.observedTitles
+        XCTAssertTrue(cleanup.isEmpty, "Rejected preparation and failed application must preserve reservations")
     }
 
     func testSymlinkAttachmentDirectoryIsRejectedBeforeRestoration() async throws {
@@ -80,4 +93,9 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         let records = try await store.records()
         XCTAssertEqual(records.map(\.id), [record.id])
     }
+}
+
+private actor ReminderCleanupProbe {
+    private(set) var observedTitles: [[String]] = []
+    func record(_ titles: [String]) { observedTitles.append(titles) }
 }

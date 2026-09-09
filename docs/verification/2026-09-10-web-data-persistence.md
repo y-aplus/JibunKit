@@ -1,0 +1,17 @@
+# Webデータ保持の比較診断
+
+## 状態
+
+識別子付きWKWebsiteDataStoreのCookie保持は複数runで成功した一方、34379082689でも再起動後missingが再発した。安定解決とは扱わない。同runの選択復元Runtimeテストは49.466秒で成功。
+
+## 次の診断
+
+同一の検証用iOSアプリ内で、識別子付きストアと標準ストアそれぞれにWebViewを保持し、ページ読込完了後、同じdomain・expiry・値のCookieを保存する。標準ストア側はowner別Cookie名を使って診断同士の上書きを避ける。保存直後のread、background移行、process再生成後のreadを比較する。これは別アプリそのものとの比較ではなく、標準ストアとの差分の一次切り分けである。
+
+診断表示にprofile UUID、isPersistent、isSessionOnly、expires、両ストアの読戻し結果を出す。失敗のassertionは維持する。通常IPAに診断は入れない。
+
+## 根拠と限界
+
+[WebKitの公開ヘッダー](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/Cocoa/WKHTTPCookieStore.h)と[NetworkProcessの保存処理](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/NetworkProcess/cocoa/NetworkProcessCocoa.mm)を確認。内部flush処理は存在するが、非公開APIを製品から呼び出す対策は採らない。公開mainの実装は現在のSimulator内WebKitと完全に同じとは限らない。
+
+`feature_ui_test_filter`で生成hostの対象testを絞れるようにした。空の場合は既存の全Feature UIテストを維持する。絞ったrunの成功を全回帰成功とは扱わない。

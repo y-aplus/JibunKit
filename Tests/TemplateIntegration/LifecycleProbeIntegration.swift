@@ -254,6 +254,9 @@ private struct WebDataProbeView: View {
     @State private var result = "unread"
     @State private var webView: WKWebView
     @State private var pageReady = false
+    @State private var baselineReady = false
+    @State private var baselineView: WKWebView
+    @State private var diagnostic = "not-read"
 
     init(context: MiniAppContext) {
         self.context = context
@@ -261,12 +264,15 @@ private struct WebDataProbeView: View {
         configuration.websiteDataStore = context.websiteDataStore()
         let view = WKWebView(frame: .zero, configuration: configuration)
         _webView = State(initialValue: view)
+        _baselineView = State(initialValue: WKWebView(frame: .zero, configuration: WKWebViewConfiguration()))
     }
 
     var body: some View {
         VStack {
             WebDataProbeWebView(webView: webView, ready: $pageReady).frame(height: 80)
-            Text(pageReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
+            WebDataProbeWebView(webView: baselineView, ready: $baselineReady).frame(height: 40)
+            Text(diagnostic).accessibilityIdentifier("webdata.diagnostic")
+            Text(pageReady && baselineReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
             Button("Save cookie") {
                 Task {
@@ -274,13 +280,23 @@ private struct WebDataProbeView: View {
                         .name: "account", .value: context.id.rawValue,
                         .expires: Date().addingTimeInterval(86400)])!
                     await webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
+                    var baselineProperties = cookie.properties!
+                    baselineProperties[.name] = "baseline-" + context.id.rawValue
+                    let baselineCookie = HTTPCookie(properties: baselineProperties)!
+                    await baselineView.configuration.websiteDataStore.httpCookieStore.setCookie(baselineCookie)
+                    diagnostic = "saved profile=\(webView.configuration.websiteDataStore.identifier?.uuidString ?? "nil") persistent=\(webView.configuration.websiteDataStore.isPersistent) sessionOnly=\(cookie.isSessionOnly) expires=\(cookie.expiresDate?.description ?? "nil")"
                     result = "saved"
                 }
             }.accessibilityIdentifier("webdata.save")
             Button("Read cookie") {
                 Task {
                     let cookies = await webView.configuration.websiteDataStore.httpCookieStore.allCookies()
-                    result = cookies.first { $0.name == "account" && $0.domain == "jibunkit.example" }?.value ?? "missing"
+                    let baseline = await baselineView.configuration.websiteDataStore.httpCookieStore.allCookies()
+                    let baselineValue = baseline.first { $0.name == "baseline-" + context.id.rawValue }?.value ?? "missing"
+                    let stored = cookies.first { $0.name == "account" && $0.domain == "jibunkit.example" }
+                    result = stored?.value ?? "missing"
+                    diagnostic = "owner=\(context.id.rawValue) profile=\(result) default=\(baselineValue) profileCookieCount=\(cookies.count) sessionOnly=\(stored?.isSessionOnly.description ?? "nil")"
+                    print("WEB-PERSISTENCE \(diagnostic)")
                 }
             }.accessibilityIdentifier("webdata.read")
             Button("Clear web data") {

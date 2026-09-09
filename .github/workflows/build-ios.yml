@@ -15,6 +15,10 @@ on:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
         default: ''
+      feature_ui_test_filter:
+        description: Optional generated-host Xcode test identifier (empty runs all Feature integration tests)
+        type: string
+        default: ''
       ui_test_filter:
         description: Optional Xcode test identifier for focused diagnostics (empty runs the normal suite)
         type: string
@@ -324,6 +328,8 @@ jobs:
 
       - name: Test generated Feature in host
         if: inputs.simulator_tests && inputs.feature_validation
+        env:
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
         shell: bash
         run: |
           set -euo pipefail
@@ -331,7 +337,7 @@ jobs:
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TemplateHost.xcresult" \
-            -only-testing:MigrationUITests/GeneratedFeatureUITests \
+            -only-testing:"${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
 

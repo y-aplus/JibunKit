@@ -6,11 +6,15 @@
 
 ### Added
 
+- 添付ファイルを含むZIPバックアップ、Featureごとの選択復元、schema移行と破損時のデータ維持を追加。書出し名へ日時を含める。
+- Core非依存のRecords参照Featureに、複数画面・構造化保存・添付・検索・UUID詳細ルート・記録別通知を実装。通常配布への自動追加は行わない。
+- Feature所有の詳細識別子をURL・通知payloadからIntegrationへ渡す接続と、安定キーごとの複数通知IDを追加。
+
 - 対応ミニアプリを選んでバックアップを書出し・読込み・復元する画面を追加。全選択の事前検証と上書き確認、部分失敗の報告を行う。
 
 - FeatureごとのApp Group内ファイル保存先を提供する`MiniAppFiles`を追加。任意のデータ形式・DBで使えるURLと、Dataのファイル単位のatomic書込みを提供。
 
-- ミニアプリのFeature・Root View生成とPackage／Registry登録をまとめる`add-mini-app.py`を追加。dry-run、既存ID・ファイルの衝突検査、隔離した生成物のCIビルドを用意。
+- 独立Swift Package・Root View・単独Example・UIテストを生成するTuist Feature雛形を追加。ホストへはIntegrationを明示登録する。
 
 - GitHub Actionsで任意実行できるiOSシミュレーターの統合操作テストと、画面・実行記録の成果物を追加。
 

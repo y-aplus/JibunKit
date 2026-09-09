@@ -45,3 +45,5 @@ CI 34305222046（605971e）は位置変化を検出して2回目のcard tapま�
 CI 34306918024（698553d）のSpringBoard logで原因境界を確認。最初のtapはIncoming Sectionへの操作、次のtapはdefault actionへ進むが、`Hinting side swipe instead of executing action`、`Action completion ... didExecute? NO`となっている。アプリ起動拒否やdelegate routingの不具合を示す結果ではなく、OSが横スワイプを促して実行していない。通知カードの右スワイプと、表示される場合のOpenボタン操作へ変更し、foreground/Reminder画面/本文のassertを維持する。
 
 CI 34308146616（6d131a8）は成功。限定実行のtestNotificationDeliveryAndRoutingが94.564秒で成功し、app logの03:54:21にNotification response receivedとparsed route: trueを確認。通知カードの右スワイプ経由で実OS callback、foreground復帰、Reminder画面と本文まで検証できた。これは既存Reminder一件の検証であり、全回帰・Records複数通知の配送・詳細通知の実機結果とは区別する。
+
+全CI 34309062684（4a6cb77）は成功。共有/Module tests、独立Recordsと生成Featureビルド、生成Feature単独・ホスト共存、通常IPA/metadata、選択復元とJSON/ZIP Files往復、Reminder実通知遷移、Records CRUD/添付保持・削除が成功。Quick Lookのみ既知の期待失敗を含む。1.0候補の版番号設定後に同条件で再検証する。

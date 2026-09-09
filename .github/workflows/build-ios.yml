@@ -235,10 +235,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.1.0"
+            "1.0.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "2"
+            "3"
 
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements JibunKitWidget.entitlements "$widget"

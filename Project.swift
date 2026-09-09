@@ -16,7 +16,7 @@ let project = Project(
             name: "JibunKit-App", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: [
-                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "1.0.0",
+                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.2.0",
                 "CFBundleVersion": "3", "JibunKitAppGroup": "group.com.jibunkit.shared",
                 "UILaunchScreen": [:],
                 "CFBundleURLTypes": [[
@@ -34,7 +34,7 @@ let project = Project(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
             bundleId: "com.jibunkit.app.Widget", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: [
-                "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "3",
+                "CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "3",
                 "JibunKitAppGroup": "group.com.jibunkit.shared",
                 "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
             ]),

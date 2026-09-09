@@ -2,6 +2,56 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testFailedAndInvalidExportsReleaseTheirOwner() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("a")
+        let invalid = MiniAppBackupProvider(id: owner, export: {
+            MiniAppBackupEntry(id: MiniAppID("wrong"), schemaVersion: 1, payload: Data())
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await invalid.exportEntry(coordinator: coordinator)
+            XCTFail("Wrong owner accepted")
+        } catch let error as MiniAppBackupError { XCTAssertEqual(error, .invalidEntry) }
+        let failing = MiniAppFileBackupProvider(id: owner, export: { _ in throw CancellationError() },
+                                               prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await failing.exportEntry(to: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString),
+                                               coordinator: coordinator)
+            XCTFail("Expected cancellation")
+        } catch is CancellationError {}
+        let restore = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
+        try await restore.apply(coordinator: coordinator)
+    }
+
+    func testExportOfAnotherOwnerProceedsDuringSnapshotAndCancellationRetainsReservation() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let owner = MiniAppID("a")
+        let provider = MiniAppBackupProvider(id: owner, export: {
+            await gate.block()
+            throw CancellationError()
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let exporting = Task { try await provider.exportEntry(coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        exporting.cancel()
+        let other = MiniAppBackupProvider(id: MiniAppID("b"), export: {
+            MiniAppBackupEntry(id: MiniAppID("b"), schemaVersion: 1, payload: Data())
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        let snapshot = try await other.exportEntry(coordinator: coordinator)
+        XCTAssertEqual(snapshot.id, "b")
+        let restore = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
+        do {
+            try await restore.apply(coordinator: coordinator)
+            XCTFail("Live snapshot reservation was released on cancellation")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        await gate.release()
+        do {
+            _ = try await exporting.value
+            XCTFail("Expected export cancellation")
+        } catch is CancellationError {}
+        try await restore.apply(coordinator: coordinator)
+    }
+
     func testExportBlocksRestoreAndRestoreBlocksBothExportAdapters() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let gate = RestoreCoordinatorGate()

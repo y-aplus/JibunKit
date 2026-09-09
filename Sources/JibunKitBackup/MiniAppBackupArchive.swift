@@ -93,7 +93,8 @@ public final class ImportedMiniAppBackup: Sendable {
 public enum MiniAppBackupArchive {
     /// Snapshots are gathered sequentially, then streamed into a standard ZIP.
     /// When both contracts exist for an ID, new exports prefer the file provider.
-    public static func export(selected: Set<MiniAppID>, providers: [MiniAppBackupProvider], fileProviders: [MiniAppFileBackupProvider]) async throws -> MiniAppBackupFile {
+    public static func export(selected: Set<MiniAppID>, providers: [MiniAppBackupProvider], fileProviders: [MiniAppFileBackupProvider],
+                              coordinator: MiniAppRestoreCoordinator = .shared) async throws -> MiniAppBackupFile {
         let workspace = try BackupWorkspace()
         let root = workspace.directory.appendingPathComponent("contents", isDirectory: true)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("features"), withIntermediateDirectories: true)
@@ -111,10 +112,10 @@ public enum MiniAppBackupArchive {
             let location = String(index)
             let destination = root.appendingPathComponent("features").appendingPathComponent(location)
             if let provider = files[id] {
-                let entry = try await provider.exportEntry(to: destination)
+                let entry = try await provider.exportEntry(to: destination, coordinator: coordinator)
                 items.append(Manifest.Item(id: id.rawValue, schemaVersion: entry.schemaVersion, storage: .files, location: location))
             } else if let provider = payloads[id] {
-                let entry = try await provider.exportEntry()
+                let entry = try await provider.exportEntry(coordinator: coordinator)
                 // Validate the existing payload contract before writing metadata.
                 _ = try MiniAppBackup(entries: [entry])
                 try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: false)

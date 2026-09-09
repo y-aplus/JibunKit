@@ -78,3 +78,7 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 34412585049（source `fabb6d9`）で複数owner途中取消のunitとIPAが成功。次の変更はJSON/file providerのexportEntryにも同じ予約を適用する。復元中の読み出しと、snapshot作成中の復元開始を拒否する。unitはJSON exportを停止中に復元拒否、復元を停止中にJSON/file双方のcallback未実行と出力先未作成を確認する。CI待ち。
 
 予約は各Featureのsnapshot作成完了まで。複数Feature共通の一点時刻snapshotや、Filesへの保存先選択中の予約保持は約束しない。生のexport closureを直接呼ぶ場合は調停を迂回するため、hostはexportEntryを使用する。通常の編集とのsnapshot整合性はproviderが担い、別processとの排他は引き続き未完である。
+
+## snapshot予約の終了条件
+
+34413012454（source `34f233b`）でexport対restoreの競合unitとIPAが成功。追加unitでは、不正ownerのJSON出力・ファイル出力callbackの取消エラー後に予約を再利用できること、Aの出力中でもBの出力が進むこと、Aの取消要求後もcallbackが終わるまで復元を拒否することを検証する。ZIP exportにもcoordinator引数を追加し、内部のJSON/file双方へ同じ値を転送する。CI待ち。

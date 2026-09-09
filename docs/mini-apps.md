@@ -267,3 +267,5 @@ hook未指定のFeatureは従来どおりです。これは全Featureの処理�
 複数Featureを選択したplanでは、各Featureの開始前にも取消を確認します。着手済みFeatureの再開処理を終えてから次の着手を止め、`MiniAppRestoreFailure.stage == .cancelledBeforeStart`で完了済みIDと未着手のIDを返します。完了済みの復元を巻き戻す契約ではありません。
 
 JSON/file providerの`exportEntry`も同じcoordinatorを利用します。同一Featureのsnapshot作成と復元を重ねず、競合はcallbackを始める前に返します。独自coordinatorを使う場合、exportとrestoreで同じものを渡してください。生の`export` closureの直接呼出しはこの調停の対象外です。予約はsnapshot作成までで、複数Featureを同じ時点の状態として書き出す保証はありません。
+
+`MiniAppBackupArchive.export(..., coordinator:)`にも同じcoordinatorを渡せます。省略時はプロセス共通のものを使い、ZIP内の各JSON/file providerへ転送します。出力callbackが失敗した場合と出力検証が失敗した場合も予約は解除されます。

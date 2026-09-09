@@ -6,11 +6,13 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-**[0.1.0を公開しました](https://github.com/y-aplus/JibunKit/releases/tag/0.1.0)。** 製品名はJibunKit、本体`com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`です。Windows上のWSLでは全11テストとWidget入りIPA生成に成功し、Shortcuts登録に必要な公式App IntentsメタデータはGitHub ActionsのmacOS／Xcode 26.6経路で生成します。
+公開版は[0.1.0](https://github.com/y-aplus/JibunKit/releases/tag/0.1.0)、mainは1.0に向けた開発中です。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター、Shortcuts、3サイズのWidget、リマインダー通知、両ミニアプリの独立保存を確認しました。build 2への上書き更新とSideStore署名更新後も保存値と各連携を維持し、F1〜F7に合格しました。source、tag、変更履歴、検査済みIPAを対応付けてpublic repositoryの0.1.0 Releaseとして公開済みです。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。通知と詳細遷移の拡張、最終回帰・出荷確認は継続中です。[1.0の完成条件と残作業](docs/superpowers/plans/2026-09-08-jibunkit-1.0.md)を参照してください。
 
-## 0.1で届けるもの
+本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
+
+## 公開版0.1の範囲
 
 - ミニアプリ一覧、カウンターと第2ミニアプリによる追加・共存の実証。
 - アプリ再起動、更新インストール、SideStoreでの署名更新後も保たれる保存値。
@@ -18,7 +20,7 @@ JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター
 - 共有した値を表示するWidgetと、予約・対象ミニアプリへの遷移ができるローカル通知。
 - Mac購入を前提にしないビルド・導入手順、ライセンス、追加・更新・貢献・検証の文書。
 
-これは完成条件であり、動作実績ではありません。0.1は設計文書の**F1〜F7・O1〜O4の全11項目**を満たして完成とします。文書をGitHubへ保存したことだけでは0.1の完成にはなりません。
+公開時の完成条件と検証履歴は、以下の0.1設計・作業計画を参照してください。
 
 ## 文書
 
@@ -28,7 +30,7 @@ JibunKitをiPhone 16e／iOS 26.6／SideStore 0.6.3へ導入し、カウンター
 | [技術確認](docs/superpowers/specs/2026-08-28-jibunkit-technical-review.md) | 一次資料・公開ソースの確認結果と、実機で確かめること |
 | [1.0の目標案と設計原則](docs/superpowers/specs/2026-08-28-jibunkit-1.0-direction.md) | 継続利用の目標、共通基盤への先行投資、将来の検討候補 |
 | [0.1の作業計画](docs/superpowers/plans/2026-08-28-jibunkit-0.1.md) | 技術検証から公開までの順序と完成条件の対応 |
-| [ビルド手順](docs/build.md) | WSLでのローカル確認とGitHub ActionsによるSideStore向けIPA生成 |
+| [ビルド手順](docs/build.md) | Tuistによるローカル開発とGitHub ActionsによるIPA生成 |
 | [SideStore導入・更新](docs/sidestore.md) | IPAの導入、上書き、署名更新、確認済み条件と保証境界 |
 | [ミニアプリの追加](docs/mini-apps.md) | feature、画面、通知、Widget、App Intentを追加する手順と検証境界 |
 | [ミニアプリ組み込み簡素化の設計](docs/superpowers/specs/2026-09-04-mini-app-integration-simplification.md) | 0.1時点のRegistry、Context、互換性、受入条件、外部エージェントへの引継ぎ |
@@ -55,7 +57,7 @@ TuistとSwift Packageを標準にする。Featureの単独開発・実行と、J
 
 Shortcuts、本体・Widget間の共有、アプリ単体の再起動後の保存、更新インストール、署名更新後の維持は、旧称・旧識別子の構成で実証済みです。JibunKitとしての確認対象もiPhone 16e／iOS 26.6／SideStore 0.6.3とし、改名後の実機結果は[検証記録](docs/verification/0.1.md)へ追記します。ビルド環境や署名の制約は技術確認文書に記録しています。
 
-個別アプリの移植、コンパイル済みアプリの動的実行、ミニアプリのストアは0.1の対象外です。ソースコードがある独立Swift／SwiftUIアプリをFeatureライブラリと薄いAdapterへ分離する支援は、1.0の目標候補です。支援範囲と完成条件はまだ決まっていません。
+個別アプリの移植、コンパイル済みアプリの動的実行、ミニアプリのストアは0.1の対象外です。ソースコードがある独立Swift／SwiftUIアプリをFeatureライブラリと薄いIntegrationへ分離する手順は、[Recordsの接続例](Modules/Records/README.md)で説明しています。画面数や保存方式を固定せず、独立したFeatureのままホストへ接続します。
 
 ## 変更の扱い
 

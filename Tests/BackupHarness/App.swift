@@ -23,6 +23,7 @@ private struct HarnessScreen: View {
     @State private var fixture: ImportedFixture?
     @State private var values = ""
     @State private var ready = false
+    @State private var presentingFixture = false
     @State private var fileValue = ""
     private let fileStore = HarnessFileStore()
 
@@ -47,7 +48,7 @@ private struct HarnessScreen: View {
                 } catch { values = "Write failed: \(error)" }
             }.accessibilityIdentifier("harness.change-file")
         }
-        .disabled(!ready)
+        .disabled(!ready || presentingFixture)
         .task {
             do {
                 if !ProcessInfo.processInfo.arguments.contains("--preserve") {
@@ -60,7 +61,12 @@ private struct HarnessScreen: View {
                 ready = true
             } catch { values = "Setup failed: \(error)" }
         }
-        .sheet(item: $fixture, onDismiss: { Task { await refresh() } }) { item in
+        .sheet(item: $fixture, onDismiss: {
+            Task {
+                await refresh()
+                presentingFixture = false
+            }
+        }) { item in
             BackupScreen(definitions: item.failReminder ? failingDefinitions : definitions,
                          importedBackup: item.backup, importedArchive: item.archive)
         }
@@ -80,7 +86,9 @@ private struct HarnessScreen: View {
                 MiniAppBackupEntry(id: .counter, schemaVersion: 1, payload: Data(counterPayload.utf8)),
                 MiniAppBackupEntry(id: .reminder, schemaVersion: 1, payload: Data(#"{"message":"old"}"#.utf8)),
             ])
-            fixture = ImportedFixture(backup: try MiniAppBackup.decode(backup.encoded()), failReminder: failReminder)
+            let imported = try MiniAppBackup.decode(backup.encoded())
+            presentingFixture = true
+            fixture = ImportedFixture(backup: imported, failReminder: failReminder)
         } catch { values = "Fixture failed: \(error)" }
     }
 
@@ -108,6 +116,7 @@ private struct HarnessScreen: View {
                         providers: [payload], fileProviders: [fileProvider])
                     return try MiniAppBackupArchive.load(from: file.url)
                 }.value
+                presentingFixture = true
                 fixture = ImportedFixture(archive: imported)
             } catch { values = "File fixture failed: \(error)" }
         }

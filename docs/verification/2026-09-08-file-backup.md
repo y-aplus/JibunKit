@@ -153,3 +153,5 @@ quickLookPreviewをList内のSectionから詳細Listへ移し、URLのStateを�
 ## Simulator Quick Lookの既知失敗の分離
 
 34293693138でも取込み後のQuick Look待ちだけが失敗。中間実機確認の成功は保持するが、Simulatorでの原因未確定は残る。XCTestのXCTExpectFailureをプレビュー表示assert一つだけに適用し、保持・削除・エラー表示の検証を除外しない。Simulator以外は通常assert。strict既定値を維持し、Simulatorで表示できるようになればunexpected successで注記の撤去を要求する。画面は表示成功/既知失敗を別名で保存する。既知失敗ありのCI成功をプレビュー自動検証成功と記載しない。Apple仕様: https://developer.apple.com/documentation/xctest/expected-failures 。
+
+34296639192（35dcda9）は添付restoreキャンセル後の2回目のfixture表示で失敗。回収階層はharnessトップ画面（9|keep/live attachment）のままでエラー表示なし。閉じる途中で背後のボタンが有効になり得るため、harnessはfixtureを提示した時点で再操作を無効にし、sheetのonDismissと値の再読込み完了後に解除する。プロダクトの復元処理は変更しない。閉じる直後の再表示・選択復元を同じテストで検証する。

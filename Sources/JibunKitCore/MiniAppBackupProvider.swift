@@ -80,7 +80,14 @@ public struct MiniAppRestorePlan: Sendable {
         ids = entries.map { MiniAppID($0.id) }
     }
 
-    public func apply(lifecycles: [MiniAppID: MiniAppRestoreLifecycle] = [:]) async throws {
+    public func apply(lifecycles: [MiniAppID: MiniAppRestoreLifecycle] = [:],
+                      coordinator: MiniAppRestoreCoordinator = .shared) async throws {
+        try await coordinator.perform(ids: ids) {
+            try await applyCoordinated(lifecycles: lifecycles)
+        }
+    }
+
+    private func applyCoordinated(lifecycles: [MiniAppID: MiniAppRestoreLifecycle]) async throws {
         var completed: [MiniAppID] = []
         for (id, operation) in zip(ids, operations) {
             do {

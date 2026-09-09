@@ -48,3 +48,11 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 選択復元の成功経路は確認済み。停止・適用・再開の失敗順序はunitで確認しているが、製品画面の失敗表示、実FeatureのDB接続解放と再接続、複数sceneから同じFeatureへ同時復元する場合の排他は未完である。現状の画面は失敗したFeatureと先行完了したFeatureを示すものの、データ適用失敗とRuntime再開失敗を区別して表示しない。この差分も以後の復元調停に含める。
 
 次の変更ではMiniAppRestoreFailureに停止／適用／再開／適用と再開の両方のstageを保持し、BackupScreenで区別する。適用成功・再開失敗を単なるデータ復元失敗と表示しない。後続Feature未変更の報告を維持する。unitは各stageと両失敗時の後続未実行を検証する。CI待ちであり、画面での失敗経路の実行証拠はまだない。
+
+## 復元予約と失敗段階
+
+[34385366877](https://github.com/y-aplus/JibunKit/actions/runs/34385366877)で失敗stageのunit、選択復元UI52.567秒、generated host全12件が成功した。失敗メッセージの実画面テストは未実施。
+
+次の変更はプロセス共通のMiniAppRestoreCoordinatorをplan.applyの既定経路に接続する。全選択ownerをstop前に予約し、重複を含む要求は誰も変更せずConflictとして拒否する。成功・throwとも予約を解除する。重ならないplanは並行実行できる。unitはcontinuationでAを停止中に固定し、A+Bの拒否、B単独の進行、A完了後の再実行、失敗後の予約解除を確認する。固定sleepは使わない。CI待ち。
+
+これは同一プロセス内の復元同士の調停。通常の書込み停止はFeatureのrestoreLifecycle、extensionなど他プロセスとの排他は保存層が引き続き担う。予約はplan全体の終了まで保持する。独自coordinatorを渡す場合、その利用者同士だけが調停対象となる。

@@ -232,6 +232,9 @@ struct BackupScreen: View {
                 status = plan.ids.map(title).joined(separator: "、") + "を復元しました。"
                 imported = nil
                 restoreIDs = []
+            } catch let error as MiniAppRestoreCoordinator.Conflict {
+                let names = error.owners.sorted { $0.rawValue < $1.rawValue }.map(title).joined(separator: "、")
+                status = "\(names)は別の復元処理を実行中です。完了してからもう一度選択してください。今回の復元では保存データを変更していません。"
             } catch let error as MiniAppRestoreFailure {
                 let completed = error.completed.map(title).joined(separator: "、")
                 let detail: String

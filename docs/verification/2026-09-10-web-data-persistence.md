@@ -21,3 +21,7 @@
 [34382453375](https://github.com/y-aplus/JibunKit/actions/runs/34382453375)（source `a037462`）は成功。Web保持・他Feature削除後の保持は92.804秒、通常host通知ルーティング44.792秒、Records添付操作102.671秒、編集保持69.406秒で成功。共有ロジック、独立Feature、IPAも成功した。generated hostはWebテストだけに絞っており、全件回帰ではない。
 
 ただしアプリ側printの比較値はActionsログおよびSimulator-text-diagnosticsに収集されていなかった。標準ストア側の保持結果はこの証拠から断定できない。次の検証ではUIテストプロセスが診断ラベルを読み、成功時にもActionsログへ記録する。識別子付きストアの不安定性は未解決として維持する。
+
+## 比較値を取得した回帰
+
+[34385366877](https://github.com/y-aplus/JibunKit/actions/runs/34385366877)（source `a939cdb`）でgenerated host全12件成功。Webテスト87.339秒。ログで両ownerとも保存直後・再起動後にprofile/defaultの値が一致し、sessionOnly=falseを確認した。A削除後はA profileのみmissing、defaultはAを保持し、さらに再起動後もB profile/defaultはBを保持した。過去の失敗原因は未確定で、再現性の問題を解決済みにはしない。

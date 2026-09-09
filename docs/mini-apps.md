@@ -211,3 +211,12 @@ callback内で長時間処理をしないでください。これはhostが前�
 MainActor上で同期的に検証・合成・標準API呼出しを行います。OS側の適用完了通知は標準APIにないため、このメソッドの成功はOS内の適用完了を保証しません。動的な登録はプロセス内の状態です。次回起動時に必要なカテゴリはFeatureが定義または永続化した情報から再登録してください。カテゴリ解除は通知要求自体の取消ではありません。
 
 Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き換わるため、この経路を使用します。独立したアプリで得られていたカテゴリ登録範囲の分離を補う仕組みで、任意の直接呼出しを遮断するsandboxではありません。
+
+
+### Feature所有のKeychain
+
+`MiniAppKeychain(context: context, service: "login")` はgeneric passwordのservice名をFeatureごとに分けます。`set(data, for: account)` / `data(for: account)` / `remove(account:)` / `removeAll()`を使用します。`removeAll()`の対象はそのFeatureのそのservice内だけです。同名accountでも別Featureや別serviceの値は残ります。取得時の未登録はnil、削除時の未登録は成功、それ以外のOSエラーは`Failure.status`として返します。更新は既存項目を削除せずに行います。
+
+今回のAPIはiCloud同期しないKeychain項目のgeneric passwordを扱います。新規項目は標準のwhen-unlocked属性、既存項目の更新では属性を維持します。同期的なSecurity APIなので、UIを待たせる処理は適切な実行場所から呼んでください。生体認証・SecAccessControl・バックグラウンド利用向けaccessibility選択はこのAPIでは未対応です。これらをプロダクト全体の非対応対象にはしません。
+
+`accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。再署名後の継続とiOS実行の証拠はまだありません。

@@ -48,6 +48,14 @@
 - [Choosing Background Strategies](https://developer.apple.com/documentation/BackgroundTasks/choosing-background-strategies-for-your-app): OSが実行機会を判断。登録とFeatureへの配送はアプリ側の責任。
 - [App extensionの構造](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/ExtensionOverview.html): 本体とextensionを区別し、process共有の説明を対象に合わせる。
 
+## 文書の正本
+
+- **上位完成基準・判定規則**はこの文書を正本とする。
+- **D01以降の差分の現在状態**は[統合差分台帳](coexistence-ledger.md)を正本とする。D番号は原則として再利用・振り直ししない。
+- **2026-09-09時点の根拠付き調査スナップショット**は[統合差分調査](research/2026-09-09-integration-boundary-research.md)へ固定保存する。実装が進んでも現在状態へ書き換えず、誤りが判明した場合は訂正履歴を残す。
+
+この文書の初期棚卸しや実装履歴は方針と経緯を示すため保持するが、D01以降の最新判定を二重管理しない。
+
 ## 差分台帳の記録形式
 
 各領域・差分ごとに「独立時の保証と主体 → 統合による喪失 → 補完契約/実装 → 競合・終了・復帰の検証 → 残存制約/根拠 → 状態/残タスク」を記録する。初期棚卸し表だけではこの評価を終えたことにならない。

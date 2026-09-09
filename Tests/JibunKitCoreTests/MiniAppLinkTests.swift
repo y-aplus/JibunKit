@@ -3,6 +3,23 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppLinkTests: XCTestCase {
+    func testNotificationDestinationPreservesLegacyRootAndOpaqueID() throws {
+        let context = MiniAppContext(id: MiniAppID("records"))
+        let legacy = try XCTUnwrap(MiniAppNotificationRoute.candidateRoute(userInfo: context.notificationUserInfo))
+        XCTAssertEqual(legacy.id, context.id)
+        XCTAssertNil(legacy.destination)
+        let destination = UUID().uuidString
+        let info = try XCTUnwrap(context.notificationUserInfo(destination: destination))
+        XCTAssertEqual(MiniAppNotificationRoute.candidateRoute(userInfo: info)?.destination, destination)
+        XCTAssertEqual(MiniAppNotificationRoute.candidate(userInfo: info), context.id)
+        XCTAssertNil(context.notificationUserInfo(destination: ""))
+        for value in [42, "", "bad\nvalue"] as [Any] {
+            var invalid: [AnyHashable: Any] = context.notificationUserInfo
+            invalid[MiniAppNotificationRoute.destinationUserInfoKey] = value
+            XCTAssertNil(MiniAppNotificationRoute.candidateRoute(userInfo: invalid))
+        }
+    }
+
     func testDestinationRoundTripPreservesFeatureOwnedIdentifiers() throws {
         let id = MiniAppID("records")
         for destination in [UUID().uuidString, "日本語/詳細?x=1&y=2", "a+b%20#c"] {

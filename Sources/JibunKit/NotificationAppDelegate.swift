@@ -30,7 +30,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping @Sendable () -> Void
     ) {
-        let candidate = MiniAppNotificationRoute.candidate(
+        let candidate = MiniAppNotificationRoute.candidateRoute(
             userInfo: response.notification.request.content.userInfo
         )
         // UIKit performs snapshot/state restoration work from this callback.
@@ -38,7 +38,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         // executor, causing UIKit's main-thread assertion on notification taps.
         Task { @MainActor in
             // AppNavigation also rejects IDs absent from the registry.
-            AppNavigation.shared.openNotificationTarget(candidate)
+            AppNavigation.shared.openNotificationRoute(candidate)
             completionHandler()
         }
     }

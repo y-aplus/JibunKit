@@ -78,10 +78,28 @@ public struct MiniAppContext: Hashable, Sendable {
     public var notificationUserInfo: [String: String] {
         [MiniAppNotificationRoute.miniAppIDUserInfoKey: id.rawValue]
     }
+
+    public func notificationUserInfo(destination: String) -> [String: String]? {
+        guard MiniAppLink.url(for: id, destination: destination) != nil else { return nil }
+        var info = notificationUserInfo
+        info[MiniAppNotificationRoute.destinationUserInfoKey] = destination
+        return info
+    }
 }
 
 public enum MiniAppNotificationRoute {
     public static let miniAppIDUserInfoKey = "JibunKitMiniAppID"
+    public static let destinationUserInfoKey = "JibunKitDestination"
+
+    public static func candidateRoute(userInfo: [AnyHashable: Any]) -> MiniAppRoute? {
+        guard let id = candidate(userInfo: userInfo) else { return nil }
+        guard let raw = userInfo[destinationUserInfoKey] else {
+            return MiniAppRoute(id: id, destination: nil)
+        }
+        guard let destination = raw as? String,
+              MiniAppLink.url(for: id, destination: destination) != nil else { return nil }
+        return MiniAppRoute(id: id, destination: destination)
+    }
 
     public static func candidate(userInfo: [AnyHashable: Any]) -> MiniAppID? {
         guard let rawValue = userInfo[miniAppIDUserInfoKey] as? String else {

@@ -13,12 +13,21 @@ final class AppNavigation {
 
     func openURL(_ url: URL) {
         guard let route = MiniAppLink.resolveRoute(url, registeredIDs: MiniAppRegistry.registeredIDs) else { return }
+        open(route)
+    }
+
+    func open(_ route: MiniAppRoute) {
         if let destination = route.destination {
             guard let next = MiniAppRegistry.definition(for: route.id)?.navigationPath(for: destination) else { return }
             path = next
         } else {
             open(route.id)
         }
+    }
+
+    func openNotificationRoute(_ route: MiniAppRoute?) {
+        guard let route else { path = NavigationPath(); return }
+        open(route)
     }
 
     func open(_ miniAppID: MiniAppID) {

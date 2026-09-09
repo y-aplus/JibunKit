@@ -1,16 +1,18 @@
 # 基盤を更新する
 
-更新日: 2026-09-04
+更新日: 2026-09-09
 
-この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。0.1は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
+この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
 ## 編集箇所を分ける
 
-個人用ミニアプリの処理、保存形式、Root View、Feature固有の通知予約は`Sources/<Name>Feature`へ置く。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。通常の追加で基盤と交差する箇所は次に限定する。
+個人用ミニアプリの処理、保存形式、Root View、Feature固有の通知予約は独立Packageの`Modules/<Name>/Sources/<Name>Feature`などへ置く。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。通常の追加で基盤と交差する箇所は次に限定する。
 
 | 交差箇所 | 個人用ミニアプリで行う変更 |
 | --- | --- |
-| `Package.swift` | feature targetと本体からの依存を追加する |
+| `Project.swift` | 独立Packageのpathとapp targetへのproduct依存を追加する |
+| `Package.swift` | root PackageへFeatureを置く場合にtarget/productとテスト依存を追加する |
+| Integration targetまたはホストの薄い接続ファイル | MiniAppDefinition、保存先・バックアップ・通知操作の接続を定義する |
 | `Sources/JibunKit/MiniAppRegistry.swift` | Featureの定義を`all`へ1件列挙する |
 
 通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。WidgetやApp Intentを追加する場合だけ、extension、entitlements、App Shortcuts、Actionsの検査対象を追加する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。

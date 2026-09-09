@@ -67,7 +67,7 @@ static let all = makeRegistry([
 - request IDとpayloadは定義から渡された`MiniAppContext.notificationRequestIdentifier`と`notificationUserInfo`を使う。
 - 通知許可は、通知を使うと利用者が選んだ操作の中で確認・要求する。アプリ起動時には要求しない。
 - 拒否はクラッシュや全画面エラーにせず、そのミニアプリの通常操作を続けられる結果として扱う。
-- 未登録・古い・不正なpayloadは別ミニアプリへ推測で遷移させず、一覧へ戻す。
+- 不正payloadや未登録の入口IDは一覧へ戻す。詳細destinationをIntegrationが拒否した場合は現在の画面を維持する。別ミニアプリや詳細を推測しない。
 - `UNTimeIntervalNotificationTrigger`の時刻は予約条件であり、正確な表示時刻を保証するものとして説明しない。
 
 リマインダーの`ReminderNotificationScheduler`はFeature側にあり、Root Viewから渡されたContextのrequest IDとpayloadを使う。画面の「10秒後に通知」からだけ許可を要求する。foregroundでも通知を表示し、通知タップは同じdestination mappingでリマインダー画面を開く。
@@ -84,7 +84,7 @@ App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphr
 
 変更後は次を分けて確認する。
 
-1. WSLの`swift test`でfeature処理、ID衝突、独立保存を確認する。
+1. macOS／Linux／WSLの`swift test`またはActionsでFeature処理、ID衝突、独立保存を確認する。UserNotificationsなどApple frameworkを使う条件付きテストはmacOSで確認する。
 2. Tuistで生成したworkspaceをXcode／Actionsでビルドし、WidgetとIPAを検査する。
 3. App Intentを含む場合はGitHub Actionsで公式メタデータ入りIPAを生成する。
 4. SideStoreで更新インストールし、一覧からの起動、保存値の独立、通知許可の拒否、通知予約、foregroundと終了状態からの通知タップを実機で確認する。
@@ -141,7 +141,7 @@ Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録でき�
 
 `MiniAppLink.url(for: id)`で`jibunkit://mini-app/<Feature ID>`を生成できる。ホストは登録済みFeatureの入口へ遷移し、起動中ならホストの遷移先を置き換える。Counter Widgetが使用例。Widget targetにも`JibunKitCore`を依存として追加する。
 
-URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。Feature内部の詳細画面への遷移は今後の拡張範囲であり、この形式ではまだ渡さない。表示中のsheetを強制終了しないため、sheetがあるときは閉じた後に遷移先が見える。独立版ではそのApp ShellがURL登録・受信を担う。
+URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。詳細画面には`MiniAppLink.url(for: id, destination: recordID)`を使う。ホストは`MiniAppDefinition.appendDestination`へ文字列を渡し、Integrationが型・形式を検証してFeature所有のnavigation valueをpathへ追加する。拒否時はfalseを返す。RecordsのUUID接続が実例であり、ホストへFeature別switchを追加しない。表示中のsheetを強制終了しないため、sheetがあるときは閉じた後に遷移先が見える。独立版ではそのApp ShellがURL登録・受信を担う。
 
 [AppleのWidget連携](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity)に従い、Widgetの`widgetURL`とホストの`onOpenURL`を接続している。カスタムschemeは認証境界ではなく、同じschemeを登録する別アプリとの競合はOSの扱いに依存する。
 
@@ -166,3 +166,9 @@ Counterの接続は`Sources/CounterIntegration/CounterMiniApp.swift`の`backup:`
 雛形は`UITests/LaunchTests.swift`とExample用UIテストtargetも生成する。生成したExample schemeで`xcodebuild test -workspace Modules/Notes/NotesExample.xcworkspace -scheme NotesExample -destination 'platform=iOS Simulator,name=<利用可能なiPhone名>'`を実行できる。最初のテストはFeatureの初期画面を確認する。実装を育てたら、利用可能になったことを示す画面要素や重要な操作へテストを更新する。
 
 これはJibunKitのRegistryやCoreに依存しない単独版の起動確認である。ホストへ組み込んだ後の共存検証とは別に行う。既存Moduleは自動更新しないため、テストtargetが必要なら生成されるProjectとUITestsを参考に追加する。CIのSimulator検証では、その場で生成したNotesExampleを起動して同じテストを実行する。
+
+### 詳細通知と添付を持つ参照実装
+
+[Records](../Modules/Records/README.md)はCore非依存のFeatureへ保存先と通知操作を注入する例である。詳細通知は`context.notificationUserInfo(destination: recordID)`でURLと同じdestinationを渡せる。従来の`notificationUserInfo`は引き続き入口を開く。詳細URLのホスト遷移と通知requestの内容はCIで検証済みだが、通知センターからの詳細タップは検証中である。[証拠と未確認事項](verification/2026-09-09-detail-routing.md)を参照。
+
+添付を含むFeatureは`MiniAppFileBackupProvider`を`fileBackup:`へ登録できる。exportは整合したsnapshot directoryとschema versionを渡し、prepareはデータを変更せず検証し、applyが復元する。ファイルproviderを含む選択はZIP、従来のData providerだけの選択はJSONとして書き出す。DBのsnapshot、schema移行、OS通知など保存先外の状態との整合はFeatureのIntegrationが所有する。Recordsは復元成功後に自身の既存通知を取り消し、復元失敗時は通知も維持する。

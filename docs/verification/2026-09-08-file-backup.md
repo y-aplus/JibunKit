@@ -149,3 +149,7 @@ quickLookPreviewをList内のSectionから詳細Listへ移し、URLのStateを�
 ## 2026-09-09 中間実機確認
 
 ユーザーが確認用IPA（source e01836bf5fadcf3fd5d1d6c2767bec6eb0f19861、CI 34292423512、records-device-check-20260909）の通常操作で「取込み／プレビュー／保持／削除」すべて正常と報告。f10deb6のRecords Featureを通常ホストに接続した構成。SimulatorのQuick Look表示待ちは引き続き失敗しており、実機成功によってCI成功へ読み替えない。v1.0出荷候補の最終実機確認とは別。
+
+## Simulator Quick Lookの既知失敗の分離
+
+34293693138でも取込み後のQuick Look待ちだけが失敗。中間実機確認の成功は保持するが、Simulatorでの原因未確定は残る。XCTestのXCTExpectFailureをプレビュー表示assert一つだけに適用し、保持・削除・エラー表示の検証を除外しない。Simulator以外は通常assert。strict既定値を維持し、Simulatorで表示できるようになればunexpected successで注記の撤去を要求する。画面は表示成功/既知失敗を別名で保存する。既知失敗ありのCI成功をプレビュー自動検証成功と記載しない。Apple仕様: https://developer.apple.com/documentation/xctest/expected-failures 。

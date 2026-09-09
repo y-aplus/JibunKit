@@ -19,3 +19,5 @@ RecordsNotificationTestsで2記録のID分離・再予約のID維持・通知本
 CI 34294297445（dcdb497）は成功。複数記録の通知request分離・置換・詳細payload・不正日時のunit testsと、Records単独/生成ホスト/通常IPAのビルドを確認。
 
 記録削除は通知取消を先に行い、取消が失敗した場合は記録を残してエラーを表示する。予約時は権限確認の前後で日時を検証し、許可待ちの時間を加算しない。生成ホストUIへ実際の通知予約/許可/取消のテストを追加した。結果待ち。バックアップとOS予約の整合・複数通知の配送と詳細タップは別途検証する。
+
+CI 34293693138（3ecad37）は全体failureだが、GeneratedFeatureUITests.testRecordsUsesIndependentHostStorage（不正ID拒否・正しいUUID詳細遷移）、生成Feature共存、JSON/ZIP Files往復は成功。失敗はRecords standalone Quick Look待ちのみ。詳細URL接続のUI証拠を得た。

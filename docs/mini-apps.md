@@ -172,3 +172,11 @@ Counterの接続は`Sources/CounterIntegration/CounterMiniApp.swift`の`backup:`
 [Records](../Modules/Records/README.md)はCore非依存のFeatureへ保存先と通知操作を注入する例である。詳細通知は`context.notificationUserInfo(destination: recordID)`でURLと同じdestinationを渡せる。従来の`notificationUserInfo`は引き続き入口を開く。詳細URLのホスト遷移と通知requestの内容はCIで検証済みだが、通知センターからの詳細タップは検証中である。[証拠と未確認事項](verification/2026-09-09-detail-routing.md)を参照。
 
 添付を含むFeatureは`MiniAppFileBackupProvider`を`fileBackup:`へ登録できる。exportは整合したsnapshot directoryとschema versionを渡し、prepareはデータを変更せず検証し、applyが復元する。ファイルproviderを含む選択はZIP、従来のData providerだけの選択はJSONとして書き出す。DBのsnapshot、schema移行、OS通知など保存先外の状態との整合はFeatureのIntegrationが所有する。Recordsは復元成功後に自身の既存通知を取り消し、復元失敗時は通知も維持する。
+
+## ホスト状態と非同期処理の所有者
+
+IntegrationはMiniAppDefinitionの`onHostPhaseChange:`にハンドラを登録できる。ホスト全体のactive/inactive/backgroundを、Feature画面が未生成でも受信する。Feature画面の表示/終了とは別のイベントであり、非表示になっただけで一律に停止しない。ハンドラは短くし、同期の重い処理を実行しない。
+
+`MiniAppTaskScope`はFeature runtimeごとに別instanceを所有する。`start`へそのFeatureの非同期処理を渡し、`cancelAll`はそのscopeの処理だけへ取消要求を送る。所有者を解放しても取消を要求する。取消後の新しいstartは可能。返されたTaskのvalueを待つことで完了を観測できる。エラー報告はoperation側で行う。
+
+Swiftの取消は協調的であり、cancelAllが返っても処理完了や資源解放は保証しない。処理側で取消を確認し、所有する資源を解放する。別Featureと共有する資源の排他・引継ぎ、background実行権限、勝手に生成されたTaskの追跡はこのscopeに含まない。Core非依存Featureには、Integrationから必要な操作やruntimeを注入できる。

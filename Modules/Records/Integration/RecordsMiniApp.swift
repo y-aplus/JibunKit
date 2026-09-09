@@ -17,7 +17,12 @@ enum RecordsMiniApp {
         return RecordsBackup.provider(store: store, id: id)
     }()
 
-    static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text", fileBackup: backup) { _ in
+    static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text", fileBackup: backup,
+        appendDestination: { destination, path in
+            guard let recordID = UUID(uuidString: destination) else { return false }
+            path.append(recordID)
+            return true
+        }) { _ in
         RecordsDestination(store: store)
     }
 }

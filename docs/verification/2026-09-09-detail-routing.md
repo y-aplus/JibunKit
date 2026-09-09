@@ -1,0 +1,7 @@
+# Feature詳細URLの接続
+
+`MiniAppLink.url(for:destination:)` はFeature所有の識別子を単一のdestinationクエリとして符号化する。既存のroot専用resolveは従来どおりqueryを拒否し、新しいresolveRouteが登録済みFeatureと厳密なquery形式を検証する。空・重複・未知query・制御文字は拒否する。識別子は操作命令として実行しない。
+
+`MiniAppDefinition.appendDestination` はIntegrationが識別子を検証し、Featureが既に登録しているSwiftUI navigation valueをpathへ追加する接続。hostはFeature別switchを持たず、拒否時は現在の画面を維持する。Records IntegrationはUUIDのみ受け付ける。Feature本体のCore非依存は維持する。
+
+unit testsでUnicode・URL予約文字・不正query・未登録Feature・既存root URL互換性を確認する。生成FeatureホストのUIテストで保存済みRecords IDを読み、Counter画面から不正ID拒否と正しい詳細URL遷移を検証する。結果待ち。通知payloadと複数通知の接続は次段階であり、この変更だけでv1.0のシステム連携完了とはしない。

@@ -3,7 +3,7 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
-    func testRecordsUsesIndependentHostStorage() {
+    func testRecordsUsesIndependentHostStorage() throws {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
@@ -26,6 +26,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         tap(app.buttons["miniapp.records"])
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "records.row.", String(title))).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        let recordID = String(row.identifier.dropFirst("records.row.".count))
+        XCTAssertNotNil(UUID(uuidString: recordID))
         tap(row)
         XCTAssertTrue(app.staticTexts["records.body"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
@@ -33,6 +36,11 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.navigationBars.buttons["ミニアプリ"])
         tap(app.buttons["miniapp.counter"])
         XCTAssertEqual(app.staticTexts["counter.value"].label, counterValue)
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/records?destination=invalid")))
+        XCTAssertTrue(app.staticTexts["counter.value"].exists)
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/records?destination=\(recordID)")))
+        XCTAssertTrue(app.staticTexts["records.body"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
     }
 
     func testGeneratedFeatureCoexistsAndRoutesInHost() throws {

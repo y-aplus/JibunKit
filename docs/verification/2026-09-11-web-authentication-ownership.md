@@ -19,3 +19,5 @@ The native adapter creates `ASWebAuthenticationSession`, assigns the supplied `p
 ## Evidence boundary
 
 The focused suite does not present the OS authentication UI and does not contact an OAuth provider. It therefore does not claim consent-sheet behavior, browser SSO behavior, registered callback routing, or successful external login. Those require a configured app/provider and device or Simulator UI verification.
+
+Run 34534109606, source `27d6b186739ac06dc6be9e199fe290a3d29e8ba8`, stopped during shared-package compilation because the runtime extension and cleanup method are separate files while `close()` was declared `fileprivate`. The cleanup remains module-internal and is reverified after correcting that access level.

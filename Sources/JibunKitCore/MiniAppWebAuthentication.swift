@@ -133,7 +133,7 @@ public final class MiniAppWebAuthentication {
 
     public func cancel() { coordinator.cancel(owner: owner) }
 
-    fileprivate func close() {
+    func close() {
         guard !isClosed else { return }
         isClosed = true
         cancel()

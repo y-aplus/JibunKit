@@ -23,6 +23,10 @@ on:
         description: Optional Xcode test identifier for focused diagnostics (empty runs the normal suite)
         type: string
         default: ''
+      focused_ui_validation:
+        description: Run only one ui_test_filter target and skip normal build and regression stages
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -71,6 +75,32 @@ jobs:
 
           test "$forbidden" -eq 0
 
+      - name: Validate focused UI inputs
+        if: inputs.focused_ui_validation
+        env:
+          UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.simulator_tests }}" != "true" ]]; then
+            echo "error: ui_test_filter requires simulator_tests=true" >&2
+            exit 1
+          fi
+          if [[ -z "$UI_TEST_FILTER" ]]; then
+            echo "error: focused_ui_validation requires ui_test_filter" >&2
+            exit 1
+          fi
+          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
+            echo "error: focused ui_test_filter cannot be combined with feature_validation" >&2
+            exit 1
+          fi
+          if [[ -n "$FEATURE_UI_TEST_FILTER" ]]; then
+            echo "error: focused_ui_validation cannot use feature_ui_test_filter" >&2
+            exit 1
+          fi
+          python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER"
+
       - name: Select Xcode 26.6
         shell: bash
         run: |
@@ -93,15 +123,18 @@ jobs:
           "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
+        if: ${{ !inputs.focused_ui_validation }}
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
       - name: Measure backup memory in separate test processes
+        if: ${{ !inputs.focused_ui_validation }}
         run: |
           swift test --skip-build --filter LargeAttachmentBackupTests/testLargeAttachmentRoundTripWithoutWholeFileData
           swift test --skip-build --filter LargeAttachmentBackupTests/testLegacyPayloadMemoryBaseline
 
       - name: Test independent Feature packages
+        if: ${{ !inputs.focused_ui_validation }}
         run: python3 Tools/test-module-packages.py Modules
 
       - name: Build independent Records app
@@ -137,6 +170,14 @@ jobs:
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsNotifications.swift', 'Sources/JibunKit/RecordsNotifications.swift')
+          keychain_probe = Path('Tests/TemplateIntegration/KeychainAccessControlProbe.swift')
+          keychain_tests = Path('Tests/TemplateIntegration/KeychainAccessControlUITests.swift')
+          if keychain_probe.exists() != keychain_tests.exists():
+              raise SystemExit('Keychain access-control integration fixtures must be added together')
+          include_keychain_probe = keychain_probe.exists()
+          if include_keychain_probe:
+              shutil.copyfile(keychain_probe, 'Sources/JibunKit/KeychainAccessControlProbe.swift')
+              shutil.copyfile(keychain_tests, 'UITests/KeychainAccessControlUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -151,6 +192,8 @@ jobs:
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
+          if include_keychain_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -164,6 +207,7 @@ jobs:
           xcodebuild -workspace JibunKit.xcworkspace -list
 
       - name: Build with Xcode
+        if: ${{ !inputs.focused_ui_validation }}
         shell: bash
         run: |
           set -euo pipefail
@@ -176,6 +220,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
       - name: Verify, ad-hoc sign, and package IPA
+        if: ${{ !inputs.focused_ui_validation }}
         shell: bash
         run: |
           set -euo pipefail
@@ -275,6 +320,7 @@ jobs:
           shasum --algorithm 256 artifacts/JibunKit.ipa
 
       - name: Upload IPA
+        if: ${{ !inputs.focused_ui_validation }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: JibunKit-ad-hoc
@@ -313,7 +359,7 @@ jobs:
           xcrun simctl bootstatus "$sim_id" -b
 
       - name: Build and install standalone Counter
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
         run: |
           set -euo pipefail
@@ -349,7 +395,7 @@ jobs:
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
 
       - name: Build and install backup UI harness
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))
         shell: bash
         run: |
           set -euo pipefail
@@ -380,6 +426,10 @@ jobs:
             "${selection[@]}" \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
+          if [[ "${{ inputs.focused_ui_validation }}" == "true" ]]; then
+            python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" \
+              --log "$RUNNER_TEMP/simulator-tests.log"
+          fi
 
       - name: Run Files backup round trip
         if: ${{ !cancelled() && inputs.simulator_tests && inputs.ui_test_filter == '' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}

@@ -39,3 +39,27 @@ Tuistが生成したentitlementsをXcode設定とCIのad-hoc署名の両方で�
 この合成はcapabilityを取得せず、プロビジョニングを購入/変更しない。background modeが書けてもscheduler登録・期限・再配送が実装されたわけではなく、権限用途説明があってもFeature別同意は未実装。OSの同意単位はホストアプリのままである。署名依存の必然的な条件と、残るJibunKit実装の仕事を混同しない。
 
 [検証記録](../verification/2026-09-11-feature-build-requirements.md)と、Tuist公式の[コード共有](https://docs.tuist.dev/en/guides/features/projects/code-sharing)、[entitlements](https://tuist.github.io/tuist/main/documentation/projectdescription/entitlements/)を参照。
+
+## 多言語InfoPlist.strings
+
+用途説明はFeatureごとの`localizedInfoPlist[locale][key]`として登録する。同一locale/keyが同値なら保持し、異なる場合はhostが`localizedInfoPlistResolutions`へ最終文言を明記する。空locale/key、未要求locale/keyへのresolutionは拒否する。
+
+```swift
+let app = FeatureBuildConfiguration(features: [
+    .init(owner: "camera", localizedInfoPlist: [
+        "en": ["NSCameraUsageDescription": "Take photos"],
+        "ja": ["NSCameraUsageDescription": "写真を撮影します"],
+    ]),
+    .init(owner: "scanner", localizedInfoPlist: [
+        "en": ["NSCameraUsageDescription": "Scan documents"],
+        "ja": ["NSCameraUsageDescription": "書類を撮影します"],
+    ]),
+], localizedInfoPlistResolutions: [
+    "en": ["NSCameraUsageDescription": "Use the camera to scan documents"],
+    "ja": ["NSCameraUsageDescription": "カメラで書類を撮影します"],
+])
+let build = try app.compose(infoPlist: hostPlist, entitlements: hostEntitlements)
+try build.writeLocalizedInfoPlistStrings(to: "Derived/AppInfo")
+```
+
+生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。

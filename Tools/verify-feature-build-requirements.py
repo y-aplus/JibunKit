@@ -42,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-build-requirements-") as temp:
     if not args.build_probe:
         raise SystemExit(0)
     shutil.copytree(helpers, root / "Tuist/ProjectDescriptionHelpers")
-    for name in ["Project.swift", "App.swift"]:
+    for name in ["Project.swift", "App.swift", "Widget.swift"]:
         source = name + ".fixture" if name == "Project.swift" else name
         shutil.copyfile(repo / "Tests/BuildRequirements" / source, root / name)
     run(["tuist", "generate", "--no-open"], cwd=root)
@@ -58,6 +58,19 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-build-requirements-") as temp:
     assert info["NSCameraUsageDescription"] == "Camera takes photos; Scanner scans documents"
     assert info["UIBackgroundModes"] == ["audio", "processing"]
     assert info["BGTaskSchedulerPermittedIdentifiers"] == ["com.jibunkit.build-scanner.refresh"]
+    readback = root / "bundle-readback"
+    run(["swiftc", repo / "Tests/BuildRequirements/BundleReadback.swift", "-o", readback])
+    run([readback, app, "en", "NSCameraUsageDescription", "Use camera to scan documents"])
+    run([readback, app, "ja", "NSCameraUsageDescription", "カメラで書類を撮影します"])
+    extensions = list(app.glob("PlugIns/*.appex"))
+    assert len(extensions) == 1, extensions
+    widget = extensions[0]
+    run([readback, widget, "en", "CFBundleDisplayName", "Build Probe Widget"])
+    run([readback, widget, "ja", "CFBundleDisplayName", "ビルド検証ウィジェット"])
+    app_localizations = {path.name for path in app.glob("*.lproj")}
+    widget_localizations = {path.name for path in widget.glob("*.lproj")}
+    assert {"en.lproj", "ja.lproj"} <= app_localizations
+    assert {"en.lproj", "ja.lproj"} <= widget_localizations
     entitlements = list((root / "Derived").rglob("BuildRequirementProbe.entitlements"))
     assert len(entitlements) == 1, entitlements
     run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",

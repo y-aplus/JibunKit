@@ -7,31 +7,51 @@ public struct FeatureBuildRequirement: Sendable {
     public let owner: String
     public let infoPlist: [String: Plist.Value]
     public let entitlements: [String: Plist.Value]
+    public let localizedInfoPlist: [String: [String: String]]
 
     public init(owner: String, infoPlist: [String: Plist.Value] = [:],
-                entitlements: [String: Plist.Value] = [:]) {
+                entitlements: [String: Plist.Value] = [:],
+                localizedInfoPlist: [String: [String: String]] = [:]) {
         self.owner = owner
         self.infoPlist = infoPlist
         self.entitlements = entitlements
+        self.localizedInfoPlist = localizedInfoPlist
     }
 }
 
 public struct ComposedFeatureBuild: Sendable {
     public let infoPlist: [String: Plist.Value]
     public let entitlements: [String: Plist.Value]
+    public let localizedInfoPlist: [String: [String: String]]
+
+    /// Writes standard locale.lproj/InfoPlist.strings property-list resources.
+    public func writeLocalizedInfoPlistStrings(to directory: String) throws {
+        let root = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for (locale, values) in localizedInfoPlist {
+            let folder = root.appendingPathComponent("\(locale).lproj", isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let data = try PropertyListSerialization.data(
+                fromPropertyList: values, format: .xml, options: 0)
+            try data.write(to: folder.appendingPathComponent("InfoPlist.strings"), options: .atomic)
+        }
+    }
 }
 
 public struct FeatureBuildConfiguration: Sendable {
     public let features: [FeatureBuildRequirement]
     public let infoPlistResolutions: [String: Plist.Value]
     public let entitlementResolutions: [String: Plist.Value]
+    public let localizedInfoPlistResolutions: [String: [String: String]]
 
     public init(features: [FeatureBuildRequirement] = [],
                 infoPlistResolutions: [String: Plist.Value] = [:],
-                entitlementResolutions: [String: Plist.Value] = [:]) {
+                entitlementResolutions: [String: Plist.Value] = [:],
+                localizedInfoPlistResolutions: [String: [String: String]] = [:]) {
         self.features = features
         self.infoPlistResolutions = infoPlistResolutions
         self.entitlementResolutions = entitlementResolutions
+        self.localizedInfoPlistResolutions = localizedInfoPlistResolutions
     }
 
     public func compose(infoPlist: [String: Plist.Value],
@@ -54,7 +74,8 @@ public struct FeatureBuildConfiguration: Sendable {
             entitlements: merge(kind: "entitlements", host: entitlements,
                 contributions: features.map { ($0.owner, $0.entitlements) },
                 resolutions: entitlementResolutions,
-                stringSetKeys: ["com.apple.security.application-groups", "keychain-access-groups", "com.apple.developer.associated-domains"])
+                stringSetKeys: ["com.apple.security.application-groups", "keychain-access-groups", "com.apple.developer.associated-domains"]),
+            localizedInfoPlist: try mergeLocalizedInfoPlist()
         )
     }
 
@@ -100,5 +121,45 @@ public struct FeatureBuildConfiguration: Sendable {
             }
         }
         return result
+    }
+
+    private func mergeLocalizedInfoPlist() throws -> [String: [String: String]] {
+        let requestedLocales = Set(features.flatMap { $0.localizedInfoPlist.keys })
+        for locale in localizedInfoPlistResolutions.keys where !requestedLocales.contains(locale) {
+            throw Failure("Unused InfoPlist.strings resolution for locale \(locale)")
+        }
+        var output: [String: [String: String]] = [:]
+        for locale in requestedLocales.sorted() {
+            guard !locale.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw Failure("InfoPlist.strings locale must be nonempty")
+            }
+            let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+            guard locale.unicodeScalars.allSatisfy(allowed.contains) else {
+                throw Failure("InfoPlist.strings locale contains invalid characters: \(locale)")
+            }
+            let requestedKeys = Set(features.flatMap { feature -> [String] in
+                feature.localizedInfoPlist[locale].map { Array($0.keys) } ?? []
+            })
+            let resolutions = localizedInfoPlistResolutions[locale] ?? [:]
+            for key in resolutions.keys where !requestedKeys.contains(key) {
+                throw Failure("Unused InfoPlist.strings resolution for locale \(locale) key \(key)")
+            }
+            for key in requestedKeys.sorted() {
+                guard !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                    throw Failure("InfoPlist.strings key must be nonempty for locale \(locale)")
+                }
+                let requests = features.compactMap { feature in
+                    feature.localizedInfoPlist[locale]?[key].map { (feature.owner, $0) }
+                }
+                if let resolution = resolutions[key] {
+                    output[locale, default: [:]][key] = resolution
+                } else if let first = requests.first?.1, requests.allSatisfy({ $0.1 == first }) {
+                    output[locale, default: [:]][key] = first
+                } else {
+                    throw Failure("Conflicting InfoPlist.strings locale \(locale) key \(key) requested by \(requests.map(\.0).joined(separator: ", ")); add an explicit resolution")
+                }
+            }
+        }
+        return output
     }
 }

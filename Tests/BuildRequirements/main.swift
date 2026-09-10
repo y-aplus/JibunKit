@@ -69,4 +69,39 @@ require(identical.infoPlist == base, "Identical setting rejected")
 let entitlementResolution = try FeatureBuildConfiguration(features: [.init(owner: "push", entitlements: ["aps-environment": "production"])],
     entitlementResolutions: ["aps-environment": "development"]).compose(infoPlist: [:], entitlements: ["aps-environment": "development"])
 require(entitlementResolution.entitlements["aps-environment"] == "development", "Explicit entitlement resolution ignored")
+let localizedA = FeatureBuildRequirement(owner: "localized-a", localizedInfoPlist: [
+    "en": ["NSCameraUsageDescription": "Use camera", "CFBundleDisplayName": "Shared"],
+    "ja": ["NSCameraUsageDescription": "カメラを使用", "CFBundleDisplayName": "共有"],
+])
+let localizedB = FeatureBuildRequirement(owner: "localized-b", localizedInfoPlist: [
+    "en": ["NSCameraUsageDescription": "Scan documents", "CFBundleDisplayName": "Shared"],
+    "ja": ["NSCameraUsageDescription": "書類を撮影", "CFBundleDisplayName": "共有"],
+])
+reject("locale en key NSCameraUsageDescription") {
+    _ = try FeatureBuildConfiguration(features: [localizedA, localizedB]).compose(infoPlist: [:], entitlements: [:])
+}
+let localized = try FeatureBuildConfiguration(features: [localizedA, localizedB],
+    localizedInfoPlistResolutions: [
+        "en": ["NSCameraUsageDescription": "Use camera to scan documents"],
+        "ja": ["NSCameraUsageDescription": "カメラで書類を撮影します"],
+    ]).compose(infoPlist: [:], entitlements: [:])
+require(localized.localizedInfoPlist["en"]?["CFBundleDisplayName"] == "Shared", "Identical localized value lost")
+require(localized.localizedInfoPlist["ja"]?["NSCameraUsageDescription"] == "カメラで書類を撮影します", "Localized resolution ignored")
+let widgetLocalized = try FeatureBuildConfiguration(features: [
+    .init(owner: "widget", localizedInfoPlist: ["en": ["CFBundleDisplayName": "Probe Widget"]])
+]).compose(infoPlist: [:], entitlements: [:])
+require(widgetLocalized.localizedInfoPlist["en"]?["CFBundleDisplayName"] == "Probe Widget", "Widget localization lost")
+require(widgetLocalized.localizedInfoPlist["ja"] == nil && localized.localizedInfoPlist["en"]?["CFBundleDisplayName"] != "Probe Widget", "Target localizations leaked")
+reject("invalid characters") {
+    _ = try FeatureBuildConfiguration(features: [.init(owner: "bad-locale", localizedInfoPlist: ["../ja": ["Key": "Value"]])])
+        .compose(infoPlist: [:], entitlements: [:])
+}
+reject("key must be nonempty") {
+    _ = try FeatureBuildConfiguration(features: [.init(owner: "bad-key", localizedInfoPlist: ["en": [" ": "Value"]])])
+        .compose(infoPlist: [:], entitlements: [:])
+}
+reject("Unused InfoPlist.strings resolution") {
+    _ = try FeatureBuildConfiguration(features: [localizedA], localizedInfoPlistResolutions: ["en": ["Unused": "Value"]])
+        .compose(infoPlist: [:], entitlements: [:])
+}
 print("Feature build requirement checks passed: baseline, union, conflict, resolution, custom values, target isolation, validation")

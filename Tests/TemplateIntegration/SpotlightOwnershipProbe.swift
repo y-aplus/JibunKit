@@ -40,7 +40,8 @@ final class SpotlightOwnershipProbeState {
                 a.domainIdentifier: "owner-a native metadata",
                 b.domainIdentifier: "owner-b native metadata",
             ] else {
-                throw SpotlightOwnershipProbe.Failure.unexpectedMetadata
+                throw SpotlightOwnershipProbe.Failure.unexpectedMetadata(
+                    SpotlightOwnershipProbe.details(before))
             }
 
             try await a.deleteAll(from: index)
@@ -51,7 +52,8 @@ final class SpotlightOwnershipProbeState {
             guard SpotlightOwnershipProbe.metadata(after) == [
                 b.domainIdentifier: "owner-b native metadata"
             ] else {
-                throw SpotlightOwnershipProbe.Failure.unexpectedMetadata
+                throw SpotlightOwnershipProbe.Failure.unexpectedMetadata(
+                    SpotlightOwnershipProbe.details(after))
             }
 
             print("SPOTLIGHT_OWNERSHIP before=\(before.map(\.uniqueIdentifier).sorted())")
@@ -70,7 +72,7 @@ final class SpotlightOwnershipProbeState {
 enum SpotlightOwnershipProbe {
     enum Failure: Error {
         case unexpectedItems([String])
-        case unexpectedMetadata
+        case unexpectedMetadata([String])
     }
 
     private static let state = SpotlightOwnershipProbeState()

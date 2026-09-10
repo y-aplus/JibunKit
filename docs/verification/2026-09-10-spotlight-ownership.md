@@ -32,3 +32,5 @@ run 34492877334、source `6e8b6bcfdef01614959349467356ea3bc3171bdf`ではpure na
 run 34494850967、source `9ce1771a7197de7a561dcdeca487ed77929de554`でも署名済みprobeのqueryは0件だった。引用符だけが原因ではない。Appleのquery guideはpredicateの属性名を`CSSearchableItemAttributeSet`のproperty（例: `title`）にするよう定めている一方、`uniqueIdentifier`は`CSSearchableItem`自身のpropertyである。そこでUUIDを含むnative `title`で対象を検索し、`CSSearchQueryContext.fetchAttributes`で`title`と`textContent`を取得したうえで、返却itemの`uniqueIdentifier`と`domainIdentifier`を所有権の証拠として比較するよう修正した。
 
 run 34498386522、source `76ef0c24e8bac7f838a933da08b9d502d2d1db6a`ではtitle queryにより期待するidentifier群を読み戻せたが、metadata比較が失敗した。`CSSearchQueryContext`は要求した属性だけを返すため、所有者の証拠に使うnative `domainIdentifier`も`fetchAttributes`へ追加した。
+
+run 34500239424、source `f0428b638b94c98c860a1b0ebb5c1d2ae828236e`はprobeが`running`のままUI testの40秒待機を超えた。取得属性を増やしたqueryの反復時間を考慮してUI待機を90秒へ延ばし、before/after-deleteの実行段階と最終返却itemの詳細が失敗時のaccessibility treeに残るようにした。

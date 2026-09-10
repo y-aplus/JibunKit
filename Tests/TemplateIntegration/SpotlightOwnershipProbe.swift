@@ -32,6 +32,7 @@ final class SpotlightOwnershipProbeState {
 
             try await a.index(localIdentifier: localIdentifier, attributes: aAttributes, in: index)
             try await b.index(localIdentifier: localIdentifier, attributes: bAttributes, in: index)
+            result = "querying-before-delete"
             let before = try await SpotlightOwnershipProbe.queryEventually(
                 titles: titles, expectedIdentifiers: Set([aIdentifier, bIdentifier]))
             print("SPOTLIGHT_OWNERSHIP queriedBefore=\(SpotlightOwnershipProbe.details(before))")
@@ -43,6 +44,7 @@ final class SpotlightOwnershipProbeState {
             }
 
             try await a.deleteAll(from: index)
+            result = "querying-after-delete"
             let after = try await SpotlightOwnershipProbe.queryEventually(
                 titles: titles, expectedIdentifiers: Set([bIdentifier]))
             print("SPOTLIGHT_OWNERSHIP queriedAfter=\(SpotlightOwnershipProbe.details(after))")
@@ -67,7 +69,7 @@ final class SpotlightOwnershipProbeState {
 @MainActor
 enum SpotlightOwnershipProbe {
     enum Failure: Error {
-        case unexpectedItems
+        case unexpectedItems([String])
         case unexpectedMetadata
     }
 
@@ -100,12 +102,14 @@ enum SpotlightOwnershipProbe {
     static func queryEventually(
         titles: [String], expectedIdentifiers: Set<String>
     ) async throws -> [CSSearchableItem] {
+        var lastItems: [CSSearchableItem] = []
         for _ in 0..<40 {
             let items = try await query(titles: titles)
             if Set(items.map(\.uniqueIdentifier)) == expectedIdentifiers { return items }
+            lastItems = items
             try await Task.sleep(nanoseconds: 250_000_000)
         }
-        throw Failure.unexpectedItems
+        throw Failure.unexpectedItems(details(lastItems))
     }
 
     private static func query(titles: [String]) async throws -> [CSSearchableItem] {

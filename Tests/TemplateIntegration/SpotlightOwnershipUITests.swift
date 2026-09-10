@@ -18,7 +18,7 @@ final class SpotlightOwnershipUITests: XCTestCase {
 
         let passed = app.staticTexts.matching(identifier: "spotlight.ownership.result")
             .matching(NSPredicate(format: "label == %@", "passed")).firstMatch
-        XCTAssertTrue(passed.waitForExistence(timeout: 40), app.debugDescription)
+        XCTAssertTrue(passed.waitForExistence(timeout: 90), app.debugDescription)
         print("SPOTLIGHT_OWNERSHIP_UI result=passed")
     }
 }

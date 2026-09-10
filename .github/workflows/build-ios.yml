@@ -203,6 +203,14 @@ jobs:
           if include_spotlight_probe:
               shutil.copyfile(spotlight_probe, 'Sources/JibunKit/SpotlightOwnershipProbe.swift')
               shutil.copyfile(spotlight_tests, 'UITests/SpotlightOwnershipUITests.swift')
+          web_storage_probe = Path('Tests/TemplateIntegration/WebStorageOwnershipProbe.swift')
+          web_storage_tests = Path('Tests/TemplateIntegration/WebStorageOwnershipUITests.swift')
+          if web_storage_probe.exists() != web_storage_tests.exists():
+              raise SystemExit('Web storage ownership integration fixtures must be added together')
+          include_web_storage_probe = web_storage_probe.exists()
+          if include_web_storage_probe:
+              shutil.copyfile(web_storage_probe, 'Sources/JibunKit/WebStorageOwnershipProbe.swift')
+              shutil.copyfile(web_storage_tests, 'UITests/WebStorageOwnershipUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -221,6 +229,8 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           if include_spotlight_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
+          if include_web_storage_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        WebStorageOwnershipProbe.ownerADefinition,\n        WebStorageOwnershipProbe.ownerBDefinition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

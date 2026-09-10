@@ -365,9 +365,9 @@ private struct SceneNavigationProbeView: View {
         VStack {
             Text("A=\(first.path.count) B=\(second.path.count)")
                 .accessibilityIdentifier("scene.navigation.result")
-            Button("Open A") { first.open(.counter) }.accessibilityIdentifier("scene.navigation.a.open")
+            Button("Open A") { first.open(MiniAppID("counter")) }.accessibilityIdentifier("scene.navigation.a.open")
             Button("Push A") { first.path.append("detail-a") }.accessibilityIdentifier("scene.navigation.a.push")
-            Button("Open B") { second.open(.counter) }.accessibilityIdentifier("scene.navigation.b.open")
+            Button("Open B") { second.open(MiniAppID("counter")) }.accessibilityIdentifier("scene.navigation.b.open")
             Button("Push B") { second.path.append("detail-b") }.accessibilityIdentifier("scene.navigation.b.push")
             Button("Notification to list") { router.open(nil) }.accessibilityIdentifier("scene.navigation.route")
             Button("Activate A") {

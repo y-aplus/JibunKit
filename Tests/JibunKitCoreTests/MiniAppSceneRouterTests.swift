@@ -11,34 +11,34 @@ final class MiniAppSceneRouterTests: XCTestCase {
     @MainActor
     func testOnlySelectedSceneReceivesRoutesAcrossActivationAndRemoval() throws {
         let router = MiniAppSceneRouter()
-        let counter = try route(.counter)
+        let target = try route(MiniAppID("scene-test"))
         var first: [MiniAppRoute?] = []
         var second: [MiniAppRoute?] = []
         let a = router.register(isActive: true) { first.append($0) }
         let b = router.register(isActive: false) { second.append($0) }
-        router.open(counter)
-        XCTAssertEqual(first, [counter])
+        router.open(target)
+        XCTAssertEqual(first, [target])
         XCTAssertTrue(second.isEmpty)
         router.update(b, isActive: true)
         router.open(nil)
         XCTAssertEqual(second, [nil])
-        XCTAssertEqual(first, [counter])
+        XCTAssertEqual(first, [target])
         router.update(a, isActive: true) // An unchanged phase does not steal focus.
-        router.open(counter)
-        XCTAssertEqual(second, [nil, counter])
+        router.open(target)
+        XCTAssertEqual(second, [nil, target])
         router.update(a, isActive: false)
         router.update(a, isActive: true)
-        router.open(counter)
-        XCTAssertEqual(first, [counter, counter])
+        router.open(target)
+        XCTAssertEqual(first, [target, target])
         router.unregister(a)
         router.open(nil)
-        XCTAssertEqual(second, [nil, counter, nil])
+        XCTAssertEqual(second, [nil, target, nil])
         router.unregister(b)
         router.update(a, isActive: true) // Stale registrations cannot return.
-        router.open(counter)
+        router.open(target)
         var replacement: [MiniAppRoute?] = []
         router.register(isActive: true) { replacement.append($0) }
-        XCTAssertEqual(replacement, [counter])
+        XCTAssertEqual(replacement, [target])
         XCTAssertEqual(first.count, 2)
         XCTAssertEqual(second.count, 3)
     }
@@ -46,14 +46,14 @@ final class MiniAppSceneRouterTests: XCTestCase {
     @MainActor
     func testColdStartLatestLocationAndInactiveFallback() throws {
         let router = MiniAppSceneRouter()
-        let counter = try route(.counter)
-        router.open(counter)
+        let target = try route(MiniAppID("scene-test"))
+        router.open(target)
         router.open(nil)
         var delivered: [MiniAppRoute?] = []
         router.register(isActive: false) { delivered.append($0) }
         XCTAssertEqual(delivered, [nil], "List request must not disappear as an empty optional")
-        router.open(counter)
-        XCTAssertEqual(delivered, [nil, counter])
+        router.open(target)
+        XCTAssertEqual(delivered, [nil, target])
         var later: [MiniAppRoute?] = []
         router.register(isActive: false) { later.append($0) }
         router.open(nil)
@@ -64,7 +64,7 @@ final class MiniAppSceneRouterTests: XCTestCase {
     @MainActor
     func testReentrantRoutingUsesTheSurvivingSceneAfterCurrentDelivery() throws {
         let router = MiniAppSceneRouter()
-        let counter = try route(.counter)
+        let target = try route(MiniAppID("scene-test"))
         var events: [String] = []
         var firstID: UUID?
         firstID = router.register(isActive: true) { _ in
@@ -74,7 +74,7 @@ final class MiniAppSceneRouterTests: XCTestCase {
             router.open(nil)
             events.append("first ends")
         }
-        router.open(counter)
+        router.open(target)
         XCTAssertEqual(events, ["first begins", "first ends", "replacement"])
     }
 }

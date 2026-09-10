@@ -144,6 +144,14 @@ jobs:
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
+      - name: Verify Feature build requirements
+        if: ${{ !inputs.focused_ui_validation }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
+          python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+
       - name: Measure backup memory in separate test processes
         if: ${{ !inputs.focused_ui_validation }}
         run: |
@@ -345,10 +353,14 @@ jobs:
             "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)"
 
+          widget_entitlements_file="$(find Derived -type f -name 'JibunKitWidget-Extension.entitlements')"
+          app_entitlements_file="$(find Derived -type f -name 'JibunKit-App.entitlements')"
+          test -f "$widget_entitlements_file"
+          test -f "$app_entitlements_file"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements JibunKitWidget.entitlements "$widget"
+            --entitlements "$widget_entitlements_file" "$widget"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements JibunKit.entitlements "$app"
+            --entitlements "$app_entitlements_file" "$app"
           codesign --verify --deep --strict "$app"
           app_entitlements="$(codesign --display --entitlements :- "$app" 2>&1)"
           widget_entitlements="$(codesign --display --entitlements :- "$widget" 2>&1)"
@@ -556,6 +568,15 @@ jobs:
           path: |
             ${{ runner.temp }}/simulator-tests.log
             ${{ runner.temp }}/simulator-app.log
+          retention-days: 14
+
+      - name: Upload build requirement diagnostics
+        if: always() && !inputs.focused_ui_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Feature-build-requirement-diagnostics
+          path: ${{ runner.temp }}/feature-build-requirements.log
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Upload backup picker diagnostics

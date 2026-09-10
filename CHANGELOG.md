@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 - Core SpotlightのFeature別item/domain識別子と所有者限定削除を追加。native属性を保持し、Aの削除後もBの検索結果が残ることを署名付きiOS hostで検証。検索結果からの画面遷移はまだ接続していない。
+- FeatureのInfo.plist/entitlements要求をTuistで合成する仕組みを追加。異なる値の衝突を検出し、明示resolutionと限定した文字列集合の合成を提供。IPA署名もTuistの生成entitlementsを使う。
 
 - 通常の保存操作を共有バックアップと調停する`withStoreAccess`を追加。同じFeatureの通常アクセスは並行でき、処理中の復元/snapshotと、復元中の新規アクセスを拒否する。他Featureは継続し、画面はデータ使用中を案内する。
 

@@ -1,4 +1,23 @@
 import ProjectDescription
+import ProjectDescriptionHelpers
+
+let sharedEntitlements: [String: Plist.Value] = [
+    "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
+]
+let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
+    "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.3.0",
+    "CFBundleVersion": "4", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "UILaunchScreen": [:],
+    "CFBundleURLTypes": [[
+        "CFBundleURLName": "com.jibunkit.app.mini-app",
+        "CFBundleURLSchemes": ["jibunkit"],
+    ]],
+], entitlements: sharedEntitlements)
+let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: [
+    "CFBundleShortVersionString": "0.3.0", "CFBundleVersion": "4",
+    "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
+], entitlements: sharedEntitlements)
 
 let project = Project(
     name: "JibunKit",
@@ -15,17 +34,9 @@ let project = Project(
         .target(
             name: "JibunKit-App", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
-            infoPlist: .extendingDefault(with: [
-                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.3.0",
-                "CFBundleVersion": "4", "JibunKitAppGroup": "group.com.jibunkit.shared",
-                "UILaunchScreen": [:],
-                "CFBundleURLTypes": [[
-                    "CFBundleURLName": "com.jibunkit.app.mini-app",
-                    "CFBundleURLSchemes": ["jibunkit"],
-                ]],
-            ]),
+            infoPlist: .extendingDefault(with: appBuild.infoPlist),
             sources: ["Sources/JibunKit/**"],
-            entitlements: "JibunKit.entitlements",
+            entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension")]
@@ -33,13 +44,9 @@ let project = Project(
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
             bundleId: "com.jibunkit.app.Widget", deploymentTargets: .iOS("26.0"),
-            infoPlist: .extendingDefault(with: [
-                "CFBundleShortVersionString": "0.3.0", "CFBundleVersion": "4",
-                "JibunKitAppGroup": "group.com.jibunkit.shared",
-                "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
-            ]),
+            infoPlist: .extendingDefault(with: widgetBuild.infoPlist),
             sources: ["Sources/JibunKitWidget/**"],
-            entitlements: "JibunKitWidget.entitlements",
+            entitlements: .dictionary(widgetBuild.entitlements),
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),
         .target(

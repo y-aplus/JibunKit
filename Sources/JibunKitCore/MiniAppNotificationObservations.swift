@@ -29,15 +29,15 @@ public final class MiniAppNotificationObservation: @unchecked Sendable {
     /// Idempotently deactivates delivery and removes the Foundation observer.
     public func cancel() {
         deactivate()
-        let observer = lock.withLock { () -> (any NSObjectProtocol)? in
-            defer {
-                nativeObserver = nil
-                retainedObject = nil
-            }
-            return nativeObserver
+        let removed = lock.withLock { () -> ((any NSObjectProtocol)?, AnyObject?) in
+            let removed = (nativeObserver, retainedObject)
+            nativeObserver = nil
+            retainedObject = nil
+            return removed
         }
-        if let observer { center.removeObserver(observer) }
+        if let observer = removed.0 { center.removeObserver(observer) }
         removeFromOwner()
+        withExtendedLifetime(removed.1) {}
     }
 
     deinit { cancel() }
@@ -104,7 +104,8 @@ private final class NotificationObservationRegistry: @unchecked Sendable {
     }
 
     func remove(id: UUID) {
-        lock.withLock { observations[id] = nil }
+        let removed = lock.withLock { observations.removeValue(forKey: id) }
+        withExtendedLifetime(removed) {}
     }
 
     func removeAll() -> [MiniAppNotificationObservation] {
@@ -126,10 +127,13 @@ private final class NotificationDeliveryState<Value: Sendable>: @unchecked Senda
 
     func canExtract() -> Bool { lock.withLock { active } }
     func deactivate() {
-        lock.withLock {
+        let removedReceive = lock.withLock { () -> (@MainActor @Sendable (Value) -> Void)? in
             active = false
+            let removedReceive = receive
             receive = nil
+            return removedReceive
         }
+        withExtendedLifetime(removedReceive) {}
     }
 
     func enqueue(_ value: Value) {

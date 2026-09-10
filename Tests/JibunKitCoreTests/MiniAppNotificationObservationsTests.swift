@@ -125,6 +125,34 @@ final class MiniAppNotificationObservationsTests: XCTestCase, @unchecked Sendabl
     }
 
     @MainActor
+    func testReceiverDeinitCanReenterTokenCancellationWithoutDeadlock() async throws {
+        let center = NotificationCenter()
+        let observations = MiniAppNotificationObservations()
+        let cancellationReturned = expectation(description: "cancellation returned")
+        let receiverReleased = expectation(description: "receiver deinitialized")
+
+        let observation: MiniAppNotificationObservation
+        do {
+            let receiver = ReentrantCancellationProbe {
+                receiverReleased.fulfill()
+            }
+            observation = try observations.observe(
+                center: center,
+                name: Notification.Name("reentrant-cancellation"),
+                extract: intValue
+            ) { [receiver] _ in }
+            receiver.observation = observation
+        }
+
+        DispatchQueue.global().async {
+            observation.cancel()
+            cancellationReturned.fulfill()
+        }
+
+        await fulfillment(of: [cancellationReturned, receiverReleased], timeout: 1)
+    }
+
+    @MainActor
     func testReleasingOwnerRemovesNativeObserverAndReceiver() async throws {
         let center = NotificationCenter()
         let name = Notification.Name("released-owner")
@@ -250,6 +278,20 @@ private final class WeakObservation {
 
     init(_ value: MiniAppNotificationObservation) {
         self.value = value
+    }
+}
+
+private final class ReentrantCancellationProbe: @unchecked Sendable {
+    weak var observation: MiniAppNotificationObservation?
+    private let onDeinit: @Sendable () -> Void
+
+    init(onDeinit: @escaping @Sendable () -> Void) {
+        self.onDeinit = onDeinit
+    }
+
+    deinit {
+        observation?.cancel()
+        onDeinit()
     }
 }
 

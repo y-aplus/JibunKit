@@ -42,6 +42,9 @@ https://developer.apple.com/documentation/Foundation/NotificationCenter/addObser
 - release of a receiver captured by an individually cancelled registration,
   and synchronous removal of that token from an owner collection that remains
   usable;
+- reentrant cancellation from receiver deinitialization, with cancellation run
+  off the test thread and bounded by a one-second expectation so a regression
+  fails promptly instead of blocking the entire test process;
 - collection deinitialization removing its native observer and releasing the
   receiver;
 - a reentrant post and ordered main-actor delivery;

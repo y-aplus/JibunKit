@@ -42,3 +42,13 @@ unitは二Featureと同Featureの別profileへ同じURLの異なるcacheを置�
 保存形式の追加レビューで、plistに変換できるだけではFoundationが同じCookieへ復元できる保証が不足していたため、書込み前に再構築した期限・送信先・保護属性等を照合する。復元できない場合は古い保存を維持してthrowする。archive version 1の絶対期限契約に反するMax-Ageが入ったデータもreloadで拒否する。Appleの[maximumAge](https://developer.apple.com/documentation/foundation/httpcookiepropertykey/maximumage)と[expires](https://developer.apple.com/documentation/foundation/httpcookiepropertykey/expires)はCookie versionによる扱いが異なるため、plist化だけで全versionの再生成が安全とは判定しない。
 
 異常系（不正version/構造/必須項目、正常entry後の不正entry、相対期限）はliveと保存dataの保持を検査。Max-Age受信Cookieの繰り返しsave/reloadで絶対期限・Secure/HttpOnly維持を検査。同Featureの三profileは同じserverから永続Cookieを受け、session再生成・redirect送信・サーバーlogout/ローカルlogoutと残りprofile保持まで一つのHTTP試験で扱う。CI待ち。接続ガイドとD09の現在記述も更新した。
+
+## Cookie保存補強の結果とパスワード資格情報
+
+[34435476250](https://github.com/y-aplus/JibunKit/actions/runs/34435476250)（source `cae8715`）成功。archive異常時の保持0.145秒、Max-Age絶対期限維持0.046秒、三profileの実HTTP再生成/redirect/logout0.109秒。iOS Cookie再起動/他owner logout非干渉96.950秒、通常host通知回帰46.689秒。IPAと生成/standalone・Records検証も成功。
+
+次の単位としてMiniAppPasswordCredentialStoreを追加。専用native credential storeへFeature/profile別Keychain snapshotを再構成する。パスワード型だけを明示saveし、native credentialはforSessionとして読み戻す。host/port/protocol/realm/authenticationMethod/proxyと複数user・default userを維持する。snapshotの全件検証後にliveを置換し、不正な構造・重複・不正default userは古いliveを保つ。clearはKeychain削除成功後にそのstoreだけを消す。
+
+unitはnative認証先の差、既定user切替、Feature/profileのlogout非干渉、Cookie保存との独立、破損時のlive/snapshot保持。HTTPは三つのFeature/profileで同一realm/userへ異なるpasswordを再生成してBasic challengeに応答し、A logout後の401と残りの200を確認する。CI-only host画面では二Featureの保存→process再起動→読出し→A logout→再起動後のA欠落/B保持を確認する。実装・native接続例・単体/HTTP/iOS試験・現在ガイドをまとめてCIへ送る。現時点は検証待ち。通常IPAにはCI画面を含めない。
+
+資格情報ストア削除は認証済みconnectionや独自delegateを失効させないため、要求受付停止・session終了待ち・clear・新session生成を利用契約とする。証明書identity/server trust/SSO/backgroundや、Digest/proxyの実通信までを検証済みとはしない。

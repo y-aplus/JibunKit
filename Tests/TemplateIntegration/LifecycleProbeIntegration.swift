@@ -294,6 +294,8 @@ private struct WebDataProbeView: View {
             WebDataProbeWebView(webView: baselineView, ready: $baselineReady).frame(height: 40)
             NavigationLink("Persistent HTTP cookies") { NetworkCookieProbeView(context: context) }
                 .accessibilityIdentifier("network.cookies.open")
+            NavigationLink("Persistent HTTP passwords") { NetworkPasswordProbeView(context: context) }
+                .accessibilityIdentifier("network.passwords.open")
             Text(diagnostic).accessibilityIdentifier("webdata.diagnostic")
             Text(pageReady && baselineReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
@@ -350,6 +352,46 @@ private struct WebDataProbeWebView: UIViewRepresentable {
     }
 }
 
+
+private struct NetworkPasswordProbeView: View {
+    let context: MiniAppContext
+    @State private var store: MiniAppPasswordCredentialStore?
+    @State private var result = "loading"
+    private let space = URLProtectionSpace(host: "jibunkit.example", port: 443,
+        protocol: "https", realm: "same", authenticationMethod: NSURLAuthenticationMethodHTTPBasic)
+
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("network.passwords.result")
+            Button("Save password") {
+                do {
+                    guard let store else { throw MiniAppPasswordCredentialStore.Failure.invalidArchive }
+                    store.storage.setDefaultCredential(URLCredential(user: "account",
+                        password: context.id.rawValue, persistence: .forSession), for: space)
+                    try store.save()
+                    result = "saved"
+                } catch { result = "error: \(error)" }
+            }.accessibilityIdentifier("network.passwords.save")
+            Button("Read password") {
+                // This CI-only fixture uses owner IDs, never real passwords.
+                result = store?.storage.defaultCredential(for: space)?.password ?? "missing"
+            }.accessibilityIdentifier("network.passwords.read")
+            Button("Log out") {
+                do {
+                    guard let store else { throw MiniAppPasswordCredentialStore.Failure.invalidArchive }
+                    try store.clear()
+                    result = "cleared"
+                } catch { result = "error: \(error)" }
+            }.accessibilityIdentifier("network.passwords.clear")
+        }
+        .task {
+            do {
+                store = try MiniAppPasswordCredentialStore(context: context, profile: "ci-persistent-password")
+                result = "ready"
+            } catch { result = "error: \(error)" }
+        }
+    }
+}
 
 private struct NetworkCookieProbeView: View {
     let context: MiniAppContext

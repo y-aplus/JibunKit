@@ -3,6 +3,53 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testPersistentHTTPPasswordsSurviveRestartAndOtherOwnerLogout() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "network.passwords.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func open(_ owner: String) {
+            tap("miniapp.\(owner)")
+            tap("webdata.open")
+            tap("network.passwords.open")
+            expect("ready")
+        }
+        func restart() { app.terminate(); app.launch() }
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            open(owner)
+            tap("network.passwords.clear")
+            expect("cleared")
+            tap("network.passwords.save")
+            expect("saved")
+            restart()
+        }
+        open("lifecycle-a")
+        tap("network.passwords.read")
+        expect("lifecycle-a")
+        tap("network.passwords.clear")
+        expect("cleared")
+        restart()
+        open("lifecycle-a")
+        tap("network.passwords.read")
+        expect("missing")
+        restart()
+        open("lifecycle-b")
+        tap("network.passwords.read")
+        expect("lifecycle-b")
+        tap("network.passwords.clear")
+        expect("cleared")
+    }
+
     func testPersistentHTTPCookiesSurviveRestartAndOtherOwnerLogout() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")

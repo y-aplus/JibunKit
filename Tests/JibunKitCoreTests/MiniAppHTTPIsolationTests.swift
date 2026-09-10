@@ -4,6 +4,42 @@ import JibunKitCore
 
 final class MiniAppHTTPIsolationTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testPersistentPasswordsAuthenticateAfterReconstructionAndLogoutIsScoped() async throws {
+        guard let rawPort = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"], let port = Int(rawPort) else {
+            throw XCTSkip("Loopback HTTP fixture required")
+        }
+        let a = MiniAppContext(id: MiniAppID("http-password-a"))
+        let b = MiniAppContext(id: MiniAppID("http-password-b"))
+        let profile = UUID().uuidString
+        let owners = [(a, profile), (a, profile + "/second"), (b, profile)]
+        let stores = try owners.map { try MiniAppPasswordCredentialStore(context: $0.0, profile: $0.1) }
+        defer { stores.forEach { try? $0.clear() } }
+        let space = URLProtectionSpace(host: "127.0.0.1", port: port, protocol: "http", realm: "same", authenticationMethod: NSURLAuthenticationMethodHTTPBasic)
+        let url = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)/auth"))
+        for (index, store) in stores.enumerated() {
+            store.storage.setDefaultCredential(URLCredential(user: "account", password: "owner-\(index)", persistence: .forSession), for: space)
+            try store.save()
+        }
+        func request(_ index: Int, expectedPassword: String?) async throws {
+            let owner = owners[index]
+            let reopened = try MiniAppPasswordCredentialStore(context: owner.0, profile: owner.1)
+            let config = URLSessionConfiguration.ephemeral
+            config.urlCredentialStorage = reopened.storage
+            let session = URLSession(configuration: config)
+            defer { session.invalidateAndCancel() }
+            let (data, response) = try await session.data(from: url)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, expectedPassword == nil ? 401 : 200)
+            let expected = expectedPassword.map { "Basic " + Data("account:\($0)".utf8).base64EncodedString() } ?? ""
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), expected)
+        }
+        for index in stores.indices { try await request(index, expectedPassword: "owner-\(index)") }
+        try stores[0].clear()
+        try await request(0, expectedPassword: nil)
+        try await request(1, expectedPassword: "owner-1")
+        try await request(2, expectedPassword: "owner-2")
+    }
+
+    @MainActor
     func testPersistentProfilesSendOnlyTheirOwnLoginAndLogoutIndependently() async throws {
         guard let port = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] else {
             throw XCTSkip("Loopback HTTP fixture required")

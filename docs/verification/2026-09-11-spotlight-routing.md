@@ -25,6 +25,10 @@ source `ce45761`を[34514127926](https://github.com/y-aplus/JibunKit/actions/run
 
 ## 証拠の境界
 
+再検証はsource `3042cae`の[34516775457](https://github.com/y-aplus/JibunKit/actions/runs/34516775457)。`gh run watch`完了後に親threadへqueue通知する。
+
+待機中のコード確認では、registeredIDs内の不正IDはContext生成前に除外され、未知owner・非canonical Base64・不正UTF-8はresolverがnilを返す。hostはnilで画面を変更せず、有効なIDでもFeatureの`navigationPath(for:)`が拒否した場合はAppNavigationが変更前にreturnする。local IDはURL用文字制限に変換せずopaqueな文字列としてFeatureへ渡す。これはソース確認であり、OS配送や複数window実行の証拠には含めない。
+
 unitの成功はOSが検索結果を表示・配送した証拠ではない。実OS検索UI・cold launch・複数windowの選択はそれぞれ区別して記録する。既存のAppNavigationが保持するのは値ベースの経路であり、任意Viewの内部状態や未保存編集内容全体の復元を保証しない。D18全体は未完。
 
 一次資料: Apple [CSSearchableItemActionType](https://developer.apple.com/documentation/corespotlight/cssearchableitemactiontype)、[onContinueUserActivity](https://developer.apple.com/documentation/swiftui/view/oncontinueuseractivity(_:perform:))。前者のnative userInfoキーと後者のscene配送/NSUserActivityTypes契約に従う。

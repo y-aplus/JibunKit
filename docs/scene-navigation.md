@@ -24,7 +24,7 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 
 Stackの識別子とbindingの世代を切替時に更新する。同じSwift型のnavigation valueを異なるFeatureが使っても、前のstackのdestination登録を再利用しない。離脱したstackのbinding更新は、同じFeatureへ戻った後も新しい経路へ適用しない。
 
-これはメモリ上の値ベースの経路保持であり、`NavigationLink(value:)`と`navigationDestination(for:)`を対象とする。Viewを直接指定するNavigationLink、View内の入力状態やsheet、任意のUIKit stack、アプリ終了後の経路復元は今回の補完範囲ではない。`Hashable`値に`Codable`を要求せず、Featureの画面型をhostで列挙しない。実装の検証状況は[Feature経路保持](verification/2026-09-10-feature-navigation.md)に記録する。
+これはメモリ上の値ベースの経路保持であり、`NavigationLink(value:)`と`navigationDestination(for:)`を対象とする。Viewを直接指定するNavigationLink、View内の入力状態やsheet、任意のUIKit stack、アプリ終了後の経路復元は今回の補完範囲ではない。`Hashable`値に`Codable`を要求せず、Featureの画面型をhostで列挙しない。34484074366で専用UI（79.425秒）と通常通知・Records回帰が成功。統合sourceの検証状況は[Feature経路保持](verification/2026-09-10-feature-navigation.md)に記録する。
 
 ## 根拠と検証
 

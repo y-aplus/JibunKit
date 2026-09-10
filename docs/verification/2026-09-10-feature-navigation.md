@@ -1,6 +1,6 @@
 # Feature別の画面経路保持
 
-状態: 初回CIで切替メニュー非表示を検出し修正。再検証待ち。D04の部分補完。main未統合。
+状態: 修正後の専用UI・通常通知・Records回帰が成功。購読機構を含む統合sourceの確認待ち。D04の部分補完、main未統合。
 
 ## 失われていた境界と変更
 
@@ -28,3 +28,9 @@ CI専用の二Featureで同じInt型のvalue navigationを使い、Aの2段詳�
 [34481976643](https://github.com/y-aplus/JibunKit/actions/runs/34481976643)、source `67cd7f2`は生成hostのUI試験で失敗。通常の共有/Featureテスト・iOS Release/IPA・生成hostのコンパイルは通過した。専用画面の古いbinding/owner切替の契約検査と、Aの値ベース2段目への遷移も通過したが、`miniapp.switch.open`が存在しなかった（36.160秒で失敗）。アクセシビリティ階層にはLevel 2と戻るボタンだけがあり、待ち時間不足ではない。
 
 NavigationStackの外へ付けたtoolbarでは詳細画面に共通の切替操作が表示されなかったため、ホスト所有のbottom safeAreaInsetへ移動した。Featureが独自のtoolbarを持っても切替操作を失わず、内容を覆わない。root URL互換性の追加（`aec0786`）も含む最新版で再検証する。初回runでは後続の通常host通知回帰へ到達していない。
+
+## 修正後の検証
+
+[34484074366](https://github.com/y-aplus/JibunKit/actions/runs/34484074366)、source `3e1e5d783a3ef157dba79aaab659359ca1a964f2`が成功。専用のFeature経路保持UIは79.425秒で成功し、同じInt型の詳細経路のA/B切替、native back、一覧から再開、片方だけroot reset、非対応routeの保持、A明示route、OS経由root URLとB保持を確認した。通常hostの実通知遷移62.373秒、Records添付操作96.560秒、Records作成/編集/検索/削除70.564秒も成功。共有114テスト、独立Feature、生成/standalone、通常IPAを確認。限定filterを用いたrunで、全UI suiteの成功ではない。
+
+その後mainへ統合された購読機構（CI34484781329成功）をこのbranchへ取り込み、製品の画面経路の差分がないことを確認した。統合sourceで共有/Feature・iOS build/IPAを再確認し、既存の二AppNavigation/通知先選択と通常hostの検索→遷移→一覧復帰を検証する。

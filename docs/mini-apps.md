@@ -273,3 +273,9 @@ JSON/file providerの`exportEntry`も同じcoordinatorを利用します。同�
 ### 非同期の資源解放
 
 `try runtime.onShutdownAsync { await connection.close() }`で非同期の後始末を登録できます。所有Taskがすべて終了した後、`onShutdown`と共通の登録逆順で一つずつ完了を待ちます。`shutdown()`を待つ復元hookは、その後始末の終了までapplyへ進みません。hookは自分自身のruntime.shutdownを待たず、有限時間で終了する必要があります。closeがthrowする場合の回復方針はFeatureで定めてください。
+
+### Feature別のURL cache
+
+`try context.urlCache(memoryCapacity: 4 * 1024 * 1024, diskCapacity: 32 * 1024 * 1024, containerURL: container)`でnative URLCacheを作り、URLSessionを生成する前に`configuration.urlCache`へ設定します。容量は例であり任意に指定できます。同じFeature/profileのcacheは保持して使い回してください。`profile:`で同一Feature内のアカウント等を分けられます。
+
+このAPIはcache保存先だけを分けます。Cookie・認証情報の共有を解消するAPIではなく、cacheはOSによって削除される可能性があります。default設定のままならCookie共有は残るため、通信全体の隔離が完了したとは扱わないでください。

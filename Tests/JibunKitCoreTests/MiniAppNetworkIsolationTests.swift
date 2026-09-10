@@ -1,8 +1,37 @@
 import Foundation
 import XCTest
+import JibunKitCore
 
 /// Native baseline: ephemeral isolation is useful but is not persistent Feature networking.
 final class MiniAppNetworkIsolationTests: XCTestCase {
+    func testFeatureDiskCacheLocationsAndRemovalAreIndependent() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = MiniAppContext(id: MiniAppID("a"))
+        let b = MiniAppContext(id: MiniAppID("b"))
+        let caches = try [
+            a.urlCache(memoryCapacity: 1048576, diskCapacity: 1048576, containerURL: root),
+            b.urlCache(memoryCapacity: 1048576, diskCapacity: 1048576, containerURL: root),
+            a.urlCache(memoryCapacity: 1048576, diskCapacity: 1048576, containerURL: root, profile: "../other")
+        ]
+        let url = try XCTUnwrap(URL(string: "https://jibunkit-isolation.example/resource"))
+        let request = URLRequest(url: url)
+        let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [:]))
+        for (index, cache) in caches.enumerated() {
+            cache.storeCachedResponse(CachedURLResponse(response: response, data: Data("\(index)".utf8)), for: request)
+        }
+        caches[0].removeAllCachedResponses()
+        XCTAssertNil(caches[0].cachedResponse(for: request))
+        XCTAssertEqual(caches[1].cachedResponse(for: request)?.data, Data("1".utf8))
+        XCTAssertEqual(caches[2].cachedResponse(for: request)?.data, Data("2".utf8))
+        let base = root.appendingPathComponent("Library/Caches/JibunKit/Features")
+        let first = base.appendingPathComponent(a.id.storageNamespace).appendingPathComponent("Network")
+        let second = base.appendingPathComponent(b.id.storageNamespace).appendingPathComponent("Network")
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: first.path).count, 2)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: second.path).count, 1)
+        for cache in caches { cache.removeAllCachedResponses() }
+    }
+
     func testNativeEphemeralStoresIsolateSameServerIdentityAndRemoval() throws {
         let first = URLSessionConfiguration.ephemeral
         let second = URLSessionConfiguration.ephemeral

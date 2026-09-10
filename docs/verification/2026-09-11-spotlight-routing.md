@@ -35,6 +35,8 @@ Simulatorログでは19:03:35に`com.apple.Spotlight`がforegroundとなり、�
 
 ## 証拠の境界
 
+`34521029216`（source `33df6e5`）は103.438秒、結果要素待ち（line 52）で失敗。検索入力とネイティブ検索結果表示は成功しており、treeにはJibunKit sectionと、`Identifier:ResultCell,Section:1,Row:0` / label `JK Alpha A98AAE9C, JibunKit native search route probe`がある。結果がStaticTextではなく複合labelのCellとして公開されるため、ResultCell prefixと完全labelで選ぶよう修正する。別の`PunchOutToWebSuggestionCell`は選ばない。タイトル照合を緩めて結果の存在を成功扱いにする変更ではなく、同じ項目の実際のaccessibility要素を操作する修正。配送とcold launchの証拠はまだない。
+
 2回目のsourceは`3042cae`、3回目は`efa4d27`。検索欄の型と初回案内対応を修正した`33df6e5`を[34521029216](https://github.com/y-aplus/JibunKit/actions/runs/34521029216)へ送った。再検証も`gh run watch`完了後に親threadへqueue通知する。
 
 待機中のコード確認では、registeredIDs内の不正IDはContext生成前に除外され、未知owner・非canonical Base64・不正UTF-8はresolverがnilを返す。hostはnilで画面を変更せず、有効なIDでもFeatureの`navigationPath(for:)`が拒否した場合はAppNavigationが変更前にreturnする。local IDはURL用文字制限に変換せずopaqueな文字列としてFeatureへ渡す。これはソース確認であり、OS配送や複数window実行の証拠には含めない。

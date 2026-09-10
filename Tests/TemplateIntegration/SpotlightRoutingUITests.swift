@@ -48,7 +48,12 @@ final class SpotlightRoutingUITests: XCTestCase {
                 search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count))
             }
             search.typeText(title)
-            let result = spotlight.staticTexts[title].firstMatch
+            // Spotlight combines title and description into the result cell's
+            // label. Exclude the similarly named web-search suggestion.
+            let result = spotlight.cells.matching(NSPredicate(
+                format: "identifier BEGINSWITH %@ AND label == %@",
+                "Identifier:ResultCell,", "\(title), JibunKit native search route probe"
+            )).firstMatch
             XCTAssertTrue(result.waitForExistence(timeout: 30), spotlight.debugDescription)
             result.tap()
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), spotlight.debugDescription)

@@ -18,20 +18,31 @@ public struct MiniAppSceneActivity: Equatable, Sendable {
 @MainActor
 public final class MiniAppSceneActivityDispatcher {
     public typealias Handler = @MainActor (MiniAppSceneActivity) -> Void
+    /// A typed initializer preserves the handler's MainActor context when
+    /// constructing a list of registrations under Swift 6.
+    public struct Registration {
+        public let id: MiniAppID
+        public let handler: Handler
+
+        public init(id: MiniAppID, handler: @escaping Handler) {
+            self.id = id
+            self.handler = handler
+        }
+    }
     private struct Snapshot: Equatable {
         let id: UUID
         let phase: MiniAppSceneActivity.Phase?
         let selectedID: MiniAppID?
     }
-    private let handlers: [(MiniAppID, Handler)]
+    private let handlers: [Registration]
     private var requested: Snapshot?
     private var pending: [Snapshot] = []
     private var delivered: [MiniAppID: MiniAppSceneActivity] = [:]
     private var delivering = false
 
-    public init(handlers: [(MiniAppID, Handler)]) {
-        precondition(handlers.allSatisfy { $0.0.isValid })
-        precondition(Set(handlers.map { $0.0 }).count == handlers.count)
+    public init(handlers: [Registration]) {
+        precondition(handlers.allSatisfy { $0.id.isValid })
+        precondition(Set(handlers.map(\.id)).count == handlers.count)
         self.handlers = handlers
     }
 
@@ -64,14 +75,15 @@ public final class MiniAppSceneActivityDispatcher {
         while !pending.isEmpty {
             let next = pending.removeFirst()
             // Finish this transition for all owners before a reentrant transition.
-            for (id, handler) in handlers {
+            for registration in handlers {
+                let id = registration.id
                 let activity = MiniAppSceneActivity(
                     featureID: id, sceneID: next.id, phase: next.phase,
                     isSelected: next.selectedID == id
                 )
                 guard delivered[id] != activity else { continue }
                 delivered[id] = activity
-                handler(activity)
+                registration.handler(activity)
             }
         }
     }

@@ -32,7 +32,9 @@ private struct MiniAppSceneRoot: View {
     @State private var registration: UUID?
     @State private var activity = MiniAppSceneActivityDispatcher(
         handlers: MiniAppRegistry.all.compactMap { definition in
-            definition.onSceneActivityChange.map { (definition.id, $0) }
+            definition.onSceneActivityChange.map {
+                MiniAppSceneActivityDispatcher.Registration(id: definition.id, handler: $0)
+            }
         }
     )
     @Environment(\.scenePhase) private var scenePhase

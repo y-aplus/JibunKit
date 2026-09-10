@@ -15,3 +15,9 @@ host集約phaseだけでは、非表示Featureも活動中と取り違える。`
 ## 未確認・残存
 
 UIKit/SwiftUIの実window二つを同時に操作する試験ではない。モデル二つの独立性と一つのnative sceneの通知を分けて記録する。rootの接続UUIDはOS session識別子ではない。任意Viewの入力状態、sheetでの被覆、Feature実行instanceの生成/終了やRuntimeとの自動接続は今回の範囲外。D01全体は未対応のまま。
+
+## 初回CIと修正
+
+[34491312333](https://github.com/y-aplus/JibunKit/actions/runs/34491312333)、source `d513135`は共有テストのコンパイルで失敗。登録をタプル配列で渡すと、内部のクロージャがMainActor/Sendableとして推論されず、非Sendable関数からの変換を拒否された。Coreのdispatcher本体はコンパイルされたが、unit実行・iOSビルド・UIには到達していない。
+
+公開の`Registration`初期化子へ型付きMainActor handlerを渡す形に変更し、hostとunitの登録箇所もそろえた。unsafeなSendable適合や並行性チェックの緩和は追加しない。mainへ入ったテスト指定の事前/実行後検査も取り込み、修正後のnative試験で併せて検証する。

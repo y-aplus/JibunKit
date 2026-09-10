@@ -10,7 +10,7 @@ final class MiniAppSceneActivityTests: XCTestCase {
         var first: [MiniAppSceneActivity] = []
         var second: [MiniAppSceneActivity] = []
         let dispatcher = MiniAppSceneActivityDispatcher(handlers: [
-            (a, { first.append($0) }), (b, { second.append($0) }),
+            .init(id: a) { first.append($0) }, .init(id: b) { second.append($0) },
         ])
         dispatcher.connect(phase: .active, selectedID: a)
         dispatcher.update(phase: .active, selectedID: b)
@@ -28,8 +28,8 @@ final class MiniAppSceneActivityTests: XCTestCase {
     func testClosingOneSceneDoesNotEndAnotherAndReconnectHasNewIdentity() {
         var first: [MiniAppSceneActivity] = []
         var second: [MiniAppSceneActivity] = []
-        let one = MiniAppSceneActivityDispatcher(handlers: [(a, { first.append($0) })])
-        let two = MiniAppSceneActivityDispatcher(handlers: [(a, { second.append($0) })])
+        let one = MiniAppSceneActivityDispatcher(handlers: [.init(id: a) { first.append($0) }])
+        let two = MiniAppSceneActivityDispatcher(handlers: [.init(id: a) { second.append($0) }])
         one.update(phase: .active, selectedID: a)
         XCTAssertTrue(first.isEmpty)
         one.connect(phase: .active, selectedID: a)
@@ -55,14 +55,14 @@ final class MiniAppSceneActivityTests: XCTestCase {
         var second: [MiniAppSceneActivity] = []
         var dispatcher: MiniAppSceneActivityDispatcher?
         dispatcher = MiniAppSceneActivityDispatcher(handlers: [
-            (a, { activity in
+            .init(id: a) { activity in
                 first.append(activity)
                 if first.count == 1 {
                     dispatcher?.disconnect()
                     dispatcher?.connect(phase: .background, selectedID: self.b)
                 }
-            }),
-            (b, { second.append($0) }),
+            },
+            .init(id: b) { second.append($0) },
         ])
         dispatcher?.connect(phase: .active, selectedID: a)
         XCTAssertEqual(first.map(\.phase), [.active, nil, .background])
@@ -79,7 +79,7 @@ final class MiniAppSceneActivityTests: XCTestCase {
         var cleanedUp = false
         let runtime = MiniAppRuntime()
         try runtime.onShutdown { cleanedUp = true }
-        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [(a, { events.append($0) })])
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [.init(id: a) { events.append($0) }])
         dispatcher.connect(phase: .active, selectedID: a)
         dispatcher.connect(phase: .active, selectedID: a)
         dispatcher.update(phase: .active, selectedID: a)

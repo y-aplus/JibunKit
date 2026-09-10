@@ -34,6 +34,8 @@ public struct RecordsRootView: View {
                         Text(record.title)
                         if !record.body.isEmpty { Text(record.body).lineLimit(1).foregroundStyle(.secondary) }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("records.row.\(record.id)")
                 .swipeActions {

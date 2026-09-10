@@ -3,6 +3,55 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testSceneIdleRequestSuspendsResumesAndPreservesOtherOwner() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_SCENE_IDLE_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ id: String, _ value: String) {
+            let text = app.staticTexts.matching(identifier: id)
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func read(_ value: String) {
+            tap("scene.idle.read")
+            expect("scene.idle.result", value)
+        }
+        func select(_ owner: String) {
+            tap("miniapp.switch.open")
+            tap("miniapp.switch.\(owner)")
+        }
+        tap("miniapp.lifecycle-a")
+        tap("scene.idle.request")
+        read("disabled:lifecycle-a")
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.activate()
+        expect("scene.idle.background", "released")
+        read("disabled:lifecycle-a")
+        select("lifecycle-b")
+        read("enabled:")
+        tap("scene.idle.manual")
+        read("disabled:lifecycle-b")
+        select("lifecycle-a")
+        read("disabled:lifecycle-a,lifecycle-b")
+        tap("scene.idle.shutdown")
+        expect("scene.idle.result", "disabled:lifecycle-b")
+        select("lifecycle-b")
+        tap("scene.idle.manual-release")
+        read("enabled:")
+        select("lifecycle-a")
+        tap("scene.idle.request")
+        expect("scene.idle.error", "closed")
+        read("enabled:")
+    }
+
     func testSceneActivityFollowsSelectionAndBackgroundWithoutStoppingOtherWork() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
@@ -230,11 +279,13 @@ final class GeneratedFeatureUITests: XCTestCase {
     func testRestoreFailuresDescribeDataAndRuntimeStateWithoutChangingOtherFeature() {
         let messages = [
             "stop": "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。",
+            "stop-after-shutdown": "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。",
+            "stop-recovery": "保存データは復元していません。このアプリの停止に失敗し、利用できる状態へ戻すこともできませんでした。",
             "apply": "保存データの復元に失敗しました。一部が変更されている可能性があります。",
             "resume": "保存データは復元しましたが、このアプリの再開に失敗しました。",
             "both": "保存データの復元と、このアプリの再開に失敗しました。"
         ]
-        for fault in ["stop", "apply", "resume", "both"] {
+        for fault in ["stop", "stop-after-shutdown", "stop-recovery", "apply", "resume", "both"] {
             let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
             app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
             app.launchEnvironment["JIBUNKIT_RESTORE_FAULT"] = fault
@@ -259,9 +310,14 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTAssertTrue(message.waitForExistence(timeout: 10), "\(fault): \(app.debugDescription)")
             XCTAssertTrue(message.label.contains("後続のアプリは変更していません。"))
             tap("閉じる")
-            XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, fault == "stop" ? "original" : "restored")
+            XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, fault.hasPrefix("stop") ? "original" : "restored")
             XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label,
-                           fault == "stop" ? "running" : fault == "apply" ? "idle" : "closed")
+                           fault == "stop" ? "running" : ["apply", "stop-after-shutdown"].contains(fault) ? "idle" : "closed")
+            if fault == "stop-after-shutdown" {
+                tap("lifecycle.task.start")
+                XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label, "running")
+                tap("lifecycle.task.complete")
+            }
             app.navigationBars.buttons["ミニアプリ"].tap()
             tap("miniapp.lifecycle-b")
             XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
@@ -269,6 +325,62 @@ final class GeneratedFeatureUITests: XCTestCase {
             tap("lifecycle.task.complete")
             app.terminate()
         }
+    }
+
+    func testOrdinaryStoreAccessBlocksRestoreUntilFinishedAndPreservesOtherOwner() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_STORE_ACCESS_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func status(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "store.access.status")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func restore() {
+            tap("runtime.restore.open")
+            let selection = app.switches["backup.restore.lifecycle-a"]
+            XCTAssertTrue(selection.waitForExistence(timeout: 10))
+            selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            tap("backup.restore")
+            app.alerts.buttons["置き換えて復元"].tap()
+        }
+        for owner in ["lifecycle-b", "lifecycle-a"] {
+            tap("miniapp.\(owner)")
+            tap("store.access.start")
+            status("running")
+            if owner == "lifecycle-b" { app.navigationBars.buttons["ミニアプリ"].tap() }
+        }
+        restore()
+        let conflict = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "lifecycle-aはデータを使用中です。")).firstMatch
+        XCTAssertTrue(conflict.waitForExistence(timeout: 10), app.debugDescription)
+        tap("閉じる")
+        status("running")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+        tap("store.access.finish")
+        status("completed")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "written")
+        restore()
+        XCTAssertTrue(app.staticTexts["lifecycle-aを復元しました。"].waitForExistence(timeout: 10), app.debugDescription)
+        tap("閉じる")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "restored")
+        // A accepts a fresh ordinary operation after the restore's runtime restart.
+        tap("store.access.start")
+        status("running")
+        tap("store.access.finish")
+        status("completed")
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        status("running")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+        tap("store.access.finish")
+        status("completed")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "written")
     }
 
     func testSelectedRestoreStopsAndRestartsOnlyItsRuntime() {

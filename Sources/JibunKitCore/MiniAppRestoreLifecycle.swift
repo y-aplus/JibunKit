@@ -1,15 +1,19 @@
 import Foundation
 
 /// Feature-owned coordination for restoring live data. Stop must close admission
-/// and await users of the store. If stop throws, it must leave a usable runtime.
+/// and await users of the store. If stop throws, it must leave a usable runtime
+/// itself or provide recoverAfterFailedStop for partially stopped resources.
 public struct MiniAppRestoreLifecycle: Sendable {
     public let stop: @Sendable () async throws -> Void
     public let resume: @Sendable () async throws -> Void
+    public let recoverAfterFailedStop: (@Sendable () async throws -> Void)?
 
     public init(stop: @escaping @Sendable () async throws -> Void,
-                resume: @escaping @Sendable () async throws -> Void) {
+                resume: @escaping @Sendable () async throws -> Void,
+                recoverAfterFailedStop: (@Sendable () async throws -> Void)? = nil) {
         self.stop = stop
         self.resume = resume
+        self.recoverAfterFailedStop = recoverAfterFailedStop
     }
 
     public struct Failure: LocalizedError, Sendable {
@@ -23,11 +27,21 @@ public struct MiniAppRestoreLifecycle: Sendable {
 
     struct StopFailure: LocalizedError {
         let reason: String
-        var errorDescription: String? { reason }
+        let recoveryReason: String?
+        var errorDescription: String? {
+            guard let recoveryReason else { return reason }
+            return "Stop failed: \(reason); recovery after failed stop failed: \(recoveryReason)"
+        }
     }
 
     func perform(_ apply: @Sendable () async throws -> Void) async throws {
-        do { try await stop() } catch { throw StopFailure(reason: error.localizedDescription) }
+        do { try await stop() } catch {
+            let stopReason = error.localizedDescription
+            do { try await recoverAfterFailedStop?() } catch {
+                throw StopFailure(reason: stopReason, recoveryReason: error.localizedDescription)
+            }
+            throw StopFailure(reason: stopReason, recoveryReason: nil)
+        }
         var restoreError: (any Error)?
         do { try await apply() } catch { restoreError = error }
         do { try await resume() } catch {

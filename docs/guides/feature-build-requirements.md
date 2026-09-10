@@ -62,4 +62,6 @@ let build = try app.compose(infoPlist: hostPlist, entitlements: hostEntitlements
 try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
 ```
 
-生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。再生成時はその出力先にある既存の`*.lproj/InfoPlist.strings`だけを除去してから書き、削除済みFeatureのlocaleを残さない。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。
+生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。`Project.swift`はapp/widgetを`GeneratedFeatureResources/App`と`Widget`へ書き、通常製品targetへ自動接続している。Feature登録の追加・除去後は通常の`tuist generate`だけで反映される。
+
+書出し先は生成専用ディレクトリにする。このAPIは再生成時に指定先の各`*.lproj/InfoPlist.strings`を除去してから書く（`Localizable.strings`等の別resourceは削除しない）。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。`compose(... localizedInfoPlist:)`へhost既存値を渡すと、hostもFeatureと同じ同値・衝突・明示resolution規則へ入る。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。

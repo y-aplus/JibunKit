@@ -352,6 +352,22 @@ jobs:
           require_equal "widget build version" \
             "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)"
+          require_equal "app English localized display name" \
+            "$(plutil -extract CFBundleDisplayName raw "$app/en.lproj/InfoPlist.strings")" \
+            "JibunKit"
+          require_equal "app Japanese localized display name" \
+            "$(plutil -extract CFBundleDisplayName raw "$app/ja.lproj/InfoPlist.strings")" \
+            "JibunKit"
+          require_equal "widget English localized display name" \
+            "$(plutil -extract CFBundleDisplayName raw "$widget/en.lproj/InfoPlist.strings")" \
+            "JibunKit Widget"
+          require_equal "widget Japanese localized display name" \
+            "$(plutil -extract CFBundleDisplayName raw "$widget/ja.lproj/InfoPlist.strings")" \
+            "JibunKitウィジェット"
+          if plutil -extract NSCameraUsageDescription raw "$widget/en.lproj/InfoPlist.strings" >/dev/null 2>&1; then
+            echo "error: app-only localized usage description leaked into widget" >&2
+            exit 1
+          fi
 
           widget_entitlements_file="$(find Derived -type f -name 'JibunKitWidget-Extension.entitlements')"
           app_entitlements_file="$(find Derived -type f -name 'JibunKit-App.entitlements')"

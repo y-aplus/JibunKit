@@ -63,7 +63,8 @@ public struct FeatureBuildConfiguration: Sendable {
     }
 
     public func compose(infoPlist: [String: Plist.Value],
-                        entitlements: [String: Plist.Value]) throws -> ComposedFeatureBuild {
+                        entitlements: [String: Plist.Value],
+                        localizedInfoPlist: [String: [String: String]] = [:]) throws -> ComposedFeatureBuild {
         var owners: Set<String> = ["host"]
         for feature in features {
             guard !feature.owner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -83,7 +84,7 @@ public struct FeatureBuildConfiguration: Sendable {
                 contributions: features.map { ($0.owner, $0.entitlements) },
                 resolutions: entitlementResolutions,
                 stringSetKeys: ["com.apple.security.application-groups", "keychain-access-groups", "com.apple.developer.associated-domains"]),
-            localizedInfoPlist: try mergeLocalizedInfoPlist()
+            localizedInfoPlist: try mergeLocalizedInfoPlist(host: localizedInfoPlist)
         )
     }
 
@@ -131,8 +132,10 @@ public struct FeatureBuildConfiguration: Sendable {
         return result
     }
 
-    private func mergeLocalizedInfoPlist() throws -> [String: [String: String]] {
-        let requestedLocales = Set(features.flatMap { $0.localizedInfoPlist.keys })
+    private func mergeLocalizedInfoPlist(
+        host: [String: [String: String]]
+    ) throws -> [String: [String: String]] {
+        let requestedLocales = Set(host.keys).union(features.flatMap { $0.localizedInfoPlist.keys })
         for locale in localizedInfoPlistResolutions.keys where !requestedLocales.contains(locale) {
             throw Failure("Unused InfoPlist.strings resolution for locale \(locale)")
         }
@@ -145,7 +148,8 @@ public struct FeatureBuildConfiguration: Sendable {
             guard locale.unicodeScalars.allSatisfy(allowed.contains) else {
                 throw Failure("InfoPlist.strings locale contains invalid characters: \(locale)")
             }
-            let requestedKeys = Set(features.flatMap { feature -> [String] in
+            let hostKeys = host[locale].map { Array($0.keys) } ?? []
+            let requestedKeys = Set(hostKeys).union(features.flatMap { feature -> [String] in
                 feature.localizedInfoPlist[locale].map { Array($0.keys) } ?? []
             })
             let resolutions = localizedInfoPlistResolutions[locale] ?? [:]
@@ -156,9 +160,10 @@ public struct FeatureBuildConfiguration: Sendable {
                 guard !key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     throw Failure("InfoPlist.strings key must be nonempty for locale \(locale)")
                 }
-                let requests = features.compactMap { feature in
+                let featureRequests = features.compactMap { feature in
                     feature.localizedInfoPlist[locale]?[key].map { (feature.owner, $0) }
                 }
+                let requests = (host[locale]?[key].map { [("host", $0)] } ?? []) + featureRequests
                 if let resolution = resolutions[key] {
                     output[locale, default: [:]][key] = resolution
                 } else if let first = requests.first?.1, requests.allSatisfy({ $0.1 == first }) {

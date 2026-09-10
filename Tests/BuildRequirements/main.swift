@@ -87,6 +87,16 @@ let localized = try FeatureBuildConfiguration(features: [localizedA, localizedB]
     ]).compose(infoPlist: [:], entitlements: [:])
 require(localized.localizedInfoPlist["en"]?["CFBundleDisplayName"] == "Shared", "Identical localized value lost")
 require(localized.localizedInfoPlist["ja"]?["NSCameraUsageDescription"] == "カメラで書類を撮影します", "Localized resolution ignored")
+reject("requested by host, localized-a") {
+    _ = try FeatureBuildConfiguration(features: [localizedA]).compose(
+        infoPlist: [:], entitlements: [:],
+        localizedInfoPlist: ["en": ["NSCameraUsageDescription": "Host camera text"]])
+}
+let hostResolved = try FeatureBuildConfiguration(features: [localizedA],
+    localizedInfoPlistResolutions: ["en": ["NSCameraUsageDescription": "Host and Feature camera text"]])
+    .compose(infoPlist: [:], entitlements: [:],
+             localizedInfoPlist: ["en": ["NSCameraUsageDescription": "Host camera text"]])
+require(hostResolved.localizedInfoPlist["en"]?["NSCameraUsageDescription"] == "Host and Feature camera text", "Host localized resolution ignored")
 let widgetLocalized = try FeatureBuildConfiguration(features: [
     .init(owner: "widget", localizedInfoPlist: ["en": ["CFBundleDisplayName": "Probe Widget"]])
 ]).compose(infoPlist: [:], entitlements: [:])
@@ -104,4 +114,15 @@ reject("Unused InfoPlist.strings resolution") {
     _ = try FeatureBuildConfiguration(features: [localizedA], localizedInfoPlistResolutions: ["en": ["Unused": "Value"]])
         .compose(infoPlist: [:], entitlements: [:])
 }
+let output = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+defer { try? FileManager.default.removeItem(at: output) }
+let staleLocale = output.appendingPathComponent("fr.lproj")
+try FileManager.default.createDirectory(at: staleLocale, withIntermediateDirectories: true)
+let staleInfo = staleLocale.appendingPathComponent("InfoPlist.strings")
+let unrelated = staleLocale.appendingPathComponent("Localizable.strings")
+try Data("stale".utf8).write(to: staleInfo)
+try Data("keep".utf8).write(to: unrelated)
+try localized.writeLocalizedInfoPlistStrings(to: output.path)
+require(!FileManager.default.fileExists(atPath: staleInfo.path), "Stale InfoPlist.strings survived regeneration")
+require(FileManager.default.fileExists(atPath: unrelated.path), "Unrelated localized resource was deleted")
 print("Feature build requirement checks passed: baseline, union, conflict, resolution, custom values, target isolation, validation")

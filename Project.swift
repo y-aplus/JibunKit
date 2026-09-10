@@ -12,12 +12,22 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
         "CFBundleURLName": "com.jibunkit.app.mini-app",
         "CFBundleURLSchemes": ["jibunkit"],
     ]],
-], entitlements: sharedEntitlements)
+], entitlements: sharedEntitlements, localizedInfoPlist: [
+    "en": ["CFBundleDisplayName": "JibunKit"],
+    "ja": ["CFBundleDisplayName": "JibunKit"],
+])
 let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: [
     "CFBundleShortVersionString": "0.3.0", "CFBundleVersion": "4",
     "JibunKitAppGroup": "group.com.jibunkit.shared",
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
-], entitlements: sharedEntitlements)
+], entitlements: sharedEntitlements, localizedInfoPlist: [
+    "en": ["CFBundleDisplayName": "JibunKit Widget"],
+    "ja": ["CFBundleDisplayName": "JibunKitウィジェット"],
+])
+
+let generatedFeatureResources = "GeneratedFeatureResources"
+try appBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/App")
+try widgetBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Widget")
 
 let project = Project(
     name: "JibunKit",
@@ -36,6 +46,7 @@ let project = Project(
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: appBuild.infoPlist),
             sources: ["Sources/JibunKit/**"],
+            resources: ["GeneratedFeatureResources/App/**"],
             entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
@@ -46,6 +57,7 @@ let project = Project(
             bundleId: "com.jibunkit.app.Widget", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: widgetBuild.infoPlist),
             sources: ["Sources/JibunKitWidget/**"],
+            resources: ["GeneratedFeatureResources/Widget/**"],
             entitlements: .dictionary(widgetBuild.entitlements),
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),

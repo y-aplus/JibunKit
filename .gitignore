@@ -34,6 +34,7 @@ __pycache__/
 /JibunKit.xcodeproj/
 /JibunKit.xcworkspace/
 /Derived/
+/GeneratedFeatureResources/
 
 # Local-only migration experiment
 /Sources/ZaikoFeature/

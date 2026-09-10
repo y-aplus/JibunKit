@@ -2,6 +2,9 @@
 import http.server
 import pathlib
 import sys
+import os
+import subprocess
+import threading
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -23,5 +26,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    pathlib.Path(sys.argv[1]).write_text(str(server.server_port), encoding="ascii")
-    server.serve_forever()
+    if sys.argv[1] == "--run-tests":
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        environment = dict(os.environ, JIBUNKIT_NETWORK_TEST_PORT=str(server.server_port))
+        print("Loopback HTTP fixture ready; starting swift test", flush=True)
+        try:
+            result = subprocess.run(["swift", "test"], env=environment)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+        sys.exit(result.returncode)
+    else:
+        pathlib.Path(sys.argv[1]).write_text(str(server.server_port), encoding="ascii")
+        server.serve_forever()

@@ -1,6 +1,6 @@
 # Feature別の画面経路保持
 
-状態: 実装済み、CI未実行。D04の部分補完。main未統合。
+状態: 初回CIで切替メニュー非表示を検出し修正。再検証待ち。D04の部分補完。main未統合。
 
 ## 失われていた境界と変更
 
@@ -22,3 +22,9 @@ CI専用の二Featureで同じInt型のvalue navigationを使い、Aの2段詳�
 値ベースの経路保持のみ。View直接指定のNavigationLink、Viewの入力状態、sheet/UIKit状態、process再起動後の保存、OS上の複数window実操作は別の残作業。強制的なCodable化やFeature画面型のhostへの集約はしない。実機確認は未実施。
 
 根拠: [Apple NavigationPath](https://developer.apple.com/documentation/swiftui/navigationpath)と[NavigationStackの状態管理](https://developer.apple.com/documentation/swiftui/understanding-the-navigation-stack)。公開APIによるvalue pathの保持を使い、任意Viewの状態保存へ効果を拡大解釈しない。
+
+## 初回CIと修正
+
+[34481976643](https://github.com/y-aplus/JibunKit/actions/runs/34481976643)、source `67cd7f2`は生成hostのUI試験で失敗。通常の共有/Featureテスト・iOS Release/IPA・生成hostのコンパイルは通過した。専用画面の古いbinding/owner切替の契約検査と、Aの値ベース2段目への遷移も通過したが、`miniapp.switch.open`が存在しなかった（36.160秒で失敗）。アクセシビリティ階層にはLevel 2と戻るボタンだけがあり、待ち時間不足ではない。
+
+NavigationStackの外へ付けたtoolbarでは詳細画面に共通の切替操作が表示されなかったため、ホスト所有のbottom safeAreaInsetへ移動した。Featureが独自のtoolbarを持っても切替操作を失わず、内容を覆わない。root URL互換性の追加（`aec0786`）も含む最新版で再検証する。初回runでは後続の通常host通知回帰へ到達していない。

@@ -58,9 +58,10 @@ struct MiniAppListScreen: View {
         // Feature-local destination types may be identical in different apps.
         // Rebuild the stack for its owner while retaining that owner's path.
         .id(navigation.stackID)
-        .toolbar {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             if owner != nil {
-                ToolbarItem(placement: .topBarTrailing) {
+                HStack {
+                    Spacer()
                     Menu {
                         Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
                             .accessibilityIdentifier("miniapp.switch.list")
@@ -80,6 +81,9 @@ struct MiniAppListScreen: View {
                     }
                     .accessibilityIdentifier("miniapp.switch.open")
                 }
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(.bar)
             }
         }
     }

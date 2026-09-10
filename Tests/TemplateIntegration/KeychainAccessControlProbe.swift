@@ -56,12 +56,11 @@ private enum KeychainAccessControlProbeRunner {
             context: MiniAppContext(id: MiniAppID("keychain-access-control-other")),
             service: service + "-protected"
         )
-        let contextWithoutUI = LAContext()
-        contextWithoutUI.interactionNotAllowed = true
+        let cleanupContext = nonInteractiveContext()
         defer {
-            try? controlled.removeAll(authenticationContext: contextWithoutUI)
-            try? protected.removeAll(authenticationContext: contextWithoutUI)
-            try? other.removeAll(authenticationContext: contextWithoutUI)
+            try? controlled.removeAll(authenticationContext: cleanupContext)
+            try? protected.removeAll(authenticationContext: cleanupContext)
+            try? other.removeAll(authenticationContext: cleanupContext)
         }
 
         let unlocked = try makeAccessControl(flags: [])
@@ -79,31 +78,82 @@ private enum KeychainAccessControlProbeRunner {
             Data("original".utf8),
             for: "same-account",
             accessControl: userPresence,
-            authenticationContext: contextWithoutUI
+            authenticationContext: nonInteractiveContext()
         )
-        try other.set(Data("other".utf8), for: "same-account", authenticationContext: contextWithoutUI)
+        let baselineAccount = "native-baseline"
+        let baselineAdd = SecItemAdd(item(
+            account: baselineAccount,
+            in: protected,
+            data: Data("original".utf8),
+            accessControl: try makeAccessControl(flags: .userPresence),
+            authenticationContext: nonInteractiveContext()
+        ) as CFDictionary, nil)
+        guard baselineAdd == errSecSuccess else {
+            return "failed: native baseline add status \(baselineAdd)"
+        }
+        try other.set(
+            Data("other".utf8),
+            for: "same-account",
+            authenticationContext: nonInteractiveContext()
+        )
 
-        let rejection: OSStatus
-        do {
-            try protected.set(
-                Data("replacement".utf8),
-                for: "same-account",
-                authenticationContext: contextWithoutUI
-            )
-            return "unsupported: user-presence update succeeded without authentication"
-        } catch let failure as MiniAppKeychain.Failure {
-            rejection = failure.status
+        let wrappedRead = wrappedReadStatus(account: "same-account", in: protected)
+        let baselineRead = nativeReadStatus(account: baselineAccount, in: protected)
+        guard isAuthenticationRejection(wrappedRead), isAuthenticationRejection(baselineRead) else {
+            return "failed: protected read wrapper=\(wrappedRead) native=\(baselineRead)"
         }
-        guard rejection == errSecInteractionNotAllowed || rejection == errSecAuthFailed else {
-            return "failed: unexpected non-interactive status \(rejection)"
+
+        let wrappedBefore = try attributes(for: "same-account", in: protected, authenticationContext: nonInteractiveContext())
+        let baselineBefore = try attributes(for: baselineAccount, in: protected, authenticationContext: nonInteractiveContext())
+        let wrappedUpdate = wrappedUpdateStatus(Data("replacement".utf8), account: "same-account", in: protected)
+        let baselineUpdate = SecItemUpdate(query(
+            account: baselineAccount,
+            in: protected,
+            authenticationContext: nonInteractiveContext()
+        ) as CFDictionary, [kSecValueData as String: Data("replacement".utf8)] as CFDictionary)
+        let wrapperAllowed = wrappedUpdate == errSecSuccess
+        let baselineAllowed = baselineUpdate == errSecSuccess
+        guard wrapperAllowed == baselineAllowed else {
+            return "failed: update diverged wrapper=\(wrappedUpdate) native=\(baselineUpdate)"
         }
-        guard try attributes(for: "same-account", in: protected, authenticationContext: contextWithoutUI) != nil else {
-            return "failed: protected item disappeared after rejected update"
+        if !wrapperAllowed,
+           (!isAuthenticationRejection(wrappedUpdate) || !isAuthenticationRejection(baselineUpdate)) {
+            return "failed: unexpected update wrapper=\(wrappedUpdate) native=\(baselineUpdate)"
         }
-        guard try other.data(for: "same-account", authenticationContext: contextWithoutUI) == Data("other".utf8) else {
+
+        let wrappedAfter = try attributes(for: "same-account", in: protected, authenticationContext: nonInteractiveContext())
+        let baselineAfter = try attributes(for: baselineAccount, in: protected, authenticationContext: nonInteractiveContext())
+        guard wrappedAfter != nil, baselineAfter != nil else {
+            return "failed: protected item disappeared after update attempt"
+        }
+        if !wrapperAllowed {
+            guard let wrappedDateBefore = modificationDate(wrappedBefore),
+                  let wrappedDateAfter = modificationDate(wrappedAfter),
+                  let baselineDateBefore = modificationDate(baselineBefore),
+                  let baselineDateAfter = modificationDate(baselineAfter)
+            else {
+                return "failed: rejected update item dates unavailable"
+            }
+            guard wrappedDateBefore == wrappedDateAfter,
+                  baselineDateBefore == baselineDateAfter
+            else {
+                return "failed: rejected update modified an item"
+            }
+        }
+        guard isAuthenticationRejection(wrappedReadStatus(account: "same-account", in: protected)) else {
+            return "failed: wrapper update weakened protected read"
+        }
+        guard isAuthenticationRejection(nativeReadStatus(account: baselineAccount, in: protected)) else {
+            return "failed: native update weakened protected read"
+        }
+        guard try other.data(
+            for: "same-account",
+            authenticationContext: nonInteractiveContext()
+        ) == Data("other".utf8) else {
             return "failed: other owner changed"
         }
-        return "passed: update=after rejection=\(rejection) protected=present other=other"
+        let updateResult = wrapperAllowed ? "native-allowed" : "rejected-\(wrappedUpdate)"
+        return "passed: update=after protected-read=rejected protected-update=\(updateResult) protected=present other=other"
     }
 
     private static func makeAccessControl(
@@ -127,6 +177,84 @@ private enum KeychainAccessControlProbeRunner {
         in keychain: MiniAppKeychain
     ) throws -> String? {
         try attributes(for: account, in: keychain)?[kSecAttrAccessible as String] as? String
+    }
+
+    private static func nonInteractiveContext() -> LAContext {
+        let context = LAContext()
+        context.interactionNotAllowed = true
+        return context
+    }
+
+    private static func isAuthenticationRejection(_ status: OSStatus) -> Bool {
+        status == errSecInteractionNotAllowed || status == errSecAuthFailed
+    }
+
+    private static func modificationDate(_ attributes: [String: Any]?) -> Date? {
+        attributes?[kSecAttrModificationDate as String] as? Date
+    }
+
+    private static func wrappedReadStatus(account: String, in keychain: MiniAppKeychain) -> OSStatus {
+        do {
+            _ = try keychain.data(for: account, authenticationContext: nonInteractiveContext())
+            return errSecSuccess
+        } catch let failure as MiniAppKeychain.Failure {
+            return failure.status
+        } catch {
+            return errSecInternalError
+        }
+    }
+
+    private static func wrappedUpdateStatus(
+        _ data: Data,
+        account: String,
+        in keychain: MiniAppKeychain
+    ) -> OSStatus {
+        do {
+            try keychain.set(data, for: account, authenticationContext: nonInteractiveContext())
+            return errSecSuccess
+        } catch let failure as MiniAppKeychain.Failure {
+            return failure.status
+        } catch {
+            return errSecInternalError
+        }
+    }
+
+    private static func nativeReadStatus(account: String, in keychain: MiniAppKeychain) -> OSStatus {
+        var nativeQuery = query(account: account, in: keychain, authenticationContext: nonInteractiveContext())
+        nativeQuery[kSecReturnData as String] = true
+        nativeQuery[kSecMatchLimit as String] = kSecMatchLimitOne
+        return SecItemCopyMatching(nativeQuery as CFDictionary, nil)
+    }
+
+    private static func item(
+        account: String,
+        in keychain: MiniAppKeychain,
+        data: Data,
+        accessControl: SecAccessControl,
+        authenticationContext: LAContext
+    ) -> [String: Any] {
+        var item = query(account: account, in: keychain, authenticationContext: authenticationContext)
+        item[kSecValueData as String] = data
+        item[kSecAttrAccessControl as String] = accessControl
+        return item
+    }
+
+    private static func query(
+        account: String,
+        in keychain: MiniAppKeychain,
+        authenticationContext: LAContext
+    ) -> [String: Any] {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychain.serviceIdentifier,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: false,
+            kSecUseAuthenticationContext as String: authenticationContext,
+        ]
+        if let accessGroup = keychain.accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        return query
     }
 
     private static func attributes(

@@ -81,9 +81,10 @@ KeychainAccessControlProbe.definition,
 
 Copy `Tests/TemplateIntegration/KeychainAccessControlUITests.swift` into the
 temporary UI-test target and select
-`KeychainAccessControlUITests/testProtectedUpdateFailsWithoutUIAndPreservesBothOwners`.
+`KeychainAccessControlUITests/testProtectedOperationsMatchNativeBaselineAndPreserveBothOwners`.
 The probe uses a caller-owned non-interactive context and reports separate
-diagnostics if Simulator user-presence enforcement is unsupported, rather than
-silently skipping. It checks native access-control save, successful data-only
-update with protection retention, rejected non-interactive update of a
-user-presence item, survival of that item, and an unchanged second owner.
+diagnostics rather than silently skipping. It first requires protected reads to
+fail without interaction. It then compares JibunKit's data-only update with a
+direct `SecItemUpdate` baseline: native success is accepted, while native
+rejection must leave modification dates unchanged. Both paths must retain
+protected-read enforcement, both items, and an unchanged second owner.

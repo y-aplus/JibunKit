@@ -3,7 +3,7 @@ import XCTest
 /// Copied only into the temporary access-control host by CI.
 @MainActor
 final class KeychainAccessControlUITests: XCTestCase {
-    func testProtectedUpdateFailsWithoutUIAndPreservesBothOwners() {
+    func testProtectedOperationsMatchNativeBaselineAndPreserveBothOwners() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
@@ -22,6 +22,7 @@ final class KeychainAccessControlUITests: XCTestCase {
             .firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(result.label.contains("update=after"))
+        XCTAssertTrue(result.label.contains("protected-read=rejected"))
         XCTAssertTrue(result.label.contains("protected=present"))
         XCTAssertTrue(result.label.contains("other=other"))
     }

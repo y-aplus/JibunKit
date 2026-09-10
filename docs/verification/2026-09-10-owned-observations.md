@@ -74,3 +74,7 @@ main-actor receiver is intentionally asynchronous. This API does not isolate
 global observers registered directly by Feature code, distributed
 notifications, notification ordering across unrelated posting threads, or
 resource work started outside the owning runtime.
+
+## Integration
+
+2026-09-10: 統合担当が最終実装`01c0247bce9a893ca0a0920a1990370b4d38b1e9`とCI34484781329の対応を確認し、証拠追補`a8d5bf6`までmainへfast-forward統合した。共有123テストと専用9テストが成功し、証拠追補の差分は文書のみ。D02全体の状態は未対応のまま、部分成果を台帳とCHANGELOGへ記録する。Foundationで完結する追加経路であり、この統合にSimulator UI成功の主張は含めない。

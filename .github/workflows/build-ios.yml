@@ -433,6 +433,16 @@ jobs:
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b
 
+      - name: Verify native web authentication handoff
+        if: inputs.simulator_tests && inputs.feature_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f Tools/verify-web-authentication-native.py ]]; then
+            python3 Tools/verify-web-authentication-native.py --simulator-id "$SIMULATOR_ID" \
+              2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
+          fi
+
       - name: Build and install standalone Counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
@@ -594,6 +604,17 @@ jobs:
           path: ${{ runner.temp }}/feature-build-requirements.log
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Upload web authentication diagnostics
+        if: always() && inputs.simulator_tests && inputs.feature_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Web-authentication-diagnostics
+          path: |
+            ${{ runner.temp }}/web-authentication-native.log
+            ${{ runner.temp }}/WebAuthentication.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload backup picker diagnostics
         if: always() && inputs.simulator_tests

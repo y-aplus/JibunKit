@@ -2,6 +2,8 @@
 
 Updated: 2026-09-11
 
+親レビュー補足: 成功試験でbyte一致まで比較したのはappのB manifestであり、WidgetのBは辞書内容の一致を比較している。先行する環境変数版のA依存残留について、manifest評価キャッシュは原因の仮説であり、キャッシュだけを操作する切り分け実験はしていない。最終試験は構成を異なるProject.swiftのリテラルで指定したclean buildの証拠として扱う。
+
 ## Scope
 
 隔離fixture A/Bが異なる`PrivacyInfo.xcprivacy`を各Swift package resourceとして所有する。通常配布アプリへ架空申告は追加しない。独自manifest合成frameworkは作らない。

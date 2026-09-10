@@ -11,6 +11,7 @@
 1. Featureの所有者を画面の一時的な再生成より長く保持し、その所有者が現在のRuntimeと保存層を保持する。同じFeatureの複数画面はこの所有者を共有する。
 2. 資源を取得した時点で`onShutdown`または`onShutdownAsync`へ解放を登録する。その後に資源を使うTaskを`start`で登録する。Taskの中断処理は取消に協調して終了する。
 3. UI以外の書込み入口も同じ所有者を通す。Runtimeを使うTask受付はshutdown時に閉じるが、同期メソッドや外部callbackの受付は所有者側でも閉じる。
+   通常の読書きを`withStoreAccess`へ登録すれば、共有coordinatorの復元/snapshotと交差する処理を受付前に拒否できる。[保存操作の接続ガイド](guides/store-access-coordination.md)を参照。
 4. `MiniAppDefinition.restoreLifecycle.stop`から受付を閉じ、`await runtime.shutdown()`を待つ。所有Taskの終了後、解放hookが逆順で完了する。解放hookから自分のshutdownを待つと自己待ちになるため避ける。
 5. backup providerのprepareは検証と準備だけを行う。返したapplyが、停止完了後の保存先を置き換える。Files/JSONを扱う共有画面はこの順序で呼ぶ。
 6. resumeで保存層を再接続し、新しいRuntimeへ所有者の参照を差し替えて受付を再開する。画面は古いRuntimeを個別に保持せず、所有者経由で処理を始める。
@@ -26,7 +27,7 @@
 
 | 状況 | 現在の共有経路の動作 | Feature側の責任 |
 | --- | --- | --- |
-| 別の復元・snapshot作成と対象が重複 | 停止・適用前にConflictを返す | 同じ保存先には同じcoordinatorを使う |
+| 別の復元・snapshot作成・登録済み通常操作と対象が重複 | 停止・適用前にConflictを返す | 同じ保存先には同じcoordinatorを使う |
 | stopがthrow | 任意のrecoverAfterFailedStopを待ち、apply/resumeを呼ばない | callbackを登録するか、stop自身で利用可能な状態へ戻す |
 | stop後の回復もthrow | 両方の理由を保持し、stopAndRecoveryとして未復元・利用状態への回復失敗を報告 | 部分停止した資源を診断し、利用受付を安全な状態に保つ |
 | applyがthrow | resumeを試み、後続Featureは変更しない | 部分変更を想定した保存層の回復 |

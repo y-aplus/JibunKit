@@ -11,6 +11,8 @@ let databaseURL = try files.fileURL(named: "store.sqlite")
 
 `fileURL`はファイル名を検査するが、DB接続・schema・WAL・共有接続poolを管理するAPIではない。エンジンが作るsidecarもこのURLと同じFeatureディレクトリに置く。明示的な共有DBを使う場合だけ、共有するURLと接続所有者をIntegrationで合意する。別Featureの書込みと衝突しないことと、同じDBを使う複数writerが整合することは別の条件である。
 
+通常のDB読書きと共有バックアップの交差は、[withStoreAccess](store-access-coordination.md)で調停できる。DB接続が生きていることと、現在実行中の読書きがあることを区別し、ファイル置換時には下記の停止も行う。
+
 ## SQLiteのsnapshotと終了
 
 稼働中のWAL形式DBは、主ファイルだけを`MiniAppFiles.read/write`でコピーしてバックアップにしない。SQLiteの[Online Backup API](https://www.sqlite.org/backup.html)等、エンジンが提供する整合したsnapshotをFeature adapterから使う。WAL/SHMはエンジンが扱う状態であり、無関係なデータファイルと同じ置換手順にはできない。[WALの仕様](https://www.sqlite.org/wal.html)。

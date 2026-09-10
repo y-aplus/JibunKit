@@ -6,7 +6,7 @@
 
 `build-ios.yml`の`ui_test_filter`はUI suiteを一件へ絞っても、その前に通常のSwift/Moduleテスト、Releaseビルド、IPA梱包、CounterExample、BackupHarnessを実行していた。通知やnavigationの短い診断反復が、Files pickerとは別の準備と通常成果物生成を待つ状態だった。
 
-filter指定時をfocused UI検証として明示し、publication boundary、固定Xcode/Tuist、workspace生成、Simulator準備、選択した一件、診断回収だけを残した。CounterExampleとBackupHarnessは対象テストが直接使う場合だけビルド・導入する。filterなしの通常IPA・全Simulator回帰と、`feature_validation`の生成Feature/Records経路は変更しない。
+`focused_ui_validation=true`を明示した場合だけfocused UI検証とし、publication boundary、固定Xcode/Tuist、workspace生成、Simulator準備、選択した一件、診断回収だけを残した。CounterExampleとBackupHarnessは対象テストが直接使う場合だけビルド・導入する。focusedを指定しない通常IPA・全Simulator回帰と、`feature_validation`の生成Feature/Records経路は変更しない。既存の`feature_validation=true`とfilterの併用も従来どおり実行できる。
 
 任意文字列は環境変数でshellへ渡し、`MigrationUITests/<TestClass>/test<TestMethod>`の単一identifier形式を検査してから、引用された一引数として`xcodebuild`へ渡す。focusedと`feature_validation`の混在、およびSimulatorを要求しないfilter指定は入力エラーにして、省略範囲が曖昧な実行を作らない。
 
@@ -14,7 +14,7 @@ filter指定時をfocused UI検証として明示し、publication boundary、�
 
 ```bash
 gh workflow run build-ios.yml --ref YOUR_BRANCH \
-  -f simulator_tests=true \
+  -f simulator_tests=true -f focused_ui_validation=true \
   -f ui_test_filter=MigrationUITests/MigrationUITests/testNotificationDeliveryAndRouting
 ```
 

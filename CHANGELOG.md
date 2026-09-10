@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Feature/RuntimeごとのFoundation NotificationCenter購読を追加。owner限定取消、個別token取消、queued MainActor配送の抑止、購読解除とcapture解放を提供。実Foundationの9テストとiOSビルドで検証済み。並行取消とRuntime終了の保証は[接続ガイド](docs/guides/owned-notification-observations.md)を参照。
+
 ## [0.3.0] - 2026-09-10
 
 - Feature/profile別Keychain・Cookie・HTTPパスワード資格情報の明示保存とnative URLCacheを追加。実HTTPとiOS process再起動で所有者分離を検証。

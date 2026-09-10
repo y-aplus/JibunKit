@@ -77,6 +77,8 @@ struct MiniAppListScreen: View {
             ForEach(matchingApps) { miniApp in
                 Button { navigation.open(miniApp.id) } label: {
                     Label(miniApp.title, systemImage: miniApp.systemImage)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
                 .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
             }

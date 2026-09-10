@@ -12,6 +12,8 @@ CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnativ
 
 回帰はRecords詳細URL、値ベース経路保持/stale binding、scene別navigation実体、生成Notesの切替を一つのfocused batchで確認する。通常hostの通知遷移も対象にする。Swift/XcodeはCIで検証し、ここでは未成功。
 
+初回修正run 34542201985（source `b6e7ac7`）は共有159試験とnative build/IPAは成功したが、Records詳細から一覧へ戻りCounter行をtapした後も一覧が残り、counter.value取得で失敗した。詳細URLへは未到達。行のLabelを全幅の明示contentShapeにし、右側の余白からの選択と遷移完了待ちを回帰へ追加した。次回は行frame/hittableとタップ直前のスクリーンショットを記録する。現時点で失敗原因や修正成功は未確定。
+
 ## 通知action: 未解決
 
 `testNativeNotificationRequestPayloadsReachOnlyTheirOwners`のnotification cardは見つかったが、左swipe後のViewボタンを検出できなかった（611行）。そのためこのrunはnative action callbackの成功証拠ではない。OS画面操作と通知配置の証拠から追加調査する。D11のcallback処理との因果関係は未確認。

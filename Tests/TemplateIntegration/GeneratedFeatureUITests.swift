@@ -799,6 +799,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             element.tap()
         }
         tap(app.buttons["miniapp.counter"])
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         let counterValue = app.staticTexts["counter.value"].label
         tap(app.navigationBars.buttons["ミニアプリ"])
         tap(app.buttons["miniapp.records"])
@@ -821,7 +822,16 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
         tap(app.navigationBars.buttons["記録"])
         tap(app.navigationBars.buttons["ミニアプリ"])
-        tap(app.buttons["miniapp.counter"])
+        let counterRow = app.buttons["miniapp.counter"]
+        XCTAssertTrue(counterRow.waitForExistence(timeout: 10), app.debugDescription)
+        // The blank trailing part of a launcher row is also a selection target.
+        print("COUNTER-ROW frame=\(counterRow.frame) hittable=\(counterRow.isHittable)")
+        let launcher = XCTAttachment(screenshot: app.screenshot())
+        launcher.name = "records-return-launcher"
+        launcher.lifetime = .keepAlways
+        add(launcher)
+        counterRow.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(app.staticTexts["counter.value"].label, counterValue)
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/records?destination=invalid")))
         XCTAssertTrue(app.staticTexts["counter.value"].exists)

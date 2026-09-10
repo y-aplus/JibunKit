@@ -12,8 +12,49 @@ import WebKit
 final class LifecycleProbeState {
     var events: [String] = []
     var sceneEvents: [MiniAppSceneActivity] = []
+    var sceneIdle: MiniAppSceneIdleTimer?
+    var sceneIdleError = "none"
+    var sceneIdleBackgroundReleased = false
+
+    func receiveSceneIdle(_ activity: MiniAppSceneActivity) {
+        guard ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" else { return }
+        do {
+            if sceneIdle == nil {
+                sceneIdle = try runtime.makeSceneIdleTimer(for: activity.featureID, using: .shared)
+            }
+            sceneIdle?.receive(activity)
+            if activity.phase == .background && activity.isSelected {
+                sceneIdleBackgroundReleased = !UIApplication.shared.isIdleTimerDisabled
+            }
+        } catch { sceneIdleError = String(describing: error) }
+    }
     var restoredValue = "original"
     var showingRestore = false
+    var storeAccessStatus = "idle"
+    private var storeAccessInput: AsyncStream<Void>.Continuation?
+
+    func startStoreAccess(owner: MiniAppID) {
+        guard storeAccessStatus != "running", storeAccessStatus != "starting" else { return }
+        let channel = AsyncStream<Void>.makeStream()
+        storeAccessInput = channel.continuation
+        storeAccessStatus = "starting"
+        do {
+            try runtime.start { [self] in
+                do {
+                    try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: owner) { [self] in
+                        await setStoreAccessStatus("running")
+                        for await _ in channel.stream { }
+                        try Task.checkCancellation()
+                        await finishStoreWrite()
+                    }
+                    await setStoreAccessStatus("completed")
+                } catch { await setStoreAccessStatus("failed") }
+            }
+        } catch { storeAccessStatus = "failed" }
+    }
+    func finishStoreAccess() { storeAccessInput?.finish(); storeAccessInput = nil }
+    private func setStoreAccessStatus(_ value: String) { storeAccessStatus = value }
+    private func finishStoreWrite() { restoredValue = "written" }
     var idleLease: MiniAppIdleTimerLease?
     var taskStatus = "idle"
     var categories = "unread"
@@ -25,6 +66,16 @@ final class LifecycleProbeState {
     func stopForRestore(owner: String) async throws {
         if owner == "lifecycle-a", restoreFault == "stop" { throw MiniAppBackupError.invalidEntry }
         await shutdown()
+        if owner == "lifecycle-a", ["stop-after-shutdown", "stop-recovery"].contains(restoreFault) {
+            throw MiniAppBackupError.invalidEntry
+        }
+    }
+
+    func recoverAfterFailedStop(owner: String) throws {
+        // The old pre-stop failure leaves the original runtime usable.
+        guard runtime.isClosed else { return }
+        if owner == "lifecycle-a", restoreFault == "stop-recovery" { throw MiniAppBackupError.invalidEntry }
+        resumeAfterRestore()
     }
 
     func resumeForRestore(owner: String) throws {
@@ -160,14 +211,15 @@ enum LifecycleProbeIntegration {
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
                           backup: backup,
                           restoreLifecycle: MiniAppRestoreLifecycle(stop: { try await state.stopForRestore(owner: id) },
-                              resume: { try await state.resumeForRestore(owner: id) }),
+                              resume: { try await state.resumeForRestore(owner: id) },
+                              recoverAfterFailedStop: { try await state.recoverAfterFailedStop(owner: id) }),
                           appendDestination: { destination, path in
                               guard let value = Int(destination), value > 0 else { return false }
                               path.append(value)
                               return true
                           },
                           onHostPhaseChange: { state.receive($0) },
-                          onSceneActivityChange: { state.sceneEvents.append($0) },
+                          onSceneActivityChange: { state.sceneEvents.append($0); state.receiveSceneIdle($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
                           },
@@ -181,7 +233,11 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             Group {
-            if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
+            if ProcessInfo.processInfo.environment["JIBUNKIT_STORE_ACCESS_PROBE"] == "1" {
+                StoreAccessProbeView(context: context, state: state)
+            } else if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" {
+                SceneIdleTimerProbeView(context: context, state: state)
+            } else if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
                 sceneActivityProbe
             } else if ProcessInfo.processInfo.environment["JIBUNKIT_NAVIGATION_PROBE"] == "1" {
                 NavigationRetentionProbeView(owner: context.id.rawValue)
@@ -259,6 +315,29 @@ enum LifecycleProbeIntegration {
         case nil: phase = "disconnected"
         }
         return "\(phase):\(activity.isSelected ? 1 : 0)"
+    }
+}
+
+private struct StoreAccessProbeView: View {
+    let context: MiniAppContext
+    let state: LifecycleProbeState
+    @State private var showingRestore = false
+    var body: some View {
+        VStack {
+            Text(state.storeAccessStatus).accessibilityIdentifier("store.access.status")
+            Text(state.restoredValue).accessibilityIdentifier("runtime.restored.value")
+            Button("Begin write") { state.startStoreAccess(owner: context.id) }
+                .accessibilityIdentifier("store.access.start")
+            Button("Finish write", action: state.finishStoreAccess)
+                .accessibilityIdentifier("store.access.finish")
+            Button("Restore probe") { showingRestore = true }
+                .accessibilityIdentifier("runtime.restore.open")
+        }
+        .sheet(isPresented: $showingRestore) {
+            BackupScreen(definitions: LifecycleProbeIntegration.definitions, importedBackup: try! MiniAppBackup(entries: [
+                MiniAppBackupEntry(id: context.id, schemaVersion: 1, payload: Data("restored".utf8))
+            ]))
+        }
     }
 }
 
@@ -588,6 +667,38 @@ private struct NetworkCookieProbeView: View {
                 result = "ready"
             } catch { result = "error: \(error)" }
         }
+    }
+}
+
+private struct SceneIdleTimerProbeView: View {
+    let context: MiniAppContext
+    let state: LifecycleProbeState
+    @State private var result = "unread"
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("scene.idle.result")
+            Text(state.sceneIdleError).accessibilityIdentifier("scene.idle.error")
+            Text(state.sceneIdleBackgroundReleased ? "released" : "unseen")
+                .accessibilityIdentifier("scene.idle.background")
+            Button("Request while selected") {
+                do {
+                    guard let scope = state.sceneIdle else { state.sceneIdleError = "missing scope"; return }
+                    try scope.setRequested(true)
+                } catch { state.sceneIdleError = String(describing: error) }
+                read()
+            }.accessibilityIdentifier("scene.idle.request")
+            Button("Manual request") { state.acquireIdle(context: context); read() }
+                .accessibilityIdentifier("scene.idle.manual")
+            Button("Release manual") { state.idleLease?.release(); state.idleLease = nil; read() }
+                .accessibilityIdentifier("scene.idle.manual-release")
+            Button("Shutdown") { Task { await state.shutdown(); read() } }
+                .accessibilityIdentifier("scene.idle.shutdown")
+            Button("Read", action: read).accessibilityIdentifier("scene.idle.read")
+        }
+    }
+    private func read() {
+        let owners = MiniAppIdleTimer.shared.activeOwners.map(\.rawValue).sorted().joined(separator: ",")
+        result = "\(UIApplication.shared.isIdleTimerDisabled ? "disabled" : "enabled"):\(owners)"
     }
 }
 

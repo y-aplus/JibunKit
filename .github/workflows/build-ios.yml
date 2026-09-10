@@ -144,6 +144,14 @@ jobs:
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
+      - name: Verify Feature build requirements
+        if: ${{ !inputs.focused_ui_validation }}
+        shell: bash
+        run: |
+          args=()
+          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
+          python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+
       - name: Measure backup memory in separate test processes
         if: ${{ !inputs.focused_ui_validation }}
         run: |
@@ -203,6 +211,22 @@ jobs:
           if include_spotlight_probe:
               shutil.copyfile(spotlight_probe, 'Sources/JibunKit/SpotlightOwnershipProbe.swift')
               shutil.copyfile(spotlight_tests, 'UITests/SpotlightOwnershipUITests.swift')
+          web_storage_probe = Path('Tests/TemplateIntegration/WebStorageOwnershipProbe.swift')
+          web_storage_tests = Path('Tests/TemplateIntegration/WebStorageOwnershipUITests.swift')
+          if web_storage_probe.exists() != web_storage_tests.exists():
+              raise SystemExit('Web storage ownership integration fixtures must be added together')
+          include_web_storage_probe = web_storage_probe.exists()
+          if include_web_storage_probe:
+              shutil.copyfile(web_storage_probe, 'Sources/JibunKit/WebStorageOwnershipProbe.swift')
+              shutil.copyfile(web_storage_tests, 'UITests/WebStorageOwnershipUITests.swift')
+          background_probe = Path('Tests/TemplateIntegration/BackgroundExecutionProbe.swift')
+          background_tests = Path('Tests/TemplateIntegration/BackgroundExecutionUITests.swift')
+          if background_probe.exists() != background_tests.exists():
+              raise SystemExit('Background execution integration fixtures must be added together')
+          include_background_probe = background_probe.exists()
+          if include_background_probe:
+              shutil.copyfile(background_probe, 'Sources/JibunKit/BackgroundExecutionProbe.swift')
+              shutil.copyfile(background_tests, 'UITests/BackgroundExecutionUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -221,6 +245,10 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           if include_spotlight_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
+          if include_web_storage_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        WebStorageOwnershipProbe.ownerADefinition,\n        WebStorageOwnershipProbe.ownerBDefinition,'))
+          if include_background_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        BackgroundExecutionProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -325,10 +353,14 @@ jobs:
             "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)"
 
+          widget_entitlements_file="$(find Derived -type f -name 'JibunKitWidget-Extension.entitlements')"
+          app_entitlements_file="$(find Derived -type f -name 'JibunKit-App.entitlements')"
+          test -f "$widget_entitlements_file"
+          test -f "$app_entitlements_file"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements JibunKitWidget.entitlements "$widget"
+            --entitlements "$widget_entitlements_file" "$widget"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
-            --entitlements JibunKit.entitlements "$app"
+            --entitlements "$app_entitlements_file" "$app"
           codesign --verify --deep --strict "$app"
           app_entitlements="$(codesign --display --entitlements :- "$app" 2>&1)"
           widget_entitlements="$(codesign --display --entitlements :- "$widget" 2>&1)"
@@ -536,6 +568,15 @@ jobs:
           path: |
             ${{ runner.temp }}/simulator-tests.log
             ${{ runner.temp }}/simulator-app.log
+          retention-days: 14
+
+      - name: Upload build requirement diagnostics
+        if: always() && !inputs.focused_ui_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Feature-build-requirement-diagnostics
+          path: ${{ runner.temp }}/feature-build-requirements.log
+          if-no-files-found: ignore
           retention-days: 14
 
       - name: Upload backup picker diagnostics

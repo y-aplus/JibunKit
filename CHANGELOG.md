@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+- Core SpotlightのFeature別item/domain識別子と所有者限定削除を追加。native属性を保持し、Aの削除後もBの検索結果が残ることを署名付きiOS hostで検証。検索結果からの画面遷移はまだ接続していない。
+- FeatureのInfo.plist/entitlements要求をTuistで合成する仕組みを追加。異なる値の衝突を検出し、明示resolutionと限定した文字列集合の合成を提供。IPA署名もTuistの生成entitlementsを使う。
+
+- 通常の保存操作を共有バックアップと調停する`withStoreAccess`を追加。同じFeatureの通常アクセスは並行でき、処理中の復元/snapshotと、復元中の新規アクセスを拒否する。他Featureは継続し、画面はデータ使用中を案内する。
+
+- 復元前の停止が途中で失敗した場合の任意の回復callbackを追加。回復完了まで重複処理を拒否し、未復元と回復失敗を画面で区別する。SQLiteの実BUSY close、他owner保持、既存を含む6失敗経路で検証。
+
+- 選択中かつactiveなsceneがある間だけ自動ロックを防ぐ任意の要求scopeを追加。非選択・背景化で解除し、復帰時に再適用。別ownerの明示leaseと複数sceneを維持し、Runtime終了後の再取得を拒否する。
+- Records参照アプリで、行の文字列横の空白も詳細表示へのタップ対象に修正。
+
 - Featureごとにsceneの活動状態・選択状態・接続終了を受け取る任意callbackを追加。既存のhost集約通知を維持し、非選択を自動的な処理終了へ変換しない。iOSの切替・背景化/復帰・他FeatureのTask継続で検証。
 
 - 同じscene内のミニアプリ切替で、各Featureの値ベースの画面経路を保持。下部の切替メニュー、一覧からの再開、選択中だけのroot resetを追加。既存root URL/通知の動作は維持し、他Featureの経路を消さない。

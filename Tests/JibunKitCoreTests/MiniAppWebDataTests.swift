@@ -10,4 +10,16 @@ final class MiniAppWebDataTests: XCTestCase {
         XCTAssertNotEqual(MiniAppContext(id: MiniAppID("a.b")).websiteDataStoreIdentifier(profile: "c"),
                           MiniAppContext(id: MiniAppID("a")).websiteDataStoreIdentifier(profile: "b.c"))
     }
+
+    #if canImport(WebKit)
+    @available(macOS 14.0, iOS 17.0, *)
+    @MainActor
+    func testFactoryReturnsPersistentNativeStoreForOwnerIdentifier() {
+        let context = MiniAppContext(id: MiniAppID("web-owner"))
+        let store = context.websiteDataStore(profile: "signed-in")
+
+        XCTAssertTrue(store.isPersistent)
+        XCTAssertEqual(store.identifier, context.websiteDataStoreIdentifier(profile: "signed-in"))
+    }
+    #endif
 }

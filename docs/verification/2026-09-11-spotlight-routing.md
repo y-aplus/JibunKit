@@ -15,6 +15,8 @@ Info.plistのNSUserActivityTypesはCoreSpotlight定数から生成する。独�
 
 fixtureは既存SpotlightOwnershipProbeのnative query helperを再利用し、一時hostにだけ組み込む。通常IPAに索引作成のテスト画面を含めない。Windowsではdiff・selector・埋込みPythonを検査し、native実行はCIで確認する。
 
+source `ce45761`を[34514127926](https://github.com/y-aplus/JibunKit/actions/runs/34514127926)へ送った。完全selectorは`MigrationUITests/SpotlightRoutingUITests/testNativeSearchOpensOwnerDetailPreservesOtherPathAndColdLaunches`。通常hostは検索/起動回帰を選択。両selectorの存在、diff、実際の埋込みPythonによるfixture両方なし/片方拒否/両方copy・各owner単一登録を確認した。完了はgh run watchからcodex queueへ通知する。
+
 ## 証拠の境界
 
 unitの成功はOSが検索結果を表示・配送した証拠ではない。実OS検索UI・cold launch・複数windowの選択はそれぞれ区別して記録する。既存のAppNavigationが保持するのは値ベースの経路であり、任意Viewの内部状態や未保存編集内容全体の復元を保証しない。D18全体は未完。

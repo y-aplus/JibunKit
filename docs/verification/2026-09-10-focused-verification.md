@@ -34,3 +34,7 @@ runは2026-09-10 13:20:39–13:32:47 UTCの12分08秒で成功した。publicati
 比較可能な既存の通常Simulator回帰run 34211874205は22分36秒だったため、今回のfocused runは観測値で10分28秒短い。ただし対象UI件数とrunner状態が異なり、固定短縮率や個々のskipだけの寄与は主張しない。このrunでは指定外回帰を意図して実行しておらず、上記「実行例と証拠の境界」の未実行範囲は残る。
 
 レビューで、形式だけ正しい不存在testを`xcodebuild`が0件成功として扱う余地を指摘された。source存在とXCTest成功件数の二段階検査を追加し、Windows上で実在する`testMiniAppSearchFiltersAndOpensResults`と模擬成功logを受理、不存在method、生成host専用`GeneratedFeatureUITests`、0件実行logを終了コード1で拒否することを確認した。通常host focusedと`feature_ui_test_filter`の混在も事前入力エラーにした。
+
+[review verification run 34487492106](https://github.com/y-aplus/JibunKit/actions/runs/34487492106)、source `51671d71697b8f30c525145f7df097b109105c42`は13分41秒で成功した。事前検査が実在testを認識し、`testMiniAppSearchFiltersAndOpensResults`一件が115.317秒で成功した後、同じidentifierのXCTest成功行を事後検査が認識した。通常成果物と指定外回帰のskipも維持された。
+
+続く`6457986`では、D08用のKeychain access-control probeとUI testが両方存在する場合だけ、`feature_validation`の隔離checkoutへcopyして一時Registryへ登録するoptional hookを追加した。片方だけならtemplate検証を失敗させる。fixtureが存在しない通常sourceでは分岐へ入らず、通常appと通常Registryには追加しない。このhookの署名済み生成host実証はD08 branchがmain統合後に行うため、本記録のfocused runの証拠には含めない。

@@ -23,3 +23,5 @@ Run 34523984820, source `8445cebba4b773829c7d7fc65452273570c3ce32`, はhelper検
 Run 34524360773, source `0807926db0358daeea9c51514e9da3031a0a5128`, はapp/widget buildとlocalized resource組込みを通過した後、検証用macOS `Bundle.path`呼出しの`inDirectory`引数不足でcompileに失敗した。`nil`を明示してnative読戻しを再実行する。
 
 Run 34524770105, source `8da7614a454547cff5a340de13e862a08e72fa5b`, は全工程success。native Tuist合成検査、app/widget build、両bundleのen/ja `InfoPlist.strings`に対するFoundation `Bundle`読戻し、通常app/IPA buildが成功した。最終checkpointでは再生成前の限定清掃と、削除済みfr localeがbundleへ残らない検査を追加する。
+
+Run 34525725652, source `ad879e0a5b74782fb15e68df04972e9dd5e622aa`, は最終checkpointの全工程success。`Native Tuist requirement merge/validation checks passed`、`Native Bundle readback passed for app/widget en+ja; stale fr localization absent`を記録し、独立Feature packages、native Feature template、通常Xcode build、ad-hoc署名、IPAも通過した。これにより合成結果だけでなく、生成された二つのiOS bundle内の言語resourceとnative読戻しを証明した。

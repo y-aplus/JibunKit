@@ -35,7 +35,7 @@ Simulatorログでは19:03:35に`com.apple.Spotlight`がforegroundとなり、�
 
 ## 証拠の境界
 
-2回目のsourceは`3042cae`。検索process参照を修正した`efa4d27`を[34518648791](https://github.com/y-aplus/JibunKit/actions/runs/34518648791)へ送った。再検証も`gh run watch`完了後に親threadへqueue通知する。
+2回目のsourceは`3042cae`、3回目は`efa4d27`。検索欄の型と初回案内対応を修正した`33df6e5`を[34521029216](https://github.com/y-aplus/JibunKit/actions/runs/34521029216)へ送った。再検証も`gh run watch`完了後に親threadへqueue通知する。
 
 待機中のコード確認では、registeredIDs内の不正IDはContext生成前に除外され、未知owner・非canonical Base64・不正UTF-8はresolverがnilを返す。hostはnilで画面を変更せず、有効なIDでもFeatureの`navigationPath(for:)`が拒否した場合はAppNavigationが変更前にreturnする。local IDはURL用文字制限に変換せずopaqueな文字列としてFeatureへ渡す。これはソース確認であり、OS配送や複数window実行の証拠には含めない。
 

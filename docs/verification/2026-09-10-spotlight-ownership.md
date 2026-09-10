@@ -17,7 +17,7 @@ Appleは`CSSearchableItem.uniqueIdentifier`をアプリ内で項目を識別・�
 
 ## native比較試験
 
-`MiniAppSpotlightTests`はdefault native indexへA/Bが同じlocal IDを持つ二項目を登録する。`CSSearchQuery`で実際のindexから両項目を読み戻し、Feature別unique identifier、domain、native `textContent`を比較する。その後Aのdomainだけを削除し、同じqueryでA消失、Bのidentifier/domain/native属性維持を確認する。cleanupも二domainの限定削除で行い、`deleteAllSearchableItems`へ依存しない。
+最終の署名付きUI fixtureはdefault native indexへA/Bが同じlocal IDを持つ二項目を登録する。`CSSearchQuery`で実際のindexから両項目を読み戻し、Feature別unique identifier、domain、native titleを比較する。その後Aのdomainだけを削除し、同じqueryでA消失、Bのidentifier/domain/title維持を確認する。`textContent`のquery返却は確認できていない。cleanupも二domainの限定削除で行い、`deleteAllSearchableItems`へ依存しない。
 
 WindowsにはCore Spotlight/Swiftがないため、実行証拠はApple platform CIで取得する。run 34491161907、source `7c8d5e5`は試験の`contentType`へ文字列を渡してcompileに失敗し、native `UTType.text`へ修正した。
 

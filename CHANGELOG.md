@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Core SpotlightのFeature別item/domain識別子と所有者限定削除を追加。native属性を保持し、Aの削除後もBの検索結果が残ることを署名付きiOS hostで検証。検索結果からの画面遷移はまだ接続していない。
+
 - 通常の保存操作を共有バックアップと調停する`withStoreAccess`を追加。同じFeatureの通常アクセスは並行でき、処理中の復元/snapshotと、復元中の新規アクセスを拒否する。他Featureは継続し、画面はデータ使用中を案内する。
 
 - 復元前の停止が途中で失敗した場合の任意の回復callbackを追加。回復完了まで重複処理を拒否し、未復元と回復失敗を画面で区別する。SQLiteの実BUSY close、他owner保持、既存を含む6失敗経路で検証。

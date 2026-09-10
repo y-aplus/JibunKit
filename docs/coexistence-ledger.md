@@ -42,7 +42,7 @@
 | D15 | BackgroundTasksの起動登録・期限・completion | 未対応 | 未対応。現在のhost phase配送とは別機構。 |
 | D16 | Background URLSessionの再接続 | 未対応 | 未対応。通常Task所有権だけではカバーしない。 |
 | D17 | ユーザー起点の継続処理・進捗・取消 | 未対応 | 初期棚卸しのbackground領域へ追加すべきAPI種別。未対応。 |
-| D18 | Spotlight・NSUserActivityと項目削除 | 未対応 | 初期棚卸しに明示されていない差分。未対応。 |
+| D18 | Spotlight・NSUserActivityと項目削除 | 未対応 | MiniAppSpotlightNamespaceでnative属性を保持したFeature別item/domainと限定削除を追加。34509301964の署名付きiOS hostで同じlocal IDのA/Bを実indexから読戻し、A削除後のB identifier/domain/title保持を検証（52.529秒）。属性copyの参照分離もunit確認。textContentのquery返却、検索結果起点のNSUserActivity/host/scene/cold launch配送は未完。[検証記録](verification/2026-09-10-spotlight-ownership.md)。 |
 | D19 | 権限・プライバシー同意の単位 | 未対応 | 権限要求/拒否の一部例はあるが一般的なFeature別同意は未対応。 |
 | D20 | 署名capability・Info.plist・構成の合成 | 未対応 | 現状Project.swift中心の手動設定。汎用的な要求合成は未対応。 |
 | D21 | AudioSessionの構成と中断・復帰 | 未対応 | 未対応。単なるcategory setterのwrapperでは不足。 |

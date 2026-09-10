@@ -1,0 +1,21 @@
+# Native Cookie保持と終了時点の比較
+
+状態: 診断を追加、CI未検証。製品の永続化保証を変更しない。
+
+34537802126では、native setCookie完了・読戻し成功後に背景化してアプリを終了したが、再起動後は識別子付きprofileと比較用default storeの両方でCookieがmissingだった。二ownerとも同じ結果で、JibunKit固有の識別子だけを原因とは決められない。
+
+## 今回の実験
+
+`WebStorageOwnershipUITests/testNativeCookiePersistenceMatchesDefaultAtControlledTerminationIntervals`で背景化の確認からterminateまでの間隔を0・5・15秒に固定して比較する。二ownerを各条件で実行し、各回の新しいUUID値をprofile/defaultへ保存する。保存直後は両方の値が一致することを必須にし、再起動後の両値をログへ残す。以前の試行で保存された値を今回の成功と誤認しない。
+
+これは終了時点を変える比較実験であり、待機秒数を製品へ追加する対処ではない。既存の`testWebDataPersistsAndClearingPreservesOtherFeature`は保持を要求するまま変更しない。新診断の成功はprofileとdefaultの結果一致を意味し、両方missingでも永続化成功を意味しない。識別子付きだけmissingなら比較は失敗する。各intervalで一回ずつの観測で、再現頻度や必要待機時間の保証にはしない。
+
+同一アプリ内のdefault storeとの比較であり、別プロセスの独立アプリとの比較やHTTP応答のSet-Cookie試験ではない。ページは従来fixtureのloadHTMLStringを使用する。製品コードと通常IPAには変更なし。
+
+## 仕様と実装を区別する
+
+[AppleのsetCookie API](https://developer.apple.com/documentation/webkit/wkhttpcookiestore/setcookie(_:completionhandler:))と[公開WebKitのWKHTTPCookieStore実装](https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/API/Cocoa/WKHTTPCookieStore.mm)を再確認した。公開実装ではsetCookieとprivateなdisk flushは別の入口である。これだけでSimulatorの失敗原因や公開APIの永続化時点は確定しない。非公開flushをJibunKitから呼ばず、実際のOS結果と独立に扱う。
+
+## 結果
+
+CI待ち。結果が得られたらsource、六観測のprofile/default、後続調査をここへ追記する。

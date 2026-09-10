@@ -1,0 +1,16 @@
+# D13 通知requestの所有Feature配送
+
+状態: 実装済み、CI未検証。
+
+既存配送はkind/requestIdentifier/destination/userTextだけを渡しており、独立アプリがnative delegateから取得できた通知content・独自payload・triggerを失っていた。`MiniAppNotificationRequestSnapshot`をactionとforegroundイベントへ追加し、通常hostの両delegate経路から接続する。native secure codingを使い、独自userInfo schemaやunchecked Sendableを設けない。
+
+検証予定:
+
+- 実UNNotificationRequestのtitle/subtitle/body/category/thread/badge、ネストしたuserInfo、Data、繰返しtriggerをsecure archive経由で復元する。snapshotのexecutor間受渡しもSwift 6で検査する。
+- 元の可変dictionaryを変えてもsnapshotが変わらず、読み出しごとのnative objectが独立する。
+- action handlerへ所有者だけのsnapshotとuserTextを渡し、custom actionで画面を変更しない。
+- 既存の署名付きhost通知試験にnative requestの検査を組込み、foreground A/Bそれぞれのowner/recordとcustom actionのowner/record/title/bodyを復元できた場合だけ受信済みにする。通常delegateを通らない直接resolver呼出しを証拠にしない。
+
+選択UI testは`MigrationUITests/GeneratedFeatureUITests/testNativeNotificationRequestPayloadsReachOnlyTheirOwners`。既存のforeground試験→所有通知削除→custom action試験を一単位にし、後者でB表示維持とAのみの受信を確認する。
+
+添付ファイルの保持/コピー、実APNs配送、response.targetScene、受信日時はこの単位の検証対象外。native requestに添付参照があってもファイル寿命を延長する保証はない。D13全体を完了とはしない。

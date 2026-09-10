@@ -8,12 +8,15 @@ public struct MiniAppNotificationAction: Sendable, Equatable {
     public let requestIdentifier: String
     public let destination: String?
     public let userText: String?
+    public let requestSnapshot: MiniAppNotificationRequestSnapshot?
 
-    public init(kind: Kind, requestIdentifier: String, destination: String?, userText: String?) {
+    public init(kind: Kind, requestIdentifier: String, destination: String?, userText: String?,
+                requestSnapshot: MiniAppNotificationRequestSnapshot? = nil) {
         self.kind = kind
         self.requestIdentifier = requestIdentifier
         self.destination = destination
         self.userText = userText
+        self.requestSnapshot = requestSnapshot
     }
 }
 

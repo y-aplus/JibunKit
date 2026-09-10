@@ -30,7 +30,8 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
     ) {
         let route = MiniAppNotificationRoute.candidateRoute(userInfo: notification.request.content.userInfo)
         let event = MiniAppForegroundNotification(requestIdentifier: notification.request.identifier,
-            categoryIdentifier: notification.request.content.categoryIdentifier, destination: route?.destination)
+            categoryIdentifier: notification.request.content.categoryIdentifier, destination: route?.destination,
+            requestSnapshot: Self.snapshot(notification.request))
         Task { @MainActor in
             completionHandler(MiniAppNotificationPresentation.options(for: event, route: route,
                 policyForOwner: { MiniAppRegistry.definition(for: $0)?.notificationPresentation }))
@@ -57,7 +58,8 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
             kind: kind,
             requestIdentifier: response.notification.request.identifier,
             destination: candidate?.destination,
-            userText: (response as? UNTextInputNotificationResponse)?.userText
+            userText: (response as? UNTextInputNotificationResponse)?.userText,
+            requestSnapshot: Self.snapshot(response.notification.request)
         )
         // UIKit performs snapshot/state restoration work from this callback.
         // The synthesized async delegate thunk can complete on a cooperative
@@ -71,6 +73,16 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
                 open: { AppSceneRouting.shared.open($0) })
             Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
                 .notice("Notification route dispatched; parsed route: \(candidate != nil)")
+        }
+    }
+
+    nonisolated private static func snapshot(_ request: UNNotificationRequest) -> MiniAppNotificationRequestSnapshot? {
+        do { return try MiniAppNotificationRequestSnapshot(request: request) }
+        catch {
+            // A snapshot failure must not suppress legacy navigation or completion.
+            Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
+                .error("Unable to snapshot native notification request: \(String(describing: error))")
+            return nil
         }
     }
 }

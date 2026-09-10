@@ -1,7 +1,6 @@
-import Foundation
 import ProjectDescription
 
-let includeA = ProcessInfo.processInfo.environment["PRIVACY_INCLUDE_A"] != "0"
+let includeA = __INCLUDE_A__
 let appPackages: [Package] = includeA
     ? [.package(path: "FeatureA"), .package(path: "FeatureB")]
     : [.package(path: "FeatureB")]

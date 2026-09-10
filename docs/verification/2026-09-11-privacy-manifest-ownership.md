@@ -26,3 +26,5 @@ Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、S
 Run 34529562304, source `8368e7ebd8c13e3fe207cd54422c2b5c33b6ac3f`, は独立A/BのSwiftPM buildとmanifest読取りに成功した後、一時fixtureにTuist root markerがなく統合project生成前に停止した。空の`Tuist/` markerを作成して再検証する。
 
 Run 34530020690, source `1c9eb0ef0e98491ccbc97009ebd7c1d5b3efe026`, はA+BとB-onlyのbuild自体には成功したが、同一rootへの2回目の`tuist generate`が以前のA依存を生成済みprojectに残すことを検出した。B-only検証を別DerivedDataだけでなく別のclean Tuist project rootでも生成するよう分離して再検証する。
+
+Run 34530426724, source `8136f2f264bc6731cec7bf31e028f8f9d28b3879`, は別project root・別DerivedDataでも環境変数で評価したmanifestのA依存がB-only graphへ残ることを検出した。Tuistのmanifest評価キャッシュに左右されないよう、各clean rootの`Project.swift`へA有無をリテラルで明示して再検証する。

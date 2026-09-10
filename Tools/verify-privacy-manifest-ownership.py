@@ -39,21 +39,22 @@ for owner in ["FeatureA", "FeatureB"]:
 with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     temp_root = Path(temp)
 
-    def make_project(label):
+    def make_project(label, include_a):
         root = temp_root / label
         root.mkdir()
         (root / "Tuist").mkdir()
         for name in ["FeatureA", "FeatureB"]:
             shutil.copytree(fixtures / name, root / name, ignore=shutil.ignore_patterns(".build"))
-        shutil.copyfile(fixtures / "HostProject.swift.fixture", root / "Project.swift")
+        project = (fixtures / "HostProject.swift.fixture").read_text()
+        project = project.replace("__INCLUDE_A__", "true" if include_a else "false")
+        (root / "Project.swift").write_text(project)
         shutil.copyfile(fixtures / "App.swift", root / "App.swift")
         shutil.copyfile(fixtures / "Widget.swift", root / "Widget.swift")
         return root
 
     def build(include_a, label):
-        root = make_project(label)
-        run([args.tuist, "generate", "--no-open"], root,
-            {"PRIVACY_INCLUDE_A": "1" if include_a else "0"})
+        root = make_project(label, include_a)
+        run([args.tuist, "generate", "--no-open"], root)
         derived = root / f"Build-{label}"
         run(["xcodebuild", "build", "-workspace", root / "PrivacyHost.xcworkspace",
              "-scheme", "PrivacyHost", "-configuration", "Release",

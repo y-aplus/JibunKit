@@ -110,3 +110,5 @@ Files roundtripの後続試験は時間切れで未完、Recordsは未実行。�
 ## 非同期解放と復元の結合
 
 34430359179（source `e166d67`）で非同期hook順序・別runtime終了・shutdown合流のunitとIPAが成功。次のunitは実際のMiniAppRestorePlanとMiniAppRestoreLifecycleからRuntime.shutdownを呼び、非同期解放をcontinuationで止める。停止中のapply未実行、同owner復元拒否、別runtimeのTask進行、解放→適用→再開の順序を検証する。deinit経由でも非同期hook終了前に後続資源を解放しないことを別testで確認する。CI待ち。
+
+34430649082（source `a8ea0be`）で非同期解放と復元の結合、deinit解放順序のunitとIPAが成功。これらは協調的な終了契約の証拠であり、特定DBや通信接続の切断実装を確認したものではない。

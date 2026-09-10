@@ -29,7 +29,9 @@ durable flush timing, and JibunKit does not call private
 flush APIs.
 
 To clear one owner's web state, call `removeData(ofTypes:modifiedSince:)` on that
-owner's store and await completion. Do not clear `WKWebsiteDataStore.default()`
+owner's store and await completion. Include every data type the product promises
+to clear—for example Cookies, local storage, and IndexedDB databases—rather than
+assuming one type removes another. Do not clear `WKWebsiteDataStore.default()`
 or enumerate unrelated identifiers as a substitute. Existing WebViews using a
 store must be coordinated by the Feature before deletion; automatic lifetime
 coordination is not currently provided.

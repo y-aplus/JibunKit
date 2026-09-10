@@ -29,7 +29,8 @@ the stable owner/profile identifier. The signed UI flow checks:
   values;
 - the app enters the normal background state before termination;
 - both values survive process recreation;
-- clearing A's native store completes before proceeding;
+- native removal of A's Cookie, local-storage, and IndexedDB data completes
+  before proceeding;
 - the page observes A's database deletion without opening and recreating it;
 - B remains readable after A is cleared and the app is recreated again.
 
@@ -38,10 +39,10 @@ The fixture uses only the dedicated `web-storage-owner-a` and
 Feature's data. A failure remains an assertion failure; the test has no skip or
 fixed-delay fallback for Cookie instability.
 
-IndexedDB deletion waits for `IDBOpenDBRequest.onsuccess`. The absence check
-uses `indexedDB.databases()` and does not call `indexedDB.open()` for a missing
-database, avoiding a false “missing” result that recreates the database under
-test. HTTP fetch and Service Worker storage remain out of scope.
+The absence check uses `indexedDB.databases()` and does not call
+`indexedDB.open()` for a missing database, avoiding a false “missing” result
+that recreates the database under test. HTTP fetch and Service Worker storage
+remain out of scope.
 
 ## CI-only integration
 
@@ -81,7 +82,7 @@ regression also passed (one test, 43.680 seconds), as did the release iOS build,
 IPA packaging, independent packages, generated Feature checks, and Records UI
 tests. No sleep or skip was added to the ownership path.
 
-## IndexedDB result
+## Page-level IndexedDB deletion result
 
 [GitHub Actions run 34508502126](https://github.com/y-aplus/JibunKit/actions/runs/34508502126)
 on Xcode 26.6 succeeded from source `822a362`. The same complete selector and
@@ -97,3 +98,9 @@ native-store tests. The short normal-host search/open regression passed in
 packages, generated Feature checks, and Records UI tests also passed. The probe
 remains under `Tests/TemplateIntegration`; the normal product source list does
 not contain it.
+
+This run deleted IndexedDB through the page's `deleteDatabase()` API before
+clearing the other native store types. It proves page-level deletion, but it is
+not evidence that `WKWebsiteDataStore.removeData` included IndexedDB. The next
+run replaces that sequence with one awaited native removal containing
+`WKWebsiteDataTypeIndexedDBDatabases`.

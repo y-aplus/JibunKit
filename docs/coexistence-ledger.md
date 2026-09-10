@@ -44,7 +44,7 @@
 | D17 | ユーザー起点の継続処理・進捗・取消 | 未対応 | 初期棚卸しのbackground領域へ追加すべきAPI種別。未対応。 |
 | D18 | Spotlight・NSUserActivityと項目削除 | 未対応 | 初期棚卸しに明示されていない差分。未対応。 |
 | D19 | 権限・プライバシー同意の単位 | 未対応 | 権限要求/拒否の一部例はあるが一般的なFeature別同意は未対応。 |
-| D20 | 署名capability・Info.plist・構成の合成 | 未対応 | 現状Project.swift中心の手動設定。汎用的な要求合成は未対応。 |
+| D20 | 署名capability・Info.plist・構成の合成 | 未対応 | Feature別のplist/entitlements要求をTuist標準helperで合成。異値衝突、明示resolution、限定した文字列集合、target別分離を追加。34510497056でnative helper試験、生成probeのビルド済みInfo.plist/実ad-hoc署名、通常app/Widget/IPAとUI回帰が成功。[接続ガイド](guides/feature-build-requirements.md)。多言語用途説明、privacy manifest、構造化配列の一般合成、target/依存/Registryの一元化、実provisioningと再署名後の利用条件は残る。 |
 | D21 | AudioSessionの構成と中断・復帰 | 未対応 | 未対応。単なるcategory setterのwrapperでは不足。 |
 | D22 | Now Playing・remote commands・再生対象 | 未対応 | 未対応。標準API再利用で独自実装を減らせる。 |
 | D23 | カメラ・AR等のcapture資源 | 未調査 | 未調査。カメラ機能全体を除外する根拠にはならない。 |

@@ -15,8 +15,9 @@ protocol MiniAppWebAuthenticationSessionProviding: AnyObject {
     ) -> any MiniAppWebAuthenticationSession
 }
 
-/// Serializes the single host presentation surface while retaining request
+/// Serializes a host-selected presentation surface while retaining request
 /// ownership and completion routing for the Feature that started it.
+/// Separate surfaces may use separate coordinators.
 @MainActor
 public final class MiniAppWebAuthenticationCoordinator {
     public enum Failure: Error, Equatable {

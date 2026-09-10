@@ -9,8 +9,24 @@ final class WebAuthenticationNativeUITests: XCTestCase {
         app.launch()
     }
 
-    func testLocalPageCompletesThroughCustomCallback() {
-        app.buttons["auth.complete"].tap()
+    func testNativeBaselineCompletesThroughCustomCallback() {
+        complete(startButton: "baseline.complete")
+    }
+
+    func testJibunKitWrapperCompletesThroughStandardCallbackDescriptor() {
+        complete(startButton: "wrapper.complete")
+    }
+
+    func testNativeBaselineOSCancelReturnsCanceledLogin() {
+        cancel(startButton: "baseline.cancel")
+    }
+
+    func testJibunKitWrapperOSCancelReturnsCanceledLogin() {
+        cancel(startButton: "wrapper.cancel")
+    }
+
+    private func complete(startButton: String) {
+        app.buttons[startButton].tap()
         acceptConsentIfPresent()
         let returnLink = app.links["Return to App"]
         XCTAssertTrue(returnLink.waitForExistence(timeout: 10))
@@ -19,8 +35,8 @@ final class WebAuthenticationNativeUITests: XCTestCase {
         waitForStatus("completed", timeout: 15)
     }
 
-    func testOSCancelReturnsCanceledLogin() {
-        app.buttons["auth.cancel"].tap()
+    private func cancel(startButton: String) {
+        app.buttons[startButton].tap()
         acceptConsentIfPresent()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let appCancel = app.buttons.matching(identifier: "Close").firstMatch

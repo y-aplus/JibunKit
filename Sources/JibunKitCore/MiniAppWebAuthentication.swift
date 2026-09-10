@@ -30,6 +30,7 @@ public final class MiniAppWebAuthenticationCoordinator {
         let id: UUID
         let connectionID: UUID
         let owner: MiniAppID
+        let provider: any MiniAppWebAuthenticationSessionProviding
         let session: any MiniAppWebAuthenticationSession
         let state: MiniAppWebAuthenticationRequest.State
         let completion: @MainActor (Result<URL, Error>) -> Void
@@ -56,7 +57,7 @@ public final class MiniAppWebAuthenticationCoordinator {
             [weak self] result in self?.finish(id: id, result: result, cancelNative: false)
         }
         active = Active(
-            id: id, connectionID: connectionID, owner: owner, session: session,
+            id: id, connectionID: connectionID, owner: owner, provider: provider, session: session,
             state: state, completion: completion)
         let request = MiniAppWebAuthenticationRequest(id: id, coordinator: self, state: state)
         if !session.start(), active?.id == id {
@@ -124,7 +125,6 @@ public final class MiniAppWebAuthentication {
         self.provider = provider
     }
 
-    @discardableResult
     public func start(
         url: URL,
         callbackURLScheme: String?,

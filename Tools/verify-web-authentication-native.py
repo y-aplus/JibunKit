@@ -40,7 +40,9 @@ try:
     with tempfile.TemporaryDirectory(prefix="jibunkit-web-auth-native-") as temp:
         root = Path(temp)
         (root / "Tuist").mkdir()
-        shutil.copyfile(fixture / "Project.swift.fixture", root / "Project.swift")
+        project = (fixture / "Project.swift.fixture").read_text()
+        project = project.replace("__JIBUNKIT_PATH__", str(repo).replace("\\", "/"))
+        (root / "Project.swift").write_text(project)
         shutil.copyfile(fixture / "App.swift", root / "App.swift")
         shutil.copyfile(fixture / "UITests.swift", root / "UITests.swift")
         subprocess.run([args.tuist, "generate", "--no-open"], cwd=root, check=True)
@@ -56,4 +58,4 @@ finally:
     server.shutdown()
     server.server_close()
 
-print("Native web authentication verified: local browser callback and OS cancellation")
+print("Native web authentication verified: Apple baseline and JibunKit wrapper callback/cancel")

@@ -159,6 +159,24 @@ final class MiniAppWebAuthenticationTests: XCTestCase {
         withExtendedLifetime((firstRequest, secondRequest)) {}
     }
 
+    func testPerRequestProviderIsRetainedOnlyUntilRequestFinishes() throws {
+        let coordinator = MiniAppWebAuthenticationCoordinator()
+        let baseProvider = WebAuthenticationProviderSpy()
+        let authentication = MiniAppWebAuthentication(
+            context: context("feature-a"), coordinator: coordinator, provider: baseProvider)
+        var provider: WebAuthenticationProviderSpy? = WebAuthenticationProviderSpy()
+        weak var weakProvider = provider
+        let request = try authentication.start(url: authURL, provider: provider!) { _ in }
+        let session = try XCTUnwrap(provider?.sessions.first)
+
+        provider = nil
+        XCTAssertNotNil(weakProvider)
+        session.complete(.success(URL(string: "a://callback")!))
+
+        XCTAssertTrue(request.isFinished)
+        XCTAssertNil(weakProvider)
+    }
+
     private var authURL: URL { URL(string: "https://example.invalid/authorize")! }
     private func context(_ id: String) -> MiniAppContext { MiniAppContext(id: MiniAppID(id)) }
 }

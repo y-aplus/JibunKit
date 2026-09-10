@@ -106,7 +106,6 @@ public extension MiniAppRuntime {
 public extension MiniAppWebAuthentication {
     /// Uses Apple's native callback descriptor, including associated HTTPS
     /// callbacks, without reducing it to a custom URL scheme.
-    @discardableResult
     func start(
         url: URL,
         callback: ASWebAuthenticationSession.Callback,

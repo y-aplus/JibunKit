@@ -1,6 +1,8 @@
 import ProjectDescription
 
-let project = Project(name: "WebAuthenticationNative", targets: [
+let project = Project(name: "WebAuthenticationNative", packages: [
+    .package(path: "__JIBUNKIT_PATH__"),
+], targets: [
     .target(
         name: "WebAuthenticationNative",
         destinations: .iOS,
@@ -15,7 +17,8 @@ let project = Project(name: "WebAuthenticationNative", targets: [
             "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
             "UILaunchScreen": [:],
         ]),
-        sources: ["App.swift"]
+        sources: ["App.swift"],
+        dependencies: [.package(product: "JibunKitCore")]
     ),
     .target(
         name: "WebAuthenticationNativeUITests",

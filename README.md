@@ -1,4 +1,4 @@
-> 最新公開版: [0.2.0](https://github.com/y-aplus/JibunKit/releases/tag/0.2.0)。1.0は未達で、mainでは幅広いFeatureの非干渉共存を開発中です。
+> 最新公開版: [0.3.0](https://github.com/y-aplus/JibunKit/releases/tag/0.3.0)。1.0は未達で、mainでは幅広いFeatureの非干渉共存を開発中です。
 
 # JibunKit
 
@@ -8,7 +8,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.2.0](https://github.com/y-aplus/JibunKit/releases/tag/0.2.0)。mainでは0.3.0の出荷準備と、1.0に向けた開発を進めています。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.3.0](https://github.com/y-aplus/JibunKit/releases/tag/0.3.0)。1.0に向けた開発は継続中です。[0.3.0の変更と検証範囲](release-notes-0.3.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。通知と詳細遷移の拡張、最終回帰・出荷確認は継続中です。[1.0の完成条件と残作業](docs/superpowers/plans/2026-09-08-jibunkit-1.0.md)を参照してください。
 

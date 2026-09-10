@@ -21,8 +21,16 @@
 
 macOSの実HTTP試験で、同一serverへのCookie/認証/cacheの分離、profile別再生成、個別logout、遅い応答と取消後の保存・削除順序を確認。iOS SimulatorではCookie/HTTPパスワードのprocess再起動と他Feature保持、二navigation実体の非干渉、実通知遷移を確認しています。検証source・CI・IPAの対応は[公開記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-10-0.3-release.md)を参照してください。
 
-この候補そのものの実機確認は未実施です。別sourceではユーザーがJSONバックアップの書出し・読込み・対象選択・上書き復元を確認しています。SimulatorのFilesからJSONを選択するUI試験は未解決で、今回の限定UI試験を全回帰成功とは扱いません。
+この公開版そのものの実機確認は未実施です。別sourceではユーザーがJSONバックアップの書出し・読込み・対象選択・上書き復元を確認しています。SimulatorのFilesからJSONを選択するUI試験は未解決で、今回の限定UI試験を全回帰成功とは扱いません。
 
 Cookie/パスワードの保存は明示操作で、自動保存、全Cookie属性、証明書/SSO、background再接続は未完です。Webデータの再起動保持には過去にCIで不安定性があり、全Webデータ・強制終了耐性を保証しません。二navigation実体の試験はOS上の複数window操作を実証したものではありません。
 
 音声・バックグラウンド・一般callback・capability合成なども開発中です。[差分台帳](https://github.com/y-aplus/JibunKit/blob/main/docs/coexistence-ledger.md)で仕様確認・比較実験・設計検証の残りを追跡します。namespaceは同一process内のセキュリティ隔離ではなく、正しく接続したFeatureの意図しない競合を減らすための所有権境界です。
+
+## 配布物
+
+- Source/tag: `7954dda246fa5d711371ad2223b42a2429bf4868` / `0.3.0`
+- 出荷CI: [34442458523](https://github.com/y-aplus/JibunKit/actions/runs/34442458523)（成功）。共有114テスト、独立Feature 9テスト、生成Feature検証、Records単独ビルド、本体/Widgetビルド、署名構造・App Intents・IPA検査を通過。
+- このrunではSimulator UIは実行せず、実装差分のない直前source `6a4d2fd` の限定UI試験 [34440565104](https://github.com/y-aplus/JibunKit/actions/runs/34440565104)を参照しています。
+- [IPA直接ダウンロード](https://github.com/y-aplus/JibunKit/releases/download/0.3.0/JibunKit.ipa): `JibunKit.ipa`、793,280 bytes、全26 ZIP entryの展開/CRC成功。
+- SHA-256: `afe51e1d7b2cf025913ed404ae24fc1a0955e49d8f08f918112195936f56e0c9`

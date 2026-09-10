@@ -28,12 +28,13 @@ def read_manifest(path):
     }, (path, value)
     return value
 
+independent = {}
 for owner in ["FeatureA", "FeatureB"]:
     package = fixtures / owner
     run(["swift", "build", "--package-path", package], repo)
     manifests = list((package / ".build").rglob("*.bundle/PrivacyInfo.xcprivacy"))
     assert manifests, f"No independent privacy resource bundle for {owner}"
-    read_manifest(manifests[0])
+    independent[owner] = read_manifest(manifests[0])
 
 with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     root = Path(temp)
@@ -69,8 +70,14 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     assert len(b_app) == 1, b_app
     assert len(b_widget) == 1, b_widget
     assert all("FeatureA" not in name for name in b_app), b_app
+    both_a = next(value for name, value in both_app.items() if "FeatureA" in name)
     both_b = next(value for name, value in both_app.items() if "FeatureB" in name)
     removed_b = next(value for name, value in b_app.items() if "FeatureB" in name)
+    assert both_a[1] == independent["FeatureA"]
+    assert both_b[1] == independent["FeatureB"]
+    assert removed_b[1] == independent["FeatureB"]
+    assert next(iter(both_widget.values()))[1] == independent["FeatureB"]
+    assert next(iter(b_widget.values()))[1] == independent["FeatureB"]
     assert both_b[1] == removed_b[1]
     assert both_b[0].read_bytes() == removed_b[0].read_bytes()
     assert next(iter(both_widget.values()))[1] == next(iter(b_widget.values()))[1]

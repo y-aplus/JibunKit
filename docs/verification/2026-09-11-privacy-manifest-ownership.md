@@ -17,6 +17,8 @@ Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、S
 `Tools/verify-privacy-manifest-ownership.py`はA/Bを個別に`swift build`し、各resource bundleのmanifestをplistとして読む。次にTuist hostを二構成でclean buildする。
 
 - A+B構成: app直下のSwiftPM resource bundlesにA/B、Widgetに直接依存するBを確認。
-- B-only構成: appからA bundleだけが消え、app/WidgetのB manifestが内容・bytesとも維持されることを確認。
+- B-only構成: 依存を外し別DerivedDataへ新規buildする。appからA bundleだけが消え、app/WidgetのB manifestが内容・bytesとも維持されることを確認する。これはincremental build directoryからstale resourceを清掃する試験ではない。
+
+独立buildで読んだA/B辞書を基準に、A+B appのA/B、WidgetのB、B-only app/WidgetのBを個別に照合する。
 
 これはnative bundle内の存在・配置・内容・所有者別除去の証拠である。Organizer privacy report生成、App Storeの申告やmanifest内容の実態適合性は別途確認が必要であり、本試験の成功から推定しない。

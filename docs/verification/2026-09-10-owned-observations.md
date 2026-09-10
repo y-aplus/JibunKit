@@ -1,0 +1,58 @@
+# D02 owned NotificationCenter observations
+
+Date: 2026-09-10
+
+## Boundary and contract
+
+Independent apps lose all process-local `NotificationCenter` registrations
+when their process ends. Multiple Features integrated into one process do not
+have that boundary, so a stopped Feature can otherwise remain subscribed and
+react to events intended for a live Feature.
+
+`MiniAppNotificationObservations` restores an explicit owner boundary. Each
+Feature obtains a collection from its `MiniAppRuntime`; stopping that runtime
+removes only the registrations in that collection. Each registration also has
+an idempotent cancellation token for an earlier, narrower lifetime.
+
+The implementation passes `name` and `object` directly to
+`NotificationCenter.addObserver(forName:object:queue:using:)`. It registers
+with a nil operation queue, extracts a typed `Sendable` value on the posting
+thread, and moves that value to a main-actor receiver. A lock-protected active
+flag is checked before extraction and immediately before receiver execution,
+so cancellation suppresses queued delivery. Runtime shutdown registers native
+observer removal in its awaited cleanup sequence.
+
+Apple documents that a non-nil object restricts delivery to notifications from
+that sender, a nil queue invokes the block synchronously on the posting thread,
+the center holds the block until removal, and block observers should be removed
+explicitly. Source:
+https://developer.apple.com/documentation/Foundation/NotificationCenter/addObserver%28forName%3Aobject%3Aqueue%3Ausing%3A%29
+
+## Focused evidence
+
+`MiniAppNotificationObservationsTests` covers:
+
+- two real `NotificationCenter` owners observing the same name, then cancelling
+  one while the other continues;
+- native name and sender-object filtering;
+- suppression of a value queued before owner cancellation;
+- release of a receiver captured by an individually cancelled registration,
+  while its owner collection remains usable;
+- collection deinitialization removing its native observer and releasing the
+  receiver;
+- a reentrant post and ordered main-actor delivery;
+- background-thread extraction followed by main-actor delivery;
+- awaited `MiniAppRuntime.shutdown()` removing one owner's native observers
+  without affecting another runtime.
+
+Local execution is unavailable on the Windows development host because the
+package requires Swift/Xcode. CI status is recorded after the branch run.
+
+## Remaining limits
+
+The cancellation boundary cannot interrupt a receiver that already began.
+Foundation notification posting is synchronous only through extraction; the
+main-actor receiver is intentionally asynchronous. This API does not isolate
+global observers registered directly by Feature code, distributed
+notifications, notification ordering across unrelated posting threads, or
+resource work started outside the owning runtime.

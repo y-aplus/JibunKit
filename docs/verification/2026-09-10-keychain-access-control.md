@@ -153,3 +153,8 @@ that contains `update=after`, `protected-read=rejected`,
 Packaging is complete, but this device result has not yet been obtained.
 Simulator behavior is not substituted for it, and the native/user-presence
 comparison has not been relaxed.
+
+The same IPA is published as the
+[`keychain-device-check-20260911` prerelease](https://github.com/y-aplus/JibunKit/releases/tag/keychain-device-check-20260911),
+with a direct
+[`JibunKit.ipa` download](https://github.com/y-aplus/JibunKit/releases/download/keychain-device-check-20260911/JibunKit.ipa).

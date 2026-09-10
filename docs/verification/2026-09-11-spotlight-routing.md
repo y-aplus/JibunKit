@@ -1,6 +1,8 @@
 # D18 Spotlight選択結果の詳細配送
 
-状態: 実装済み、CI待ち。
+状態: この配送単位は実装・CI検証済み。D18全体は未完。
+
+最終source `eba6fc1`の[34523416261](https://github.com/y-aplus/JibunKit/actions/runs/34523416261)は全工程success。署名付きiOS隔離hostでOSの検索結果からA詳細へ移動し、Bの既存手動経路を保持、host終了後にB結果からB詳細へ起動するテストが269.418秒で成功した。最後の両probe domain削除も`removed`待ちまで通過。共有146試験は0失敗、通常host検索/起動回帰41.516秒、Records編集/永続化69.239秒、app/widget/IPAとbuild requirementsも成功した。Records添付試験97.006秒には既知のQuick Look expected failureが含まれるため、previewの新しい成功証拠には含めない。
 
 `MiniAppSpotlightNamespace.localIdentifier`はowner prefixとcanonical Base64/UTF-8を検査してlocal IDを復元する。`MiniAppSpotlightRoute.resolve`はnativeのselected-item activityだけを登録済みFeatureへ解決する。通常hostの`onContinueUserActivity`はSwiftUIが配送したsceneの既存AppNavigationへ渡し、FeatureのappendDestinationによる検証を経てそのownerの詳細経路だけを更新する。
 

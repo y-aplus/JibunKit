@@ -45,8 +45,18 @@ compiled the implementation but returned `errSecMissingEntitlement` when its
 unsigned test host attempted to add both access-controlled items. The tests now
 skip only that OS/environment condition rather than treating macOS as biometric
 evidence. Context propagation and owner scoping still run against the native
-macOS Keychain without access-control protection. Final CI status is recorded
-after the revised branch run.
+macOS Keychain without access-control protection.
+
+Revised GitHub Actions run
+[34486755340](https://github.com/y-aplus/JibunKit/actions/runs/34486755340)
+succeeded on Xcode 26.6. `MiniAppKeychainAccessControlTests` executed four
+tests with zero failures: the context/ownership and invalid-combination tests
+passed, while the two protected-item cases reported the documented
+`errSecMissingEntitlement` skip. The complete shared suite executed 127 tests
+with those same two skips and zero failures. Independent Feature package tests,
+the release iOS build, and IPA packaging also succeeded. Existing cookie and
+password stores exercised their unchanged default Keychain path in the shared
+suite.
 
 ## Unverified OS-dependent behavior
 

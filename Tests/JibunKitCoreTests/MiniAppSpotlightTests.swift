@@ -1,6 +1,7 @@
 #if canImport(CoreSpotlight)
 import CoreSpotlight
 import Foundation
+import UniformTypeIdentifiers
 import XCTest
 import JibunKitCore
 
@@ -11,10 +12,10 @@ final class MiniAppSpotlightTests: XCTestCase {
         let a = MiniAppSpotlightNamespace(context: MiniAppContext(id: MiniAppID("spotlight-a")))
         let b = MiniAppSpotlightNamespace(context: MiniAppContext(id: MiniAppID("spotlight-b")))
         let localIdentifier = "same-local-id-\(suffix)"
-        let aAttributes = CSSearchableItemAttributeSet(contentType: "public.text")
+        let aAttributes = CSSearchableItemAttributeSet(contentType: .text)
         aAttributes.title = "A \(suffix)"
         aAttributes.textContent = "owner-a native metadata"
-        let bAttributes = CSSearchableItemAttributeSet(contentType: "public.text")
+        let bAttributes = CSSearchableItemAttributeSet(contentType: .text)
         bAttributes.title = "B \(suffix)"
         bAttributes.textContent = "owner-b native metadata"
 

@@ -7,9 +7,10 @@
 ```swift
 import CoreSpotlight
 import JibunKitCore
+import UniformTypeIdentifiers
 
 let spotlight = MiniAppSpotlightNamespace(context: context)
-let attributes = CSSearchableItemAttributeSet(contentType: "public.text")
+let attributes = CSSearchableItemAttributeSet(contentType: .text)
 attributes.title = note.title
 attributes.textContent = note.body
 try await spotlight.index(localIdentifier: note.id, attributes: attributes, in: hostSpotlightIndex)

@@ -14,6 +14,7 @@ public struct MiniAppDefinition: Identifiable {
     public let fileBackup: MiniAppFileBackupProvider?
     public let restoreLifecycle: MiniAppRestoreLifecycle?
     public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
+    public let onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler?
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
     public let notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)?
     public let notificationCategories: [UNNotificationCategory]
@@ -29,6 +30,7 @@ public struct MiniAppDefinition: Identifiable {
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
+        onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
         notificationCategories: [UNNotificationCategory] = [],
         notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)? = nil,
@@ -45,6 +47,7 @@ public struct MiniAppDefinition: Identifiable {
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.onHostPhaseChange = onHostPhaseChange
+        self.onSceneActivityChange = onSceneActivityChange
         self.onNotificationAction = onNotificationAction
         self.notificationCategories = notificationCategories
         self.notificationPresentation = notificationPresentation

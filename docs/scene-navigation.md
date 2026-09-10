@@ -28,7 +28,7 @@ Stackの識別子とbindingの世代を切替時に更新する。同じSwift型
 
 ## 根拠と検証
 
-[Apple WindowGroup](https://developer.apple.com/documentation/swiftui/windowgroup)はwindowのview階層内に置いたStateへwindow別のstorageを割り当てる。[ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内で読むと当該scene、App内では全sceneの集約になる。今回、Featureへの既存host phase配送はApp内の集約を維持し、通知先選択のphaseだけroot view内で読む。
+[Apple WindowGroup](https://developer.apple.com/documentation/swiftui/windowgroup)はwindowのview階層内に置いたStateへwindow別のstorageを割り当てる。[ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内で読むと当該scene、App内では全sceneの集約になる。Featureへの既存host phase配送はApp内の集約を維持する。root view内のphaseは通知先選択と[Feature別のscene活動通知](guides/scene-feature-activity.md)へ用いる。
 
 [MiniAppSceneRouterTests](../Tests/JibunKitCoreTests/MiniAppSceneRouterTests.swift)は選択・非同報・phase変化・登録解除・起動前の保留・再入時の順序を検証する。CI専用iOS画面は実際のAppNavigationを二つ作り、片方の詳細pathや通知先の変更が他方のpathを消さないことを確認する。通常hostでは実通知からの遷移を回帰検証する。[34440565104](https://github.com/y-aplus/JibunKit/actions/runs/34440565104)でunit、iOSの二navigation実体の非干渉（52.260秒）、通常hostの通知遷移（68.971秒）、IPA/Feature/Records検証が成功。
 

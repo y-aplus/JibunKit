@@ -3,6 +3,45 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testSceneActivityFollowsSelectionAndBackgroundWithoutStoppingOtherWork() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ id: String, _ value: String) {
+            let text = app.staticTexts.matching(identifier: id)
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        tap("miniapp.lifecycle-a")
+        // B has never constructed its root, but receives this scene's initial state.
+        expect("scene.activity.status", "A=active:1 B=active:0")
+        expect("scene.activity.identity", "same scene")
+        tap("scene.activity.start")
+        expect("scene.activity.work", "running")
+        tap("miniapp.switch.open")
+        tap("miniapp.switch.lifecycle-b")
+        expect("scene.activity.status", "A=active:0 B=active:1")
+        expect("scene.activity.work", "running")
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.activate()
+        expect("scene.activity.background", "both background")
+        expect("scene.activity.status", "A=active:0 B=active:1")
+        expect("scene.activity.work", "running")
+        tap("miniapp.switch.open")
+        tap("miniapp.switch.list")
+        tap("miniapp.lifecycle-a")
+        expect("scene.activity.status", "A=active:1 B=active:0")
+        expect("scene.activity.work", "running")
+    }
+
     func testSceneNavigationObjectsAndNotificationTargetStayIndependent() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")

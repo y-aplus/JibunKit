@@ -11,6 +11,7 @@ import WebKit
 @Observable
 final class LifecycleProbeState {
     var events: [String] = []
+    var sceneEvents: [MiniAppSceneActivity] = []
     var restoredValue = "original"
     var showingRestore = false
     var idleLease: MiniAppIdleTimerLease?
@@ -166,6 +167,7 @@ enum LifecycleProbeIntegration {
                               return true
                           },
                           onHostPhaseChange: { state.receive($0) },
+                          onSceneActivityChange: { state.sceneEvents.append($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
                           },
@@ -179,7 +181,9 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             Group {
-            if ProcessInfo.processInfo.environment["JIBUNKIT_NAVIGATION_PROBE"] == "1" {
+            if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
+                sceneActivityProbe
+            } else if ProcessInfo.processInfo.environment["JIBUNKIT_NAVIGATION_PROBE"] == "1" {
                 NavigationRetentionProbeView(owner: context.id.rawValue)
             } else {
             VStack {
@@ -227,6 +231,34 @@ enum LifecycleProbeIntegration {
             }
             }
         }
+    }
+
+    private static var sceneActivityProbe: some View {
+        VStack {
+            Text("A=\(sceneStatus(first)) B=\(sceneStatus(second))")
+                .accessibilityIdentifier("scene.activity.status")
+            Text(first.sceneEvents.contains { $0.phase == .background }
+                 && second.sceneEvents.contains { $0.phase == .background } ? "both background" : "no background")
+                .accessibilityIdentifier("scene.activity.background")
+            Text(first.sceneEvents.last?.sceneID == second.sceneEvents.last?.sceneID
+                 && first.sceneEvents.last != nil ? "same scene" : "missing scene")
+                .accessibilityIdentifier("scene.activity.identity")
+            Text(first.taskStatus).accessibilityIdentifier("scene.activity.work")
+            Button("Start A work") { first.start() }
+                .accessibilityIdentifier("scene.activity.start")
+        }
+    }
+
+    private static func sceneStatus(_ state: LifecycleProbeState) -> String {
+        guard let activity = state.sceneEvents.last else { return "missing" }
+        let phase: String
+        switch activity.phase {
+        case .active: phase = "active"
+        case .inactive: phase = "inactive"
+        case .background: phase = "background"
+        case nil: phase = "disconnected"
+        }
+        return "\(phase):\(activity.isSelected ? 1 : 0)"
     }
 }
 

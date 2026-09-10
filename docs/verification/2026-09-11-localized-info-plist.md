@@ -1,5 +1,7 @@
 # D20 localized InfoPlist.strings verification
 
+親レビュー追補: 通常IPAの検証を固定表示名/特定用途keyの無条件拒否から、target別の生成済みInfoPlist.stringsとbundle内容の比較へ変更した。正当なFeature要求・表示名変更・新しいlocaleを製品CIが妨げないようにする。`Tools/verify-localized-info-plist.py`は入力側とbundle側のlocale集合と全key/valueを比較する。run 34527122584から実際に取得したIPAのapp/widget en/jaをWindowsで読戻して成功、app/widget取違え、異値、不一致の追加localeを拒否し、双方へ明示設定された用途key/表示名変更は受理することを確認した。製品Swift実装の変更はない。固定期待値による先行成功と、この構成に追従する検証への変更は分けて記録する。
+
 Updated: 2026-09-11
 
 ## Scope

@@ -34,6 +34,7 @@ final class SpotlightOwnershipProbeState {
             try await b.index(localIdentifier: localIdentifier, attributes: bAttributes, in: index)
             let before = try await SpotlightOwnershipProbe.queryEventually(
                 titles: titles, expectedIdentifiers: Set([aIdentifier, bIdentifier]))
+            print("SPOTLIGHT_OWNERSHIP queriedBefore=\(SpotlightOwnershipProbe.details(before))")
             guard SpotlightOwnershipProbe.metadata(before) == [
                 a.domainIdentifier: "owner-a native metadata",
                 b.domainIdentifier: "owner-b native metadata",
@@ -44,6 +45,7 @@ final class SpotlightOwnershipProbeState {
             try await a.deleteAll(from: index)
             let after = try await SpotlightOwnershipProbe.queryEventually(
                 titles: titles, expectedIdentifiers: Set([bIdentifier]))
+            print("SPOTLIGHT_OWNERSHIP queriedAfter=\(SpotlightOwnershipProbe.details(after))")
             guard SpotlightOwnershipProbe.metadata(after) == [
                 b.domainIdentifier: "owner-b native metadata"
             ] else {
@@ -89,6 +91,12 @@ enum SpotlightOwnershipProbe {
         })
     }
 
+    static func details(_ items: [CSSearchableItem]) -> [String] {
+        items.map {
+            "id=\($0.uniqueIdentifier) domain=\($0.domainIdentifier ?? "nil") title=\($0.attributeSet.title ?? "nil") text=\($0.attributeSet.textContent ?? "nil")"
+        }.sorted()
+    }
+
     static func queryEventually(
         titles: [String], expectedIdentifiers: Set<String>
     ) async throws -> [CSSearchableItem] {
@@ -103,7 +111,7 @@ enum SpotlightOwnershipProbe {
     private static func query(titles: [String]) async throws -> [CSSearchableItem] {
         let clauses = titles.map { "title == \"\($0)\"" }.joined(separator: " || ")
         let context = CSSearchQueryContext()
-        context.fetchAttributes = ["title", "textContent"]
+        context.fetchAttributes = ["title", "textContent", "domainIdentifier"]
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: context)
             let results = SpotlightSearchResults()

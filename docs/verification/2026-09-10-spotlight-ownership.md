@@ -30,3 +30,5 @@ run 34492344143、source `ef8efdcd17a32ae24cad1878e03bac7715fdbecd`では署名h
 run 34492877334、source `6e8b6bcfdef01614959349467356ea3bc3171bdf`ではpure namespace test、共有124 tests、template/build/IPAが成功し、署名済み隔離hostのprobeも起動した。queryが0件のまま`unexpectedItems`となったため、Appleのquery predicate形式に合わせidentifier literalを二重引用符へ修正した。namespaceが生成するidentifierは引用符を含まない固定形式である。
 
 run 34494850967、source `9ce1771a7197de7a561dcdeca487ed77929de554`でも署名済みprobeのqueryは0件だった。引用符だけが原因ではない。Appleのquery guideはpredicateの属性名を`CSSearchableItemAttributeSet`のproperty（例: `title`）にするよう定めている一方、`uniqueIdentifier`は`CSSearchableItem`自身のpropertyである。そこでUUIDを含むnative `title`で対象を検索し、`CSSearchQueryContext.fetchAttributes`で`title`と`textContent`を取得したうえで、返却itemの`uniqueIdentifier`と`domainIdentifier`を所有権の証拠として比較するよう修正した。
+
+run 34498386522、source `76ef0c24e8bac7f838a933da08b9d502d2d1db6a`ではtitle queryにより期待するidentifier群を読み戻せたが、metadata比較が失敗した。`CSSearchQueryContext`は要求した属性だけを返すため、所有者の証拠に使うnative `domainIdentifier`も`fetchAttributes`へ追加した。

@@ -87,7 +87,7 @@ final class MiniAppSpotlightTests: XCTestCase {
     private func queryItems(titles: [String]) async throws -> [CSSearchableItem] {
         let clauses = titles.map { "title == \"\($0)\"" }.joined(separator: " || ")
         let context = CSSearchQueryContext()
-        context.fetchAttributes = ["title", "textContent"]
+        context.fetchAttributes = ["title", "textContent", "domainIdentifier"]
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: context)
             let items = SearchResults()

@@ -24,7 +24,7 @@ MiniAppDefinition(
 
 同じscheme/domainを複数Featureが共有し、pathなどで区別してよい。複数Featureが同じURLを受理すると`ambiguousOwners`で拒否し、登録順で優先しない。未知URL、曖昧URL、Featureが受理できないdetailは現在の画面を維持する。他Featureの経路は上書きしない。host予約の`jibunkit://`は既存の厳密な解決だけを使い、不正な予約URLをFeatureに再解釈させない。
 
-OSがURLをhostへ配送する設定は別に必要。custom schemeはapp targetの`CFBundleURLTypes`、Universal LinkはAssociated Domainsと対応するwebサイトの関連付けを設定する。[Feature build requirements](feature-build-requirements.md)でhostとFeatureの要求を合成する。現在の構造化配列は異なる要求に明示resolutionが必要で、既存の`jibunkit` schemeも解決値に保持する。実例は隔離CI用の`Tests/TemplateIntegration/URLRoutingBuildRequirements.swift.fixture`にある。Widgetへ不要なschemeを複製しない。
+OSがURLをhostへ配送する設定は別に必要。custom schemeはapp targetの`CFBundleURLTypes`、Universal LinkはAssociated Domainsと対応するwebサイトの関連付けを設定する。[Feature build requirements](feature-build-requirements.md)でhostとFeatureの要求を合成する。異なるnameのURL宣言は自動で集め、既存の`jibunkit` schemeも保持する。同じnameの異値衝突を明示resolutionで解決する場合は、hostを含む必要な宣言を解決値に保持する。実例は隔離CI用の`Tests/TemplateIntegration/URLRoutingBuildRequirements.swift.fixture`にある。Widgetへ不要なschemeを複製しない。
 
 この接続は画面へのアドレス配送を扱う。一般の操作callback、ASWebAuthenticationSessionの完了処理、外部ファイルのsecurity scope、`UIOpenURLContext`のoptions、実OS上の複数window選択は別途検証・補完が必要。
 

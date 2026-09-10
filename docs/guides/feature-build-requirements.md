@@ -27,7 +27,8 @@ public enum EnabledFeatureBuildRequirements {
 - hostと各Featureが同じkeyへ同じ値を指定した場合は共有する。独自key、ネストしたdictionary、数値等のTuistのplist値も指定できる。
 - `UIBackgroundModes`、`BGTaskSchedulerPermittedIdentifiers`、`LSApplicationQueriesSchemes`、`NSUserActivityTypes`、App Group、Keychain access group、Associated Domainsは文字列配列を重複除去・ソートして合成する。
 - それ以外の異なる値は、keyと要求元を示して生成を止める。用途説明を単純連結したり、最後のFeatureで上書きしたりしない。統合担当が`infoPlistResolutions`/`entitlementResolutions`へ合意した値を明記する。
-- URL Typesやdocument types等の構造化配列も、異なる要求なら明示的に合成結果を指定する。一般的なkey別schema validatorはまだ提供しない。
+- `CFBundleURLTypes`はhostとFeatureの辞書をそのまま集め、完全に同じ宣言だけを重複除去する。name/role/icon/独自metadataを落とさない。同じ`CFBundleURLName`に異なる辞書があれば、所有者を表示して明示resolutionを求める。nameなしの宣言も許可する。同じschemeを異なるnameで使うことは禁止せず、受信先は[実行時のURL resolver](feature-url-routing.md)で調停する。
+- document types等、それ以外の構造化配列は異なる要求なら明示的に合成結果を指定する。一般的なkey別schema validatorはまだ提供しない。
 - 空/重複のowner、文字列集合keyの不正な型、要求のないkeyへの余ったresolutionを拒否する。bundle identifier/executableはFeatureのplistで変更せずnative targetで設定する。
 
 独自のnative target設定を禁止するものではない。たとえば外部SDKの特殊な設定は通常のTuist APIで表現できる。helperが扱わない設定の共存条件や、明示resolutionが各Featureの動作要件を満たすかは統合側で確認する。

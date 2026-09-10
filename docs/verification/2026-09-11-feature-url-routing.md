@@ -10,7 +10,7 @@
 - iOS隔離host: `jkrouteprobe` schemeをnative app設定へ登録し、二Featureの冷起動detail、温起動detail、手動で進んだ他ownerの経路保持、曖昧/未知/不正detailの拒否、root指定後の他owner保持を`XCUIDevice.shared.system.open`経由で確認する。
 - 通常IPAのRegistryとschemeにはprobeを加えない。`jibunkit://`の既存経路も回帰対象にする。
 
-ローカルWindowsではSwift/Xcodeを実行していない。CI結果とsourceは完了後に追記する。Coreのhttps解析試験は、実Universal LinkのOS配送やweb関連付けの証拠ではない。別アプリの同scheme競合、操作callback、security-scoped file、URL context options、実OS複数windowは未確認。
+ローカルWindowsではSwift/Xcodeを実行していない。Coreのhttps解析試験は、実Universal LinkのOS配送やweb関連付けの証拠ではない。別アプリの同scheme競合、操作callback、security-scoped file、URL context options、実OS複数windowは未確認。
 
 ## CI証拠
 

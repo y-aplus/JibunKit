@@ -6,10 +6,6 @@ public enum EnabledFeatureBuildRequirements {
         "CFBundleURLSchemes": ["jkrouteprobe"],
     ]]
     public static let app = FeatureBuildConfiguration(
-        features: [.init(owner: "url-routing-probe", infoPlist: ["CFBundleURLTypes": probeTypes])],
-        infoPlistResolutions: ["CFBundleURLTypes": [
-            ["CFBundleURLName": "com.jibunkit.app.mini-app", "CFBundleURLSchemes": ["jibunkit"]],
-            ["CFBundleURLName": "com.jibunkit.url-route-probe", "CFBundleURLSchemes": ["jkrouteprobe"]],
-        ]])
+        features: [.init(owner: "url-routing-probe", infoPlist: ["CFBundleURLTypes": probeTypes])])
     public static let widget = FeatureBuildConfiguration()
 }

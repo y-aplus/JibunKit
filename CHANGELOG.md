@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- Featureごとの独自URL resolverを追加。曖昧な受信先を拒否し、SwiftUIが配送したscene内で所有Featureを開き、他Featureの画面経路を保持する。
+- Featureの`CFBundleURLTypes`をhostと自動合成。宣言のname/role/icon等を保持し、同名異値だけ明示resolutionを求める。
+
 ## [0.4.0] - 2026-09-11
 
 - 通知action/foregroundの所有Featureへ、元のnative requestを復元できるsnapshotを渡す。独自userInfoやcontent/triggerを保持し、既存ハンドラーの互換性を維持する。実通知で所有者別配送と他Feature表示維持を検証。

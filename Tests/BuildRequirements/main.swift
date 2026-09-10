@@ -59,10 +59,40 @@ reject("aps-environment") {
     _ = try FeatureBuildConfiguration(features: [.init(owner: "push", entitlements: ["aps-environment": "production"])])
         .compose(infoPlist: [:], entitlements: ["aps-environment": "development"])
 }
-reject("CFBundleURLTypes") {
-    _ = try FeatureBuildConfiguration(features: [.init(owner: "callback", infoPlist: ["CFBundleURLTypes": [["CFBundleURLSchemes": ["callback"]]]])])
-        .compose(infoPlist: ["CFBundleURLTypes": [["CFBundleURLSchemes": ["host"]]]], entitlements: [:])
+let hostURL: Plist.Value = ["CFBundleURLName": "host", "CFBundleURLSchemes": ["host"]]
+let aURL: Plist.Value = ["CFBundleURLName": "feature.a", "CFBundleURLSchemes": ["shared", "callback-a"],
+                        "CFBundleTypeRole": "Viewer", "CFBundleURLIconFile": "AIcon", "CustomMetadata": ["value": 3]]
+let bURL: Plist.Value = ["CFBundleURLName": "feature.b", "CFBundleURLSchemes": ["shared", "callback-b"], "CFBundleTypeRole": "Editor"]
+let anonymousURL: Plist.Value = ["CFBundleURLSchemes": ["anonymous"]]
+let urlA = FeatureBuildRequirement(owner: "a", infoPlist: ["CFBundleURLTypes": .array([aURL, anonymousURL])])
+let urlB = FeatureBuildRequirement(owner: "b", infoPlist: ["CFBundleURLTypes": .array([bURL, aURL, anonymousURL])])
+let urls = try FeatureBuildConfiguration(features: [urlA, urlB]).compose(
+    infoPlist: ["CFBundleURLTypes": .array([hostURL])], entitlements: [:])
+require(urls.infoPlist["CFBundleURLTypes"] == .array([hostURL, aURL, anonymousURL, bURL]), "URL declarations lost fields, host, or exact deduplication")
+let afterRemoval = try FeatureBuildConfiguration(features: [urlA]).compose(
+    infoPlist: ["CFBundleURLTypes": .array([hostURL])], entitlements: [:])
+require(afterRemoval.infoPlist["CFBundleURLTypes"] == .array([hostURL, aURL, anonymousURL]), "Removing B changed A/host declarations")
+let conflictingURL: Plist.Value = ["CFBundleURLName": "feature.a", "CFBundleURLSchemes": ["other"], "CFBundleTypeRole": "Editor"]
+let conflicting = FeatureBuildRequirement(owner: "conflict", infoPlist: ["CFBundleURLTypes": .array([conflictingURL])])
+reject("name feature.a requested by a, conflict") {
+    _ = try FeatureBuildConfiguration(features: [urlA, conflicting]).compose(infoPlist: [:], entitlements: [:])
 }
+let explicitURLs: Plist.Value = .array([hostURL, conflictingURL])
+let resolvedURLs = try FeatureBuildConfiguration(features: [urlA, conflicting], infoPlistResolutions: ["CFBundleURLTypes": explicitURLs])
+    .compose(infoPlist: [:], entitlements: [:])
+require(resolvedURLs.infoPlist["CFBundleURLTypes"] == explicitURLs, "Explicit URL conflict decision ignored")
+let malformedURLTypes: [Plist.Value] = [true, ["not-a-dictionary"]]
+for bad in malformedURLTypes {
+    reject("dictionary array") {
+        _ = try FeatureBuildConfiguration(features: [.init(owner: "bad", infoPlist: ["CFBundleURLTypes": bad])])
+            .compose(infoPlist: [:], entitlements: [:])
+    }
+}
+reject("string array for CFBundleURLSchemes") {
+    _ = try FeatureBuildConfiguration(features: [.init(owner: "bad", infoPlist: ["CFBundleURLTypes": [["CFBundleURLSchemes": [true]]]])])
+        .compose(infoPlist: [:], entitlements: [:])
+}
+require(otherTarget.infoPlist["CFBundleURLTypes"] == nil, "URL declarations leaked to another target")
 let identical = try FeatureBuildConfiguration(features: [.init(owner: "same", infoPlist: ["CFBundleVersion": "4"])])
     .compose(infoPlist: base, entitlements: group)
 require(identical.infoPlist == base, "Identical setting rejected")

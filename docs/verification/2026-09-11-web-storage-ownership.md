@@ -80,3 +80,20 @@ executed 135 tests with zero failures. The short normal-host search/open UI
 regression also passed (one test, 43.680 seconds), as did the release iOS build,
 IPA packaging, independent packages, generated Feature checks, and Records UI
 tests. No sleep or skip was added to the ownership path.
+
+## IndexedDB result
+
+[GitHub Actions run 34508502126](https://github.com/y-aplus/JibunKit/actions/runs/34508502126)
+on Xcode 26.6 succeeded from source `822a362`. The same complete selector and
+flow executed one UI test in 82.111 seconds with zero failures. Every immediate
+and post-relaunch A/B diagnostic contained the expected `localStorage`, Cookie,
+and IndexedDB values. After A deletion completed, the page reported
+`local=missing cookie=missing indexeddb=missing`; after the next normal
+background/relaunch boundary, B still reported all three B values.
+
+The shared suite executed 139 tests with zero failures, including the two
+native-store tests. The short normal-host search/open regression passed in
+41.545 seconds. The release iOS build, normal IPA packaging, independent
+packages, generated Feature checks, and Records UI tests also passed. The probe
+remains under `Tests/TemplateIntegration`; the normal product source list does
+not contain it.

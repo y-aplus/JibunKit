@@ -56,16 +56,17 @@ deletion while other WebViews are active.
 
 ## Result
 
-[GitHub Actions run 34503206316](https://github.com/y-aplus/JibunKit/actions/runs/34503206316)
-on Xcode 26.6 succeeded. Source `db12b79` ran the exact three-part selector and
-executed one ownership UI test in 62.273 seconds with zero failures. The log
+[GitHub Actions run 34505014278](https://github.com/y-aplus/JibunKit/actions/runs/34505014278)
+on Xcode 26.6 succeeded. Source `ae6ba26` ran the exact three-part selector and
+executed one ownership UI test in 91.121 seconds with zero failures. The log
 recorded immediate page readback for A and B, A and B readback after the normal
-background/termination/relaunch boundary, A removal, and B readback after A's
-removal and a second relaunch. Every recorded read contained both the expected
-`localStorage` value and Cookie value.
+background/termination/relaunch boundary, A removal followed by
+`local=missing cookie=missing`, and B readback after A's removal and a second
+relaunch. Every retained-value read contained both the expected `localStorage`
+value and Cookie value.
 
-The native-store unit test passed in 0.007 seconds. The complete shared suite
+The native-store unit test passed in 0.015 seconds. The complete shared suite
 executed 135 tests with zero failures. The short normal-host search/open UI
-regression also passed (one test, 26.488 seconds), as did the release iOS build,
+regression also passed (one test, 43.680 seconds), as did the release iOS build,
 IPA packaging, independent packages, generated Feature checks, and Records UI
 tests. No sleep or skip was added to the ownership path.

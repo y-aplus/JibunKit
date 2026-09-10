@@ -101,6 +101,23 @@ jobs:
           fi
           python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER"
 
+      - name: Validate selected simulator tests
+        if: inputs.simulator_tests
+        env:
+          UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$UI_TEST_FILTER" ]]; then
+            python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" --allow-suite
+          fi
+          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
+            python3 Tools/validate-focused-ui-test.py \
+              "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" --allow-suite \
+              --source-root UITests --source-root Tests/TemplateIntegration
+          fi
+
       - name: Select Xcode 26.6
         shell: bash
         run: |
@@ -178,6 +195,14 @@ jobs:
           if include_keychain_probe:
               shutil.copyfile(keychain_probe, 'Sources/JibunKit/KeychainAccessControlProbe.swift')
               shutil.copyfile(keychain_tests, 'UITests/KeychainAccessControlUITests.swift')
+          spotlight_probe = Path('Tests/TemplateIntegration/SpotlightOwnershipProbe.swift')
+          spotlight_tests = Path('Tests/TemplateIntegration/SpotlightOwnershipUITests.swift')
+          if spotlight_probe.exists() != spotlight_tests.exists():
+              raise SystemExit('Spotlight ownership integration fixtures must be added together')
+          include_spotlight_probe = spotlight_probe.exists()
+          if include_spotlight_probe:
+              shutil.copyfile(spotlight_probe, 'Sources/JibunKit/SpotlightOwnershipProbe.swift')
+              shutil.copyfile(spotlight_tests, 'UITests/SpotlightOwnershipUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -194,6 +219,8 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
           if include_keychain_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
+          if include_spotlight_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -393,6 +420,9 @@ jobs:
             -only-testing:"${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
+          python3 Tools/validate-focused-ui-test.py \
+            "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" --allow-suite \
+            --source-root "$RUNNER_TEMP/template-check/UITests" --log "$RUNNER_TEMP/template-host.log"
 
       - name: Build and install backup UI harness
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))
@@ -426,9 +456,9 @@ jobs:
             "${selection[@]}" \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
-          if [[ "${{ inputs.focused_ui_validation }}" == "true" ]]; then
+          if [[ -n "$UI_TEST_FILTER" ]]; then
             python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" \
-              --log "$RUNNER_TEMP/simulator-tests.log"
+              --allow-suite --log "$RUNNER_TEMP/simulator-tests.log"
           fi
 
       - name: Run Files backup round trip

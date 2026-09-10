@@ -27,4 +27,8 @@ gh workflow run build-ios.yml --ref YOUR_BRANCH \
 
 ## 検証記録
 
-WindowsではSwift/Xcodeを実行できないため、workflow構文と条件の静的検査を行い、branch上のfocused runで実行時間と選択stepを確認する。run URL、source commit、結果は実行後に追記する。
+Windowsでは`git diff --check`を実行した。Swift/Xcodeはないため、branch上の[focused run 34482025360](https://github.com/y-aplus/JibunKit/actions/runs/34482025360)、source `e82b1a981e1f145887948db3b9d6e1cc545d42d8`で実行条件と実機能を確認した。
+
+runは2026-09-10 13:20:39–13:32:47 UTCの12分08秒で成功した。publication boundary、入力検査、Xcode/Tuist固定、workspace生成、Simulator準備、`testMiniAppSearchFiltersAndOpensResults`、診断export/uploadが成功した。通常Swift/Moduleテスト、Records/template、Releaseビルド、IPA検査/upload、CounterExample、BackupHarness、Files往復はActionsのstep結果でもskipを確認した。
+
+比較可能な既存の通常Simulator回帰run 34211874205は22分36秒だったため、今回のfocused runは観測値で10分28秒短い。ただし対象UI件数とrunner状態が異なり、固定短縮率や個々のskipだけの寄与は主張しない。このrunでは指定外回帰を意図して実行しておらず、上記「実行例と証拠の境界」の未実行範囲は残る。

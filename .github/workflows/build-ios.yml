@@ -332,6 +332,7 @@ jobs:
         if: inputs.simulator_tests
         env:
           REQUESTED_RUNTIME: ${{ inputs.simulator_runtime }}
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
         shell: bash
         run: |
           set -euo pipefail
@@ -357,6 +358,9 @@ jobs:
           echo "SIMULATOR_ID=$sim_id" >> "$GITHUB_ENV"
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b
+          if [[ "$FEATURE_UI_TEST_FILTER" == "MigrationUITests/KeychainAccessControlUITests/testProtectedOperationsMatchNativeBaselineAndPreserveBothOwners" ]]; then
+            xcrun simctl biometric "$sim_id" enroll
+          fi
 
       - name: Build and install standalone Counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')

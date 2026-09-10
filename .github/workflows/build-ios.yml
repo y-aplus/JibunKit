@@ -150,7 +150,10 @@ jobs:
         run: |
           args=()
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
-          python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+            python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+            if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
+              python3 Tools/verify-privacy-manifest-ownership.py
+            fi
 
       - name: Measure backup memory in separate test processes
         if: ${{ !inputs.focused_ui_validation }}

@@ -1,0 +1,22 @@
+# D20 Feature privacy manifest ownership verification
+
+Updated: 2026-09-11
+
+## Scope
+
+隔離fixture A/Bが異なる`PrivacyInfo.xcprivacy`を各Swift package resourceとして所有する。通常配布アプリへ架空申告は追加しない。独自manifest合成frameworkは作らない。
+
+Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、Swift packageでは明示resource宣言するよう定める。Xcodeはappとlinked third-party SDKのmanifestからprivacy reportを集約する。
+
+- [Adding a privacy manifest to your app or third-party SDK](https://developer.apple.com/documentation/bundleresources/adding-a-privacy-manifest-to-your-app-or-third-party-sdk)
+- [Privacy manifest files](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files)
+- [Describing data use in privacy manifests](https://developer.apple.com/documentation/bundleresources/describing-data-use-in-privacy-manifests)
+
+## Native checks
+
+`Tools/verify-privacy-manifest-ownership.py`はA/Bを個別に`swift build`し、各resource bundleのmanifestをplistとして読む。次にTuist hostを二構成でclean buildする。
+
+- A+B構成: app直下のSwiftPM resource bundlesにA/B、Widgetに直接依存するBを確認。
+- B-only構成: appからA bundleだけが消え、app/WidgetのB manifestが内容・bytesとも維持されることを確認。
+
+これはnative bundle内の存在・配置・内容・所有者別除去の証拠である。Organizer privacy report生成、App Storeの申告やmanifest内容の実態適合性は別途確認が必要であり、本試験の成功から推定しない。

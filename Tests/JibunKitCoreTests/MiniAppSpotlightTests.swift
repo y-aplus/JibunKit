@@ -6,6 +6,26 @@ import XCTest
 import JibunKitCore
 
 final class MiniAppSpotlightTests: XCTestCase {
+    func testSameLocalIdentifierGetsOwnedNativeIdentifiersAndAttributes() {
+        let a = MiniAppSpotlightNamespace(context: MiniAppContext(id: MiniAppID("spotlight-a")))
+        let b = MiniAppSpotlightNamespace(context: MiniAppContext(id: MiniAppID("spotlight-b")))
+        let attributes = CSSearchableItemAttributeSet(contentType: .text)
+        attributes.title = "Native title"
+        attributes.keywords = ["native", "metadata"]
+
+        let aItem = a.searchableItem(localIdentifier: "same", attributes: attributes)
+        let bItem = b.searchableItem(localIdentifier: "same", attributes: attributes)
+
+        XCTAssertNotEqual(aItem.uniqueIdentifier, bItem.uniqueIdentifier)
+        XCTAssertEqual(aItem.domainIdentifier, a.domainIdentifier)
+        XCTAssertEqual(bItem.domainIdentifier, b.domainIdentifier)
+        XCTAssertTrue(a.owns(itemIdentifier: aItem.uniqueIdentifier))
+        XCTAssertFalse(a.owns(itemIdentifier: bItem.uniqueIdentifier))
+        XCTAssertEqual(aItem.attributeSet.title, "Native title")
+        XCTAssertEqual(aItem.attributeSet.keywords, ["native", "metadata"])
+    }
+
+    #if os(iOS)
     func testNativeIndexKeepsOtherOwnerAfterOwnedDomainDeletion() async throws {
         let suffix = UUID().uuidString
         let index = CSSearchableIndex.default()
@@ -80,8 +100,10 @@ final class MiniAppSpotlightTests: XCTestCase {
             query.start()
         }
     }
+    #endif
 }
 
+#if os(iOS)
 private final class SearchResults: @unchecked Sendable {
     private let lock = NSLock()
     private var items: [CSSearchableItem] = []
@@ -94,4 +116,5 @@ private final class SearchResults: @unchecked Sendable {
         lock.withLock { items }
     }
 }
+#endif
 #endif

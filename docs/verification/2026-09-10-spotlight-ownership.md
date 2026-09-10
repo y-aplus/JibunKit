@@ -18,4 +18,8 @@ Appleは`CSSearchableItem.uniqueIdentifier`をアプリ内で項目を識別・�
 
 `MiniAppSpotlightTests`はdefault native indexへA/Bが同じlocal IDを持つ二項目を登録する。`CSSearchQuery`で実際のindexから両項目を読み戻し、Feature別unique identifier、domain、native `textContent`を比較する。その後Aのdomainだけを削除し、同じqueryでA消失、Bのidentifier/domain/native属性維持を確認する。cleanupも二domainの限定削除で行い、`deleteAllSearchableItems`へ依存しない。
 
-WindowsにはCore Spotlight/Swiftがないため、実行証拠はmacOS CIで取得する。成功run、source commit、時間、未実行範囲は実行後に追記する。
+WindowsにはCore Spotlight/Swiftがないため、実行証拠はApple platform CIで取得する。run 34491161907、source `7c8d5e5`は試験の`contentType`へ文字列を渡してcompileに失敗し、native `UTType.text`へ修正した。
+
+run 34491615457、source `5411ece`は実装と124 testsをcompileし、既存123 testsは成功した。macOS SwiftPM test executableではindex登録APIがエラーなしで完了した後も`CSSearchQuery`が約5秒間0件を返し、A/Bのnative readbackを証明できず対象testを失敗とした。Appleはcustom indexの変更を署名済みapp/extensionへ限定しているが、default indexの今回の0件について署名だけが原因とは断定しない。CLI環境の0件を製品挙動や所有権失敗とも扱わない。
+
+生成itemのidentifier/domain/native属性を比較するpure namespace testはmacOSに残す。実indexの登録・読戻し・A限定削除・B再読戻しは`SpotlightOwnershipProbe`と`SpotlightOwnershipUITests`へ移し、通常hostへ含めず、署名済み`feature_validation`隔離hostだけで実行する。selectorは`MigrationUITests/SpotlightOwnershipUITests/testNativeIndexPreservesOtherOwnerAfterOwnedDeletion`。workflow側のoptional fixture接続がmainへ統合されるまでnative比較は未検証であり、本補完単位も完了扱いしない。

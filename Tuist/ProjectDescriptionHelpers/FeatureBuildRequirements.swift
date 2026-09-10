@@ -28,6 +28,14 @@ public struct ComposedFeatureBuild: Sendable {
     public func writeLocalizedInfoPlistStrings(to directory: String) throws {
         let root = URL(fileURLWithPath: directory, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        for folder in try FileManager.default.contentsOfDirectory(
+            at: root, includingPropertiesForKeys: [.isDirectoryKey]
+        ) where folder.pathExtension == "lproj" {
+            let stale = folder.appendingPathComponent("InfoPlist.strings")
+            if FileManager.default.fileExists(atPath: stale.path) {
+                try FileManager.default.removeItem(at: stale)
+            }
+        }
         for (locale, values) in localizedInfoPlist {
             let folder = root.appendingPathComponent("\(locale).lproj", isDirectory: true)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)

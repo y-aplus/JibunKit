@@ -32,6 +32,10 @@ let widgetBuild = try FeatureBuildConfiguration(features: [
 ]).compose(infoPlist: [
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
 ], entitlements: [:])
+let staleBuild = try FeatureBuildConfiguration(features: [
+    .init(owner: "removed", localizedInfoPlist: ["fr": ["CFBundleDisplayName": "Obsolète"]])
+]).compose(infoPlist: [:], entitlements: [:])
+try staleBuild.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
 try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
 try widgetBuild.writeLocalizedInfoPlistStrings(to: "GeneratedResources/WidgetInfo")
 

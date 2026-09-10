@@ -21,3 +21,5 @@ build probeはappと埋込みwidget extensionを実際に生成・buildする。
 Run 34523984820, source `8445cebba4b773829c7d7fc65452273570c3ce32`, はhelper検査とTuist生成を通過したが、fixtureがresourceをTuist管理対象の`Derived/`へ書いたためgenerate後に入力fileが消え、Xcode buildで失敗した。生成先をTuistが清掃しない`GeneratedResources/`へ変更する。
 
 Run 34524360773, source `0807926db0358daeea9c51514e9da3031a0a5128`, はapp/widget buildとlocalized resource組込みを通過した後、検証用macOS `Bundle.path`呼出しの`inDirectory`引数不足でcompileに失敗した。`nil`を明示してnative読戻しを再実行する。
+
+Run 34524770105, source `8da7614a454547cff5a340de13e862a08e72fa5b`, は全工程success。native Tuist合成検査、app/widget build、両bundleのen/ja `InfoPlist.strings`に対するFoundation `Bundle`読戻し、通常app/IPA buildが成功した。最終checkpointでは再生成前の限定清掃と、削除済みfr localeがbundleへ残らない検査を追加する。

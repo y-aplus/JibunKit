@@ -62,4 +62,4 @@ let build = try app.compose(infoPlist: hostPlist, entitlements: hostEntitlements
 try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
 ```
 
-生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。
+生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。再生成時はその出力先にある既存の`*.lproj/InfoPlist.strings`だけを除去してから書き、削除済みFeatureのlocaleを残さない。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。

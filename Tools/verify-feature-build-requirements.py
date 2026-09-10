@@ -71,6 +71,8 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-build-requirements-") as temp:
     widget_localizations = {path.name for path in widget.glob("*.lproj")}
     assert {"en.lproj", "ja.lproj"} <= app_localizations
     assert {"en.lproj", "ja.lproj"} <= widget_localizations
+    assert "fr.lproj" not in app_localizations
+    print("Native Bundle readback passed for app/widget en+ja; stale fr localization absent")
     entitlements = list((root / "Derived").rglob("BuildRequirementProbe.entitlements"))
     assert len(entitlements) == 1, entitlements
     run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",

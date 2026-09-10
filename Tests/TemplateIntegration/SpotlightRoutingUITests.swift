@@ -34,17 +34,20 @@ final class SpotlightRoutingUITests: XCTestCase {
             XCUIDevice.shared.press(.home)
             let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
             springboard.swipeDown()
-            let search = springboard.searchFields.firstMatch
-            XCTAssertTrue(search.waitForExistence(timeout: 15), springboard.debugDescription)
+            // SpringBoard hosts the gesture, but the searchScreen and keyboard
+            // belong to the separate Spotlight process on the CI runtime.
+            let spotlight = XCUIApplication(bundleIdentifier: "com.apple.Spotlight")
+            let search = spotlight.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 15), spotlight.debugDescription)
             search.tap()
             if let old = search.value as? String, !old.isEmpty {
                 search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count))
             }
             search.typeText(title)
-            let result = springboard.staticTexts[title].firstMatch
-            XCTAssertTrue(result.waitForExistence(timeout: 30), springboard.debugDescription)
+            let result = spotlight.staticTexts[title].firstMatch
+            XCTAssertTrue(result.waitForExistence(timeout: 30), spotlight.debugDescription)
             result.tap()
-            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), springboard.debugDescription)
+            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), spotlight.debugDescription)
         }
 
         tap("miniapp.spotlight-link-b")

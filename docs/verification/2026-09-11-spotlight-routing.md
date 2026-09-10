@@ -23,9 +23,15 @@ source `ce45761`を[34514127926](https://github.com/y-aplus/JibunKit/actions/run
 
 失敗時の画面は`indexing`。Simulator診断ログでは18:40:40.084にindex-items、同40.199にCSSearchQuery開始が記録されており、索引登録後のquery完了待ちまで進んでいた。既存の成功run `34509301964`はprobe操作からpassedまで約40秒（全体52.529秒）、待機上限90秒だった。新規テストだけ30秒に縮めていたため、上限を既存と揃える。固定sleepは追加せず、failed状態なら即失敗する。fixtureには`querying`状態と登録/検索完了の経過秒を追加し、次の失敗を段階ごとに判別できるようにした。製品の索引APIは変更していない。
 
+## 2回目CIと検索画面の参照先
+
+`34516775457`は95.843秒で検索欄の存在確認（line 38）に失敗した。両ownerのnative queryによるready、B手動詳細→A→Bでの経路保持は通過。OS検索結果の選択とcold launchはまだ未到達。
+
+Simulatorログでは19:03:35に`com.apple.Spotlight`がforegroundとなり、同36.082に`searchScreen`がready、同36.949にそのprocessがキーボード入力先になっている。検索画面は表示されたが、テストが`com.apple.springboard`の子要素から検索欄を探していた。検索欄・結果の問い合わせを実際の`com.apple.Spotlight`へ修正し、ホームへ移る操作とスワイプはSpringBoardのままとする。製品配送コードは変更しない。
+
 ## 証拠の境界
 
-再検証はsource `3042cae`の[34516775457](https://github.com/y-aplus/JibunKit/actions/runs/34516775457)。`gh run watch`完了後に親threadへqueue通知する。
+2回目のsourceは`3042cae`。次の再検証も`gh run watch`完了後に親threadへqueue通知する。
 
 待機中のコード確認では、registeredIDs内の不正IDはContext生成前に除外され、未知owner・非canonical Base64・不正UTF-8はresolverがnilを返す。hostはnilで画面を変更せず、有効なIDでもFeatureの`navigationPath(for:)`が拒否した場合はAppNavigationが変更前にreturnする。local IDはURL用文字制限に変換せずopaqueな文字列としてFeatureへ渡す。これはソース確認であり、OS配送や複数window実行の証拠には含めない。
 

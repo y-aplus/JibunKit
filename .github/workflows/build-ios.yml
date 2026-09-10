@@ -93,7 +93,21 @@ jobs:
           "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
-        run: swift test
+        shell: bash
+        run: |
+          set -euo pipefail
+          port_file="$RUNNER_TEMP/network-fixture-port"
+          python3 Tests/Fixtures/network_server.py "$port_file" &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..50}; do
+            if [[ -s "$port_file" ]]; then break; fi
+            kill -0 "$fixture_pid"
+            sleep 0.1
+          done
+          test -s "$port_file"
+          export JIBUNKIT_NETWORK_TEST_PORT="$(cat "$port_file")"
+          swift test
 
       - name: Measure backup memory in separate test processes
         run: |

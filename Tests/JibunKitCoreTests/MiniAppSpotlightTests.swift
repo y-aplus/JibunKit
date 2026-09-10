@@ -52,7 +52,7 @@ final class MiniAppSpotlightTests: XCTestCase {
         }
         XCTAssertEqual(Set(before.map(\.uniqueIdentifier)), expectedIdentifiers)
         let nativeMetadata = Dictionary(uniqueKeysWithValues: before.compactMap { item -> (String, String)? in
-            guard let domain = item.domainIdentifier,
+            guard let domain = item.domainIdentifier ?? item.attributeSet.domainIdentifier,
                   let text = item.attributeSet.textContent else { return nil }
             return (domain, text)
         })
@@ -67,7 +67,10 @@ final class MiniAppSpotlightTests: XCTestCase {
             $0.map(\.uniqueIdentifier) == [b.itemIdentifier(for: localIdentifier)]
         }
         XCTAssertEqual(after.map(\.uniqueIdentifier), [b.itemIdentifier(for: localIdentifier)])
-        XCTAssertEqual(after.first?.domainIdentifier, b.domainIdentifier)
+        XCTAssertEqual(
+            after.first?.domainIdentifier ?? after.first?.attributeSet.domainIdentifier,
+            b.domainIdentifier
+        )
         XCTAssertEqual(after.first?.attributeSet.textContent, "owner-b native metadata")
         try await b.deleteAll(from: index)
     }

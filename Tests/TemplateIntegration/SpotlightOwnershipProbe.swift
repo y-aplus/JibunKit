@@ -87,7 +87,7 @@ enum SpotlightOwnershipProbe {
 
     static func metadata(_ items: [CSSearchableItem]) -> [String: String] {
         Dictionary(uniqueKeysWithValues: items.compactMap { item in
-            guard let domain = item.domainIdentifier,
+            guard let domain = item.domainIdentifier ?? item.attributeSet.domainIdentifier,
                   let text = item.attributeSet.textContent else { return nil }
             return (domain, text)
         })
@@ -95,7 +95,7 @@ enum SpotlightOwnershipProbe {
 
     static func details(_ items: [CSSearchableItem]) -> [String] {
         items.map {
-            "id=\($0.uniqueIdentifier) domain=\($0.domainIdentifier ?? "nil") title=\($0.attributeSet.title ?? "nil") text=\($0.attributeSet.textContent ?? "nil")"
+            "id=\($0.uniqueIdentifier) domain=\($0.domainIdentifier ?? "nil") attributeDomain=\($0.attributeSet.domainIdentifier ?? "nil") title=\($0.attributeSet.title ?? "nil") text=\($0.attributeSet.textContent ?? "nil")"
         }.sorted()
     }
 

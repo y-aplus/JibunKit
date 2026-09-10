@@ -15,6 +15,7 @@ private final class SpotlightRoutingState {
     init(owner: String) { title = "JK \(owner) \(UUID().uuidString.prefix(8))" }
 
     func index(context: MiniAppContext) async {
+        let started = Date()
         status = "indexing"
         do {
             let namespace = MiniAppSpotlightNamespace(context: context)
@@ -22,10 +23,13 @@ private final class SpotlightRoutingState {
             attributes.title = title
             attributes.contentDescription = "JibunKit native search route probe"
             try await namespace.index(localIdentifier: "detail", attributes: attributes, in: .default())
+            status = "querying"
+            print("SPOTLIGHT_ROUTE owner=\(context.id) indexed elapsed=\(Date().timeIntervalSince(started))")
             // Observe actual native query visibility before moving to SpringBoard.
             _ = try await SpotlightOwnershipProbe.queryEventually(
                 titles: [title], expectedIdentifiers: [namespace.itemIdentifier(for: "detail")])
             status = "ready"
+            print("SPOTLIGHT_ROUTE owner=\(context.id) ready elapsed=\(Date().timeIntervalSince(started))")
         } catch { status = "failed: \(error)" }
     }
 

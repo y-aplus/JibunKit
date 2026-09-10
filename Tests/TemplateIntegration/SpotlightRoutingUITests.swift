@@ -19,8 +19,11 @@ final class SpotlightRoutingUITests: XCTestCase {
         }
         func status(_ value: String) {
             let text = app.staticTexts.matching(identifier: "spotlight.route.status")
-                .matching(NSPredicate(format: "label == %@", value)).firstMatch
-            XCTAssertTrue(text.waitForExistence(timeout: 30), app.debugDescription)
+                .matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", value, "failed:")).firstMatch
+            // The existing native Spotlight probe needed about 40 seconds on CI.
+            // Bound the wait consistently, but surface explicit failure immediately.
+            XCTAssertTrue(text.waitForExistence(timeout: 90), app.debugDescription)
+            XCTAssertEqual(text.label, value, app.debugDescription)
         }
         func destination(_ value: String) {
             let text = app.staticTexts.matching(identifier: "spotlight.route.destination")

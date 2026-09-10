@@ -17,6 +17,12 @@ fixtureは既存SpotlightOwnershipProbeのnative query helperを再利用し、�
 
 source `ce45761`を[34514127926](https://github.com/y-aplus/JibunKit/actions/runs/34514127926)へ送った。完全selectorは`MigrationUITests/SpotlightRoutingUITests/testNativeSearchOpensOwnerDetailPreservesOtherPathAndColdLaunches`。通常hostは検索/起動回帰を選択。両selectorの存在、diff、実際の埋込みPythonによるfixture両方なし/片方拒否/両方copy・各owner単一登録を確認した。完了はgh run watchからcodex queueへ通知する。
 
+## 初回CIと診断
+
+`34514127926`はgenerated hostの最初の`ready`待ちが30秒で失敗した。build requirements、通常app/widget/IPA buildは成功。検索UIへの移動・結果配送は未到達であり成功扱いにしない。
+
+失敗時の画面は`indexing`。Simulator診断ログでは18:40:40.084にindex-items、同40.199にCSSearchQuery開始が記録されており、索引登録後のquery完了待ちまで進んでいた。既存の成功run `34509301964`はprobe操作からpassedまで約40秒（全体52.529秒）、待機上限90秒だった。新規テストだけ30秒に縮めていたため、上限を既存と揃える。固定sleepは追加せず、failed状態なら即失敗する。fixtureには`querying`状態と登録/検索完了の経過秒を追加し、次の失敗を段階ごとに判別できるようにした。製品の索引APIは変更していない。
+
 ## 証拠の境界
 
 unitの成功はOSが検索結果を表示・配送した証拠ではない。実OS検索UI・cold launch・複数windowの選択はそれぞれ区別して記録する。既存のAppNavigationが保持するのは値ベースの経路であり、任意Viewの内部状態や未保存編集内容全体の復元を保証しない。D18全体は未完。

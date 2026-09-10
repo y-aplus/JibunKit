@@ -1,6 +1,6 @@
 # Feature別の画面経路保持
 
-状態: 修正後の専用UI・通常通知・Records回帰が成功。購読機構を含む統合sourceの確認待ち。D04の部分補完、main未統合。
+状態: 修正後の専用UI・通常通知・Records回帰と、購読機構を含む統合sourceの確認が成功。D04の部分補完としてmainへ統合。
 
 ## 失われていた境界と変更
 
@@ -33,4 +33,4 @@ NavigationStackの外へ付けたtoolbarでは詳細画面に共通の切替操�
 
 [34484074366](https://github.com/y-aplus/JibunKit/actions/runs/34484074366)、source `3e1e5d783a3ef157dba79aaab659359ca1a964f2`が成功。専用のFeature経路保持UIは79.425秒で成功し、同じInt型の詳細経路のA/B切替、native back、一覧から再開、片方だけroot reset、非対応routeの保持、A明示route、OS経由root URLとB保持を確認した。通常hostの実通知遷移62.373秒、Records添付操作96.560秒、Records作成/編集/検索/削除70.564秒も成功。共有114テスト、独立Feature、生成/standalone、通常IPAを確認。限定filterを用いたrunで、全UI suiteの成功ではない。
 
-その後mainへ統合された購読機構（CI34484781329成功）をこのbranchへ取り込み、製品の画面経路の差分がないことを確認した。統合sourceで共有/Feature・iOS build/IPAを再確認し、既存の二AppNavigation/通知先選択と通常hostの検索→遷移→一覧復帰を検証する。
+その後mainへ統合された購読機構（CI34484781329成功）をこのbranchへ取り込み、製品の画面経路の差分がないことを確認した。[34487215191](https://github.com/y-aplus/JibunKit/actions/runs/34487215191)、source `6c7b7cc8092b9a593448863175a0ca111d6558cd`で共有/Feature・iOS build/IPAが成功。二AppNavigation/通知先選択44.823秒、通常hostの検索→遷移→一覧復帰37.028秒、生成standalone 18.768秒、Records添付83.612秒・編集操作60.813秒が成功した。FilesバックアップUIはこのrunでは選択していない。

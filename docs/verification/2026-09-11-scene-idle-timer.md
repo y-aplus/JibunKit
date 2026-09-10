@@ -1,6 +1,6 @@
 # D05 scene選択とidle timer要求の接続
 
-状態: 実装済み、CI確認待ち。main未統合。
+状態: 専用unit/iOS UIと、修正したRecords回帰を確認済み。部分補完としてmainへ統合。
 
 ## 補完する差分
 
@@ -21,3 +21,5 @@ Simulatorで共有設定を読み戻す試験であり、実機が放置後に�
 [34494488615](https://github.com/y-aplus/JibunKit/actions/runs/34494488615)、source `159bb56`では専用4unitを含む共有131テスト、専用scene idle UI（70.522秒）、通常通知遷移（46.487秒）、iOS build/IPA検査が成功した。run全体は後続の独立Records UI回帰で失敗しており、成功runとは扱わない。既知のSimulator Quick Lookのexpected failureも実プレビュー成功へ読み替えない。
 
 Recordsの保存JSONには新規記録と本文が正常に存在したが、タップ後の動画とUI階層は一覧のままだった。合成tapは新規行の中央 `(201, 256.67)`。短いタイトル/本文はそれぞれx32–174、x32–133にあり、中央はラベルの空白部分だった。既存NavigationLinkラベルのVStackへ横幅と矩形のhit領域を明示し、中央の空白もリンク操作に含める修正を行った。試験は同じ中央tapのまま、編集ボタン/本文の出現を明示的に待って詳細遷移を確認する。二度目のtapや失敗skipは追加しない。原因仮説と修正の有効性は再runで確認する。
+
+[34497999557](https://github.com/y-aplus/JibunKit/actions/runs/34497999557)、source `d0f4215b71d642848346c611ea8f3ed6f61698d5`が成功。Recordsの中央tapからの詳細表示・作成/取消/編集/再起動/検索/削除は72.081秒で成功。scene idle専用UIは72.461秒、通常host検索は37.099秒、生成standaloneは10.027秒で成功した。共有131テスト・iOS build/IPAも成功。Records添付試験は89.931秒で通過したが、Quick Look表示は既知のexpected failureを含むので成功扱いしない。

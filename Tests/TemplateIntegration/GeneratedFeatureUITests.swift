@@ -88,6 +88,8 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("lifecycle-b:1")
         tap("navigation.retention.route")
         expect("lifecycle-a:7")
+        XCUIDevice.shared.system.open(URL(string: "jibunkit://mini-app/lifecycle-a")!)
+        expect("lifecycle-a:0")
         select("lifecycle-b")
         expect("lifecycle-b:1")
     }

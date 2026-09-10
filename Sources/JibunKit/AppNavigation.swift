@@ -72,7 +72,11 @@ final class AppNavigation {
             paths[route.id] = next
             select(route.id)
         } else {
-            open(route.id)
+            // Existing root URLs/notifications explicitly address the entry.
+            // Menu selection resumes; an explicit route replaces only its owner.
+            guard MiniAppRegistry.registeredIDs.contains(route.id) else { return }
+            paths.removeValue(forKey: route.id)
+            select(route.id)
         }
     }
 

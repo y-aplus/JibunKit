@@ -100,7 +100,7 @@ enum SpotlightOwnershipProbe {
     }
 
     private static func query(identifiers: [String]) async throws -> [CSSearchableItem] {
-        let clauses = identifiers.map { "uniqueIdentifier == '\($0)'" }.joined(separator: " || ")
+        let clauses = identifiers.map { "uniqueIdentifier == \"\($0)\"" }.joined(separator: " || ")
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: nil)
             let results = SpotlightSearchResults()

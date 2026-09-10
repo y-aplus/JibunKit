@@ -85,7 +85,7 @@ final class MiniAppSpotlightTests: XCTestCase {
     }
 
     private func queryItems(identifiers: [String]) async throws -> [CSSearchableItem] {
-        let clauses = identifiers.map { "uniqueIdentifier == '\($0)'" }.joined(separator: " || ")
+        let clauses = identifiers.map { "uniqueIdentifier == \"\($0)\"" }.joined(separator: " || ")
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: nil)
             let items = SearchResults()

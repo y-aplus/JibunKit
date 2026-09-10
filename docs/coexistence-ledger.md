@@ -41,7 +41,7 @@
 | D14 | APNs・remote pushの配送とサーバー識別 | 未調査 | 未調査。必要契約と署名可否を分け、SideStore全般で不可と一括推定しない。 |
 | D15 | BackgroundTasksの起動登録・期限・completion | 未対応 | 未対応。現在のhost phase配送とは別機構。 |
 | D16 | Background URLSessionの再接続 | 未対応 | 未対応。通常Task所有権だけではカバーしない。 |
-| D17 | ユーザー起点の継続処理・進捗・取消 | 未対応 | 初期棚卸しのbackground領域へ追加すべきAPI種別。未対応。 |
+| D17 | ユーザー起点の継続処理・進捗・取消 | 未対応 | UIKit begin/endBackgroundTaskのFeature/処理別token所有権を補完。34519837163で共有150試験、署名付きhostのnative取得/終了（18.539秒）、既存回帰が成功。期限切れ配送は注入provider試験であり実OS期限切れの証拠ではない。host共有時間枠は変わらず、BGTaskScheduler/BGContinuedProcessingTask・進捗/取消調停は残る。[検証記録](verification/2026-09-11-background-execution-ownership.md)。 |
 | D18 | Spotlight・NSUserActivityと項目削除 | 未対応 | MiniAppSpotlightNamespaceでnative属性を保持したFeature別item/domainと限定削除を追加。34509301964の署名付きiOS hostで同じlocal IDのA/Bを実indexから読戻し、A削除後のB identifier/domain/title保持を検証（52.529秒）。属性copyの参照分離もunit確認。textContentのquery返却、検索結果起点のNSUserActivity/host/scene/cold launch配送は未完。[検証記録](verification/2026-09-10-spotlight-ownership.md)。 |
 | D19 | 権限・プライバシー同意の単位 | 未対応 | 権限要求/拒否の一部例はあるが一般的なFeature別同意は未対応。 |
 | D20 | 署名capability・Info.plist・構成の合成 | 未対応 | Feature別のplist/entitlements要求をTuist標準helperで合成。異値衝突、明示resolution、限定した文字列集合、target別分離を追加。34510497056でnative helper試験、生成probeのビルド済みInfo.plist/実ad-hoc署名、通常app/Widget/IPAとUI回帰が成功。[接続ガイド](guides/feature-build-requirements.md)。多言語用途説明、privacy manifest、構造化配列の一般合成、target/依存/Registryの一元化、実provisioningと再署名後の利用条件は残る。 |

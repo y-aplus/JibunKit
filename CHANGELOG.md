@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- UIKitの短時間バックグラウンド実行tokenをFeature/処理ごとに所有し、個別完了・期限切れ・Runtime終了・解放時に終了するAPIを追加。他Featureのtokenを維持し、重複終了を防ぐ。OSの実行時間枠はhost全体で共有する。
+
 - Core SpotlightのFeature別item/domain識別子と所有者限定削除を追加。native属性を保持し、Aの削除後もBの検索結果が残ることを署名付きiOS hostで検証。検索結果からの画面遷移はまだ接続していない。
 - FeatureのInfo.plist/entitlements要求をTuistで合成する仕組みを追加。異なる値の衝突を検出し、明示resolutionと限定した文字列集合の合成を提供。IPA署名もTuistの生成entitlementsを使う。
 

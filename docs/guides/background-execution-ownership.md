@@ -7,9 +7,9 @@ work finishes.
 
 ```swift
 let execution = try runtime.makeBackgroundExecution(context: context)
-guard let lease = try execution.begin(operation: "save") {
+guard let lease = try execution.begin(operation: "save", onExpiration: {
     cancelOrCheckpointSave()
-} else {
+}) else {
     // UIKit returned .invalid. Do not start work that requires extra time.
     return
 }

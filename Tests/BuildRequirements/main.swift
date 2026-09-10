@@ -66,6 +66,9 @@ reject("CFBundleURLTypes") {
 let identical = try FeatureBuildConfiguration(features: [.init(owner: "same", infoPlist: ["CFBundleVersion": "4"])])
     .compose(infoPlist: base, entitlements: group)
 require(identical.infoPlist == base, "Identical setting rejected")
+let activities = try FeatureBuildConfiguration(features: [.init(owner: "activity", infoPlist: ["NSUserActivityTypes": ["custom", "native"]])])
+    .compose(infoPlist: ["NSUserActivityTypes": ["native"]], entitlements: [:])
+require(activities.infoPlist["NSUserActivityTypes"] == ["custom", "native"], "Activity types lost host continuation")
 let entitlementResolution = try FeatureBuildConfiguration(features: [.init(owner: "push", entitlements: ["aps-environment": "production"])],
     entitlementResolutions: ["aps-environment": "development"]).compose(infoPlist: [:], entitlements: ["aps-environment": "development"])
 require(entitlementResolution.entitlements["aps-environment"] == "development", "Explicit entitlement resolution ignored")

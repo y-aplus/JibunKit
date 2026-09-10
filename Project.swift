@@ -1,5 +1,6 @@
 import ProjectDescription
 import ProjectDescriptionHelpers
+import CoreSpotlight
 
 let sharedEntitlements: [String: Plist.Value] = [
     "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
@@ -8,6 +9,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.3.0",
     "CFBundleVersion": "4", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "UILaunchScreen": [:],
+    "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
     "CFBundleURLTypes": [[
         "CFBundleURLName": "com.jibunkit.app.mini-app",
         "CFBundleURLSchemes": ["jibunkit"],

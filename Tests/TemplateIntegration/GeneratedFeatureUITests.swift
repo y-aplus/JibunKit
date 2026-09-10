@@ -7,8 +7,8 @@ final class GeneratedFeatureUITests: XCTestCase {
         continueAfterFailure = false
         // Both fixtures now validate the native request before marking receipt.
         // Foreground notifications are removed before testing the action card.
-        testForegroundNotificationsConsultOnlyTheirOwner()
-        testNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature()
+        verifyForegroundNotificationsConsultOnlyTheirOwner()
+        verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature()
     }
 
     func testSceneIdleRequestSuspendsResumesAndPreservesOtherOwner() {
@@ -569,7 +569,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("removed")
     }
 
-    func testNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature() {
+    private func verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
@@ -629,7 +629,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertTrue(result.waitForExistence(timeout: 10), app.debugDescription)
     }
 
-    func testForegroundNotificationsConsultOnlyTheirOwner() {
+    private func verifyForegroundNotificationsConsultOnlyTheirOwner() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

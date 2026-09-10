@@ -21,6 +21,7 @@ final class KeychainAccessControlUITests: XCTestCase {
             .matching(NSPredicate(format: "label BEGINSWITH %@", "passed:"))
             .firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15), app.debugDescription)
+        print("KEYCHAIN-ACCESS-CONTROL \(result.label)")
         XCTAssertTrue(result.label.contains("update=after"))
         XCTAssertTrue(result.label.contains("protected-read=rejected"))
         XCTAssertTrue(result.label.contains("protected=present"))

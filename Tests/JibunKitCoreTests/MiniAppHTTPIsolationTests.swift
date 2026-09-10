@@ -29,6 +29,8 @@ final class MiniAppHTTPIsolationTests: XCTestCase, @unchecked Sendable {
         for (index, owner) in ["a", "b"].enumerated() {
             let (data, _) = try await sessions[index].data(for: request("/echo", owner: owner))
             XCTAssertEqual(String(decoding: data, as: UTF8.self), "account=\(owner)")
+            let (redirected, _) = try await sessions[index].data(for: request("/redirect", owner: owner))
+            XCTAssertEqual(String(decoding: redirected, as: UTF8.self), "account=\(owner)")
         }
         let path = "/cache/" + UUID().uuidString
         for (index, owner) in ["a", "b"].enumerated() {
@@ -42,14 +44,34 @@ final class MiniAppHTTPIsolationTests: XCTestCase, @unchecked Sendable {
             XCTAssertEqual(String(decoding: data, as: UTF8.self), owner)
         }
         configurations[0].urlCache?.removeAllCachedResponses()
-        for cookie in configurations[0].httpCookieStorage?.cookies ?? [] {
-            configurations[0].httpCookieStorage?.deleteCookie(cookie)
-        }
+        _ = try await sessions[0].data(for: request("/logout", owner: "a"))
+        let (removedCookie, _) = try await sessions[0].data(for: request("/echo", owner: "a"))
+        XCTAssertEqual(String(decoding: removedCookie, as: UTF8.self), "")
         let (remainingCookie, _) = try await sessions[1].data(for: request("/echo", owner: "b"))
         XCTAssertEqual(String(decoding: remainingCookie, as: UTF8.self), "account=b")
         var remainingCache = try request(path, owner: "network-fallback")
         remainingCache.cachePolicy = .returnCacheDataDontLoad
         let (data, _) = try await sessions[1].data(for: remainingCache)
         XCTAssertEqual(String(decoding: data, as: UTF8.self), "b")
+    }
+
+    func testHTTPAuthenticationChallengesUseOnlyTheirSessionCredentials() async throws {
+        guard let rawPort = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"], let port = Int(rawPort) else {
+            throw XCTSkip("Loopback HTTP fixture required")
+        }
+        let space = URLProtectionSpace(host: "127.0.0.1", port: port, protocol: "http", realm: "same", authenticationMethod: NSURLAuthenticationMethodHTTPBasic)
+        let sessions = ["a", "b"].map { password in
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.urlCredentialStorage?.setDefaultCredential(
+                URLCredential(user: "account", password: password, persistence: .forSession), for: space)
+            return URLSession(configuration: configuration)
+        }
+        defer { sessions.forEach { $0.invalidateAndCancel() } }
+        let url = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)/auth"))
+        for (index, password) in ["a", "b"].enumerated() {
+            let (data, response) = try await sessions[index].data(from: url)
+            XCTAssertEqual((response as? HTTPURLResponse)?.statusCode, 200)
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), "Basic " + Data("account:\(password)".utf8).base64EncodedString())
+        }
     }
 }

@@ -9,6 +9,29 @@ import threading
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        if self.path.startswith("/redirect"):
+            self.send_response(302)
+            self.send_header("Location", "/echo")
+            self.send_header("Content-Length", "0")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return
+        if self.path.startswith("/auth"):
+            authorization = self.headers.get("Authorization")
+            if not authorization:
+                self.send_response(401)
+                self.send_header("WWW-Authenticate", 'Basic realm="same"')
+                self.send_header("Content-Length", "0")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return
+            body = authorization.encode()
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(body)
+            return
         body = (self.headers.get("Cookie", "") if self.path.startswith("/echo")
                 else self.headers.get("X-Fixture-Owner", "missing")).encode()
         self.send_response(200)
@@ -17,6 +40,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "max-age=3600" if self.path.startswith("/cache") else "no-store")
         if self.path.startswith("/set"):
             self.send_header("Set-Cookie", "account=" + self.headers.get("X-Fixture-Owner", "missing") + "; Path=/")
+        if self.path.startswith("/logout"):
+            self.send_header("Set-Cookie", "account=; Max-Age=0; Path=/")
         self.end_headers()
         self.wfile.write(body)
 

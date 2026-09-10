@@ -71,6 +71,26 @@ jobs:
 
           test "$forbidden" -eq 0
 
+      - name: Validate focused UI inputs
+        if: inputs.ui_test_filter != ''
+        env:
+          UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.simulator_tests }}" != "true" ]]; then
+            echo "error: ui_test_filter requires simulator_tests=true" >&2
+            exit 1
+          fi
+          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
+            echo "error: focused ui_test_filter cannot be combined with feature_validation" >&2
+            exit 1
+          fi
+          if [[ ! "$UI_TEST_FILTER" =~ ^MigrationUITests/[A-Za-z_][A-Za-z0-9_]*/test[A-Za-z0-9_]+$ ]]; then
+            echo "error: ui_test_filter must identify one MigrationUITests test method" >&2
+            exit 1
+          fi
+
       - name: Select Xcode 26.6
         shell: bash
         run: |
@@ -93,15 +113,18 @@ jobs:
           "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
+        if: inputs.ui_test_filter == ''
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
       - name: Measure backup memory in separate test processes
+        if: inputs.ui_test_filter == ''
         run: |
           swift test --skip-build --filter LargeAttachmentBackupTests/testLargeAttachmentRoundTripWithoutWholeFileData
           swift test --skip-build --filter LargeAttachmentBackupTests/testLegacyPayloadMemoryBaseline
 
       - name: Test independent Feature packages
+        if: inputs.ui_test_filter == ''
         run: python3 Tools/test-module-packages.py Modules
 
       - name: Build independent Records app
@@ -164,6 +187,7 @@ jobs:
           xcodebuild -workspace JibunKit.xcworkspace -list
 
       - name: Build with Xcode
+        if: inputs.ui_test_filter == ''
         shell: bash
         run: |
           set -euo pipefail
@@ -176,6 +200,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
       - name: Verify, ad-hoc sign, and package IPA
+        if: inputs.ui_test_filter == ''
         shell: bash
         run: |
           set -euo pipefail
@@ -275,6 +300,7 @@ jobs:
           shasum --algorithm 256 artifacts/JibunKit.ipa
 
       - name: Upload IPA
+        if: inputs.ui_test_filter == ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: JibunKit-ad-hoc
@@ -313,7 +339,7 @@ jobs:
           xcrun simctl bootstatus "$sim_id" -b
 
       - name: Build and install standalone Counter
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && (inputs.ui_test_filter == '' || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
         run: |
           set -euo pipefail
@@ -349,7 +375,7 @@ jobs:
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
 
       - name: Build and install backup UI harness
-        if: inputs.simulator_tests
+        if: inputs.simulator_tests && (inputs.ui_test_filter == '' || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))
         shell: bash
         run: |
           set -euo pipefail

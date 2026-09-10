@@ -43,4 +43,6 @@ workflowは固定SHA-256でTuistを導入し、Swiftテスト、通常app／Widg
 
 ## UI失敗の限定再現
 
-診断時は`-f simulator_tests=true -f ui_test_filter=MigrationUITests/MigrationUITests/testNotificationDeliveryAndRouting`のようにXcode test identifierを指定できる。integration suiteをその対象だけに絞り、別のFiles往復stepは実行しない。通常の全検証ではui_test_filterを空に戻す。限定実行の成功を全回帰成功として扱わない。ログのみ先に読む場合はSimulator-text-diagnostics artifactを取得できる。
+診断時は`-f simulator_tests=true -f ui_test_filter=MigrationUITests/MigrationUITests/testNotificationDeliveryAndRouting`のように、単一test methodのXcode test identifierを指定できる。このfocused経路はpublication boundary、固定Xcode/Tuist、workspace生成、Simulator準備、指定UIテストと診断artifactだけを実行する。通常のSwift/Moduleテスト、Releaseビルド、IPA検査、Files往復は省略し、CounterExampleまたはBackupHarnessも指定テストが使う場合だけ準備する。
+
+`ui_test_filter`には`MigrationUITests/<TestClass>/test<TestMethod>`形式だけを受け付ける。`simulator_tests=true`が必須で、`feature_validation=true`との併用は入力エラーになる。通常の全検証ではfilterを空に戻す。focused成功は指定した一件の証拠であり、Swift/Moduleテスト、通常IPA、全Simulator回帰、生成Feature/Records検証の成功として扱わない。ログのみ先に読む場合はSimulator-text-diagnostics artifactを取得できる。

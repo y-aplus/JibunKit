@@ -73,7 +73,7 @@ private enum KeychainAccessControlProbeRunner {
             return "failed: data-only update changed protection"
         }
 
-        let applicationPassword = try makeAccessControl(flags: .applicationPassword)
+        let applicationPassword = try makeAccessControl(flags: [.userPresence, .applicationPassword])
         let creationContext = try applicationPasswordContext()
         try protected.set(
             Data("original".utf8),
@@ -86,7 +86,7 @@ private enum KeychainAccessControlProbeRunner {
             account: baselineAccount,
             in: protected,
             data: Data("original".utf8),
-            accessControl: try makeAccessControl(flags: .applicationPassword),
+            accessControl: try makeAccessControl(flags: [.userPresence, .applicationPassword]),
             authenticationContext: try applicationPasswordContext()
         ) as CFDictionary, nil)
         guard baselineAdd == errSecSuccess else {

@@ -49,7 +49,9 @@ private enum KeychainAccessControlProbeRunner {
     }
 
     private static func execute(context: MiniAppContext) throws -> String {
-        let service = "ci-access-control"
+        // A protected item can survive a cancelled or interrupted authentication.
+        // Isolate every device run so stale probe data cannot collide with a retry.
+        let service = "device-access-control-\(UUID().uuidString)"
         let controlled = MiniAppKeychain(context: context, service: service)
         let protected = MiniAppKeychain(context: context, service: service + "-protected")
         let other = MiniAppKeychain(

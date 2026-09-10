@@ -18,6 +18,7 @@ let project = Project(
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.3.0",
                 "CFBundleVersion": "4", "JibunKitAppGroup": "group.com.jibunkit.shared",
+                "NSFaceIDUsageDescription": "Verify Keychain access control in this dedicated QA build.",
                 "UILaunchScreen": [:],
                 "CFBundleURLTypes": [[
                     "CFBundleURLName": "com.jibunkit.app.mini-app",

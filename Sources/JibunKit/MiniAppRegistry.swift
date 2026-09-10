@@ -6,6 +6,7 @@ import ReminderIntegration
 @MainActor
 enum MiniAppRegistry {
     static let all = makeRegistry([
+        KeychainAccessControlProbe.definition,
         CounterMiniApp.definition,
         ReminderMiniApp.definition,
     ])

@@ -211,6 +211,14 @@ jobs:
           if include_web_storage_probe:
               shutil.copyfile(web_storage_probe, 'Sources/JibunKit/WebStorageOwnershipProbe.swift')
               shutil.copyfile(web_storage_tests, 'UITests/WebStorageOwnershipUITests.swift')
+          background_probe = Path('Tests/TemplateIntegration/BackgroundExecutionProbe.swift')
+          background_tests = Path('Tests/TemplateIntegration/BackgroundExecutionUITests.swift')
+          if background_probe.exists() != background_tests.exists():
+              raise SystemExit('Background execution integration fixtures must be added together')
+          include_background_probe = background_probe.exists()
+          if include_background_probe:
+              shutil.copyfile(background_probe, 'Sources/JibunKit/BackgroundExecutionProbe.swift')
+              shutil.copyfile(background_tests, 'UITests/BackgroundExecutionUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -231,6 +239,8 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
           if include_web_storage_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        WebStorageOwnershipProbe.ownerADefinition,\n        WebStorageOwnershipProbe.ownerBDefinition,'))
+          if include_background_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        BackgroundExecutionProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

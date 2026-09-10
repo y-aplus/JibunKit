@@ -3,6 +3,53 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testPersistentHTTPCookiesSurviveRestartAndOtherOwnerLogout() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "network.cookies.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func open(_ owner: String) {
+            tap("miniapp.\(owner)")
+            tap("webdata.open")
+            tap("network.cookies.open")
+            expect("ready")
+        }
+        func restart() { app.terminate(); app.launch() }
+        for owner in ["lifecycle-a", "lifecycle-b"] {
+            open(owner)
+            tap("network.cookies.clear")
+            expect("cleared")
+            tap("network.cookies.save")
+            expect("saved")
+            restart()
+        }
+        open("lifecycle-a")
+        tap("network.cookies.read")
+        expect("lifecycle-a|secure=true|httpOnly=true")
+        tap("network.cookies.clear")
+        expect("cleared")
+        restart()
+        open("lifecycle-a")
+        tap("network.cookies.read")
+        expect("missing")
+        restart()
+        open("lifecycle-b")
+        tap("network.cookies.read")
+        expect("lifecycle-b|secure=true|httpOnly=true")
+        tap("network.cookies.clear")
+        expect("cleared")
+    }
+
     func testRestoreFailuresDescribeDataAndRuntimeStateWithoutChangingOtherFeature() {
         let messages = [
             "stop": "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。",

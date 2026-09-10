@@ -32,3 +32,5 @@ unitは二Featureと同Featureの別profileへ同じURLの異なるcacheを置�
 34431912303（source `072c0e1`）でloopback HTTP testが0.098秒で成功、IPAも成功。次の契約単位としてHTTP Basic同一realm/userのA/B credential分離、同origin redirectのCookie維持、サーバーのMax-Age=0によるAだけの削除を追加し、接続ガイドを作成した。fixture応答のsmokeはWindowsで成功。Swiftの追加経路はCI待ち。
 
 34432354335（source `271b875`）でHTTP auth challenge、redirect、Max-Age=0によるAログアウト/B維持が成功。次の単位はKeychainを利用するMiniAppCookieStoreの明示save/reload/clear。unitはFeature分離・再生成・session-only除外・期限・Secure/path・破損時のlive保持・logout後再生成を扱う。HTTP testはMax-Age Cookieを受けて保存し、別session/storeへ再生成して送信、サーバー失効後のsaveで復活しないことを確認する。実process再起動とは区別する。CI待ち。
+
+34432845944（source `e8e8c38`）でCookie保存unit0.097秒、HTTP再生成/logout0.033秒が成功。次はCI専用iOS画面を追加し、Set-Cookieから作るSecure/HttpOnly付きCookieを二Featureに保存する。processを終了・再起動してAの値/属性を確認し、A logout後の再起動でAがmissing、Bは値/属性を維持することを確認する。通常IPAにはfixtureを含めない。WebKitのCookie保持試験とは別で、Foundation CookieをKeychainへ明示保存する経路を検証する。CI待ち。

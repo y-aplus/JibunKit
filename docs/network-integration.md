@@ -31,7 +31,7 @@ let session = URLSession(configuration: configuration)
 
 D09全体は未達。詳細と各CIは[検証記録](verification/2026-09-10-network-isolation.md)。
 
-## 永続Cookieの明示保存（検証中）
+## 永続Cookieの明示保存（macOS検証済み・iOS検証中）
 
 `let cookies = try MiniAppCookieStore(context: context, profile: "account-1")`はKeychainの保存状態を検証して専用メモリストアへ読み込む。sessionを作る前に`configuration.httpCookieStorage = cookies.storage`を設定する。ログイン応答などの状態変更後に`try cookies.save()`を実行して、成功してから永続保存済みと扱う。
 
@@ -39,4 +39,4 @@ D09全体は未達。詳細と各CIは[検証記録](verification/2026-09-10-net
 
 ローカルログアウトは要求を停止してから`try cookies.clear()`を呼ぶ。サーバーがCookieを失効させた場合は、応答完了後のstoreをsaveする。削除のKeychain書込みに失敗したら成功扱いしない。セッション限定Cookieは保存せず、有効期限を過ぎたCookieは読み戻さない。相対Max-Ageを再起動時に延長しないため絶対期限で保存する。
 
-これは自動保存のHTTP層ではない。save以前の強制終了、同profileの多重owner、別processの同時利用、HTTP資格情報の永続化は残る。Keychainのサイズや保護状態による失敗はthrowする。Cookie属性を失うおそれのある未対応データは保存失敗として扱う。実機と実process再起動、SameSite等の全属性、redirect途中の永続化は未検証。
+これは自動保存のHTTP層ではない。save以前の強制終了、同profileの多重owner、別processの同時利用、HTTP資格情報の永続化は残る。Keychainのサイズや保護状態による失敗はthrowする。Cookie属性を失うおそれのある未対応データは保存失敗として扱う。macOSでは期限・破損時の保持・保存データからの再生成とHTTP送信・サーバーlogoutを検証済み。iOS process再起動・Secure/HttpOnly保持は検証中。実機、SameSite等の全属性、redirect途中の永続化は未検証。

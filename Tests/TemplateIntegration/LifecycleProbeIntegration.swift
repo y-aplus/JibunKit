@@ -292,6 +292,8 @@ private struct WebDataProbeView: View {
         VStack {
             WebDataProbeWebView(webView: webView, ready: $pageReady).frame(height: 80)
             WebDataProbeWebView(webView: baselineView, ready: $baselineReady).frame(height: 40)
+            NavigationLink("Persistent HTTP cookies") { NetworkCookieProbeView(context: context) }
+                .accessibilityIdentifier("network.cookies.open")
             Text(diagnostic).accessibilityIdentifier("webdata.diagnostic")
             Text(pageReady && baselineReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
@@ -348,6 +350,51 @@ private struct WebDataProbeWebView: UIViewRepresentable {
     }
 }
 
+
+private struct NetworkCookieProbeView: View {
+    let context: MiniAppContext
+    @State private var store: MiniAppCookieStore?
+    @State private var result = "loading"
+
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("network.cookies.result")
+            Button("Save login") {
+                do {
+                    guard let store else { throw MiniAppCookieStore.Failure.invalidArchive }
+                    let url = URL(string: "https://jibunkit.example/account")!
+                    let cookies = HTTPCookie.cookies(withResponseHeaderFields: [
+                        "Set-Cookie": "account=\(context.id.rawValue); Path=/; Max-Age=86400; Secure; HttpOnly"
+                    ], for: url)
+                    guard cookies.count == 1 else { throw MiniAppCookieStore.Failure.unsupportedCookie }
+                    store.storage.setCookie(cookies[0])
+                    try store.save()
+                    result = "saved"
+                } catch { result = "error: \(error)" }
+            }.accessibilityIdentifier("network.cookies.save")
+            Button("Read login") {
+                guard let cookie = store?.storage.cookies?.first(where: { $0.name == "account" }) else {
+                    result = "missing"
+                    return
+                }
+                result = "\(cookie.value)|secure=\(cookie.isSecure)|httpOnly=\(cookie.isHTTPOnly)"
+            }.accessibilityIdentifier("network.cookies.read")
+            Button("Log out") {
+                do {
+                    guard let store else { throw MiniAppCookieStore.Failure.invalidArchive }
+                    try store.clear()
+                    result = "cleared"
+                } catch { result = "error: \(error)" }
+            }.accessibilityIdentifier("network.cookies.clear")
+        }
+        .task {
+            do {
+                store = try MiniAppCookieStore(context: context, profile: "ci-persistent-login")
+                result = "ready"
+            } catch { result = "error: \(error)" }
+        }
+    }
+}
 
 private struct IdleTimerProbeView: View {
     let context: MiniAppContext

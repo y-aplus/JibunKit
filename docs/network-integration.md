@@ -21,7 +21,7 @@ let session = URLSession(configuration: configuration)
 
 ## 所有者の終了と復元
 
-通信を使うTaskをRuntimeへ登録し、取消後の処理終了を待つ。sessionの無効化、delegateが必要とする終了処理、ログアウトに伴う保存層更新はFeatureの所有者から接続する。`invalidateAndCancel()`を呼んだだけで全callbackが完了したとは扱わない。native sessionの終了通知を待つための`MiniAppURLSessionLifetime`を追加した（下記、CI検証中）。独自delegateの追加解放も終えてから通知を転送し、`onShutdownAsync`へ接続する。[Runtime接続ガイド](runtime-restore-integration.md)も参照。
+通信を使うTaskをRuntimeへ登録し、取消後の処理終了を待つ。sessionの無効化、delegateが必要とする終了処理、ログアウトに伴う保存層更新はFeatureの所有者から接続する。`invalidateAndCancel()`を呼んだだけで全callbackが完了したとは扱わない。native sessionの終了通知を待つための`MiniAppURLSessionLifetime`を追加した（下記、macOS実HTTP検証済み）。独自delegateの追加解放も終えてから通知を転送し、`onShutdownAsync`へ接続する。[Runtime接続ガイド](runtime-restore-integration.md)も参照。
 
 ## 証拠と残件
 
@@ -76,7 +76,7 @@ host・port・protocol・realm・認証方式・proxy区分を保持し、同じ
 
 これはパスワード型資格情報用のadapterであり、クライアント証明書identity、server trust、SSO、biometric access control、同期Keychain、background再接続の補完は未実装。trust判定やサーバー側ログアウトは変更しない。[34437448875](https://github.com/y-aplus/JibunKit/actions/runs/34437448875)でnativeのhost/port/realm/protocol/proxy/認証方式の区別と複数user、Feature/profileの隔離・Cookie維持・破損時保持、実HTTP Basic challenge（0.057秒）、iOS process再起動（100.041秒）が成功。Digestやproxy認証の実通信は別途残る。
 
-## 要求・delegate完了後の保存とログアウト（CI検証中）
+## 要求・delegate完了後の保存とログアウト
 
 `MiniAppURLSessionLifetime`はnative URLSessionの終了通知を待つ部品。Featureの独自delegateへ次の転送を追加する。data/download/authentication等のdelegateはそのまま使える。
 
@@ -106,3 +106,5 @@ try cookies.save() // ログアウトならclear。パスワードstoreも必要
 Runtimeでは`onShutdownAsync`へこの待機と必要な保存・削除を登録する。hookはthrowできないのでエラーをFeatureの状態に保持し、`runtime.shutdown()`後に利用側が確認・報告する。成功扱いして隠さない。[コンパイル対象の接続例・実HTTP試験](../Tests/JibunKitCoreTests/MiniAppURLSessionLifetimeTests.swift)は遅い応答のCookieをdelegate解放後に保存する経路、実行中要求を取消してからログアウトする経路を示す。
 
 delegateの転送漏れ、独自解放が終わらない場合、この待機も終わらない。待機対象のdelegate callback内で同期的にfinishAndWaitの終了を待つと循環待ちになるため、外部のFeature所有者から終了を開始する。別processやbackground sessionの再接続・イベント配送はこの部品だけでは補完していない。iOS runtimeでの終了順序の追加検証は残る。
+
+[34439496158](https://github.com/y-aplus/JibunKit/actions/runs/34439496158)で遅いHTTP応答・delegate追加解放後の保存（0.016秒）、Runtimeの要求取消後のlogoutと他session維持（0.020秒）、先行エラー/重複通知/他session拒否（0.001秒）が成功。共有logic、iOS build/IPA、Feature生成検証も成功。

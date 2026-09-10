@@ -7,8 +7,6 @@ import SwiftUI
 @MainActor
 @Observable
 final class AppNavigation {
-    static let shared = AppNavigation()
-
     var path = NavigationPath()
 
     func openURL(_ url: URL) {
@@ -45,5 +43,11 @@ final class AppNavigation {
         }
         open(miniAppID)
     }
+}
+
+/// Process notifications need a target selector, not a process-wide UI path.
+@MainActor
+enum AppSceneRouting {
+    static let shared = MiniAppSceneRouter()
 }
 #endif

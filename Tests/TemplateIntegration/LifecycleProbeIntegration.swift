@@ -296,6 +296,8 @@ private struct WebDataProbeView: View {
                 .accessibilityIdentifier("network.cookies.open")
             NavigationLink("Persistent HTTP passwords") { NetworkPasswordProbeView(context: context) }
                 .accessibilityIdentifier("network.passwords.open")
+            NavigationLink("Scene navigation") { SceneNavigationProbeView() }
+                .accessibilityIdentifier("scene.navigation.open")
             Text(diagnostic).accessibilityIdentifier("webdata.diagnostic")
             Text(pageReady && baselineReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
@@ -352,6 +354,44 @@ private struct WebDataProbeWebView: UIViewRepresentable {
     }
 }
 
+
+private struct SceneNavigationProbeView: View {
+    @State private var first = AppNavigation()
+    @State private var second = AppNavigation()
+    @State private var router = MiniAppSceneRouter()
+    @State private var registrations: [UUID] = []
+
+    var body: some View {
+        VStack {
+            Text("A=\(first.path.count) B=\(second.path.count)")
+                .accessibilityIdentifier("scene.navigation.result")
+            Button("Open A") { first.open(.counter) }.accessibilityIdentifier("scene.navigation.a.open")
+            Button("Push A") { first.path.append("detail-a") }.accessibilityIdentifier("scene.navigation.a.push")
+            Button("Open B") { second.open(.counter) }.accessibilityIdentifier("scene.navigation.b.open")
+            Button("Push B") { second.path.append("detail-b") }.accessibilityIdentifier("scene.navigation.b.push")
+            Button("Notification to list") { router.open(nil) }.accessibilityIdentifier("scene.navigation.route")
+            Button("Activate A") {
+                guard registrations.count == 2 else { return }
+                router.update(registrations[0], isActive: true)
+            }.accessibilityIdentifier("scene.navigation.activate-a")
+            Button("Remove A") {
+                guard let id = registrations.first else { return }
+                router.unregister(id)
+            }.accessibilityIdentifier("scene.navigation.remove-a")
+        }
+        .onAppear {
+            guard registrations.isEmpty else { return }
+            registrations = [
+                router.register(isActive: false) { [weak first] in first?.openNotificationRoute($0) },
+                router.register(isActive: true) { [weak second] in second?.openNotificationRoute($0) }
+            ]
+        }
+        .onDisappear {
+            for id in registrations { router.unregister(id) }
+            registrations = []
+        }
+    }
+}
 
 private struct NetworkPasswordProbeView: View {
     let context: MiniAppContext

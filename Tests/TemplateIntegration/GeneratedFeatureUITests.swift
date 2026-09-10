@@ -3,6 +3,43 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testSceneNavigationObjectsAndNotificationTargetStayIndependent() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "scene.navigation.result")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        tap("miniapp.lifecycle-a")
+        tap("webdata.open")
+        tap("scene.navigation.open")
+        expect("A=0 B=0")
+        tap("scene.navigation.a.open")
+        tap("scene.navigation.a.push")
+        tap("scene.navigation.b.open")
+        tap("scene.navigation.b.push")
+        expect("A=2 B=2")
+        tap("scene.navigation.route")
+        expect("A=2 B=0")
+        tap("scene.navigation.b.open")
+        tap("scene.navigation.b.push")
+        tap("scene.navigation.activate-a")
+        tap("scene.navigation.route")
+        expect("A=0 B=2")
+        tap("scene.navigation.a.open")
+        tap("scene.navigation.remove-a")
+        tap("scene.navigation.route")
+        expect("A=1 B=0")
+    }
+
     func testPersistentHTTPPasswordsSurviveRestartAndOtherOwnerLogout() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")

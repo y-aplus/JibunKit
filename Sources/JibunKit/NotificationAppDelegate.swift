@@ -68,7 +68,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
             // must not navigate or disturb another Feature's visible screen.
             await MiniAppNotificationActionDelivery.deliver(action, route: candidate,
                 handlerForOwner: { MiniAppRegistry.definition(for: $0)?.onNotificationAction },
-                open: { AppNavigation.shared.openNotificationRoute($0) })
+                open: { AppSceneRouting.shared.open($0) })
             Logger(subsystem: "com.jibunkit.app", category: "NotificationRouting")
                 .notice("Notification route dispatched; parsed route: \(candidate != nil)")
         }

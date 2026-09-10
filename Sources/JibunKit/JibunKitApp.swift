@@ -6,7 +6,6 @@ import JibunKitCore
 struct JibunKitApp: App {
     @UIApplicationDelegateAdaptor(NotificationAppDelegate.self)
     private var notificationAppDelegate
-    @State private var navigation = AppNavigation.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var lifecycle = MiniAppLifecycleDispatcher(
         handlers: MiniAppRegistry.all.compactMap(\.onHostPhaseChange)
@@ -14,8 +13,7 @@ struct JibunKitApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MiniAppListScreen(navigation: navigation)
-                .onOpenURL { navigation.openURL($0) }
+            MiniAppSceneRoot()
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
@@ -25,6 +23,32 @@ struct JibunKitApp: App {
             @unknown default: break
             }
         }
+    }
+}
+
+/// State is instantiated inside WindowGroup's view hierarchy, once per window.
+private struct MiniAppSceneRoot: View {
+    @State private var navigation = AppNavigation()
+    @State private var registration: UUID?
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        MiniAppListScreen(navigation: navigation)
+            // SwiftUI delivers this URL to a particular scene; keep that target.
+            .onOpenURL { navigation.openURL($0) }
+            .onAppear {
+                guard registration == nil else { return }
+                registration = AppSceneRouting.shared.register(isActive: scenePhase == .active) { [weak navigation] route in
+                    navigation?.openNotificationRoute(route)
+                }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if let registration { AppSceneRouting.shared.update(registration, isActive: phase == .active) }
+            }
+            .onDisappear {
+                if let registration { AppSceneRouting.shared.unregister(registration) }
+                registration = nil
+            }
     }
 }
 #endif

@@ -60,3 +60,7 @@ unitはnative認証先の差、既定user切替、Feature/profileのlogout非干
 次にMiniAppURLSessionLifetimeを追加。既存delegateを置き換えず、native didBecomeInvalidWithError通知をactorへ転送してfinishTasksAndInvalidateの完了を待つ。複数待機・先行通知・エラー保持・重複通知/他session拒否を扱う。待機Taskの取消を解放完了とはしない。invalidateAndCancelの通知はApple仕様上即時なので、graceful完了と同一視しない。
 
 実HTTP試験ではeventで応答を保持し、別sessionから開始確認・releaseする。Runtimeの終了hookが、応答のCookie受信とdelegateの追加解放を待ってからsaveすることを確認する。別経路ではRuntimeのowned HTTP Taskを取消・joinしてからnative終了を待ち、保存loginをclearし、他sessionは利用を続ける。専用serverのtimeoutは試験失敗時の停止用20秒で、成功時の同期はevent駆動。Windows上のfixture smoke（開始確認/別要求/release/遅いSet-Cookie応答）は成功。Swift実行はCI待ち。iOS runtimeでの終了順序・backgroundは未検証。
+
+## native session終了の結果
+
+[34439496158](https://github.com/y-aplus/JibunKit/actions/runs/34439496158)（source `43dea6c`）成功。Runtimeの要求取消→session終了→logout/他session継続0.020秒、遅いHTTP Cookie応答→delegate追加解放→保存0.016秒、先行エラー/重複・他session拒否0.001秒。iOS build/IPAとFeature生成検証も成功。今回simulator UIは実行していない。通信の次の検証課題はiOS runtime、background、保存自動化等として残し、並行する基盤課題D04のscene別ナビゲーションへ進む。

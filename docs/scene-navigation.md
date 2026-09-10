@@ -1,0 +1,27 @@
+# Sceneとナビゲーションの所有権
+
+## 現在の契約（CI検証中）
+
+`JibunKitApp`のWindowGroup内にある`MiniAppSceneRoot`が、自分の`AppNavigation`を`@State`で保持する。App単位のsingleton NavigationPathを廃止した。各rootの検索・backup sheetも既存のview状態としてそのsceneに属する。sceneに届いた`onOpenURL`は、そのsceneのnavigationへ直接渡す。
+
+process単位の通知には対象sceneが直接渡されないため、`AppSceneRouting.shared`が`MiniAppSceneRouter`で配送先を選ぶ。これは経路そのものを共有するオブジェクトではない。各rootは表示時に登録し、sceneのactive変化を更新し、非表示時に登録解除する。handlerはnavigationを弱参照し、登録が画面の寿命を延ばさない。
+
+配送規則は次のとおり。
+
+- 登録中でactiveなsceneを優先し、複数あるときは直近にactiveへ移ったsceneを選ぶ。同じactive値の再通知では順序を変えない。
+- activeがなければ、最後に登録またはactive化された残存sceneへ渡す。これはwindowをOS上で前面にする操作ではない。
+- sceneがまだない場合、最後に要求された行先を保留し、最初の登録時に渡す。nilは「一覧へ」の明示要求として保持する。
+- 一件の要求を複数sceneへ同報しない。handler中の追加要求は現在の配送後に再選択する。解除された登録は次の選択に使わない。
+- 通知のcustom action/dismissは既存のFeature所有者配送を保ち、画面選択処理へ渡さない。
+
+## 根拠と検証
+
+[Apple WindowGroup](https://developer.apple.com/documentation/swiftui/windowgroup)はwindowのview階層内に置いたStateへwindow別のstorageを割り当てる。[ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内で読むと当該scene、App内では全sceneの集約になる。今回、Featureへの既存host phase配送はApp内の集約を維持し、通知先選択のphaseだけroot view内で読む。
+
+[MiniAppSceneRouterTests](../Tests/JibunKitCoreTests/MiniAppSceneRouterTests.swift)は選択・非同報・phase変化・登録解除・起動前の保留・再入時の順序を検証する。CI専用iOS画面は実際のAppNavigationを二つ作り、片方の詳細pathや通知先の変更が他方のpathを消さないことを確認する。通常hostでは実通知からの遷移を回帰検証する。今回の変更一式のCI待ち。
+
+## 残る差分
+
+二navigation実体の試験は、OSの二つのwindowを操作する試験ではない。iPadOSの複数windowを有効にするscene manifest、window生成・破棄・前面化の運用、scene session identifierを用いた明示配送は未実装/未検証。これはOSにより不可能と判定した制約ではない。
+
+同じsceneでFeatureを切り替えた際の各Featureのpath・入力状態保持、複数sheet要求の所有者/調停、UIViewControllerによるrootの接続契約も残る。今回の変更だけでD04全体を完了とはしない。OSによる永続的な全画面状態保存も保証しない。

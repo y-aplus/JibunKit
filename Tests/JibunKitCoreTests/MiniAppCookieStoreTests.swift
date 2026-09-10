@@ -4,6 +4,75 @@ import JibunKitCore
 
 final class MiniAppCookieStoreTests: XCTestCase {
     @MainActor
+    func testInvalidArchivesNeverPartiallyReplaceLiveCookies() throws {
+        let context = MiniAppContext(id: MiniAppID("cookie-validation"))
+        let profile = UUID().uuidString
+        let store = try MiniAppCookieStore(context: context, profile: profile)
+        defer { try? store.clear() }
+        let keychain = MiniAppKeychain(context: context, service: "network-cookies-v1")
+        let expiry = Date.now.addingTimeInterval(3600)
+        let cookie = try XCTUnwrap(HTTPCookie(properties: [
+            .domain: "jibunkit.example", .path: "/", .name: "account", .value: "live", .expires: expiry
+        ]))
+        store.storage.setCookie(cookie)
+        try store.save()
+        let goodData = try XCTUnwrap(try keychain.data(for: profile))
+        let good = try XCTUnwrap(PropertyListSerialization.propertyList(from: goodData, format: nil) as? [String: Any])
+        let entries = try XCTUnwrap(good["cookies"] as? [[String: Any]])
+        var replacement = try XCTUnwrap(entries.first)
+        replacement[HTTPCookiePropertyKey.value.rawValue] = "replacement"
+        var relative = replacement
+        relative[HTTPCookiePropertyKey.maximumAge.rawValue] = "86400"
+        var missingName = replacement
+        missingName.removeValue(forKey: HTTPCookiePropertyKey.name.rawValue)
+        var missingExpiry = replacement
+        missingExpiry.removeValue(forKey: HTTPCookiePropertyKey.expires.rawValue)
+        let cases: [([String: Any], MiniAppCookieStore.Failure)] = [
+            (["version": 2, "cookies": entries], .unsupportedVersion),
+            (["cookies": entries], .invalidArchive),
+            (["version": 1, "cookies": "invalid"], .invalidArchive),
+            (["version": 1, "cookies": [replacement, missingName]], .invalidArchive),
+            (["version": 1, "cookies": [replacement, missingExpiry]], .invalidArchive),
+            (["version": 1, "cookies": [relative]], .invalidArchive)
+        ]
+        for (archive, expected) in cases {
+            let data = try PropertyListSerialization.data(fromPropertyList: archive, format: .binary, options: 0)
+            try keychain.set(data, for: profile)
+            XCTAssertThrowsError(try store.reload()) { XCTAssertEqual($0 as? MiniAppCookieStore.Failure, expected) }
+            XCTAssertEqual(store.storage.cookies?.map(\.value), ["live"])
+            XCTAssertEqual(try keychain.data(for: profile), data, "Failed reads must not rewrite saved data")
+        }
+        try keychain.set(goodData, for: profile)
+        try store.reload()
+        XCTAssertEqual(store.storage.cookies?.map(\.value), ["live"])
+    }
+
+    @MainActor
+    func testSavedMaxAgeUsesOriginalAbsoluteExpiryAcrossReloads() throws {
+        let context = MiniAppContext(id: MiniAppID("cookie-lifetime"))
+        let profile = UUID().uuidString
+        let store = try MiniAppCookieStore(context: context, profile: profile)
+        defer { try? store.clear() }
+        let url = try XCTUnwrap(URL(string: "https://jibunkit.example/account"))
+        let cookie = try XCTUnwrap(HTTPCookie.cookies(withResponseHeaderFields: [
+            "Set-Cookie": "account=persistent; Path=/account; Max-Age=3600; Secure; HttpOnly"
+        ], for: url).first)
+        let expiry = try XCTUnwrap(cookie.expiresDate)
+        store.storage.setCookie(cookie)
+        try store.save()
+        for _ in 0..<3 {
+            try store.reload(now: expiry.addingTimeInterval(-10))
+            let restored = try XCTUnwrap(store.storage.cookies?.first)
+            XCTAssertEqual(try XCTUnwrap(restored.expiresDate).timeIntervalSince1970, expiry.timeIntervalSince1970, accuracy: 1)
+            XCTAssertTrue(restored.isSecure)
+            XCTAssertTrue(restored.isHTTPOnly)
+            try store.save()
+        }
+        try store.reload(now: expiry.addingTimeInterval(1))
+        XCTAssertTrue(store.storage.cookies?.isEmpty ?? true)
+    }
+
+    @MainActor
     func testPersistenceExpiryLogoutAndCorruptionPreserveOwnership() throws {
         let profile = UUID().uuidString
         let a = MiniAppContext(id: MiniAppID("cookie-a"))

@@ -34,3 +34,11 @@ unitは二Featureと同Featureの別profileへ同じURLの異なるcacheを置�
 34432354335（source `271b875`）でHTTP auth challenge、redirect、Max-Age=0によるAログアウト/B維持が成功。次の単位はKeychainを利用するMiniAppCookieStoreの明示save/reload/clear。unitはFeature分離・再生成・session-only除外・期限・Secure/path・破損時のlive保持・logout後再生成を扱う。HTTP testはMax-Age Cookieを受けて保存し、別session/storeへ再生成して送信、サーバー失効後のsaveで復活しないことを確認する。実process再起動とは区別する。CI待ち。
 
 34432845944（source `e8e8c38`）でCookie保存unit0.097秒、HTTP再生成/logout0.033秒が成功。次はCI専用iOS画面を追加し、Set-Cookieから作るSecure/HttpOnly付きCookieを二Featureに保存する。processを終了・再起動してAの値/属性を確認し、A logout後の再起動でAがmissing、Bは値/属性を維持することを確認する。通常IPAにはfixtureを含めない。WebKitのCookie保持試験とは別で、Foundation CookieをKeychainへ明示保存する経路を検証する。CI待ち。
+
+## iOS結果と保存契約の補強
+
+[34433288351](https://github.com/y-aplus/JibunKit/actions/runs/34433288351)（source `d519e1c`）成功。generated hostの `testPersistentHTTPCookiesSurviveRestartAndOtherOwnerLogout` は111.793秒、通常hostの通知配信/routing回帰は49.977秒。共有logic、生成Feature/standalone、Records、IPAも成功。Files round tripは今回のfilterでは実行していない。Foundation Cookieを組み立ててKeychainへ保存するiOS試験であり、iOS上のHTTP server通信ではない。
+
+保存形式の追加レビューで、plistに変換できるだけではFoundationが同じCookieへ復元できる保証が不足していたため、書込み前に再構築した期限・送信先・保護属性等を照合する。復元できない場合は古い保存を維持してthrowする。archive version 1の絶対期限契約に反するMax-Ageが入ったデータもreloadで拒否する。Appleの[maximumAge](https://developer.apple.com/documentation/foundation/httpcookiepropertykey/maximumage)と[expires](https://developer.apple.com/documentation/foundation/httpcookiepropertykey/expires)はCookie versionによる扱いが異なるため、plist化だけで全versionの再生成が安全とは判定しない。
+
+異常系（不正version/構造/必須項目、正常entry後の不正entry、相対期限）はliveと保存dataの保持を検査。Max-Age受信Cookieの繰り返しsave/reloadで絶対期限・Secure/HttpOnly維持を検査。同Featureの三profileは同じserverから永続Cookieを受け、session再生成・redirect送信・サーバーlogout/ローカルlogoutと残りprofile保持まで一つのHTTP試験で扱う。CI待ち。接続ガイドとD09の現在記述も更新した。

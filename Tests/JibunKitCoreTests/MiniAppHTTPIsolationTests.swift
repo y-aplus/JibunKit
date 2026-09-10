@@ -4,6 +4,51 @@ import JibunKitCore
 
 final class MiniAppHTTPIsolationTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testPersistentProfilesSendOnlyTheirOwnLoginAndLogoutIndependently() async throws {
+        guard let port = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] else {
+            throw XCTSkip("Loopback HTTP fixture required")
+        }
+        let context = MiniAppContext(id: MiniAppID("http-profiles"))
+        let prefix = UUID().uuidString
+        let profiles = [prefix + "/account", prefix + "/../account", prefix + "/日本語"]
+        let stores = try profiles.map { try MiniAppCookieStore(context: context, profile: $0) }
+        defer { stores.forEach { try? $0.clear() } }
+        func session(_ store: MiniAppCookieStore) -> URLSession {
+            let config = URLSessionConfiguration.ephemeral
+            config.httpCookieStorage = store.storage
+            return URLSession(configuration: config)
+        }
+        func url(_ path: String) throws -> URL { try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)/\(path)")) }
+        let original = stores.map(session)
+        defer { original.forEach { $0.invalidateAndCancel() } }
+        for index in stores.indices {
+            var login = URLRequest(url: try url("set-persistent"))
+            login.setValue("profile-\(index)", forHTTPHeaderField: "X-Fixture-Owner")
+            _ = try await original[index].data(for: login)
+            try stores[index].save()
+            original[index].finishTasksAndInvalidate()
+        }
+        let reopened = try profiles.map { try MiniAppCookieStore(context: context, profile: $0) }
+        let sessions = reopened.map(session)
+        defer { sessions.forEach { $0.invalidateAndCancel() } }
+        for index in sessions.indices {
+            let (data, _) = try await sessions[index].data(from: url("redirect"))
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), "account=profile-\(index)")
+        }
+        _ = try await sessions[0].data(from: url("logout"))
+        try reopened[0].save()
+        // A local logout and a server logout both remain scoped to one profile.
+        try reopened[1].clear()
+        for index in sessions.indices {
+            let persisted = try MiniAppCookieStore(context: context, profile: profiles[index])
+            let check = session(persisted)
+            defer { check.invalidateAndCancel() }
+            let (data, _) = try await check.data(from: url("echo"))
+            XCTAssertEqual(String(decoding: data, as: UTF8.self), index == 2 ? "account=profile-2" : "")
+        }
+    }
+
+    @MainActor
     func testPersistentCookiesSurviveSessionRecreationAndServerLogout() async throws {
         guard let port = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] else {
             throw XCTSkip("Loopback HTTP fixture required")

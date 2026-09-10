@@ -5,7 +5,7 @@ import Foundation
 /// expiry, in the Feature's Keychain namespace. HTTP credential storage is separate.
 @MainActor
 public final class MiniAppCookieStore {
-    public enum Failure: Error { case invalidArchive, unsupportedVersion, unsupportedCookie }
+    public enum Failure: Error, Equatable { case invalidArchive, unsupportedVersion, unsupportedCookie }
     public let storage: HTTPCookieStorage
     private let keychain: MiniAppKeychain
     private let account: String
@@ -35,6 +35,16 @@ public final class MiniAppCookieStore {
                 if let url = value as? URL { properties[key] = url.absoluteString }
             }
             guard PropertyListSerialization.propertyList(properties, isValidFor: .binary) else { throw Failure.unsupportedCookie }
+            // Encoding a property list alone does not prove Foundation can restore
+            // it without changing the cookie's routing, protection, or lifetime.
+            let restored = try Self.decode(properties, now: now, failure: .unsupportedCookie)
+            guard let restored,
+                  restored.name == cookie.name, restored.value == cookie.value,
+                  restored.domain == cookie.domain, restored.path == cookie.path,
+                  restored.isSecure == cookie.isSecure, restored.isHTTPOnly == cookie.isHTTPOnly,
+                  restored.version == cookie.version, restored.portList == cookie.portList else {
+                throw Failure.unsupportedCookie
+            }
             entries.append(properties)
         }
         let archive: [String: Any] = ["version": 1, "cookies": entries]
@@ -52,15 +62,25 @@ public final class MiniAppCookieStore {
             guard version == 1 else { throw Failure.unsupportedVersion }
             guard let entries = archive["cookies"] as? [[String: Any]] else { throw Failure.invalidArchive }
             for entry in entries {
-                guard let expiry = entry[HTTPCookiePropertyKey.expires.rawValue] as? Date else { throw Failure.invalidArchive }
-                guard expiry > now else { continue }
-                let properties = Dictionary(uniqueKeysWithValues: entry.map { (HTTPCookiePropertyKey(rawValue: $0.key), $0.value) })
-                guard let cookie = HTTPCookie(properties: properties), !cookie.isSessionOnly else { throw Failure.invalidArchive }
-                cookies.append(cookie)
+                if let cookie = try Self.decode(entry, now: now, failure: .invalidArchive) { cookies.append(cookie) }
             }
         }
         for cookie in storage.cookies ?? [] { storage.deleteCookie(cookie) }
         for cookie in cookies { storage.setCookie(cookie) }
+    }
+
+    private static func decode(_ entry: [String: Any], now: Date, failure: Failure) throws -> HTTPCookie? {
+        guard let expiry = entry[HTTPCookiePropertyKey.expires.rawValue] as? Date,
+              expiry.timeIntervalSince1970.isFinite,
+              // Version 1 of our archive stores absolute lifetimes only. A
+              // relative lifetime here could extend a login on each reload.
+              entry[HTTPCookiePropertyKey.maximumAge.rawValue] == nil else { throw failure }
+        guard expiry > now else { return nil }
+        let properties = Dictionary(uniqueKeysWithValues: entry.map { (HTTPCookiePropertyKey(rawValue: $0.key), $0.value) })
+        guard let cookie = HTTPCookie(properties: properties), !cookie.isSessionOnly,
+              let actualExpiry = cookie.expiresDate,
+              abs(actualExpiry.timeIntervalSince(expiry)) < 1 else { throw failure }
+        return cookie
     }
 
     /// Quiesce requests first so a late response cannot log this profile back in.

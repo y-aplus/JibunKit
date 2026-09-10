@@ -195,6 +195,14 @@ jobs:
           if include_keychain_probe:
               shutil.copyfile(keychain_probe, 'Sources/JibunKit/KeychainAccessControlProbe.swift')
               shutil.copyfile(keychain_tests, 'UITests/KeychainAccessControlUITests.swift')
+          spotlight_probe = Path('Tests/TemplateIntegration/SpotlightOwnershipProbe.swift')
+          spotlight_tests = Path('Tests/TemplateIntegration/SpotlightOwnershipUITests.swift')
+          if spotlight_probe.exists() != spotlight_tests.exists():
+              raise SystemExit('Spotlight ownership integration fixtures must be added together')
+          include_spotlight_probe = spotlight_probe.exists()
+          if include_spotlight_probe:
+              shutil.copyfile(spotlight_probe, 'Sources/JibunKit/SpotlightOwnershipProbe.swift')
+              shutil.copyfile(spotlight_tests, 'UITests/SpotlightOwnershipUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -211,6 +219,8 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
           if include_keychain_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
+          if include_spotlight_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

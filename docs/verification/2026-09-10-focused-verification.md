@@ -48,3 +48,9 @@ WindowsではCI34487215191の実際のXCTest logを使った8ケースが成功�
 変更したworkflowが誤ったtarget指定をtoolchain準備前に拒否することを、意図的な失敗runで確認する。このrunは製品の失敗やnative UI成功の証拠として扱わない。
 
 [34491707040](https://github.com/y-aplus/JibunKit/actions/runs/34491707040)、source `733301b3a2c8b8f8fbcec98de95916b8003047e7`でこの拒否を確認した。通常methodの事前検査は成功し、targetを欠く生成host指定を入力検査が拒否した。jobは9秒、Xcode選択/インストール/ビルドは未実行。ローカルの実log照合とこのworkflow配線確認を根拠にmainへ統合する。生成hostの成功後検査は、活動通知の修正後runでも実際のnative試験と組み合わせて確認する。
+
+## Spotlightの署名付き検証接続
+
+D18のmacOS CLI試験ではindex APIがthrowしなくてもCSSearchQueryの読戻しは0件であり、成功の証拠にできなかった。署名付き生成hostで検証するため、`SpotlightOwnershipProbe.swift`と`SpotlightOwnershipUITests.swift`が両方ある場合にだけ既存の隔離checkoutへcopyし、`SpotlightOwnershipProbe.definition`を登録するhookを追加した。Project targetは増やさず、通常IPAのcheckout/Registryは変更しない。
+
+Windows上でworkflowの実際の埋込みPythonを一時checkoutへ実行し、両方なしは無変更、片方だけはエラー、両方ありはcopyと登録が行われる3条件を確認した。mainへ接続だけを先に統合し、D18 branchがそれを取り込んでnative試験を行う。これはiOS Spotlight読戻しの成功を示す検証ではない。

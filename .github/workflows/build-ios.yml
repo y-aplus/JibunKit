@@ -79,6 +79,7 @@ jobs:
         if: inputs.focused_ui_validation
         env:
           UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
         shell: bash
         run: |
           set -euo pipefail
@@ -94,10 +95,11 @@ jobs:
             echo "error: focused ui_test_filter cannot be combined with feature_validation" >&2
             exit 1
           fi
-          if [[ ! "$UI_TEST_FILTER" =~ ^MigrationUITests/[A-Za-z_][A-Za-z0-9_]*/test[A-Za-z0-9_]+$ ]]; then
-            echo "error: ui_test_filter must identify one MigrationUITests test method" >&2
+          if [[ -n "$FEATURE_UI_TEST_FILTER" ]]; then
+            echo "error: focused_ui_validation cannot use feature_ui_test_filter" >&2
             exit 1
           fi
+          python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER"
 
       - name: Select Xcode 26.6
         shell: bash
@@ -414,6 +416,10 @@ jobs:
             "${selection[@]}" \
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/simulator-tests.log"
+          if [[ "${{ inputs.focused_ui_validation }}" == "true" ]]; then
+            python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" \
+              --log "$RUNNER_TEMP/simulator-tests.log"
+          fi
 
       - name: Run Files backup round trip
         if: ${{ !cancelled() && inputs.simulator_tests && inputs.ui_test_filter == '' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}

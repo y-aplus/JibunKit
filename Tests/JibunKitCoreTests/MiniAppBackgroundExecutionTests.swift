@@ -81,6 +81,24 @@ final class MiniAppBackgroundExecutionTests: XCTestCase {
         XCTAssertEqual(Set(provider.ended), Set([0, 1, 2]))
     }
 
+    func testOwnerDeinitializationMarksExternalLeaseEndedAndLeavesOtherOwnerActive() async throws {
+        let provider = BackgroundAssertionSpy()
+        var owner: MiniAppBackgroundExecution? = MiniAppBackgroundExecution(
+            context: context("feature-a"), provider: provider)
+        let other = MiniAppBackgroundExecution(context: context("feature-b"), provider: provider)
+        let orphanedLease = try XCTUnwrap(owner?.begin(operation: "save"))
+        let otherLease = try XCTUnwrap(other.begin(operation: "save"))
+
+        owner = nil
+        for _ in 0..<10 where !orphanedLease.isEnded { await Task.yield() }
+        orphanedLease.end()
+
+        XCTAssertTrue(orphanedLease.isEnded)
+        XCTAssertFalse(orphanedLease.didExpire)
+        XCTAssertFalse(otherLease.isEnded)
+        XCTAssertEqual(provider.ended, [0])
+    }
+
     private func context(_ id: String) -> MiniAppContext {
         MiniAppContext(id: MiniAppID(id))
     }

@@ -83,8 +83,13 @@ public final class MiniAppBackgroundExecution {
     private func expire(_ id: UUID) { finish(id, expired: true) }
 
     deinit {
-        let remaining = entries.values.map(\.endNative)
-        Task { @MainActor in remaining.forEach { $0() } }
+        let remaining = entries.values.map { ($0.state, $0.endNative) }
+        Task { @MainActor in
+            for (state, endNative) in remaining {
+                state.isEnded = true
+                endNative()
+            }
+        }
     }
 }
 

@@ -33,6 +33,8 @@ checks:
 - a denied begin returns nil and admits no operation;
 - `MiniAppRuntime.shutdown()` ends all of its assertions exactly once while a
   second runtime stays active and later performs its own cleanup.
+- manager deinitialization updates an externally retained lease, ends its native
+  token once, and leaves another owner active.
 
 The signed-host `BackgroundExecutionProbe` uses real `UIApplication` begin/end
 calls for two Feature runtimes, proves A's explicit end and runtime shutdown do

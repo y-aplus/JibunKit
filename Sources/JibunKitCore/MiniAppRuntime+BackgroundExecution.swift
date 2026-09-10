@@ -1,19 +1,17 @@
 import Foundation
 
+#if canImport(UIKit) && !os(watchOS)
 public extension MiniAppRuntime {
     /// Ends every still-active assertion during this runtime's awaited shutdown.
     func makeBackgroundExecution(
         context: MiniAppContext
     ) throws -> MiniAppBackgroundExecution {
-        #if canImport(UIKit) && !os(watchOS)
         let execution = MiniAppBackgroundExecution(context: context)
         try onShutdown { execution.endAll() }
         return execution
-        #else
-        fatalError("UIKit background execution is unavailable on this platform")
-        #endif
     }
 }
+#endif
 
 extension MiniAppRuntime {
     func makeBackgroundExecution(

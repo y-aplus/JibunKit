@@ -24,6 +24,9 @@ runtime shutdown converge on the same idempotent end path. Expiration invokes
 only that operation's cleanup before ending its token. Shutting down one runtime
 does not end another Feature's leases.
 
+The UIKit factory is available only on platforms that provide `UIApplication`;
+unsupported platforms do not expose a public factory that traps at runtime.
+
 This is ownership bookkeeping, not a private time allocation. UIKit grants a
 finite execution window to the host app, and `backgroundTimeRemaining` describes
 that shared app window. A Feature cannot reserve or extend its own independent

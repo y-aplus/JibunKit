@@ -28,3 +28,5 @@ Run 34529562304, source `8368e7ebd8c13e3fe207cd54422c2b5c33b6ac3f`, は独立A/B
 Run 34530020690, source `1c9eb0ef0e98491ccbc97009ebd7c1d5b3efe026`, はA+BとB-onlyのbuild自体には成功したが、同一rootへの2回目の`tuist generate`が以前のA依存を生成済みprojectに残すことを検出した。B-only検証を別DerivedDataだけでなく別のclean Tuist project rootでも生成するよう分離して再検証する。
 
 Run 34530426724, source `8136f2f264bc6731cec7bf31e028f8f9d28b3879`, は別project root・別DerivedDataでも環境変数で評価したmanifestのA依存がB-only graphへ残ることを検出した。Tuistのmanifest評価キャッシュに左右されないよう、各clean rootの`Project.swift`へA有無をリテラルで明示して再検証する。
+
+Run 34530924876, source `eb5bd21def96039fedcae1eb57a0d17e19574ba6`, はXcode 26.6で成功した。独立A/B、統合app内A+B、Widget内Bを各manifest辞書まで照合し、別clean Tuist project root・別DerivedDataでAを構成から除いた後はA bundleだけが消え、app/Widget双方のB bundleと内容が維持された。ログ: `Privacy manifests verified: independent A/B, integrated app A+B, widget B, A removal preserves B`。

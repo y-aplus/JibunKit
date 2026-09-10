@@ -78,7 +78,7 @@ static let all = makeRegistry([
 
 Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。Registryから生成されないため、Featureが所有する安定IDから同じContextを生成したshared Storeを使う。現在のカウンターWidgetが実例である。
 
-App Intentを追加する場合は、Intent型と`AppShortcutsProvider`へのphrase登録に加え、Xcodeが生成するApp IntentsメタデータをIPAへ含める必要がある。Tuistのapp target内で宣言してXcodeに生成させ、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`が実例である。Intentからも同じshared Storeを使う。
+App IntentはFeatureのSwift Packageに公開型として置き、標準`AppIntentsPackage.includedPackages`でapp targetへ接続できる。[Package内Intentの接続手順と検証範囲](guides/package-app-intents.md)を参照。自動提示するApp Shortcutには`AppShortcutsProvider`のphrase等も登録する。Xcodeが生成するnative metadataをIPAへ含め、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`はapp target内にある既存の互換経路で、Package内配置を禁止するものではない。Intentからも同じFeature所有Storeを使う。
 
 ## 検証
 

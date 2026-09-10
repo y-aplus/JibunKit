@@ -15,6 +15,10 @@ on:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
         default: ''
+      package_intents_validation:
+        description: Compare independent and combined package App Intents (requires simulator_tests)
+        type: boolean
+        default: false
       feature_ui_test_filter:
         description: Optional generated-host Xcode test identifier (empty runs all Feature integration tests)
         type: string
@@ -74,6 +78,12 @@ jobs:
           fi
 
           test "$forbidden" -eq 0
+
+      - name: Validate package App Intents inputs
+        if: inputs.package_intents_validation && !inputs.simulator_tests
+        run: |
+          echo "package_intents_validation requires simulator_tests" >&2
+          exit 1
 
       - name: Validate focused UI inputs
         if: inputs.focused_ui_validation
@@ -454,6 +464,16 @@ jobs:
               2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
           fi
 
+      - name: Verify package App Intents
+        if: inputs.simulator_tests && inputs.package_intents_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f Tools/verify-package-app-intents.py ]]; then
+            python3 Tools/verify-package-app-intents.py --simulator-id "$SIMULATOR_ID" \
+              2>&1 | tee "$RUNNER_TEMP/package-app-intents.log"
+          fi
+
       - name: Build and install standalone Counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
@@ -624,6 +644,17 @@ jobs:
           path: |
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload package App Intents diagnostics
+        if: always() && inputs.simulator_tests && inputs.package_intents_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Package-App-Intents-diagnostics
+          path: |
+            ${{ runner.temp }}/package-app-intents.log
+            ${{ runner.temp }}/PackageAppIntents
           if-no-files-found: ignore
           retention-days: 7
 

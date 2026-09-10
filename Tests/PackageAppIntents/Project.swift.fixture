@@ -1,0 +1,27 @@
+import ProjectDescription
+
+let project = Project(name: "PackageIntents", packages: [
+    .package(path: "FeatureA"), .package(path: "FeatureB"),
+], targets: [
+    .target(name: "StandaloneA", destinations: .iOS, product: .app,
+        bundleId: "com.jibunkit.intent-fixture.a", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        sources: ["App.swift", "StandaloneA.swift"], dependencies: [.package(product: "IntentFeatureA")]),
+    .target(name: "StandaloneB", destinations: .iOS, product: .app,
+        bundleId: "com.jibunkit.intent-fixture.b", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        sources: ["App.swift", "StandaloneB.swift"], dependencies: [.package(product: "IntentFeatureB")]),
+    .target(name: "Combined", destinations: .iOS, product: .app,
+        bundleId: "com.jibunkit.intent-fixture.combined", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        sources: ["App.swift", "Combined.swift"],
+        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
+    .target(name: "IntentExecutionTests", destinations: .iOS, product: .unitTests,
+        bundleId: "com.jibunkit.intent-fixture.tests", deploymentTargets: .iOS("26.0"),
+        infoPlist: .default, sources: ["IntentExecutionTests.swift"],
+        dependencies: [.target(name: "Combined"), .package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
+], schemes: [
+    .scheme(name: "IntentExecutionTests", shared: true,
+            buildAction: .buildAction(targets: ["Combined"]),
+            testAction: .targets(["IntentExecutionTests"]))
+])

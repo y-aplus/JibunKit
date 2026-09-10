@@ -8,15 +8,45 @@ let build = try FeatureBuildConfiguration(features: [
     .init(owner: "scanner", infoPlist: [
         "NSCameraUsageDescription": "Scan documents", "UIBackgroundModes": ["processing", "audio"],
         "BGTaskSchedulerPermittedIdentifiers": ["com.jibunkit.build-scanner.refresh"],
+    ], localizedInfoPlist: [
+        "en": ["NSCameraUsageDescription": "Scan documents", "CFBundleDisplayName": "Build Probe"],
+        "ja": ["NSCameraUsageDescription": "書類を撮影", "CFBundleDisplayName": "ビルド検証"],
     ]),
-], infoPlistResolutions: ["NSCameraUsageDescription": "Camera takes photos; Scanner scans documents"])
+    .init(owner: "camera-localized", localizedInfoPlist: [
+        "en": ["NSCameraUsageDescription": "Take photos", "CFBundleDisplayName": "Build Probe"],
+        "ja": ["NSCameraUsageDescription": "写真を撮影", "CFBundleDisplayName": "ビルド検証"],
+    ]),
+], infoPlistResolutions: ["NSCameraUsageDescription": "Camera takes photos; Scanner scans documents"],
+localizedInfoPlistResolutions: [
+    "en": ["NSCameraUsageDescription": "Use camera to scan documents"],
+    "ja": ["NSCameraUsageDescription": "カメラで書類を撮影します"],
+])
     .compose(infoPlist: ["UILaunchScreen": [:]], entitlements: [
         "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
     ])
+let widgetBuild = try FeatureBuildConfiguration(features: [
+    .init(owner: "widget", localizedInfoPlist: [
+        "en": ["CFBundleDisplayName": "Build Probe Widget"],
+        "ja": ["CFBundleDisplayName": "ビルド検証ウィジェット"],
+    ])
+]).compose(infoPlist: [
+    "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
+], entitlements: [:])
+let staleBuild = try FeatureBuildConfiguration(features: [
+    .init(owner: "removed", localizedInfoPlist: ["fr": ["CFBundleDisplayName": "Obsolète"]])
+]).compose(infoPlist: [:], entitlements: [:])
+try staleBuild.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
+try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
+try widgetBuild.writeLocalizedInfoPlistStrings(to: "GeneratedResources/WidgetInfo")
 
 let project = Project(name: "BuildRequirementProbe", targets: [
     .target(name: "BuildRequirementProbe", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.build-probe", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: build.infoPlist), sources: ["App.swift"],
-        entitlements: .dictionary(build.entitlements))
+        resources: ["GeneratedResources/AppInfo/**"], entitlements: .dictionary(build.entitlements),
+        dependencies: [.target(name: "BuildRequirementProbeWidget")]),
+    .target(name: "BuildRequirementProbeWidget", destinations: .iOS, product: .appExtension,
+        bundleId: "com.jibunkit.build-probe.Widget", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: widgetBuild.infoPlist), sources: ["Widget.swift"],
+        resources: ["GeneratedResources/WidgetInfo/**"])
 ])

@@ -363,6 +363,8 @@ jobs:
           require_equal "widget build version" \
             "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)"
+          python3 Tools/verify-localized-info-plist.py GeneratedFeatureResources/App "$app"
+          python3 Tools/verify-localized-info-plist.py GeneratedFeatureResources/Widget "$widget"
 
           widget_entitlements_file="$(find Derived -type f -name 'JibunKitWidget-Extension.entitlements')"
           app_entitlements_file="$(find Derived -type f -name 'JibunKit-App.entitlements')"

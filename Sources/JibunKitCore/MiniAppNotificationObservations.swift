@@ -2,28 +2,31 @@ import Foundation
 
 /// An individually cancellable NotificationCenter registration.
 ///
-/// Cancellation removes the native observer immediately and suppresses values
-/// that were extracted before cancellation but are still queued for delivery.
+/// Cancellation removes the native observer immediately. Owner cancellation on
+/// the main actor suppresses values still queued for main-actor delivery.
 public final class MiniAppNotificationObservation: @unchecked Sendable {
     private let lock = NSLock()
     private var nativeObserver: (any NSObjectProtocol)?
     private var retainedObject: AnyObject?
     private let center: NotificationCenter
     private let deactivate: @Sendable () -> Void
+    private let removeFromOwner: @Sendable () -> Void
 
     fileprivate init(
         center: NotificationCenter,
         nativeObserver: any NSObjectProtocol,
         retainedObject: AnyObject?,
-        deactivate: @escaping @Sendable () -> Void
+        deactivate: @escaping @Sendable () -> Void,
+        removeFromOwner: @escaping @Sendable () -> Void
     ) {
         self.center = center
         self.nativeObserver = nativeObserver
         self.retainedObject = retainedObject
         self.deactivate = deactivate
+        self.removeFromOwner = removeFromOwner
     }
 
-    /// Idempotently prevents later delivery and removes the Foundation observer.
+    /// Idempotently deactivates delivery and removes the Foundation observer.
     public func cancel() {
         deactivate()
         let observer = lock.withLock { () -> (any NSObjectProtocol)? in
@@ -34,6 +37,7 @@ public final class MiniAppNotificationObservation: @unchecked Sendable {
             return nativeObserver
         }
         if let observer { center.removeObserver(observer) }
+        removeFromOwner()
     }
 
     deinit { cancel() }
@@ -43,7 +47,7 @@ public final class MiniAppNotificationObservation: @unchecked Sendable {
 /// are independent even when they observe the same notification name.
 @MainActor
 public final class MiniAppNotificationObservations {
-    private var observations: [MiniAppNotificationObservation] = []
+    private let registry = NotificationObservationRegistry()
     public private(set) var isCancelled = false
 
     public init() {}
@@ -61,6 +65,7 @@ public final class MiniAppNotificationObservations {
     ) throws -> MiniAppNotificationObservation {
         guard !isCancelled else { throw MiniAppRuntime.Failure.closed }
 
+        let id = UUID()
         let delivery = NotificationDeliveryState(receive: receive)
         let nativeObserver = center.addObserver(forName: name, object: object, queue: nil) { [weak delivery] notification in
             guard let delivery, delivery.canExtract(), let value = extract(notification) else { return }
@@ -70,9 +75,10 @@ public final class MiniAppNotificationObservations {
             center: center,
             nativeObserver: nativeObserver,
             retainedObject: object,
-            deactivate: { delivery.deactivate() }
+            deactivate: { delivery.deactivate() },
+            removeFromOwner: { [weak registry] in registry?.remove(id: id) }
         )
-        observations.append(observation)
+        registry.insert(observation, id: id)
         return observation
     }
 
@@ -80,13 +86,32 @@ public final class MiniAppNotificationObservations {
     public func cancelAll() {
         guard !isCancelled else { return }
         isCancelled = true
-        let owned = observations
-        observations.removeAll()
+        let owned = registry.removeAll()
         for observation in owned { observation.cancel() }
     }
 
     deinit {
-        for observation in observations { observation.cancel() }
+        for observation in registry.removeAll() { observation.cancel() }
+    }
+}
+
+private final class NotificationObservationRegistry: @unchecked Sendable {
+    private let lock = NSLock()
+    private var observations: [UUID: MiniAppNotificationObservation] = [:]
+
+    func insert(_ observation: MiniAppNotificationObservation, id: UUID) {
+        lock.withLock { observations[id] = observation }
+    }
+
+    func remove(id: UUID) {
+        lock.withLock { observations[id] = nil }
+    }
+
+    func removeAll() -> [MiniAppNotificationObservation] {
+        lock.withLock {
+            defer { observations.removeAll() }
+            return Array(observations.values)
+        }
     }
 }
 

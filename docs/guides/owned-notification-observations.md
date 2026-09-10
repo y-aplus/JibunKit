@@ -35,10 +35,13 @@ Keep the returned `MiniAppNotificationObservation` when one registration needs
 to end earlier than its owning Feature, and call `cancel()`. Calling
 `cancelAll()`, releasing the collection, or awaiting `runtime.shutdown()`
 removes each native observer explicitly. Values already waiting for main-actor
-delivery are discarded after cancellation. Cancellation also releases the
-receiver closure even while its owner collection remains alive. A receiver
-that has already begun is allowed to finish, so keep receiver work short and
-use runtime-owned tasks for asynchronous work.
+delivery are discarded when cancellation runs on the main actor, as
+`cancelAll()` and runtime cleanup do. `cancel()` is thread-safe, but if another
+thread cancels after a main-actor delivery has already claimed its receiver,
+that accepted receiver may still run. Cancellation releases the stored receiver
+closure and removes the token from its owner collection, so repeated
+register/cancel cycles do not accumulate token history. Keep receiver work
+short and use runtime-owned tasks for asynchronous work.
 
 An observation collection is single-use after `cancelAll()`. Create a new
 runtime and collection when restarting a Feature.

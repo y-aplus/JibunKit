@@ -11,7 +11,8 @@ let webView = WKWebView(frame: .zero, configuration: configuration)
 The returned store is Apple's persistent `WKWebsiteDataStore`, identified by a
 stable UUID derived from the Feature ID and profile. Two Features can therefore
 use the same web origin, cookie name, and `localStorage` key without sharing
-values. Reuse the same profile for later launches that should reopen the same
+values. The same boundary applies to IndexedDB database, object-store, and key
+names. Reuse the same profile for later launches that should reopen the same
 website state. Changing the derivation or profile loses that association and
 requires an explicit migration plan.
 
@@ -19,6 +20,9 @@ The host observes page operations through asynchronous JavaScript evaluation.
 Treat `WKNavigationDelegate.webView(_:didFinish:)` plus an application-level
 JavaScript acknowledgement as the execution completion boundary;
 an arbitrary delay does not prove that a page loaded or that its write ran.
+For IndexedDB, resolve that acknowledgement from the transaction's
+`oncomplete`, not merely from the `put()` request callback. Close database
+connections after the transaction so later deletion cannot be blocked.
 Before process termination, allow the app to enter its normal background state.
 That acknowledgement is not a durable-flush guarantee. WebKit controls the
 durable flush timing, and JibunKit does not call private
@@ -29,6 +33,11 @@ owner's store and await completion. Do not clear `WKWebsiteDataStore.default()`
 or enumerate unrelated identifiers as a substitute. Existing WebViews using a
 store must be coordinated by the Feature before deletion; automatic lifetime
 coordination is not currently provided.
+
+When checking that an IndexedDB database was deleted, do not call
+`indexedDB.open(name)` first: opening a missing database creates it. Check
+`indexedDB.databases()` for absence, and only open a database already reported
+as present.
 
 This isolates WebKit website data, not server accounts or tracking performed
 outside the store. Cookie rules such as `Secure`, `SameSite`, domain, and path

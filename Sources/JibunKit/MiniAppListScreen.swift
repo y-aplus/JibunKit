@@ -18,10 +18,11 @@ struct MiniAppListScreen: View {
     }
 
     var body: some View {
-        NavigationStack(path: $navigation.path) {
+        let owner = navigation.activeID
+        NavigationStack(path: navigation.pathBinding) {
             List {
                 ForEach(matchingApps) { miniApp in
-                    NavigationLink(value: miniApp.id) {
+                    Button { navigation.open(miniApp.id) } label: {
                         Label(miniApp.title, systemImage: miniApp.systemImage)
                     }
                     .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
@@ -51,6 +52,33 @@ struct MiniAppListScreen: View {
                         "ミニアプリを開けません",
                         systemImage: "questionmark.app"
                     )
+                }
+            }
+        }
+        // Feature-local destination types may be identical in different apps.
+        // Rebuild the stack for its owner while retaining that owner's path.
+        .id(navigation.stackID)
+        .toolbar {
+            if owner != nil {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
+                            .accessibilityIdentifier("miniapp.switch.list")
+                        ForEach(MiniAppRegistry.all) { miniApp in
+                            Button { navigation.open(miniApp.id) } label: {
+                                Label(miniApp.title, systemImage: miniApp.systemImage)
+                            }
+                            .accessibilityIdentifier("miniapp.switch.\(miniApp.id.rawValue)")
+                        }
+                        Divider()
+                        Button("このアプリの最初の画面へ", systemImage: "arrow.uturn.backward") {
+                            navigation.resetCurrentPath()
+                        }
+                        .accessibilityIdentifier("miniapp.switch.reset")
+                    } label: {
+                        Label("ミニアプリを切り替え", systemImage: "square.grid.2x2")
+                    }
+                    .accessibilityIdentifier("miniapp.switch.open")
                 }
             }
         }

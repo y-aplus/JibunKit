@@ -14,6 +14,16 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 - 一件の要求を複数sceneへ同報しない。handler中の追加要求は現在の配送後に再選択する。解除された登録は次の選択に使わない。
 - 通知のcustom action/dismissは既存のFeature所有者配送を保ち、画面選択処理へ渡さない。
 
+## 同じscene内のFeature切替
+
+`AppNavigation`はMiniAppID別の`NavigationPath`をscene内で所有する。右上の「ミニアプリを切り替え」から他Featureを選ぶと、対象の最後の値ベースの経路へ戻る。「ミニアプリ一覧」も経路を保持し、一覧から再度選択すると復帰する。通常の戻る操作は経路を一段ずつ戻す操作であり、戻した詳細を自動的に復活させない。「このアプリの最初の画面へ」は選択中のFeatureだけをrootへ戻す。
+
+行先なしのURL/通知も保存経路へ復帰する。具体的なdestinationを持つURL/通知は、Integrationによる検証に成功した場合だけ、そのFeatureの経路を指定先へ置換する。不正/非対応のdestinationは表示中・保存中の経路を変更しない。他Featureの経路は維持する。
+
+Stackの識別子とbindingの世代を切替時に更新する。同じSwift型のnavigation valueを異なるFeatureが使っても、前のstackのdestination登録を再利用しない。離脱したstackのbinding更新は、同じFeatureへ戻った後も新しい経路へ適用しない。
+
+これはメモリ上の値ベースの経路保持であり、`NavigationLink(value:)`と`navigationDestination(for:)`を対象とする。Viewを直接指定するNavigationLink、View内の入力状態やsheet、任意のUIKit stack、アプリ終了後の経路復元は今回の補完範囲ではない。`Hashable`値に`Codable`を要求せず、Featureの画面型をhostで列挙しない。実装の検証状況は[Feature経路保持](verification/2026-09-10-feature-navigation.md)に記録する。
+
 ## 根拠と検証
 
 [Apple WindowGroup](https://developer.apple.com/documentation/swiftui/windowgroup)はwindowのview階層内に置いたStateへwindow別のstorageを割り当てる。[ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内で読むと当該scene、App内では全sceneの集約になる。今回、Featureへの既存host phase配送はApp内の集約を維持し、通知先選択のphaseだけroot view内で読む。
@@ -24,7 +34,7 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 
 二navigation実体の試験は、OSの二つのwindowを操作する試験ではない。iPadOSの複数windowを有効にするscene manifest、window生成・破棄・前面化の運用、scene session identifierを用いた明示配送は未実装/未検証。これはOSにより不可能と判定した制約ではない。
 
-同じsceneでFeatureを切り替えた際の各Featureのpath・入力状態保持、複数sheet要求の所有者/調停、UIViewControllerによるrootの接続契約も残る。今回の変更だけでD04全体を完了とはしない。OSによる永続的な全画面状態保存も保証しない。
+同じsceneでFeatureを切り替えた際の各FeatureのView内入力状態保持、複数sheet要求の所有者/調停、UIViewControllerによるrootの接続契約も残る。今回の変更だけでD04全体を完了とはしない。OSによる永続的な全画面状態保存も保証しない。
 
 ## 検証経過
 

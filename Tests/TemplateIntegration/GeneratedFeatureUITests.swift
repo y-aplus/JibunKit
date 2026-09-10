@@ -30,14 +30,66 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap("scene.navigation.route")
         expect("A=2 B=0")
         tap("scene.navigation.b.open")
-        tap("scene.navigation.b.push")
+        expect("A=2 B=2")
         tap("scene.navigation.activate-a")
         tap("scene.navigation.route")
         expect("A=0 B=2")
         tap("scene.navigation.a.open")
         tap("scene.navigation.remove-a")
         tap("scene.navigation.route")
-        expect("A=1 B=0")
+        expect("A=2 B=0")
+    }
+
+    func testFeatureNavigationRetainsPathsAcrossSwitches() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_NAVIGATION_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ page: String) {
+            let text = app.staticTexts.matching(identifier: "navigation.retention.page")
+                .matching(NSPredicate(format: "label == %@", page)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func select(_ id: String) {
+            tap("miniapp.switch.open")
+            tap("miniapp.switch." + id)
+        }
+        tap("miniapp.lifecycle-a")
+        expect("lifecycle-a:0")
+        tap("navigation.retention.check")
+        XCTAssertTrue(app.staticTexts.matching(identifier: "navigation.retention.contract")
+            .matching(NSPredicate(format: "label == %@", "passed")).firstMatch.waitForExistence(timeout: 10))
+        tap("navigation.retention.next")
+        expect("lifecycle-a:1")
+        tap("navigation.retention.next")
+        expect("lifecycle-a:2")
+        select("lifecycle-b")
+        expect("lifecycle-b:0")
+        tap("navigation.retention.next")
+        expect("lifecycle-b:1")
+        select("lifecycle-a")
+        expect("lifecycle-a:2")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        expect("lifecycle-a:1")
+        select("list")
+        tap("miniapp.lifecycle-a")
+        expect("lifecycle-a:1")
+        select("reset")
+        expect("lifecycle-a:0")
+        select("lifecycle-b")
+        expect("lifecycle-b:1")
+        tap("navigation.retention.invalid")
+        expect("lifecycle-b:1")
+        tap("navigation.retention.route")
+        expect("lifecycle-a:7")
+        select("lifecycle-b")
+        expect("lifecycle-b:1")
     }
 
     func testPersistentHTTPPasswordsSurviveRestartAndOtherOwnerLogout() {

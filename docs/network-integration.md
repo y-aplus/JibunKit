@@ -21,13 +21,13 @@ let session = URLSession(configuration: configuration)
 
 ## 所有者の終了と復元
 
-通信を使うTaskをRuntimeへ登録し、取消後の処理終了を待つ。sessionの無効化、delegateが必要とする終了処理、ログアウトに伴う保存層更新はFeatureの所有者から接続する。`invalidateAndCancel()`を呼んだだけで全callbackが完了したとは扱わない。delegate完了まで待つ必要がある資源は、待機を実装して`onShutdownAsync`へ登録する。[Runtime接続ガイド](runtime-restore-integration.md)も参照。
+通信を使うTaskをRuntimeへ登録し、取消後の処理終了を待つ。sessionの無効化、delegateが必要とする終了処理、ログアウトに伴う保存層更新はFeatureの所有者から接続する。`invalidateAndCancel()`を呼んだだけで全callbackが完了したとは扱わない。native sessionの終了通知を待つための`MiniAppURLSessionLifetime`を追加した（下記、CI検証中）。独自delegateの追加解放も終えてから通知を転送し、`onShutdownAsync`へ接続する。[Runtime接続ガイド](runtime-restore-integration.md)も参照。
 
 ## 証拠と残件
 
 [MiniAppHTTPIsolationTests](../Tests/JibunKitCoreTests/MiniAppHTTPIsolationTests.swift)はloopback HTTP serverからSet-Cookieを受け、同URLに異なる応答をcacheし、ネットワークを使わない再読出しを比較する。認証challenge・redirect・サーバー側Cookie失効は34432354335で成功。
 
-永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の永続化は下記の実装をCI検証中。iOSでの実HTTP送信、process再生成後のdisk cache、background再接続、独自delegateの共有状態は未完。恒久的なログインを必要とするアプリへephemeral化を強制しない。App Group cookie storeは署名で許可されたgroupの共有用であり、任意のFeature名で隔離できるとは扱わない。
+永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の明示保存は34437448875でmacOS実HTTPとiOS再起動を検証済み。iOSでの実HTTP送信、process再生成後のdisk cache、background再接続、独自delegateの共有状態は未完。恒久的なログインを必要とするアプリへephemeral化を強制しない。App Group cookie storeは署名で許可されたgroupの共有用であり、任意のFeature名で隔離できるとは扱わない。
 
 D09全体は未達。詳細と各CIは[検証記録](verification/2026-09-10-network-isolation.md)。
 
@@ -49,7 +49,7 @@ profileはアカウントを識別する安定した文字列を渡す。同じF
 
 不正なarchive・未対応version・相対Max-Ageを含む保存データはreloadでエラーにする。途中まで有効なCookieがあっても、全件を読み終えるまではlive storeを変更しない。読み込み失敗で元の保存データを削除・上書きしない。繰り返すsave/reloadでも元の絶対期限を延長しない試験も追加した。34435476250でこれらの補強とiOSのprocess再起動試験が成功。
 
-## HTTPパスワード資格情報の明示保存（CI検証中）
+## HTTPパスワード資格情報の明示保存
 
 `MiniAppPasswordCredentialStore`はFeature/profile別の専用`URLCredentialStorage`とKeychain snapshotを結び付ける。Cookie storeとは保存serviceも独立しており、片方のclearはもう片方を削除しない。HTTP認証とCookieの両方を使うアプリは、ログアウトで両方を処理する。
 
@@ -74,4 +74,35 @@ host・port・protocol・realm・認証方式・proxy区分を保持し、同じ
 
 読み戻しは全件の形式、重複、既定ユーザーの存在、native protection spaceの再構築を検証してからlive storeを置換する。読出し失敗はlive storeと保存dataを保持し、保存失敗は以前のKeychain snapshotを維持する。Keychainのサイズ・ロック状態・署名による失敗は呼出し側へthrowする。同profileには一つの生存する所有者を置く。
 
-これはパスワード型資格情報用のadapterであり、クライアント証明書identity、server trust、SSO、biometric access control、同期Keychain、background再接続の補完は未実装。trust判定やサーバー側ログアウトは変更しない。今回の試験はnativeのhost/port/realm/protocol/proxy/認証方式の区別と複数user、Feature/profileの隔離・Cookie維持・破損時保持、実HTTP Basic challenge、iOS process再起動を対象にする。Digestやproxy認証の実通信は別途残る。
+これはパスワード型資格情報用のadapterであり、クライアント証明書identity、server trust、SSO、biometric access control、同期Keychain、background再接続の補完は未実装。trust判定やサーバー側ログアウトは変更しない。[34437448875](https://github.com/y-aplus/JibunKit/actions/runs/34437448875)でnativeのhost/port/realm/protocol/proxy/認証方式の区別と複数user、Feature/profileの隔離・Cookie維持・破損時保持、実HTTP Basic challenge（0.057秒）、iOS process再起動（100.041秒）が成功。Digestやproxy認証の実通信は別途残る。
+
+## 要求・delegate完了後の保存とログアウト（CI検証中）
+
+`MiniAppURLSessionLifetime`はnative URLSessionの終了通知を待つ部品。Featureの独自delegateへ次の転送を追加する。data/download/authentication等のdelegateはそのまま使える。
+
+```swift
+final class FeatureSessionDelegate: NSObject, URLSessionDelegate, Sendable {
+    let lifetime = MiniAppURLSessionLifetime()
+
+    func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
+        Task {
+            // 独自の非同期解放がある場合は、この転送より前に完了させる。
+            await lifetime.didBecomeInvalid(session, error: error)
+        }
+    }
+}
+
+let delegate = FeatureSessionDelegate()
+let session = URLSession(configuration: configuration, delegate: delegate, delegateQueue: nil)
+// Featureの入口を閉じ、必要ならRuntimeのowned Taskを取消・joinする。
+try await delegate.lifetime.finishAndWait(session)
+try cookies.save() // ログアウトならclear。パスワードstoreも必要に応じて処理する。
+```
+
+一つのlifetimeは一つのsessionに対応する。他sessionへの使い回しや終了できないshared sessionはエラー。複数の終了呼出しは同じ結果へ合流し、先に届いた終了通知も保持する。待っているTaskが取消されても、資源解放完了を早く報告しない。終わったsessionは再利用せず、新しいsessionとlifetimeを作る。
+
+内部では`finishTasksAndInvalidate()`を一度呼ぶ。これは新しいnative taskの受付を閉じ、既存要求とdelegate呼出しが終わった後の通知を待つ（[Apple仕様](https://developer.apple.com/documentation/foundation/urlsession/finishtasksandinvalidate())）。取消したい場合は、まずRuntime等が所有するTaskを取消してjoinし、その後にこの待機へ進む。外から`invalidateAndCancel()`を呼ぶと同じ完了保証にはならない。[その終了通知は即座に届くとの仕様](https://developer.apple.com/documentation/foundation/urlsessiondelegate/urlsession(_:didBecomeInvalidWithError:))があるため、その通知だけで全処理が完了したとは判定しない。
+
+Runtimeでは`onShutdownAsync`へこの待機と必要な保存・削除を登録する。hookはthrowできないのでエラーをFeatureの状態に保持し、`runtime.shutdown()`後に利用側が確認・報告する。成功扱いして隠さない。[コンパイル対象の接続例・実HTTP試験](../Tests/JibunKitCoreTests/MiniAppURLSessionLifetimeTests.swift)は遅い応答のCookieをdelegate解放後に保存する経路、実行中要求を取消してからログアウトする経路を示す。
+
+delegateの転送漏れ、独自解放が終わらない場合、この待機も終わらない。待機対象のdelegate callback内で同期的にfinishAndWaitの終了を待つと循環待ちになるため、外部のFeature所有者から終了を開始する。別processやbackground sessionの再接続・イベント配送はこの部品だけでは補完していない。iOS runtimeでの終了順序の追加検証は残る。

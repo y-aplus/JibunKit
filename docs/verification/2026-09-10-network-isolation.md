@@ -52,3 +52,11 @@ unitは二Featureと同Featureの別profileへ同じURLの異なるcacheを置�
 unitはnative認証先の差、既定user切替、Feature/profileのlogout非干渉、Cookie保存との独立、破損時のlive/snapshot保持。HTTPは三つのFeature/profileで同一realm/userへ異なるpasswordを再生成してBasic challengeに応答し、A logout後の401と残りの200を確認する。CI-only host画面では二Featureの保存→process再起動→読出し→A logout→再起動後のA欠落/B保持を確認する。実装・native接続例・単体/HTTP/iOS試験・現在ガイドをまとめてCIへ送る。現時点は検証待ち。通常IPAにはCI画面を含めない。
 
 資格情報ストア削除は認証済みconnectionや独自delegateを失効させないため、要求受付停止・session終了待ち・clear・新session生成を利用契約とする。証明書identity/server trust/SSO/backgroundや、Digest/proxyの実通信までを検証済みとはしない。
+
+## パスワード資格情報の結果とnative session終了
+
+[34437448875](https://github.com/y-aplus/JibunKit/actions/runs/34437448875)（source `9bb0c4f`）成功。実HTTP password再生成認証/個別logout0.057秒、破損保持0.066秒、Feature/profile/Cookie非干渉0.043秒、native認証先/既定user0.020秒、native既定選択維持0.018秒。iOS process再起動/片方logout100.041秒、通常host通知回帰41.120秒。IPAとFeature/Records検証も成功。
+
+次にMiniAppURLSessionLifetimeを追加。既存delegateを置き換えず、native didBecomeInvalidWithError通知をactorへ転送してfinishTasksAndInvalidateの完了を待つ。複数待機・先行通知・エラー保持・重複通知/他session拒否を扱う。待機Taskの取消を解放完了とはしない。invalidateAndCancelの通知はApple仕様上即時なので、graceful完了と同一視しない。
+
+実HTTP試験ではeventで応答を保持し、別sessionから開始確認・releaseする。Runtimeの終了hookが、応答のCookie受信とdelegateの追加解放を待ってからsaveすることを確認する。別経路ではRuntimeのowned HTTP Taskを取消・joinしてからnative終了を待ち、保存loginをclearし、他sessionは利用を続ける。専用serverのtimeoutは試験失敗時の停止用20秒で、成功時の同期はevent駆動。Windows上のfixture smoke（開始確認/別要求/release/遅いSet-Cookie応答）は成功。Swift実行はCI待ち。iOS runtimeでの終了順序・backgroundは未検証。

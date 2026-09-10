@@ -6,9 +6,41 @@ import os
 import subprocess
 import threading
 
+gates = {}
+gates_lock = threading.Lock()
+
+
+def gate(token):
+    with gates_lock:
+        return gates.setdefault(token, (threading.Event(), threading.Event()))
+
 
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
+        # Event-driven lifetime tests: the response is held until another request
+        # releases it. A deadline prevents a failed test from hanging the fixture.
+        if self.path.startswith(("/hold/", "/await-start/", "/release/")):
+            operation, token = self.path.strip("/").split("/", 1)
+            started, released = gate(token)
+            if operation == "hold":
+                started.set()
+                ready = released.wait(timeout=20)
+            elif operation == "await-start":
+                ready = started.wait(timeout=20)
+            else:
+                released.set()
+                ready = True
+            self.send_response(200 if ready else 504)
+            self.send_header("Content-Length", "0")
+            self.send_header("Cache-Control", "no-store")
+            if operation == "hold" and ready:
+                self.send_header("Set-Cookie", "account=late-response; Path=/; Max-Age=3600")
+            try:
+                self.end_headers()
+            except (BrokenPipeError, ConnectionResetError):
+                # The cancellation test intentionally disconnects before release.
+                pass
+            return
         if self.path.startswith("/redirect"):
             self.send_response(302)
             self.send_header("Location", "/echo")

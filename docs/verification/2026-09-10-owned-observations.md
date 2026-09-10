@@ -46,7 +46,14 @@ https://developer.apple.com/documentation/Foundation/NotificationCenter/addObser
   without affecting another runtime.
 
 Local execution is unavailable on the Windows development host because the
-package requires Swift/Xcode. CI status is recorded after the branch run.
+package requires Swift/Xcode. GitHub Actions run
+[34481904178](https://github.com/y-aplus/JibunKit/actions/runs/34481904178)
+succeeded on Xcode 26.6. Its `Test shared feature logic` step compiled the new
+implementation under Swift 6 and ran all eight
+`MiniAppNotificationObservationsTests` with zero failures. The same run also
+passed the independent Feature package tests, the release iOS build, and IPA
+packaging. Simulator tests were intentionally disabled because this boundary
+uses Foundation only and the real `NotificationCenter` cases ran on macOS.
 
 ## Remaining limits
 

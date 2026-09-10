@@ -52,8 +52,8 @@ https://developer.apple.com/documentation/Foundation/NotificationCenter/addObser
 The tests use fulfilled and inverted XCTest expectations for delivery
 boundaries; they do not infer completion from a fixed number of executor
 yields. Local execution is unavailable on the Windows development host because
-the package requires Swift/Xcode. The pre-review GitHub Actions run
-[34481904178](https://github.com/y-aplus/JibunKit/actions/runs/34481904178)
+the package requires Swift/Xcode. The review-validation GitHub Actions run
+[34483892148](https://github.com/y-aplus/JibunKit/actions/runs/34483892148)
 succeeded on Xcode 26.6. Its `Test shared feature logic` step compiled the new
 implementation under Swift 6 and ran all eight
 `MiniAppNotificationObservationsTests` with zero failures. The same run also

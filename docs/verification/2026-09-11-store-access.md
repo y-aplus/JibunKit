@@ -14,6 +14,8 @@
 
 Windowsではdiff/selectorの検査を行う。Swift/macOS・iOS UI・IPAはCIで確認する。通常画面の回帰とRecordsの既存試験を合わせ、選択外UIや実機を検証済みとしない。
 
+source `2aecc3f`を[34506390553](https://github.com/y-aplus/JibunKit/actions/runs/34506390553)へ送った。生成hostは`MigrationUITests/GeneratedFeatureUITests/testOrdinaryStoreAccessBlocksRestoreUntilFinishedAndPreservesOtherOwner`、通常hostは`MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults`。両selectorの存在検査とdiff検査が成功。gh run watchとcodex queueで完了時に再開する。
+
 ## 残る範囲
 
 opt-inの協調契約であり、通常書込みの全自動検出、DBのtransaction自体の排他、別process writerは対象外。通常アクセスが0件でもDB接続が閉じているとは限らず、restoreLifecycleの停止・再開責任を維持する。D07全体は未完。

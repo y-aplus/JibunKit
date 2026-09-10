@@ -13,6 +13,8 @@
 
 WindowsではSwift/iOS試験を実行できないため、diff検査とCI selector検査を行い、macOS共有試験・生成hostの選択UI試験・通常host回帰・IPA検査をCIへ依頼する。
 
+source `35324f0`のCIは[34502469319](https://github.com/y-aplus/JibunKit/actions/runs/34502469319)で実行中。生成hostは`MigrationUITests/GeneratedFeatureUITests/testRestoreFailuresDescribeDataAndRuntimeStateWithoutChangingOtherFeature`、通常hostは`MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults`を指定した。先行34502431856は通常hostのmethod名を誤指定したため取り消した。訂正後の二selectorはローカルの存在検査を通した。完了はgh run watchからcodex queueへ通知する。
+
 ## 責任と限界
 
 callbackはFeatureが実装する。途中まで閉じた複数接続、外部writer、通常書込みや購読の受付を共有Runtimeが発見・自動修復するものではない。回復callbackが取消で失敗した場合も回復失敗として扱う。DB以外の移行/リセット、別process排他、D07全体は未完。CI専用probeは通常IPAへ含めない。

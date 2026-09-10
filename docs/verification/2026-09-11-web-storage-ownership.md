@@ -7,14 +7,15 @@ Date: 2026-09-11
 The signed-iOS fixture supplies an HTML page with `loadHTMLString`, using the same
 fixed `https://jibunkit.example/ownership` base URL in two Features. It does not
 test an HTTP fetch or TLS. Both pages write
-the same `localStorage` key and the same persistent cookie name through page
-JavaScript. The `WKWebViewConfiguration` receives each Feature's
+the same `localStorage` key, persistent cookie name, and IndexedDB
+database/object-store/key through page JavaScript. The `WKWebViewConfiguration` receives each Feature's
 `context.websiteDataStore()` before navigation.
 
 The test observes navigation completion and verifies the page-installed
-JavaScript API before enabling operations. Every write returns the values read
-back by the page, so neither page loading nor write completion is represented by
-an unconditional sleep.
+JavaScript API before enabling operations. The IndexedDB write resolves only
+from the read-write transaction's `oncomplete`, after which every write returns
+all three values read back by the page. Neither page loading nor write
+completion is represented by an unconditional sleep.
 
 ## Native checks
 
@@ -22,17 +23,26 @@ an unconditional sleep.
 checks that the wrapper returns a persistent native `WKWebsiteDataStore` with
 the stable owner/profile identifier. The signed UI flow checks:
 
-- owner A and B write different values using the same origin, key, and cookie;
-- each page immediately reads back its own `localStorage` and cookie values;
+- owner A and B write different values using the same origin, storage names,
+  and cookie;
+- each page immediately reads back its own `localStorage`, cookie, and IndexedDB
+  values;
 - the app enters the normal background state before termination;
 - both values survive process recreation;
-- clearing A's native store completes before proceeding;
+- native removal of A's Cookie, local-storage, and IndexedDB data completes
+  before proceeding;
+- the page observes A's database deletion without opening and recreating it;
 - B remains readable after A is cleared and the app is recreated again.
 
 The fixture uses only the dedicated `web-storage-owner-a` and
 `web-storage-owner-b` stores. It never clears the default store or another
 Feature's data. A failure remains an assertion failure; the test has no skip or
 fixed-delay fallback for Cookie instability.
+
+The absence check uses `indexedDB.databases()` and does not call
+`indexedDB.open()` for a missing database, avoiding a false “missing” result
+that recreates the database under test. HTTP fetch and Service Worker storage
+remain out of scope.
 
 ## CI-only integration
 
@@ -55,7 +65,7 @@ origin, OS, and background/relaunch sequence; it does not guarantee immediate
 durability after abrupt termination, every cookie attribute, or coordinated
 deletion while other WebViews are active.
 
-## Result
+## localStorage and Cookie result
 
 [GitHub Actions run 34505014278](https://github.com/y-aplus/JibunKit/actions/runs/34505014278)
 on Xcode 26.6 succeeded. Source `ae6ba26` ran the exact three-part selector and
@@ -71,3 +81,47 @@ executed 135 tests with zero failures. The short normal-host search/open UI
 regression also passed (one test, 43.680 seconds), as did the release iOS build,
 IPA packaging, independent packages, generated Feature checks, and Records UI
 tests. No sleep or skip was added to the ownership path.
+
+## Page-level IndexedDB deletion result
+
+[GitHub Actions run 34508502126](https://github.com/y-aplus/JibunKit/actions/runs/34508502126)
+on Xcode 26.6 succeeded from source `822a362`. The same complete selector and
+flow executed one UI test in 82.111 seconds with zero failures. Every immediate
+and post-relaunch A/B diagnostic contained the expected `localStorage`, Cookie,
+and IndexedDB values. After A deletion completed, the page reported
+`local=missing cookie=missing indexeddb=missing`; after the next normal
+background/relaunch boundary, B still reported all three B values.
+
+The shared suite executed 139 tests with zero failures, including the two
+native-store tests. The short normal-host search/open regression passed in
+41.545 seconds. The release iOS build, normal IPA packaging, independent
+packages, generated Feature checks, and Records UI tests also passed. The probe
+remains under `Tests/TemplateIntegration`; the normal product source list does
+not contain it.
+
+This run deleted IndexedDB through the page's `deleteDatabase()` API before
+clearing the other native store types. It proves page-level deletion, but it is
+not evidence that `WKWebsiteDataStore.removeData` included IndexedDB. The next
+run replaces that sequence with one awaited native removal containing
+`WKWebsiteDataTypeIndexedDBDatabases`.
+
+## Native IndexedDB removal result
+
+[GitHub Actions run 34511621182](https://github.com/y-aplus/JibunKit/actions/runs/34511621182)
+on Xcode 26.6 succeeded from source `f5da977`. The clear operation passed
+Cookies, local storage, and `WKWebsiteDataTypeIndexedDBDatabases` together to
+the owner-specific native `removeData` call and awaited its completion; it did
+not call the page's `deleteDatabase()` first. The same complete UI flow passed
+in 94.855 seconds. After native A removal, the non-creating page read reported
+`local=missing cookie=missing indexeddb=missing`; after another normal
+background/relaunch boundary, B still reported all three B values.
+
+IndexedDB read and write transactions now close their database connection on
+completion, JavaScript error, transaction error, transaction abort, and
+synchronous setup failure. This prevents a failed page operation from leaving a
+connection that can block the later native removal.
+
+The shared suite executed 139 tests with zero failures. The native store test
+passed in 0.019 seconds, and the short normal-host search/open regression passed
+in 37.794 seconds. Release build and IPA packaging, generated Feature checks,
+independent packages, and Records UI tests also succeeded.

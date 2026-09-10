@@ -39,9 +39,9 @@ final class WebStorageOwnershipUITests: XCTestCase {
         }
         func writeAndObserve(_ owner: String) {
             tap("web-storage.write")
-            expect("local=\(owner) cookie=\(owner)")
+            expect("local=\(owner) cookie=\(owner) indexeddb=\(owner)")
             tap("web-storage.read")
-            expect("local=\(owner) cookie=\(owner)")
+            expect("local=\(owner) cookie=\(owner) indexeddb=\(owner)")
         }
         func backgroundAndTerminate() {
             XCUIDevice.shared.press(.home)
@@ -60,16 +60,16 @@ final class WebStorageOwnershipUITests: XCTestCase {
         launch()
         open("web-storage-owner-a")
         tap("web-storage.read")
-        expect("local=web-storage-owner-a cookie=web-storage-owner-a")
+        expect("local=web-storage-owner-a cookie=web-storage-owner-a indexeddb=web-storage-owner-a")
         clear("web-storage-owner-a")
         tap("web-storage.read")
-        expect("local=missing cookie=missing")
+        expect("local=missing cookie=missing indexeddb=missing")
 
         backgroundAndTerminate()
         launch()
         open("web-storage-owner-b")
         tap("web-storage.read")
-        expect("local=web-storage-owner-b cookie=web-storage-owner-b")
+        expect("local=web-storage-owner-b cookie=web-storage-owner-b indexeddb=web-storage-owner-b")
         clear("web-storage-owner-b")
     }
 }

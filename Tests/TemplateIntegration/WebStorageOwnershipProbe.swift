@@ -38,10 +38,14 @@ private struct WebStorageOwnershipProbeView: View {
                 .accessibilityIdentifier("web-storage.page")
             Text(result)
                 .accessibilityIdentifier("web-storage.result")
-            Button("Write page storage") { perform(writeScript) }
+            Button("Write page storage") {
+                perform("return await window.jibunKitWrite(value)", arguments: ["value": context.id.rawValue])
+            }
                 .disabled(!pageReady)
                 .accessibilityIdentifier("web-storage.write")
-            Button("Read page storage") { perform(readScript) }
+            Button("Read page storage") {
+                perform("return await window.jibunKitRead()")
+            }
                 .disabled(!pageReady)
                 .accessibilityIdentifier("web-storage.read")
             Button("Clear this owner") {
@@ -50,7 +54,11 @@ private struct WebStorageOwnershipProbeView: View {
                 result = "clearing"
                 Task {
                     await webView.configuration.websiteDataStore.removeData(
-                        ofTypes: [WKWebsiteDataTypeCookies, WKWebsiteDataTypeLocalStorage],
+                        ofTypes: [
+                            WKWebsiteDataTypeCookies,
+                            WKWebsiteDataTypeLocalStorage,
+                            WKWebsiteDataTypeIndexedDBDatabases,
+                        ],
                         modifiedSince: .distantPast
                     )
                     guard token == operation else { return }
@@ -63,19 +71,17 @@ private struct WebStorageOwnershipProbeView: View {
         .navigationTitle(context.id.rawValue)
     }
 
-    private var writeScript: String {
-        "window.jibunKitWrite('\(context.id.rawValue)')"
-    }
-
-    private var readScript: String { "window.jibunKitRead()" }
-
-    private func perform(_ script: String) {
+    private func perform(_ body: String, arguments: [String: Any] = [:]) {
         operation += 1
         let token = operation
         result = "running"
         Task {
             do {
-                let value = try await webView.evaluateJavaScript(script)
+                let value = try await webView.callAsyncJavaScript(
+                    body,
+                    arguments: arguments,
+                    contentWorld: .page
+                )
                 guard token == operation else { return }
                 guard let pageResult = value as? String else {
                     result = "failed: page returned no string result"
@@ -115,7 +121,7 @@ private struct WebStoragePage: UIViewRepresentable {
         init(ready: Binding<Bool>) { _ready = ready }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            webView.evaluateJavaScript("document.readyState === 'complete' && typeof window.jibunKitRead === 'function'") {
+            webView.evaluateJavaScript("document.readyState === 'complete' && typeof window.jibunKitRead === 'function' && typeof window.jibunKitWrite === 'function'") {
                 value, error in
                 self.ready = error == nil && (value as? Bool == true)
             }
@@ -125,16 +131,96 @@ private struct WebStoragePage: UIViewRepresentable {
     private static let html = """
     <!doctype html><html><head><meta charset="utf-8"><title>Web storage ownership</title></head>
     <body><p id="status">ready</p><script>
-    window.jibunKitRead = function() {
+    const databaseName = 'ownership-db';
+    const objectStoreName = 'values';
+    const objectKey = 'owner';
+
+    function openDatabaseForWrite() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(databaseName, 1);
+        request.onupgradeneeded = () => request.result.createObjectStore(objectStoreName);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+      });
+    }
+
+    async function readIndexedDBWithoutCreating() {
+      const databases = await indexedDB.databases();
+      if (!databases.some(database => database.name === databaseName)) return 'missing';
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(databaseName, 1);
+        request.onupgradeneeded = () => {
+          request.transaction.abort();
+          reject(new Error('read attempted to recreate a deleted database'));
+        };
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const database = request.result;
+          let transaction;
+          let get;
+          let settled = false;
+          const fail = error => {
+            if (settled) return;
+            settled = true;
+            database.close();
+            reject(error || new Error('IndexedDB read transaction failed'));
+          };
+          try {
+            transaction = database.transaction(objectStoreName, 'readonly');
+            get = transaction.objectStore(objectStoreName).get(objectKey);
+            get.onerror = () => fail(get.error);
+            transaction.onerror = () => fail(transaction.error);
+            transaction.onabort = () => fail(transaction.error || new Error('IndexedDB read transaction aborted'));
+            transaction.oncomplete = () => {
+              if (settled) return;
+              settled = true;
+              const value = get.result || 'missing';
+              database.close();
+              resolve(value);
+            };
+          } catch (error) {
+            fail(error);
+          }
+        };
+      });
+    }
+
+    window.jibunKitRead = async function() {
       const local = localStorage.getItem('owner') || 'missing';
       const entry = document.cookie.split('; ').find(row => row.startsWith('owner='));
       const cookie = entry ? decodeURIComponent(entry.substring(6)) : 'missing';
-      return `local=${local} cookie=${cookie}`;
+      const indexeddb = await readIndexedDBWithoutCreating();
+      return `local=${local} cookie=${cookie} indexeddb=${indexeddb}`;
     };
-    window.jibunKitWrite = function(value) {
+
+    window.jibunKitWrite = async function(value) {
       localStorage.setItem('owner', value);
       document.cookie = `owner=${encodeURIComponent(value)}; Max-Age=86400; Path=/; SameSite=Lax`;
-      return window.jibunKitRead();
+      const database = await openDatabaseForWrite();
+      await new Promise((resolve, reject) => {
+        let settled = false;
+        const fail = error => {
+          if (settled) return;
+          settled = true;
+          database.close();
+          reject(error || new Error('IndexedDB write transaction failed'));
+        };
+        try {
+          const transaction = database.transaction(objectStoreName, 'readwrite');
+          transaction.objectStore(objectStoreName).put(value, objectKey);
+          transaction.onerror = () => fail(transaction.error);
+          transaction.onabort = () => fail(transaction.error || new Error('IndexedDB write transaction aborted'));
+          transaction.oncomplete = () => {
+            if (settled) return;
+            settled = true;
+            database.close();
+            resolve();
+          };
+        } catch (error) {
+          fail(error);
+        }
+      });
+      return await window.jibunKitRead();
     };
     </script></body></html>
     """

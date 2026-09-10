@@ -67,9 +67,21 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "JibunKit-backup")).firstMatch
+        func selectBackupFile() {
+            XCTAssertTrue(file.waitForExistence(timeout: 15), app.debugDescription)
+            let thumbnail = file.images.firstMatch
+            XCTAssertTrue(thumbnail.waitForExistence(timeout: 10), app.debugDescription)
+            let frame = thumbnail.frame
+            XCTAssertFalse(frame.isEmpty)
+            XCTAssertTrue(app.frame.contains(frame), app.debugDescription)
+            app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY)).tap()
+            capture("backup-after-file-selection")
+            XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15), app.debugDescription)
+        }
         XCTAssertTrue(file.waitForExistence(timeout: 10))
         capture("backup-file-importer")
-        tap(file)
+        selectBackupFile()
         let restore = app.buttons["backup.restore"]
         XCTAssertTrue(restore.waitForExistence(timeout: 20))
         XCTAssertFalse(restore.isEnabled)
@@ -87,7 +99,7 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["backup.open"])
         tap(app.buttons["backup.import"])
         XCTAssertTrue(file.waitForExistence(timeout: 15))
-        tap(file)
+        selectBackupFile()
         XCTAssertTrue(selection.waitForExistence(timeout: 20))
         selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         tap(restore)

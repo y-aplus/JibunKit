@@ -92,3 +92,7 @@ generated host UIは12件中11件成功、Webデータ再起動保持の1件が�
 34413746215（source `d97ee2e`）は45分のjob上限でcancelled。ZIP公開API結合unit0.031秒、生成host回帰（復元失敗4経路172.115秒、選択復元63.151秒、Web保持92.670秒を含む）は成功。通常hostでBackupRestoreUITests.testApplyFailureReportsCompletedFeatureが変更前の「リマインダーで失敗」を期待して失敗した。現在の段階別表示に合わせ、対象名・適用失敗・部分変更の可能性・後続未変更を検証するよう更新。
 
 Files roundtripの後続試験は時間切れで未完、Recordsは未実行。次はfeature_validation=falseで通常hostとFiles回帰を実行し、成功済みの生成host検証を重ねずに未完部分を確認する。上限超過を全体成功とは扱わない。
+
+## JSON Files選択の検証修正
+
+34417540314で旧文言テスト修正は成功（42.862秒）、ZIP Files往復も成功（103.069秒）。JSON Files往復はMigrationUITests.swift:74で復元ボタン待ちに失敗。失敗時のUI階層にFile ViewとJSONファイルが残り、読込み完了以前に停止していた。セル中央は名前領域にかかるため、サムネイルのframe中央を指定する操作へ変更し、Files終了のassertionと選択直後の画像を追加した。二度目の読込みにも同じ操作を用いる。この変更でSimulator操作の安定性が解決したとはまだ断定しない。次は該当JSON往復を単独実行する。

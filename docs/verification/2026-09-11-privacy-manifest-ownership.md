@@ -19,7 +19,7 @@ Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、S
 `Tools/verify-privacy-manifest-ownership.py`はA/Bを個別に`swift build`し、各resource bundleのmanifestをplistとして読む。次にTuist hostを二構成でclean buildし、さらに通常のFeature削除を模したincremental buildを行う。
 
 - A+B構成: app直下のSwiftPM resource bundlesにA/B、Widgetに直接依存するBを確認。
-- B-only構成: 依存を外し別DerivedDataへ新規buildする。appからA bundleだけが消え、app/WidgetのB manifestが内容・bytesとも維持されることを確認する。これはincremental build directoryからstale resourceを清掃する試験ではない。
+- B-only構成: 依存を外し別DerivedDataへ新規buildする。appからA bundleだけが消え、appのB manifestが内容・bytesとも維持され、WidgetのB manifest辞書も維持されることを確認する。これはincremental build directoryからstale resourceを清掃する試験ではない。
 - Incremental構成: 同じproject rootとDerivedDataを維持し、`Project.swift`のA有無リテラルを`true`から`false`へ変更して`tuist generate`と`xcodebuild build`を再実行する。A bundleだけが除去され、app/WidgetのB manifest辞書が維持されることを確認する。
 
 独立buildで読んだA/B辞書を基準に、A+B appのA/B、WidgetのB、B-only app/WidgetのBを個別に照合する。

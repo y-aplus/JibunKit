@@ -27,3 +27,5 @@ Run 34524770105, source `8da7614a454547cff5a340de13e862a08e72fa5b`, は全工程
 Run 34525725652, source `ad879e0a5b74782fb15e68df04972e9dd5e622aa`, は最終checkpointの全工程success。`Native Tuist requirement merge/validation checks passed`、`Native Bundle readback passed for app/widget en+ja; stale fr localization absent`を記録し、独立Feature packages、native Feature template、通常Xcode build、ad-hoc署名、IPAも通過した。これにより合成結果だけでなく、生成された二つのiOS bundle内の言語resourceとnative読戻しを証明した。
 
 通常`Project.swift`もapp/widgetのhost localized値を`compose`へ渡し、ignore済み生成専用`GeneratedFeatureResources/App`・`Widget`へ書出して各targetのresourcesへ接続する。製品検証stepはbuild後のapp/widget bundleからen/jaの`CFBundleDisplayName`を`plutil`で読戻し、target別期待値とapp-only keyの非流入を確認してからIPAを作る。host localized値はFeature要求と同じ衝突・resolution規則へ含む。
+
+Run 34527122584, source `4f1bd674e276b9b53db420c4e7dd8b20bf05e12c`, は最新main統合後の全工程success。fixtureのnative app/widget en+ja読戻し・stale fr排除に加え、通常製品appのen/ja `JibunKit`、widgetのen `JibunKit Widget`・ja `JibunKitウィジェット`をbuild済みbundleから読戻して一致した。app-only keyのwidget非流入、ad-hoc署名、IPA作成も同じstepで成功した。

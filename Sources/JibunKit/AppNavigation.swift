@@ -3,6 +3,7 @@ import JibunKitCore
 import Foundation
 import Observation
 import SwiftUI
+import OSLog
 
 @MainActor
 @Observable
@@ -62,8 +63,25 @@ final class AppNavigation {
     }
 
     func openURL(_ url: URL) {
-        guard let route = MiniAppLink.resolveRoute(url, registeredIDs: MiniAppRegistry.registeredIDs) else { return }
-        open(route)
+        if url.scheme?.lowercased() == "jibunkit" {
+            if let route = MiniAppLink.resolveRoute(url, registeredIDs: MiniAppRegistry.registeredIDs) {
+                open(route)
+            }
+            return
+        }
+        let registrations = MiniAppRegistry.all.compactMap { definition in
+            definition.resolveIncomingURL.map {
+                MiniAppURLRouter.Registration(id: definition.id, resolve: $0)
+            }
+        }
+        do {
+            if let route = try MiniAppURLRouter.resolve(url, registrations: registrations) { open(route) }
+        } catch {
+            // URLs may carry private query values; diagnostics contain only the
+            // registration failure and owner identities, never the URL itself.
+            Logger(subsystem: "com.jibunkit.app", category: "IncomingURL")
+                .error("Incoming URL routing rejected: \(String(describing: error), privacy: .private)")
+        }
     }
 
     func open(_ route: MiniAppRoute) {

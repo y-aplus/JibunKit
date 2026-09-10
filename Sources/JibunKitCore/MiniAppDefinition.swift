@@ -18,6 +18,7 @@ public struct MiniAppDefinition: Identifiable {
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
     public let notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)?
     public let notificationCategories: [UNNotificationCategory]
+    public let resolveIncomingURL: MiniAppURLRouter.Resolver?
     private let rootView: @MainActor (MiniAppContext) -> AnyView
     private let appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)?
 
@@ -29,6 +30,7 @@ public struct MiniAppDefinition: Identifiable {
         fileBackup: MiniAppFileBackupProvider? = nil,
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
+        resolveIncomingURL: MiniAppURLRouter.Resolver? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
@@ -46,6 +48,7 @@ public struct MiniAppDefinition: Identifiable {
         self.fileBackup = fileBackup
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
+        self.resolveIncomingURL = resolveIncomingURL
         self.onHostPhaseChange = onHostPhaseChange
         self.onSceneActivityChange = onSceneActivityChange
         self.onNotificationAction = onNotificationAction

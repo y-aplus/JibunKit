@@ -70,7 +70,7 @@
 
 - D01: host集約phase配送は複数Featureへの実イベントと再入時の順序までCI確認済みだが、Feature/scene/instance別の寿命は残る。
 - D02: MiniAppTaskScopeによるowner別Task取消・他owner継続・owner解放はunit確認済み。台帳初期化時点ではCI隔離hostのFeature間UI検証結果待ち。
-- D06: UserDefaults namespaceとMiniAppFilesは実装・限定検証済み。DBや他の状態分離はD07–D11等で別管理する。
+- D06: UserDefaults namespaceとMiniAppFilesは実装・限定検証済み。[native SQLite比較](verification/2026-09-11-sqlite-isolation.md)で同名WAL DB、片側削除/再接続、Backup APIによる片側復元と他owner保持をmacOSで確認。別process writer・iOS Data Protection・他DBまでの完了ではない。復元の協調や他の状態分離はD07–D11等で別管理する。
 - D12/D13: URL/通知routingとnotification request namespaceの既存成果は維持する。一般callback、通知category/action等は未完として扱う。
 
 ## 「未調査」で残っている具体的な確認

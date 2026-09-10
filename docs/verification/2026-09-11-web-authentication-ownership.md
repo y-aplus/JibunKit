@@ -33,6 +33,8 @@ Run 34537802126, source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`, completed th
 
 Run 34541962981, source `1d2053227810df1f632e06550d708db32ce7f27bce5`, succeeded with the independent `web_authentication_validation` input on an iOS 26.5 Simulator. All 4 native UI tests passed: direct Apple baseline and JibunKit wrapper each completed the same local-page custom callback and each delivered OS cancellation. The wrapper completion path used `ASWebAuthenticationSession.Callback.customScheme`. The one requested normal-host regression, `testMiniAppSearchFiltersAndOpensResults`, also passed; unrelated generated-host UI suites were not run.
 
+Run 34542730167, source `528dcbc459d1adc7de6dedb2854823ceec585f17`, succeeded. `MiniAppWebAuthenticationTests` executed 8 tests with 0 failures, including `testPerRequestProviderIsRetainedOnlyUntilRequestFinishes`, which verifies the temporary native provider lifetime is bounded by its active request.
+
 Run 34534109606, source `27d6b186739ac06dc6be9e199fe290a3d29e8ba8`, stopped during shared-package compilation because the runtime extension and cleanup method are separate files while `close()` was declared `fileprivate`. The cleanup remains module-internal and is reverified after correcting that access level.
 
 Run 34534363845, source `55d8c1aa795347f94611432b581cb44493e89077`, succeeded with Xcode 26.6. `MiniAppWebAuthenticationTests` executed all 5 provider-injection tests with 0 failures, the standard shared suite passed, and the generated native app built successfully with the AuthenticationServices adapter. No `MiniAppDefinition`, navigation, project-generation, or workflow change is part of this unit.

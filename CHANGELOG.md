@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Featureごとにsceneの活動状態・選択状態・接続終了を受け取る任意callbackを追加。既存のhost集約通知を維持し、非選択を自動的な処理終了へ変換しない。iOSの切替・背景化/復帰・他FeatureのTask継続で検証。
+
 - 同じscene内のミニアプリ切替で、各Featureの値ベースの画面経路を保持。下部の切替メニュー、一覧からの再開、選択中だけのroot resetを追加。既存root URL/通知の動作は維持し、他Featureの経路を消さない。
 
 - Feature/RuntimeごとのFoundation NotificationCenter購読を追加。owner限定取消、個別token取消、queued MainActor配送の抑止、購読解除とcapture解放を提供。実Foundationの9テストとiOSビルドで検証済み。並行取消とRuntime終了の保証は[接続ガイド](docs/guides/owned-notification-observations.md)を参照。

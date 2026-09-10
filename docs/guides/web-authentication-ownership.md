@@ -29,7 +29,7 @@ On iOS 17.4+/macOS 14.4+, use the overload accepting `ASWebAuthenticationSession
 
 Apple documents `ASWebAuthenticationSession` as a request object initialized with its own completion handler, `start()` as a Boolean admission result, `cancel()` as cancellation of that session, and `presentationContextProvider` as the source of the presentation anchor. `prefersEphemeralWebBrowserSession` is only a request to avoid the shared browser session; the user may still be prompted. These native properties remain intact behind the ownership connection.
 
-Provider-injection tests prove deterministic start/conflict/callback/cancel routing without displaying authentication UI or contacting an OAuth service. They do not prove the OS consent sheet, browser handoff, universal/custom-scheme callback delivery, or a real provider login. Validate those separately in an app with its registered callback and scene presentation anchor.
+Provider-injection tests prove deterministic start/conflict/callback/cancel routing without displaying authentication UI or contacting an OAuth service. The isolated native probe separately presents AuthenticationServices' browser sheet, opens a credential-free local HTTP page, follows a user-activated link through a registered custom callback, and checks OS cancellation. It does not prove a real provider login, an associated HTTPS callback, or that an explicit consent prompt appears on every OS/configuration.
 
 ## Apple references
 

@@ -38,6 +38,7 @@ for owner in ["FeatureA", "FeatureB"]:
 
 with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     root = Path(temp)
+    (root / "Tuist").mkdir()
     for name in ["FeatureA", "FeatureB"]:
         shutil.copytree(fixtures / name, root / name, ignore=shutil.ignore_patterns(".build"))
     shutil.copyfile(fixtures / "HostProject.swift.fixture", root / "Project.swift")

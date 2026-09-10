@@ -22,3 +22,5 @@ Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、S
 独立buildで読んだA/B辞書を基準に、A+B appのA/B、WidgetのB、B-only app/WidgetのBを個別に照合する。
 
 これはnative bundle内の存在・配置・内容・所有者別除去の証拠である。Organizer privacy report生成、App Storeの申告やmanifest内容の実態適合性は別途確認が必要であり、本試験の成功から推定しない。
+
+Run 34529562304, source `8368e7ebd8c13e3fe207cd54422c2b5c33b6ac3f`, は独立A/BのSwiftPM buildとmanifest読取りに成功した後、一時fixtureにTuist root markerがなく統合project生成前に停止した。空の`Tuist/` markerを作成して再検証する。

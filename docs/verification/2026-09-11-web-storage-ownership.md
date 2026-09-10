@@ -104,3 +104,24 @@ clearing the other native store types. It proves page-level deletion, but it is
 not evidence that `WKWebsiteDataStore.removeData` included IndexedDB. The next
 run replaces that sequence with one awaited native removal containing
 `WKWebsiteDataTypeIndexedDBDatabases`.
+
+## Native IndexedDB removal result
+
+[GitHub Actions run 34511621182](https://github.com/y-aplus/JibunKit/actions/runs/34511621182)
+on Xcode 26.6 succeeded from source `f5da977`. The clear operation passed
+Cookies, local storage, and `WKWebsiteDataTypeIndexedDBDatabases` together to
+the owner-specific native `removeData` call and awaited its completion; it did
+not call the page's `deleteDatabase()` first. The same complete UI flow passed
+in 94.855 seconds. After native A removal, the non-creating page read reported
+`local=missing cookie=missing indexeddb=missing`; after another normal
+background/relaunch boundary, B still reported all three B values.
+
+IndexedDB read and write transactions now close their database connection on
+completion, JavaScript error, transaction error, transaction abort, and
+synchronous setup failure. This prevents a failed page operation from leaving a
+connection that can block the later native removal.
+
+The shared suite executed 139 tests with zero failures. The native store test
+passed in 0.019 seconds, and the short normal-host search/open regression passed
+in 37.794 seconds. Release build and IPA packaging, generated Feature checks,
+independent packages, and Records UI tests also succeeded.

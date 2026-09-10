@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-11
+
 - 通知action/foregroundの所有Featureへ、元のnative requestを復元できるsnapshotを渡す。独自userInfoやcontent/triggerを保持し、既存ハンドラーの互換性を維持する。実通知で所有者別配送と他Feature表示維持を検証。
 
 - Featureとhostの言語別InfoPlist.stringsを合成し、app/Widgetへ別々に組み込む。言語・keyごとの衝突を明示解決でき、削除済み設定は次回生成で除去する。CIは固定文言でなく、各targetの生成設定と実bundleの一致を確認する。

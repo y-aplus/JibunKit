@@ -39,7 +39,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", "text/plain")
         self.send_header("Cache-Control", "max-age=3600" if self.path.startswith("/cache") else "no-store")
         if self.path.startswith("/set"):
-            self.send_header("Set-Cookie", "account=" + self.headers.get("X-Fixture-Owner", "missing") + "; Path=/")
+            lifetime = "; Max-Age=3600" if self.path.startswith("/set-persistent") else ""
+            self.send_header("Set-Cookie", "account=" + self.headers.get("X-Fixture-Owner", "missing") + "; Path=/" + lifetime)
         if self.path.startswith("/logout"):
             self.send_header("Set-Cookie", "account=; Max-Age=0; Path=/")
         self.end_headers()

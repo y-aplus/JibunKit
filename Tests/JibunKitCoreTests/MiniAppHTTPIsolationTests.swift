@@ -3,6 +3,38 @@ import XCTest
 import JibunKitCore
 
 final class MiniAppHTTPIsolationTests: XCTestCase, @unchecked Sendable {
+    @MainActor
+    func testPersistentCookiesSurviveSessionRecreationAndServerLogout() async throws {
+        guard let port = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] else {
+            throw XCTSkip("Loopback HTTP fixture required")
+        }
+        let context = MiniAppContext(id: MiniAppID("http-persistent"))
+        let profile = UUID().uuidString
+        let cookies = try MiniAppCookieStore(context: context, profile: profile)
+        defer { try? cookies.clear() }
+        func session(_ store: MiniAppCookieStore) -> URLSession {
+            let config = URLSessionConfiguration.ephemeral
+            config.httpCookieStorage = store.storage
+            return URLSession(configuration: config)
+        }
+        func url(_ path: String) throws -> URL { try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)/\(path)")) }
+        let first = session(cookies)
+        defer { first.invalidateAndCancel() }
+        var login = URLRequest(url: try url("set-persistent"))
+        login.setValue("persistent", forHTTPHeaderField: "X-Fixture-Owner")
+        _ = try await first.data(for: login)
+        try cookies.save()
+        let reopened = try MiniAppCookieStore(context: context, profile: profile)
+        let second = session(reopened)
+        defer { second.invalidateAndCancel() }
+        let (data, _) = try await second.data(from: url("echo"))
+        XCTAssertEqual(String(decoding: data, as: UTF8.self), "account=persistent")
+        _ = try await second.data(from: url("logout"))
+        try reopened.save()
+        let loggedOut = try MiniAppCookieStore(context: context, profile: profile)
+        XCTAssertTrue(loggedOut.storage.cookies?.isEmpty ?? true)
+    }
+
     func testActualRequestsKeepCookiesAndCachedResponsesOwned() async throws {
         guard let port = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] else {
             throw XCTSkip("Start Tests/Fixtures/network_server.py and set JIBUNKIT_NETWORK_TEST_PORT")

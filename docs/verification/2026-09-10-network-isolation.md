@@ -30,3 +30,5 @@ unitは二Featureと同Featureの別profileへ同じURLの異なるcacheを置�
 34431712192はSwiftのビルド/テスト以前にfixture port待ちで終了した。50回×0.1秒の起動確認の期限内にportファイルが得られなかった。Python初期化のどこで遅れたかまではログから確定できない。固定待ちを増やす代わりに、Pythonがサーバー構築・serveスレッド開始後に環境変数を渡してswift testを起動する構造へ変更した。子テストの終了コードを返し、終了時にサーバーを閉じる。準備成功メッセージと例外の標準ログを残す。HTTPテストの検証待ちは継続。
 
 34431912303（source `072c0e1`）でloopback HTTP testが0.098秒で成功、IPAも成功。次の契約単位としてHTTP Basic同一realm/userのA/B credential分離、同origin redirectのCookie維持、サーバーのMax-Age=0によるAだけの削除を追加し、接続ガイドを作成した。fixture応答のsmokeはWindowsで成功。Swiftの追加経路はCI待ち。
+
+34432354335（source `271b875`）でHTTP auth challenge、redirect、Max-Age=0によるAログアウト/B維持が成功。次の単位はKeychainを利用するMiniAppCookieStoreの明示save/reload/clear。unitはFeature分離・再生成・session-only除外・期限・Secure/path・破損時のlive保持・logout後再生成を扱う。HTTP testはMax-Age Cookieを受けて保存し、別session/storeへ再生成して送信、サーバー失効後のsaveで復活しないことを確認する。実process再起動とは区別する。CI待ち。

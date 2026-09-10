@@ -24,6 +24,8 @@ The focused suite does not present the OS authentication UI and does not contact
 
 The native adapter also accepts `ASWebAuthenticationSession.Callback`, including `.https(host:path:)`, on its native availability range. Compilation proves API availability and wiring only; it does not prove the associated-domain configuration or OS delivery of an HTTPS callback.
 
+Run 34535983015, source `295b425`, compiled and launched the isolated native probe and exposed AuthenticationServices' browser sheet. Its first UI attempt failed because a meta refresh did not activate the custom scheme without a user gesture, and the cancel query matched both the fixture's launch button and the browser sheet's `Close` control. The retry uses an explicit local-page link and the browser control's accessibility identifier. This run does not count as successful native callback/cancel evidence.
+
 Run 34534109606, source `27d6b186739ac06dc6be9e199fe290a3d29e8ba8`, stopped during shared-package compilation because the runtime extension and cleanup method are separate files while `close()` was declared `fileprivate`. The cleanup remains module-internal and is reverified after correcting that access level.
 
 Run 34534363845, source `55d8c1aa795347f94611432b581cb44493e89077`, succeeded with Xcode 26.6. `MiniAppWebAuthenticationTests` executed all 5 provider-injection tests with 0 failures, the standard shared suite passed, and the generated native app built successfully with the AuthenticationServices adapter. No `MiniAppDefinition`, navigation, project-generation, or workflow change is part of this unit.

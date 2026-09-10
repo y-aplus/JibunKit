@@ -18,7 +18,7 @@ fixture = repo / "Tests/WebAuthenticationNative"
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/complete":
-            body = b'<meta http-equiv="refresh" content="0;url=jibunkit-auth-probe://callback?code=local">'
+            body = b'<a href="jibunkit-auth-probe://callback?code=local">Return to App</a>'
         elif self.path == "/hold":
             body = b'<title>Hold for cancellation</title><p>Cancel this authentication session.</p>'
         else:

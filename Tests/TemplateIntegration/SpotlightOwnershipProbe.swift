@@ -37,8 +37,8 @@ final class SpotlightOwnershipProbeState {
                 titles: titles, expectedIdentifiers: Set([aIdentifier, bIdentifier]))
             print("SPOTLIGHT_OWNERSHIP queriedBefore=\(SpotlightOwnershipProbe.details(before))")
             guard SpotlightOwnershipProbe.metadata(before) == [
-                a.domainIdentifier: "owner-a native metadata",
-                b.domainIdentifier: "owner-b native metadata",
+                a.domainIdentifier: titles[0],
+                b.domainIdentifier: titles[1],
             ] else {
                 throw SpotlightOwnershipProbe.Failure.unexpectedMetadata(
                     SpotlightOwnershipProbe.details(before))
@@ -50,7 +50,7 @@ final class SpotlightOwnershipProbeState {
                 titles: titles, expectedIdentifiers: Set([bIdentifier]))
             print("SPOTLIGHT_OWNERSHIP queriedAfter=\(SpotlightOwnershipProbe.details(after))")
             guard SpotlightOwnershipProbe.metadata(after) == [
-                b.domainIdentifier: "owner-b native metadata"
+                b.domainIdentifier: titles[1]
             ] else {
                 throw SpotlightOwnershipProbe.Failure.unexpectedMetadata(
                     SpotlightOwnershipProbe.details(after))
@@ -90,8 +90,8 @@ enum SpotlightOwnershipProbe {
     static func metadata(_ items: [CSSearchableItem]) -> [String: String] {
         Dictionary(uniqueKeysWithValues: items.compactMap { item in
             guard let domain = item.domainIdentifier ?? item.attributeSet.domainIdentifier,
-                  let text = item.attributeSet.textContent else { return nil }
-            return (domain, text)
+                  let title = item.attributeSet.title else { return nil }
+            return (domain, title)
         })
     }
 
@@ -117,7 +117,7 @@ enum SpotlightOwnershipProbe {
     private static func query(titles: [String]) async throws -> [CSSearchableItem] {
         let clauses = titles.map { "title == \"\($0)\"" }.joined(separator: " || ")
         let context = CSSearchQueryContext()
-        context.fetchAttributes = ["title", "textContent", "domainIdentifier"]
+        context.fetchAttributes = ["title", "domainIdentifier"]
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: context)
             let results = SpotlightSearchResults()

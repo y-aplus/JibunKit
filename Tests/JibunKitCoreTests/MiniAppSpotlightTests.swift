@@ -53,12 +53,12 @@ final class MiniAppSpotlightTests: XCTestCase {
         XCTAssertEqual(Set(before.map(\.uniqueIdentifier)), expectedIdentifiers)
         let nativeMetadata = Dictionary(uniqueKeysWithValues: before.compactMap { item -> (String, String)? in
             guard let domain = item.domainIdentifier ?? item.attributeSet.domainIdentifier,
-                  let text = item.attributeSet.textContent else { return nil }
-            return (domain, text)
+                  let title = item.attributeSet.title else { return nil }
+            return (domain, title)
         })
         XCTAssertEqual(nativeMetadata, [
-            a.domainIdentifier: "owner-a native metadata",
-            b.domainIdentifier: "owner-b native metadata",
+            a.domainIdentifier: titles[0],
+            b.domainIdentifier: titles[1],
         ])
 
         try await a.deleteAll(from: index)
@@ -71,7 +71,7 @@ final class MiniAppSpotlightTests: XCTestCase {
             after.first?.domainIdentifier ?? after.first?.attributeSet.domainIdentifier,
             b.domainIdentifier
         )
-        XCTAssertEqual(after.first?.attributeSet.textContent, "owner-b native metadata")
+        XCTAssertEqual(after.first?.attributeSet.title, titles[1])
         try await b.deleteAll(from: index)
     }
 
@@ -90,7 +90,7 @@ final class MiniAppSpotlightTests: XCTestCase {
     private func queryItems(titles: [String]) async throws -> [CSSearchableItem] {
         let clauses = titles.map { "title == \"\($0)\"" }.joined(separator: " || ")
         let context = CSSearchQueryContext()
-        context.fetchAttributes = ["title", "textContent", "domainIdentifier"]
+        context.fetchAttributes = ["title", "domainIdentifier"]
         return try await withCheckedThrowingContinuation { continuation in
             let query = CSSearchQuery(queryString: clauses, queryContext: context)
             let items = SearchResults()

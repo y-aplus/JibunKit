@@ -14,6 +14,8 @@ Feature要求をTuist標準のProjectDescriptionHelpersでnative `Plist.Value`�
 
 WindowsではPython構文/diffを確認する。Swift/Xcode実行はmacOS CIのみ。診断logは`Feature-build-requirement-diagnostics` artifactへ保存する。
 
+source `e887a29`の[34510497056](https://github.com/y-aplus/JibunKit/actions/runs/34510497056)で検証中。生成hostは直近の通常保存操作/復元のUI試験、通常hostは検索/起動回帰を選択した。両selectorの存在とPython構文/diffの検査は成功。完了はgh run watchからcodex queueへ通知する。
+
 ## 未完の範囲
 
 構造化配列の一般合成、InfoPlist.stringsの多言語合成、privacy manifest、target/extensionの自動組立て、依存/Registry/要求の一元登録、任意SDKのschema検証は未実装。実provisioningとSideStore再署名後のcapability利用可否、権限同意やBackgroundTasksの実行契約はこの生成/署名試験では検証しない。D20全体の完了にはしない。

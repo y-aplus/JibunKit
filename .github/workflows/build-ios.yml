@@ -451,6 +451,20 @@ jobs:
             ${{ runner.temp }}/simulator-app.log
           retention-days: 14
 
+      - name: Upload backup picker diagnostics
+        if: always() && inputs.simulator_tests
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Backup-picker-diagnostics
+          path: |
+            ${{ runner.temp }}/simulator-screenshots/*.png
+            ${{ runner.temp }}/simulator-screenshots/*.txt
+            ${{ runner.temp }}/simulator-screenshots/manifest.json
+            ${{ runner.temp }}/files-screenshots/*.png
+            ${{ runner.temp }}/files-screenshots/*.txt
+            ${{ runner.temp }}/files-screenshots/manifest.json
+          retention-days: 7
+
       - name: Upload focused Records diagnostics
         if: always() && inputs.simulator_tests && inputs.feature_validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

@@ -68,14 +68,14 @@ final class MigrationUITests: XCTestCase {
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
         let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "JibunKit-backup")).firstMatch
         func selectBackupFile() {
+            tap(app.buttons["OverflowBarButtonItem"])
+            capture("backup-files-view-menu")
+            let list = app.buttons["リスト"]
+            XCTAssertTrue(list.waitForExistence(timeout: 5), app.debugDescription)
+            tap(list)
             XCTAssertTrue(file.waitForExistence(timeout: 15), app.debugDescription)
-            let thumbnail = file.images.firstMatch
-            XCTAssertTrue(thumbnail.waitForExistence(timeout: 10), app.debugDescription)
-            let frame = thumbnail.frame
-            XCTAssertFalse(frame.isEmpty)
-            XCTAssertTrue(app.frame.contains(frame), app.debugDescription)
-            app.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: frame.midX - app.frame.minX, dy: frame.midY - app.frame.minY)).tap()
+            capture("backup-files-list")
+            tap(file)
             capture("backup-after-file-selection")
             XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15), app.debugDescription)
         }

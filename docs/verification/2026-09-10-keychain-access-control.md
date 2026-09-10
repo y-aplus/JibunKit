@@ -67,3 +67,23 @@ for protected-item persistence, failed-update retention, prompt text, user
 approval, cancellation UI, passcode/enrollment changes, biometric-set
 invalidation, background/locked-device behavior, and host `Info.plist`
 integration. No test bypasses or simulates OS consent.
+
+## Prepared signed-iOS probe
+
+`Tests/TemplateIntegration/KeychainAccessControlProbe.swift` provides
+`KeychainAccessControlProbe.definition`. After the fixture is copied into the
+temporary host, register it by adding exactly this entry to the array passed to
+`MiniAppRegistry.makeRegistry`:
+
+```swift
+KeychainAccessControlProbe.definition,
+```
+
+Copy `Tests/TemplateIntegration/KeychainAccessControlUITests.swift` into the
+temporary UI-test target and select
+`KeychainAccessControlUITests/testProtectedUpdateFailsWithoutUIAndPreservesBothOwners`.
+The probe uses a caller-owned non-interactive context and reports separate
+diagnostics if Simulator user-presence enforcement is unsupported, rather than
+silently skipping. It checks native access-control save, successful data-only
+update with protection retention, rejected non-interactive update of a
+user-presence item, survival of that item, and an unchanged second owner.

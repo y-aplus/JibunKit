@@ -15,11 +15,13 @@ values. Reuse the same profile for later launches that should reopen the same
 website state. Changing the derivation or profile loses that association and
 requires an explicit migration plan.
 
-Page writes are asynchronous. Treat `WKNavigationDelegate.webView(_:didFinish:)`
-plus an application-level JavaScript acknowledgement as the completion boundary;
+The host observes page operations through asynchronous JavaScript evaluation.
+Treat `WKNavigationDelegate.webView(_:didFinish:)` plus an application-level
+JavaScript acknowledgement as the execution completion boundary;
 an arbitrary delay does not prove that a page loaded or that its write ran.
 Before process termination, allow the app to enter its normal background state.
-WebKit controls the durable flush timing, and JibunKit does not call private
+That acknowledgement is not a durable-flush guarantee. WebKit controls the
+durable flush timing, and JibunKit does not call private
 flush APIs.
 
 To clear one owner's web state, call `removeData(ofTypes:modifiedSince:)` on that

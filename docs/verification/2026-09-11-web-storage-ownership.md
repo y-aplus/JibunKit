@@ -4,8 +4,9 @@ Date: 2026-09-11
 
 ## Scope
 
-The signed-iOS fixture loads an HTML page at the same fixed
-`https://jibunkit.example/ownership` origin in two Features. Both pages write
+The signed-iOS fixture supplies an HTML page with `loadHTMLString`, using the same
+fixed `https://jibunkit.example/ownership` base URL in two Features. It does not
+test an HTTP fetch or TLS. Both pages write
 the same `localStorage` key and the same persistent cookie name through page
 JavaScript. The `WKWebViewConfiguration` receives each Feature's
 `context.websiteDataStore()` before navigation.

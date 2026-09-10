@@ -1,6 +1,6 @@
 # D20 URL宣言の合成
 
-状態: 実装済み、CI未確認。
+状態: 以下のCI検証済み。D20の他の構造化配列・署名条件等は未完。
 
 D12の独自URL受信を接続した際、Feature一つのscheme追加でも`CFBundleURLTypes`配列全体のresolutionが必要だった。hostとFeatureのnative URL宣言を集め、異なるURL typeの追加に手書きの全体配列を不要にする。
 
@@ -17,3 +17,12 @@ D12の独自URL受信を接続した際、Feature一つのscheme追加でも`CFB
 - 先行URL routing fixtureの手書きresolutionを外し、自動合成だけで独自scheme冷/温起動と他ownerの画面保持が成立することをiOSで再検証。通常のjibunkitリンク回帰も実施。
 
 Apple [CFBundleURLTypes](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleurltypes)、[CFBundleURLName](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleurltypes/cfbundleurlname)、[CFBundleTypeRole](https://developer.apple.com/documentation/bundleresources/information-property-list/cfbundleurltypes/cfbundletyperole)を参照。型や各keyの意味を根拠とし、同名衝突拒否はJibunKit側の明示的な合成規則であってOSのエラー規則と同一とは扱わない。
+
+## CI証拠
+
+[34537911487](https://github.com/y-aplus/JibunKit/actions/runs/34537911487)、source `96c095fbe259dd7d48ef0000656f8248707a839a`、Xcode 26.6で成功。
+
+- native Tuist helperの合成・拒否試験が成功。ビルド済みappのhost/A/B URL宣言の辞書全体とWidgetへの非混入を照合。
+- 手書きresolutionを外した隔離hostでも、独自URL冷/温起動・他Feature画面保持が53.956秒で成功。通常jibunkitリンクの回帰も23.566秒で成功。
+- 共有159試験、独立package/生成Feature/通常app・Widget/IPAの検証は成功。
+- Records UI stepには既知のQuick Look expected failureが残る。通常hostの全UI suiteとFiles round tripは今回のfilter対象外であり、成功範囲に加えない。

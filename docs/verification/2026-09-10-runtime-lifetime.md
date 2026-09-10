@@ -106,3 +106,7 @@ Files roundtripの後続試験は時間切れで未完、Recordsは未実行。�
 ユーザーが確認用IPA `7c578e3` でカウンターのみのJSON書出し・読込み・復元対象選択・上書き復元の正常動作を確認した。Files選択の連続失敗は現時点でSimulatorに限って観測されており、実機の不具合とは判定しない。Simulatorの失敗は未解決として保持する。
 
 次の基盤変更はMiniAppRuntime.onShutdownAsync。所有Taskの終了後、同期/非同期hookを共通の登録逆順で実行し、各非同期hookの完了まで待つ。復元のstopからshutdownを待てば、非同期の接続解放を待たずapplyへ進む問題を避けられる。unitはcontinuationでhookを途中停止し、順序・新規登録拒否・別runtime終了・同時shutdown合流を検証する。無期限のhookはshutdownを止める。エラー回復はFeature側の責任で、throwを黙殺する仕組みは追加しない。CI待ち。
+
+## 非同期解放と復元の結合
+
+34430359179（source `e166d67`）で非同期hook順序・別runtime終了・shutdown合流のunitとIPAが成功。次のunitは実際のMiniAppRestorePlanとMiniAppRestoreLifecycleからRuntime.shutdownを呼び、非同期解放をcontinuationで止める。停止中のapply未実行、同owner復元拒否、別runtimeのTask進行、解放→適用→再開の順序を検証する。deinit経由でも非同期hook終了前に後続資源を解放しないことを別testで確認する。CI待ち。

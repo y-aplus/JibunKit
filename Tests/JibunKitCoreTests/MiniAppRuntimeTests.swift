@@ -3,6 +3,67 @@ import JibunKitCore
 
 final class MiniAppRuntimeTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testRestoreWaitsForAsyncResourceReleaseBeforeApplyingAndResuming() async throws {
+        let runtime = MiniAppRuntime()
+        let other = MiniAppRuntime()
+        let gate = RuntimeGate()
+        let events = RuntimeEvents()
+        let entered = expectation(description: "Connection closing")
+        let otherWorked = expectation(description: "Other owner progressed")
+        try runtime.onShutdownAsync {
+            events.values.append("closing")
+            await gate.wait(entered: entered)
+            events.values.append("closed")
+        }
+        let owner = MiniAppID("a")
+        let coordinator = MiniAppRestoreCoordinator()
+        let lifecycle = MiniAppRestoreLifecycle(stop: { await runtime.shutdown() }, resume: {
+            await MainActor.run { events.values.append("resumed") }
+        })
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {
+            await MainActor.run { events.values.append("applied") }
+        }])
+        let restoring = Task { try await plan.apply(lifecycles: [owner: lifecycle], coordinator: coordinator) }
+        await fulfillment(of: [entered], timeout: 5)
+        XCTAssertEqual(events.values, ["closing"])
+        XCTAssertThrowsError(try runtime.start {})
+        let task = try other.start { otherWorked.fulfill() }
+        await fulfillment(of: [otherWorked], timeout: 5)
+        await task.value
+        do {
+            try await plan.apply(lifecycles: [owner: lifecycle], coordinator: coordinator)
+            XCTFail("Second restore must not overlap connection release")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        await gate.release()
+        try await restoring.value
+        XCTAssertEqual(events.values, ["closing", "closed", "applied", "resumed"])
+        await other.shutdown()
+    }
+
+    @MainActor
+    func testDeinitializationAwaitsAsyncCleanupBeforeLaterResourceRelease() async throws {
+        var runtime: MiniAppRuntime? = MiniAppRuntime()
+        weak var reference = runtime
+        let gate = RuntimeGate()
+        let events = RuntimeEvents()
+        let entered = expectation(description: "Async cleanup entered")
+        let finished = expectation(description: "Cleanup sequence finished")
+        try runtime?.onShutdown { events.values.append("final"); finished.fulfill() }
+        try runtime?.onShutdownAsync {
+            events.values.append("async started")
+            await gate.wait(entered: entered)
+            events.values.append("async ended")
+        }
+        runtime = nil
+        XCTAssertNil(reference)
+        await fulfillment(of: [entered], timeout: 5)
+        XCTAssertEqual(events.values, ["async started"])
+        await gate.release()
+        await fulfillment(of: [finished], timeout: 5)
+        XCTAssertEqual(events.values, ["async started", "async ended", "final"])
+    }
+
+    @MainActor
     func testAsyncCleanupIsAwaitedInOrderAndOtherRuntimeCanFinish() async throws {
         let runtime = MiniAppRuntime()
         let other = MiniAppRuntime()

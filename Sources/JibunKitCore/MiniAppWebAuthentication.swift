@@ -28,6 +28,7 @@ public final class MiniAppWebAuthenticationCoordinator {
 
     private struct Active {
         let id: UUID
+        let connectionID: UUID
         let owner: MiniAppID
         let session: any MiniAppWebAuthenticationSession
         let state: MiniAppWebAuthenticationRequest.State
@@ -41,6 +42,7 @@ public final class MiniAppWebAuthenticationCoordinator {
     public var activeOwner: MiniAppID? { active?.owner }
 
     fileprivate func start(
+        connectionID: UUID,
         owner: MiniAppID,
         url: URL,
         callbackURLScheme: String?,
@@ -53,7 +55,9 @@ public final class MiniAppWebAuthenticationCoordinator {
         let session = provider.makeSession(url: url, callbackURLScheme: callbackURLScheme) {
             [weak self] result in self?.finish(id: id, result: result, cancelNative: false)
         }
-        active = Active(id: id, owner: owner, session: session, state: state, completion: completion)
+        active = Active(
+            id: id, connectionID: connectionID, owner: owner, session: session,
+            state: state, completion: completion)
         let request = MiniAppWebAuthenticationRequest(id: id, coordinator: self, state: state)
         if !session.start(), active?.id == id {
             finish(id: id, result: .failure(Failure.startRejected), cancelNative: false)
@@ -65,8 +69,8 @@ public final class MiniAppWebAuthenticationCoordinator {
         finish(id: id, result: .failure(Failure.cancelled), cancelNative: true)
     }
 
-    fileprivate func cancel(owner: MiniAppID) {
-        guard active?.owner == owner, let id = active?.id else { return }
+    fileprivate func cancel(connectionID: UUID) {
+        guard active?.connectionID == connectionID, let id = active?.id else { return }
         cancel(id: id)
     }
 
@@ -105,7 +109,8 @@ public final class MiniAppWebAuthenticationRequest {
 @MainActor
 public final class MiniAppWebAuthentication {
     public let owner: MiniAppID
-    private let coordinator: MiniAppWebAuthenticationCoordinator
+    let connectionID = UUID()
+    let coordinator: MiniAppWebAuthenticationCoordinator
     private let provider: any MiniAppWebAuthenticationSessionProviding
     private var isClosed = false
 
@@ -127,11 +132,23 @@ public final class MiniAppWebAuthentication {
     ) throws -> MiniAppWebAuthenticationRequest {
         guard !isClosed else { throw MiniAppRuntime.Failure.closed }
         return try coordinator.start(
-            owner: owner, url: url, callbackURLScheme: callbackURLScheme,
+            connectionID: connectionID, owner: owner, url: url,
+            callbackURLScheme: callbackURLScheme,
             provider: provider, completion: completion)
     }
 
-    public func cancel() { coordinator.cancel(owner: owner) }
+    func start(
+        url: URL,
+        provider: any MiniAppWebAuthenticationSessionProviding,
+        completion: @escaping @MainActor (Result<URL, Error>) -> Void
+    ) throws -> MiniAppWebAuthenticationRequest {
+        guard !isClosed else { throw MiniAppRuntime.Failure.closed }
+        return try coordinator.start(
+            connectionID: connectionID, owner: owner, url: url,
+            callbackURLScheme: nil, provider: provider, completion: completion)
+    }
+
+    public func cancel() { coordinator.cancel(connectionID: connectionID) }
 
     func close() {
         guard !isClosed else { return }

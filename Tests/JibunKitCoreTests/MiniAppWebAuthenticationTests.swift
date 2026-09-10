@@ -113,6 +113,52 @@ final class MiniAppWebAuthenticationTests: XCTestCase {
         XCTAssertThrowsError(try b.start(url: authURL, callbackURLScheme: "b") { _ in })
     }
 
+    func testOldConnectionCannotCancelNewConnectionForSameFeature() async throws {
+        let coordinator = MiniAppWebAuthenticationCoordinator()
+        let provider = WebAuthenticationProviderSpy()
+        let oldRuntime = MiniAppRuntime()
+        let newRuntime = MiniAppRuntime()
+        let old = try oldRuntime.makeWebAuthentication(
+            context: context("feature-a"), coordinator: coordinator, provider: provider)
+        let replacement = try newRuntime.makeWebAuthentication(
+            context: context("feature-a"), coordinator: coordinator, provider: provider)
+        var replacementCallbacks = 0
+        let oldRequest = try old.start(url: authURL, callbackURLScheme: "a") { _ in }
+        provider.sessions[0].complete(.success(URL(string: "a://old")!))
+        let replacementRequest = try replacement.start(
+            url: authURL, callbackURLScheme: "a") { _ in replacementCallbacks += 1 }
+
+        old.cancel()
+        await oldRuntime.shutdown()
+        provider.sessions[0].complete(.success(URL(string: "a://old-late")!))
+
+        XCTAssertTrue(oldRequest.isFinished)
+        XCTAssertFalse(replacementRequest.isFinished)
+        XCTAssertEqual(provider.sessions[1].cancelCount, 0)
+        XCTAssertEqual(coordinator.activeOwner, MiniAppID("feature-a"))
+        provider.sessions[1].complete(.success(URL(string: "a://replacement")!))
+        XCTAssertEqual(replacementCallbacks, 1)
+        await newRuntime.shutdown()
+    }
+
+    func testSeparatePresentationCoordinatorsDoNotConflict() throws {
+        let provider = WebAuthenticationProviderSpy()
+        let firstCoordinator = MiniAppWebAuthenticationCoordinator()
+        let secondCoordinator = MiniAppWebAuthenticationCoordinator()
+        let first = MiniAppWebAuthentication(
+            context: context("feature-a"), coordinator: firstCoordinator, provider: provider)
+        let second = MiniAppWebAuthentication(
+            context: context("feature-b"), coordinator: secondCoordinator, provider: provider)
+
+        let firstRequest = try first.start(url: authURL, callbackURLScheme: "a") { _ in }
+        let secondRequest = try second.start(url: authURL, callbackURLScheme: "b") { _ in }
+
+        XCTAssertEqual(provider.sessions.count, 2)
+        XCTAssertEqual(firstCoordinator.activeOwner, MiniAppID("feature-a"))
+        XCTAssertEqual(secondCoordinator.activeOwner, MiniAppID("feature-b"))
+        withExtendedLifetime((firstRequest, secondRequest)) {}
+    }
+
     private var authURL: URL { URL(string: "https://example.invalid/authorize")! }
     private func context(_ id: String) -> MiniAppContext { MiniAppContext(id: MiniAppID(id)) }
 }

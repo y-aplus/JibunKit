@@ -3,6 +3,14 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testNativeNotificationRequestPayloadsReachOnlyTheirOwners() {
+        continueAfterFailure = false
+        // Both fixtures now validate the native request before marking receipt.
+        // Foreground notifications are removed before testing the action card.
+        testForegroundNotificationsConsultOnlyTheirOwner()
+        testNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature()
+    }
+
     func testSceneIdleRequestSuspendsResumesAndPreservesOtherOwner() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")

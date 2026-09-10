@@ -105,6 +105,7 @@ final class LifecycleProbeState {
             if action { content.body = "Choose Action to deliver to the owning Feature." }
             content.categoryIdentifier = action ? context.notificationCategoryIdentifier(for: "initial") : ""
             content.userInfo = context.notificationUserInfo
+            content.userInfo["probePayload"] = ["owner": context.id.rawValue, "record": 42]
             try await center.add(UNNotificationRequest(
                 identifier: context.notificationRequestIdentifier(for: action ? "action" : "foreground"), content: content,
                 trigger: UNTimeIntervalNotificationTrigger(timeInterval: action ? 10 : 2, repeats: false)))
@@ -221,7 +222,19 @@ enum LifecycleProbeIntegration {
                           onHostPhaseChange: { state.receive($0) },
                           onSceneActivityChange: { state.sceneEvents.append($0); state.receiveSceneIdle($0) },
                           onNotificationAction: { action in
-                              if case let .custom(identifier) = action.kind { state.lastAction = identifier }
+                              if case let .custom(identifier) = action.kind {
+                                  guard let request = try? action.requestSnapshot?.request(),
+                                        request.content.title == "Action-" + id,
+                                        request.content.body == "Choose Action to deliver to the owning Feature.",
+                                        let payload = request.content.userInfo["probePayload"] as? [String: Any],
+                                        payload["owner"] as? String == id,
+                                        payload["record"] as? Int == 42 else {
+                                      state.lastAction = "failed: native action payload"
+                                      return
+                                  }
+                                  print("NOTIFICATION_REQUEST action native payload preserved owner=\(id)")
+                                  state.lastAction = identifier
+                              }
                           },
                           notificationCategories: [category(context, key: "initial")],
                           notificationPresentation: { event in
@@ -229,6 +242,15 @@ enum LifecycleProbeIntegration {
                               if event.categoryIdentifier == context.notificationCategoryIdentifier(for: "initial") {
                                   return [.list]
                               }
+                              guard let request = try? event.requestSnapshot?.request(),
+                                    request.content.title == id,
+                                    let payload = request.content.userInfo["probePayload"] as? [String: Any],
+                                    payload["owner"] as? String == id,
+                                    payload["record"] as? Int == 42 else {
+                                  state.foregroundCount = -1
+                                  return []
+                              }
+                              print("NOTIFICATION_REQUEST foreground native payload preserved owner=\(id)")
                               state.foregroundCount += 1
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in

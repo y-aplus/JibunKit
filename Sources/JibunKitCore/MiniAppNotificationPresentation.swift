@@ -5,11 +5,14 @@ public struct MiniAppForegroundNotification: Sendable, Equatable {
     public let requestIdentifier: String
     public let categoryIdentifier: String
     public let destination: String?
+    public let requestSnapshot: MiniAppNotificationRequestSnapshot?
 
-    public init(requestIdentifier: String, categoryIdentifier: String, destination: String?) {
+    public init(requestIdentifier: String, categoryIdentifier: String, destination: String?,
+                requestSnapshot: MiniAppNotificationRequestSnapshot? = nil) {
         self.requestIdentifier = requestIdentifier
         self.categoryIdentifier = categoryIdentifier
         self.destination = destination
+        self.requestSnapshot = requestSnapshot
     }
 }
 

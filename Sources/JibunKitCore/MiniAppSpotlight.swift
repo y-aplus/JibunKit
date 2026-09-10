@@ -24,10 +24,13 @@ public struct MiniAppSpotlightNamespace: Sendable {
         localIdentifier: String,
         attributes: CSSearchableItemAttributeSet
     ) -> CSSearchableItem {
-        CSSearchableItem(
+        // CSSearchableItem writes identifier/domain fields into its attribute set.
+        // Copy the complete native object so reuse across owners cannot alias them.
+        let ownedAttributes = attributes.copy() as! CSSearchableItemAttributeSet
+        return CSSearchableItem(
             uniqueIdentifier: itemIdentifier(for: localIdentifier),
             domainIdentifier: domainIdentifier,
-            attributeSet: attributes
+            attributeSet: ownedAttributes
         )
     }
 

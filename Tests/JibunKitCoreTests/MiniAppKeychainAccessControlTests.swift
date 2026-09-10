@@ -12,7 +12,12 @@ final class MiniAppKeychainAccessControlTests: XCTestCase {
         defer { try? keychain.removeAll() }
         let accessControl = try makeAccessControl(flags: [])
 
-        try keychain.set(Data("original".utf8), for: account, accessControl: accessControl)
+        try setAccessControlled(
+            Data("original".utf8),
+            for: account,
+            in: keychain,
+            accessControl: accessControl
+        )
         XCTAssertEqual(try accessibility(for: account, in: keychain), kSecAttrAccessibleWhenUnlocked as String)
 
         try keychain.set(Data("updated".utf8), for: account)
@@ -57,9 +62,10 @@ final class MiniAppKeychainAccessControlTests: XCTestCase {
         let accessControl = try makeAccessControl(flags: .userPresence)
         let addContext = LAContext()
         addContext.interactionNotAllowed = true
-        try protected.set(
+        try setAccessControlled(
             Data("original".utf8),
             for: account,
+            in: protected,
             accessControl: accessControl,
             authenticationContext: addContext
         )
@@ -83,6 +89,35 @@ final class MiniAppKeychainAccessControlTests: XCTestCase {
         XCTAssertEqual(try other.data(for: account), Data("other".utf8))
     }
 
+    func testCallerOwnedContextsKeepReadsAndRemovalScoped() throws {
+        let service = "contexts-" + UUID().uuidString
+        let first = MiniAppKeychain(
+            context: MiniAppContext(id: MiniAppID("context-owner-a")),
+            service: service
+        )
+        let second = MiniAppKeychain(
+            context: MiniAppContext(id: MiniAppID("context-owner-b")),
+            service: service
+        )
+        defer {
+            try? first.removeAll()
+            try? second.removeAll()
+        }
+        let firstContext = LAContext()
+        firstContext.interactionNotAllowed = true
+        let secondContext = LAContext()
+        secondContext.interactionNotAllowed = true
+
+        try first.set(Data("first".utf8), for: "same", authenticationContext: firstContext)
+        try second.set(Data("second".utf8), for: "same", authenticationContext: secondContext)
+        XCTAssertEqual(try first.data(for: "same", authenticationContext: firstContext), Data("first".utf8))
+        XCTAssertEqual(try second.data(for: "same", authenticationContext: secondContext), Data("second".utf8))
+
+        try first.remove(account: "same", authenticationContext: firstContext)
+        XCTAssertNil(try first.data(for: "same", authenticationContext: firstContext))
+        XCTAssertEqual(try second.data(for: "same", authenticationContext: secondContext), Data("second".utf8))
+    }
+
     private func makeKeychain(feature: String) -> MiniAppKeychain {
         MiniAppKeychain(
             context: MiniAppContext(id: MiniAppID(feature)),
@@ -104,6 +139,25 @@ final class MiniAppKeychainAccessControlTests: XCTestCase {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecParam))
         }
         return accessControl
+    }
+
+    private func setAccessControlled(
+        _ data: Data,
+        for account: String,
+        in keychain: MiniAppKeychain,
+        accessControl: SecAccessControl,
+        authenticationContext: LAContext? = nil
+    ) throws {
+        do {
+            try keychain.set(
+                data,
+                for: account,
+                accessControl: accessControl,
+                authenticationContext: authenticationContext
+            )
+        } catch let error as MiniAppKeychain.Failure where error.status == errSecMissingEntitlement {
+            throw XCTSkip("The unsigned macOS test host cannot add a SecAccessControl-protected item")
+        }
     }
 
     private func accessibility(for account: String, in keychain: MiniAppKeychain) throws -> String? {

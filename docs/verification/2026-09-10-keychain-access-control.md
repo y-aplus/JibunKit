@@ -36,14 +36,24 @@ authentication. Sources:
 - non-interactive failure when updating a user-presence-protected item;
 - existence of the protected item after that failed in-place update;
 - continued readability of the same account owned by another Feature.
+- distinct caller-owned contexts used for native save/read/removal operations,
+  with removal still limited to one Feature owner.
 
-CI results are recorded after the branch run.
+Initial macOS CI run
+[34486251417](https://github.com/y-aplus/JibunKit/actions/runs/34486251417)
+compiled the implementation but returned `errSecMissingEntitlement` when its
+unsigned test host attempted to add both access-controlled items. The tests now
+skip only that OS/environment condition rather than treating macOS as biometric
+evidence. Context propagation and owner scoping still run against the native
+macOS Keychain without access-control protection. Final CI status is recorded
+after the revised branch run.
 
 ## Unverified OS-dependent behavior
 
-The macOS CI test can exercise native access-control storage and a prohibited-UI
-failure, but it cannot establish successful Face ID or Touch ID authentication.
-Simulator or device work remains necessary for prompt text, user approval,
-cancellation UI, passcode/enrollment changes, biometric-set invalidation,
-background/locked-device behavior, and host `Info.plist` integration. No test
-bypasses or simulates OS consent.
+The unsigned macOS CI host cannot add an access-controlled item and therefore
+cannot exercise its prohibited-UI failure or establish successful Face ID or
+Touch ID authentication. A signed Simulator or device test remains necessary
+for protected-item persistence, failed-update retention, prompt text, user
+approval, cancellation UI, passcode/enrollment changes, biometric-set
+invalidation, background/locked-device behavior, and host `Info.plist`
+integration. No test bypasses or simulates OS consent.

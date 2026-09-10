@@ -610,6 +610,11 @@ jobs:
               --path "$RUNNER_TEMP/Migration.xcresult" \
               --output-path "$RUNNER_TEMP/simulator-diagnostics"
           fi
+          if [[ -d "$RUNNER_TEMP/TemplateHost.xcresult" ]]; then
+            xcrun xcresulttool export attachments \
+              --path "$RUNNER_TEMP/TemplateHost.xcresult" \
+              --output-path "$RUNNER_TEMP/template-host-screenshots"
+          fi
           if [[ -d "$RUNNER_TEMP/FilesRoundTrip.xcresult" ]]; then
             xcrun xcresulttool export attachments \
               --path "$RUNNER_TEMP/FilesRoundTrip.xcresult" \
@@ -708,6 +713,7 @@ jobs:
             ${{ runner.temp }}/records-ui.log
             ${{ runner.temp }}/TemplateLaunch.xcresult
             ${{ runner.temp }}/TemplateHost.xcresult
+            ${{ runner.temp }}/template-host-screenshots
             ${{ runner.temp }}/template-host.log
             ${{ runner.temp }}/template-launch.log
             ${{ runner.temp }}/FilesRoundTrip.xcresult

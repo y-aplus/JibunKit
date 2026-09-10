@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- Web認証の提示面ごとの任意調停とFeature接続別の取消・Runtime終了処理を追加。標準ASWebAuthenticationSessionのcallback形式と提示先を維持する。
+- Swift Package内のApp Intentsを標準AppIntentsPackageで接続する手順と、単独/統合metadata・所有Storeの比較検証を追加。
+
 - Featureごとの独自URL resolverを追加。曖昧な受信先を拒否し、SwiftUIが配送したscene内で所有Featureを開き、他Featureの画面経路を保持する。
 - Featureの`CFBundleURLTypes`をhostと自動合成。宣言のname/role/icon等を保持し、同名異値だけ明示resolutionを求める。
 

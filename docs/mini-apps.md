@@ -269,3 +269,7 @@ hook未指定のFeatureは従来どおりです。これは全Featureの処理�
 JSON/file providerの`exportEntry`も同じcoordinatorを利用します。同一Featureのsnapshot作成と復元を重ねず、競合はcallbackを始める前に返します。独自coordinatorを使う場合、exportとrestoreで同じものを渡してください。生の`export` closureの直接呼出しはこの調停の対象外です。予約はsnapshot作成までで、複数Featureを同じ時点の状態として書き出す保証はありません。
 
 `MiniAppBackupArchive.export(..., coordinator:)`にも同じcoordinatorを渡せます。省略時はプロセス共通のものを使い、ZIP内の各JSON/file providerへ転送します。出力callbackが失敗した場合と出力検証が失敗した場合も予約は解除されます。
+
+### 非同期の資源解放
+
+`try runtime.onShutdownAsync { await connection.close() }`で非同期の後始末を登録できます。所有Taskがすべて終了した後、`onShutdown`と共通の登録逆順で一つずつ完了を待ちます。`shutdown()`を待つ復元hookは、その後始末の終了までapplyへ進みません。hookは自分自身のruntime.shutdownを待たず、有限時間で終了する必要があります。closeがthrowする場合の回復方針はFeatureで定めてください。

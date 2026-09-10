@@ -3,6 +3,34 @@ import JibunKitCore
 
 final class MiniAppRuntimeTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testAsyncCleanupIsAwaitedInOrderAndOtherRuntimeCanFinish() async throws {
+        let runtime = MiniAppRuntime()
+        let other = MiniAppRuntime()
+        let events = RuntimeEvents()
+        let gate = RuntimeGate()
+        let entered = expectation(description: "Async cleanup entered")
+        try runtime.onShutdown { events.values.append("first registered") }
+        try runtime.onShutdownAsync {
+            events.values.append("async started")
+            await gate.wait(entered: entered)
+            events.values.append("async ended")
+        }
+        try runtime.onShutdown { events.values.append("last registered") }
+        let shutdown = Task { await runtime.shutdown(); events.values.append("returned") }
+        await fulfillment(of: [entered], timeout: 5)
+        XCTAssertTrue(runtime.isClosed)
+        XCTAssertThrowsError(try runtime.onShutdownAsync {})
+        XCTAssertEqual(events.values, ["last registered", "async started"])
+        try other.onShutdown { events.values.append("other ended") }
+        await other.shutdown()
+        let joined = Task { await runtime.shutdown() }
+        await gate.release()
+        await shutdown.value
+        await joined.value
+        XCTAssertEqual(events.values, ["last registered", "async started", "other ended", "async ended", "first registered", "returned"])
+    }
+
+    @MainActor
     func testAdmissionClosesBeforeSlowTaskCleanupAndConcurrentShutdownWaits() async throws {
         let runtime = MiniAppRuntime()
         let events = RuntimeEvents()

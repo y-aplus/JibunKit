@@ -73,21 +73,20 @@ private enum KeychainAccessControlProbeRunner {
             return "failed: data-only update changed protection"
         }
 
-        let applicationPassword = try makeAccessControl(flags: [.userPresence, .applicationPassword])
-        let creationContext = try applicationPasswordContext()
+        let userPresence = try makeAccessControl(flags: .userPresence)
         try protected.set(
             Data("original".utf8),
             for: "same-account",
-            accessControl: applicationPassword,
-            authenticationContext: creationContext
+            accessControl: userPresence,
+            authenticationContext: nonInteractiveContext()
         )
         let baselineAccount = "native-baseline"
         let baselineAdd = SecItemAdd(item(
             account: baselineAccount,
             in: protected,
             data: Data("original".utf8),
-            accessControl: try makeAccessControl(flags: [.userPresence, .applicationPassword]),
-            authenticationContext: try applicationPasswordContext()
+            accessControl: try makeAccessControl(flags: .userPresence),
+            authenticationContext: nonInteractiveContext()
         ) as CFDictionary, nil)
         guard baselineAdd == errSecSuccess else {
             return "failed: native baseline add status \(baselineAdd)"
@@ -171,14 +170,6 @@ private enum KeychainAccessControlProbeRunner {
             throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecParam))
         }
         return accessControl
-    }
-
-    private static func applicationPasswordContext() throws -> LAContext {
-        let context = nonInteractiveContext()
-        guard context.setCredential(Data("ci-password".utf8), type: .applicationPassword) else {
-            throw NSError(domain: NSOSStatusErrorDomain, code: Int(errSecAuthFailed))
-        }
-        return context
     }
 
     private static func accessibility(

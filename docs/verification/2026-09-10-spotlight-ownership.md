@@ -13,6 +13,7 @@ Appleは`CSSearchableItem.uniqueIdentifier`をアプリ内で項目を識別・�
 - [CSSearchableItem.uniqueIdentifier](https://developer.apple.com/documentation/corespotlight/cssearchableitem/uniqueidentifier)
 - [CSSearchableItem.domainIdentifier](https://developer.apple.com/documentation/corespotlight/cssearchableitem/domainidentifier)
 - [CSSearchableIndex](https://developer.apple.com/documentation/corespotlight/cssearchableindex)
+- [Searching for information in your app](https://developer.apple.com/documentation/corespotlight/searching-for-information-in-your-app)
 
 ## native比較試験
 
@@ -27,3 +28,5 @@ run 34491615457、source `5411ece`は実装と124 testsをcompileし、既存123
 run 34492344143、source `ef8efdcd17a32ae24cad1878e03bac7715fdbecd`では署名hostへ進む前のpure namespace testで、同じnative attribute setをA/Bへ渡すと先に生成したA itemまでBのidentifier/domainへ変わることを検出した。`CSSearchableItem`が属性実体へ識別値を反映するため、wrapper内でnative attribute set全体をcopyしてから所有値を設定する。独自属性型へ変換せず、Feature間の参照aliasだけを断つ。
 
 run 34492877334、source `6e8b6bcfdef01614959349467356ea3bc3171bdf`ではpure namespace test、共有124 tests、template/build/IPAが成功し、署名済み隔離hostのprobeも起動した。queryが0件のまま`unexpectedItems`となったため、Appleのquery predicate形式に合わせidentifier literalを二重引用符へ修正した。namespaceが生成するidentifierは引用符を含まない固定形式である。
+
+run 34494850967、source `9ce1771a7197de7a561dcdeca487ed77929de554`でも署名済みprobeのqueryは0件だった。引用符だけが原因ではない。Appleのquery guideはpredicateの属性名を`CSSearchableItemAttributeSet`のproperty（例: `title`）にするよう定めている一方、`uniqueIdentifier`は`CSSearchableItem`自身のpropertyである。そこでUUIDを含むnative `title`で対象を検索し、`CSSearchQueryContext.fetchAttributes`で`title`と`textContent`を取得したうえで、返却itemの`uniqueIdentifier`と`domainIdentifier`を所有権の証拠として比較するよう修正した。

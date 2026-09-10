@@ -20,19 +20,20 @@ final class SpotlightOwnershipProbeState {
         let localIdentifier = "same-local-id-\(suffix)"
         let aIdentifier = a.itemIdentifier(for: localIdentifier)
         let bIdentifier = b.itemIdentifier(for: localIdentifier)
+        let titles = ["A \(suffix)", "B \(suffix)"]
 
         do {
             let aAttributes = CSSearchableItemAttributeSet(contentType: .text)
-            aAttributes.title = "A \(suffix)"
+            aAttributes.title = titles[0]
             aAttributes.textContent = "owner-a native metadata"
             let bAttributes = CSSearchableItemAttributeSet(contentType: .text)
-            bAttributes.title = "B \(suffix)"
+            bAttributes.title = titles[1]
             bAttributes.textContent = "owner-b native metadata"
 
             try await a.index(localIdentifier: localIdentifier, attributes: aAttributes, in: index)
             try await b.index(localIdentifier: localIdentifier, attributes: bAttributes, in: index)
             let before = try await SpotlightOwnershipProbe.queryEventually(
-                identifiers: [aIdentifier, bIdentifier], expected: Set([aIdentifier, bIdentifier]))
+                titles: titles, expectedIdentifiers: Set([aIdentifier, bIdentifier]))
             guard SpotlightOwnershipProbe.metadata(before) == [
                 a.domainIdentifier: "owner-a native metadata",
                 b.domainIdentifier: "owner-b native metadata",
@@ -42,7 +43,7 @@ final class SpotlightOwnershipProbeState {
 
             try await a.deleteAll(from: index)
             let after = try await SpotlightOwnershipProbe.queryEventually(
-                identifiers: [aIdentifier, bIdentifier], expected: Set([bIdentifier]))
+                titles: titles, expectedIdentifiers: Set([bIdentifier]))
             guard SpotlightOwnershipProbe.metadata(after) == [
                 b.domainIdentifier: "owner-b native metadata"
             ] else {
@@ -89,20 +90,22 @@ enum SpotlightOwnershipProbe {
     }
 
     static func queryEventually(
-        identifiers: [String], expected: Set<String>
+        titles: [String], expectedIdentifiers: Set<String>
     ) async throws -> [CSSearchableItem] {
         for _ in 0..<40 {
-            let items = try await query(identifiers: identifiers)
-            if Set(items.map(\.uniqueIdentifier)) == expected { return items }
+            let items = try await query(titles: titles)
+            if Set(items.map(\.uniqueIdentifier)) == expectedIdentifiers { return items }
             try await Task.sleep(nanoseconds: 250_000_000)
         }
         throw Failure.unexpectedItems
     }
 
-    private static func query(identifiers: [String]) async throws -> [CSSearchableItem] {
-        let clauses = identifiers.map { "uniqueIdentifier == \"\($0)\"" }.joined(separator: " || ")
+    private static func query(titles: [String]) async throws -> [CSSearchableItem] {
+        let clauses = titles.map { "title == \"\($0)\"" }.joined(separator: " || ")
+        let context = CSSearchQueryContext()
+        context.fetchAttributes = ["title", "textContent"]
         return try await withCheckedThrowingContinuation { continuation in
-            let query = CSSearchQuery(queryString: clauses, queryContext: nil)
+            let query = CSSearchQuery(queryString: clauses, queryContext: context)
             let results = SpotlightSearchResults()
             query.foundItemsHandler = { results.append($0) }
             query.completionHandler = { error in

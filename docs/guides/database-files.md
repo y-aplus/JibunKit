@@ -1,0 +1,22 @@
+# DBの保存先とエンジンの責任
+
+JibunKitへ統合してもDBエンジンを置き換える必要はない。`MiniAppFiles`でFeature専用URLを作り、SQLite・GRDB・Core Data等、そのエンジンの接続設定へ渡す。同じローカルDB名でもFeatureごとのディレクトリへ分かれる。
+
+```swift
+let files = try MiniAppFiles.shared(context: context)
+try files.prepareDirectory()
+let databaseURL = try files.fileURL(named: "store.sqlite")
+// Pass databaseURL to the Feature's native database configuration.
+```
+
+`fileURL`はファイル名を検査するが、DB接続・schema・WAL・共有接続poolを管理するAPIではない。エンジンが作るsidecarもこのURLと同じFeatureディレクトリに置く。明示的な共有DBを使う場合だけ、共有するURLと接続所有者をIntegrationで合意する。別Featureの書込みと衝突しないことと、同じDBを使う複数writerが整合することは別の条件である。
+
+## SQLiteのsnapshotと終了
+
+稼働中のWAL形式DBは、主ファイルだけを`MiniAppFiles.read/write`でコピーしてバックアップにしない。SQLiteの[Online Backup API](https://www.sqlite.org/backup.html)等、エンジンが提供する整合したsnapshotをFeature adapterから使う。WAL/SHMはエンジンが扱う状態であり、無関係なデータファイルと同じ置換手順にはできない。[WALの仕様](https://www.sqlite.org/wal.html)。
+
+ファイルの置換や削除に入る前に、そのFeatureの全接続・statement・外部writerが終了したことを確かめる。SQLiteの`sqlite3_close`は未解放statementがあるとBUSYを返し、接続を閉じない。`sqlite3_close_v2`は終了を遅延できるので、呼出しが成功しただけで即時にすべての利用者が止まったとは判定しない。[SQLite close仕様](https://www.sqlite.org/c3ref/close.html)。
+
+`MiniAppRuntime.shutdown()`は登録Taskとcleanupを待つが、任意DBの接続を発見せず、現在のcleanup hookはエラーを返さない。失敗し得るDB終了は、Featureのthrowingな`MiniAppRestoreLifecycle.stop`内で、Runtime終了待ちの後に明示的に検査する。失敗したらthrowして復元/ファイル置換へ進めない。再開時の接続再生成・旧callbackの停止はそのDBのadapterが担う。現時点で全DB用の自動復元adapterが完成しているという意味ではない。
+
+[native SQLiteの検証記録](../verification/2026-09-11-sqlite-isolation.md)はSQLiteの具体例である。Core Data/SwiftData/他DB、App Groupの別process writer、iOSファイル保護・署名変更の条件へ成功を拡大しない。

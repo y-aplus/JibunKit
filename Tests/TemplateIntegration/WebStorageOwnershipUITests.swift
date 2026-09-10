@@ -62,6 +62,8 @@ final class WebStorageOwnershipUITests: XCTestCase {
         tap("web-storage.read")
         expect("local=web-storage-owner-a cookie=web-storage-owner-a")
         clear("web-storage-owner-a")
+        tap("web-storage.read")
+        expect("local=missing cookie=missing")
 
         backgroundAndTerminate()
         launch()

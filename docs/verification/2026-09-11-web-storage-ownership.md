@@ -53,3 +53,19 @@ The UI test prints every observed page result with the
 origin, OS, and background/relaunch sequence; it does not guarantee immediate
 durability after abrupt termination, every cookie attribute, or coordinated
 deletion while other WebViews are active.
+
+## Result
+
+[GitHub Actions run 34503206316](https://github.com/y-aplus/JibunKit/actions/runs/34503206316)
+on Xcode 26.6 succeeded. Source `db12b79` ran the exact three-part selector and
+executed one ownership UI test in 62.273 seconds with zero failures. The log
+recorded immediate page readback for A and B, A and B readback after the normal
+background/termination/relaunch boundary, A removal, and B readback after A's
+removal and a second relaunch. Every recorded read contained both the expected
+`localStorage` value and Cookie value.
+
+The native-store unit test passed in 0.007 seconds. The complete shared suite
+executed 135 tests with zero failures. The short normal-host search/open UI
+regression also passed (one test, 26.488 seconds), as did the release iOS build,
+IPA packaging, independent packages, generated Feature checks, and Records UI
+tests. No sleep or skip was added to the ownership path.

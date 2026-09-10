@@ -39,23 +39,23 @@ for owner in ["FeatureA", "FeatureB"]:
 with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     temp_root = Path(temp)
 
-    def make_project(label, include_a):
+    def make_project(label):
         root = temp_root / label
         root.mkdir()
         (root / "Tuist").mkdir()
         for name in ["FeatureA", "FeatureB"]:
             shutil.copytree(fixtures / name, root / name, ignore=shutil.ignore_patterns(".build"))
-        project = (fixtures / "HostProject.swift.fixture").read_text()
-        project = project.replace("__INCLUDE_A__", "true" if include_a else "false")
-        (root / "Project.swift").write_text(project)
         shutil.copyfile(fixtures / "App.swift", root / "App.swift")
         shutil.copyfile(fixtures / "Widget.swift", root / "Widget.swift")
         return root
 
-    def build(include_a, label):
-        root = make_project(label, include_a)
+    def configure(root, include_a):
+        project = (fixtures / "HostProject.swift.fixture").read_text()
+        project = project.replace("__INCLUDE_A__", "true" if include_a else "false")
+        (root / "Project.swift").write_text(project)
         run([args.tuist, "generate", "--no-open"], root)
-        derived = root / f"Build-{label}"
+
+    def build_existing(root, derived):
         run(["xcodebuild", "build", "-workspace", root / "PrivacyHost.xcworkspace",
              "-scheme", "PrivacyHost", "-configuration", "Release",
              "-destination", "generic/platform=iOS", "-derivedDataPath", derived,
@@ -70,6 +70,11 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
         return {path.parent.name: (path, read_manifest(path)) for path in direct}, {
             path.parent.name: (path, read_manifest(path)) for path in widget
         }
+
+    def build(include_a, label):
+        root = make_project(label)
+        configure(root, include_a)
+        return build_existing(root, root / f"Build-{label}")
 
     both_app, both_widget = build(True, "both")
     b_app, b_widget = build(False, "b-only")
@@ -89,4 +94,25 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
     assert both_b[1] == removed_b[1]
     assert both_b[0].read_bytes() == removed_b[0].read_bytes()
     assert next(iter(both_widget.values()))[1] == next(iter(b_widget.values()))[1]
-    print("Privacy manifests verified: independent A/B, integrated app A+B, widget B, A removal preserves B")
+
+    incremental_root = make_project("incremental")
+    incremental_derived = incremental_root / "Build-incremental"
+    configure(incremental_root, True)
+    incremental_both_app, incremental_both_widget = build_existing(
+        incremental_root, incremental_derived)
+    incremental_before_b_bytes = next(
+        value for name, value in incremental_both_app.items() if "FeatureB" in name
+    )[0].read_bytes()
+    configure(incremental_root, False)
+    incremental_b_app, incremental_b_widget = build_existing(
+        incremental_root, incremental_derived)
+    assert len(incremental_both_app) == 2, incremental_both_app
+    assert len(incremental_both_widget) == 1, incremental_both_widget
+    assert len(incremental_b_app) == 1, incremental_b_app
+    assert len(incremental_b_widget) == 1, incremental_b_widget
+    assert all("FeatureA" not in name for name in incremental_b_app), incremental_b_app
+    incremental_after_b = next(iter(incremental_b_app.values()))
+    assert incremental_after_b[1] == independent["FeatureB"]
+    assert incremental_before_b_bytes == incremental_after_b[0].read_bytes()
+    assert next(iter(incremental_b_widget.values()))[1] == independent["FeatureB"]
+    print("Privacy manifests verified: independent and clean ownership plus same-root incremental A removal preserves B")

@@ -160,6 +160,11 @@ enum LifecycleProbeIntegration {
                           backup: backup,
                           restoreLifecycle: MiniAppRestoreLifecycle(stop: { try await state.stopForRestore(owner: id) },
                               resume: { try await state.resumeForRestore(owner: id) }),
+                          appendDestination: { destination, path in
+                              guard let value = Int(destination), value > 0 else { return false }
+                              path.append(value)
+                              return true
+                          },
                           onHostPhaseChange: { state.receive($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
@@ -173,6 +178,10 @@ enum LifecycleProbeIntegration {
                               state.foregroundCount += 1
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
+            Group {
+            if ProcessInfo.processInfo.environment["JIBUNKIT_NAVIGATION_PROBE"] == "1" {
+                NavigationRetentionProbeView(owner: context.id.rawValue)
+            } else {
             VStack {
                 Button("Restore probe") { state.showingRestore = true }
                     .accessibilityIdentifier("runtime.restore.open")
@@ -215,10 +224,82 @@ enum LifecycleProbeIntegration {
                     MiniAppBackupEntry(id: context.id, schemaVersion: 1, payload: Data("restored".utf8))
                 ]))
             }
+            }
+            }
         }
     }
 }
 
+@MainActor
+private enum NavigationRetentionFixture {
+    static func route(_ destination: String) -> MiniAppRoute {
+        let url = MiniAppLink.url(for: MiniAppID("lifecycle-a"), destination: destination)!
+        return MiniAppLink.resolveRoute(url, registeredIDs: MiniAppRegistry.registeredIDs)!
+    }
+}
+
+private struct NavigationRetentionProbeView: View {
+    let owner: String
+    var body: some View {
+        NavigationRetentionPage(owner: owner, level: 0)
+            .navigationDestination(for: Int.self) { level in
+                NavigationRetentionPage(owner: owner, level: level)
+            }
+    }
+}
+
+private struct NavigationRetentionPage: View {
+    let owner: String
+    let level: Int
+    @State private var contractResult = "unchecked"
+    var body: some View {
+        VStack {
+            Text("\(owner):\(level)").accessibilityIdentifier("navigation.retention.page")
+            NavigationLink("Next", value: level + 1).accessibilityIdentifier("navigation.retention.next")
+            Button("Route A detail") {
+                AppSceneRouting.shared.open(NavigationRetentionFixture.route("7"))
+            }.accessibilityIdentifier("navigation.retention.route")
+            Button("Unsupported A detail") {
+                AppSceneRouting.shared.open(NavigationRetentionFixture.route("invalid"))
+            }.accessibilityIdentifier("navigation.retention.invalid")
+            Button("Check stale bindings") { contractResult = checkBindings() }
+                .accessibilityIdentifier("navigation.retention.check")
+            Text(contractResult).accessibilityIdentifier("navigation.retention.contract")
+        }
+        .navigationTitle(level == 0 ? owner : "Level \(level)")
+    }
+
+    @MainActor
+    private func checkBindings() -> String {
+        let navigation = AppNavigation()
+        let a = MiniAppID("lifecycle-a"), b = MiniAppID("lifecycle-b")
+        navigation.open(a)
+        navigation.path.append(42)
+        let originalA = navigation.path
+        let staleA = navigation.pathBinding
+        navigation.open(b)
+        navigation.path.append(9)
+        let originalB = navigation.path
+        staleA.wrappedValue = NavigationPath()
+        guard navigation.path == originalB else { return "stale A changed B" }
+        navigation.open(a)
+        staleA.wrappedValue = NavigationPath()
+        guard navigation.path == originalA else { return "previous A changed resumed A" }
+        navigation.open(NavigationRetentionFixture.route("invalid"))
+        guard navigation.path == originalA else { return "invalid route changed A" }
+        navigation.showList()
+        navigation.open(a)
+        guard navigation.path == originalA else { return "list lost A" }
+        navigation.resetCurrentPath()
+        guard navigation.path == NavigationPath([a]) else { return "reset did not reach root" }
+        navigation.open(b)
+        guard navigation.path == originalB else { return "reset A changed B" }
+        navigation.pathBinding.wrappedValue = NavigationPath()
+        navigation.open(b)
+        guard navigation.path == NavigationPath([b]) else { return "native pop did not unwind B" }
+        return "passed"
+    }
+}
 
 // Uses only synthetic test credentials. This view is never distributed.
 private struct KeychainProbeView: View {

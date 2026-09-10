@@ -1,6 +1,7 @@
 #if os(iOS)
 import SwiftUI
 import JibunKitCore
+import CoreSpotlight
 
 @main
 struct JibunKitApp: App {
@@ -51,6 +52,13 @@ private struct MiniAppSceneRoot: View {
         MiniAppListScreen(navigation: navigation)
             // SwiftUI delivers this URL to a particular scene; keep that target.
             .onOpenURL { navigation.openURL($0) }
+            .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                // SwiftUI selected this scene; do not broadcast or select a
+                // different window through the process notification router.
+                if let route = MiniAppSpotlightRoute.resolve(userActivity, registeredIDs: MiniAppRegistry.registeredIDs) {
+                    navigation.open(route)
+                }
+            }
             .onAppear {
                 activity.connect(phase: activityPhase, selectedID: navigation.activeID)
                 guard registration == nil else { return }

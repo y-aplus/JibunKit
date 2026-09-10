@@ -25,7 +25,7 @@ public enum EnabledFeatureBuildRequirements {
 ## 合成規則
 
 - hostと各Featureが同じkeyへ同じ値を指定した場合は共有する。独自key、ネストしたdictionary、数値等のTuistのplist値も指定できる。
-- `UIBackgroundModes`、`BGTaskSchedulerPermittedIdentifiers`、`LSApplicationQueriesSchemes`、App Group、Keychain access group、Associated Domainsは文字列配列を重複除去・ソートして合成する。
+- `UIBackgroundModes`、`BGTaskSchedulerPermittedIdentifiers`、`LSApplicationQueriesSchemes`、`NSUserActivityTypes`、App Group、Keychain access group、Associated Domainsは文字列配列を重複除去・ソートして合成する。
 - それ以外の異なる値は、keyと要求元を示して生成を止める。用途説明を単純連結したり、最後のFeatureで上書きしたりしない。統合担当が`infoPlistResolutions`/`entitlementResolutions`へ合意した値を明記する。
 - URL Typesやdocument types等の構造化配列も、異なる要求なら明示的に合成結果を指定する。一般的なkey別schema validatorはまだ提供しない。
 - 空/重複のowner、文字列集合keyの不正な型、要求のないkeyへの余ったresolutionを拒否する。bundle identifier/executableはFeatureのplistで変更せずnative targetで設定する。

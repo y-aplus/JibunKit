@@ -1,37 +1,34 @@
 # 公開・release手順
 
-更新日: 2026-09-09
+更新日: 2026-09-10。最新公開版はGitHub Releasesを正本とする。0.3.0を準備中。1.0は[共存の完成基準](coexistence-boundaries.md)と[差分台帳](coexistence-ledger.md)で判断し、旧V1〜V6やサンプルだけの成功で完了としない。
 
-現在の公開版は0.1.0、mainは1.0開発中。2026-09-09にGitHubでrepositoryがpublic、default branchがmainであることを確認した。1.0の完了条件は[完成計画](superpowers/plans/2026-09-08-jibunkit-1.0.md)のV1〜V6で管理する。公開済み0.1の検証は過去版の証拠として保持する。
+## 版ごとの出荷判断
 
-## 出荷候補を準備する
+0.xは検証済みの機能のまとまりを公開する中間版。2026-09-10のユーザー依頼により、着実な開発を続けながら適切な区切りで0.xを公開する。1.0の未達を明記し、未対応・未調査を出荷済み機能へ数えない。既存release/tagの差し替えはしない。
 
-1. 完成計画の実装・自動検証を終え、残る実機確認と既知の制限を具体的に整理する。限定UIテストの成功を全回帰成功として扱わない。
-2. 版番号、CHANGELOG.md、release-notes-1.0.0.mdを出荷内容に合わせる。候補sourceをcommitし、origin/mainと一致することを確認する。
-3. 候補commitからbuild-ios.ymlをsimulator_tests=true、feature_validation=true、ui_test_filter空で実行する。共有・Module tests、単独Feature・生成ホスト、通常app/Widget、App Intents metadata、IPAとUIの結果を確認する。期待失敗は理由・対象を明示し、成功した機能の証拠に数えない。
-4. runのheadShaと候補commitが一致することを確認し、IPAを取得する。展開検査・署名構造・bundle ID・App Group・版番号を確認し、SHA-256を検証記録へ残す。
-5. 同じIPAをSideStoreで上書き導入し、署名更新、既存保存値、Widget/Shortcuts/通知、選択復元をまとめて実機確認する。Recordsなど参照Featureを含む確認用構成は、通常配布物との差分とsourceを明示する。
-6. 実機結果、対象commit、run URL、IPA hash、既知の制限を記録する。不具合を直してIPAが変われば、影響する項目を再確認する。
-7. release notesとIPAを揃えた具体的な公開成果物について、利用者の最終承認を受ける。
+1.0は完成基準の実装・検証・残存制約の説明を終え、必要な最終実機確認と利用者の公開判断を経る。0.xの公開をもって1.0の承認とは扱わない。
 
-publication boundaryは追跡ファイルの鍵・証明書・provisioning・pairing関連ファイル、SDK archive、生成IPAなどを検査する。最終差分と配布IPAの確認も行う。ignoredの個人Featureや実データを公開物へ含めない。
+## 候補の準備と検証
 
-## 承認後に公開する
+1. 変更内容、対象範囲、既知の不具合、再検証が必要な項目を整理し、CHANGELOGと版別release notesへ記録する。
+2. 本体/Widgetのshort versionとbuild番号、CIの期待値を揃え、commit/pushする。配布用候補はCI成功を確認したimmutable commitへ固定する。
+3. 共有・Module tests、単独Feature/生成host、App Intents metadata、本体/Widget、IPAを検証する。UIは変更の影響範囲を含む試験を行い、必要なら通常hostと生成hostを分割してjob上限内に収める。限定filterを全回帰成功とは記載しない。
+4. 直前の検証済みsourceから版番号・文書・版検査値だけを変更した場合、差分を確認したうえでそのUI証拠を参照できる。候補のビルド/IPA検査は省略しない。参照元source/runと候補source/runを分けて記録する。
+5. 新しい実機確認が必要な挙動があれば、複数項目をまとめて依頼する。過去の実機成功を別sourceの実機成功へ読み替えない。Simulatorだけの既知の失敗も、その範囲・実機証拠・未解明部分を明示する。
+6. run.headShaを確認して通常構成のIPAを取得する。全ZIP entryの展開/CRC、bundle ID、版番号、App Group/署名構造、CI fixtureの混入がないことを確認する。source・run・SHA-256を検証記録とrelease notesへ残す。
 
-承認されたcommitをtagへ固定する。既存tagを移動せず、既存releaseのassetを無断で差し替えない。
+publication boundaryは追跡ファイルの鍵・証明書・provisioning・pairing材料、SDK archive、IPA等を検査する。ignoredの個人Featureや実データを出荷物へ含めない。通常IPAはCounter/Reminder、Recordsは参照ソース。CI専用Featureを含む確認用構成と区別する。
+
+## 公開と確認
+
+検証済みcommitに新規tagを作り、同じIPAとnotesを公開する。tag形式は既存の`0.1.0`/`0.2.0`に合わせる。1.0には上記の利用者判断も必要。
 
 ```powershell
-git tag -a 1.0.0 APPROVED_COMMIT -m "JibunKit 1.0.0"
-git push origin 1.0.0
-gh release create 1.0.0 .\actions-run-RUN_ID\JibunKit.ipa --repo y-aplus/JibunKit --verify-tag --title "JibunKit 1.0.0" --notes-file .\release-notes-1.0.0.md
+git tag -a VERSION VERIFIED_COMMIT -m "JibunKit VERSION"
+git push origin VERSION
+gh release create VERSION PATH_TO_IPA --repo y-aplus/JibunKit --verify-tag --title "JibunKit VERSION" --notes-file PATH_TO_NOTES
 ```
 
-APPROVED_COMMITとRUN_IDは確認した値に置き換える。repositoryのvisibility変更は不要。release notesには導入方法、確認環境、source/run/hash、互換性、既知の制限、変更履歴を含める。
+公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。README・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。
 
-## 公開後の確認
-
-- tagが承認されたcommitを指し、公開されたIPAのSHA-256が検証済みファイルと一致する。
-- release notes、CHANGELOG、検証記録が同じ版と成果物を説明している。
-- releaseページからIPAを取得でき、LICENSEとSECURITY.mdの案内が参照できる。
-
-配布まで確認してV6を完了する。
+0.3.0の候補・参照証拠は[公開記録](verification/2026-09-10-0.3-release.md)で管理する。

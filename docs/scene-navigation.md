@@ -1,6 +1,6 @@
 # Sceneとナビゲーションの所有権
 
-## 現在の契約（CI検証中）
+## 現在の契約
 
 `JibunKitApp`のWindowGroup内にある`MiniAppSceneRoot`が、自分の`AppNavigation`を`@State`で保持する。App単位のsingleton NavigationPathを廃止した。各rootの検索・backup sheetも既存のview状態としてそのsceneに属する。sceneに届いた`onOpenURL`は、そのsceneのnavigationへ直接渡す。
 
@@ -18,7 +18,7 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 
 [Apple WindowGroup](https://developer.apple.com/documentation/swiftui/windowgroup)はwindowのview階層内に置いたStateへwindow別のstorageを割り当てる。[ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内で読むと当該scene、App内では全sceneの集約になる。今回、Featureへの既存host phase配送はApp内の集約を維持し、通知先選択のphaseだけroot view内で読む。
 
-[MiniAppSceneRouterTests](../Tests/JibunKitCoreTests/MiniAppSceneRouterTests.swift)は選択・非同報・phase変化・登録解除・起動前の保留・再入時の順序を検証する。CI専用iOS画面は実際のAppNavigationを二つ作り、片方の詳細pathや通知先の変更が他方のpathを消さないことを確認する。通常hostでは実通知からの遷移を回帰検証する。今回の変更一式のCI待ち。
+[MiniAppSceneRouterTests](../Tests/JibunKitCoreTests/MiniAppSceneRouterTests.swift)は選択・非同報・phase変化・登録解除・起動前の保留・再入時の順序を検証する。CI専用iOS画面は実際のAppNavigationを二つ作り、片方の詳細pathや通知先の変更が他方のpathを消さないことを確認する。通常hostでは実通知からの遷移を回帰検証する。[34440565104](https://github.com/y-aplus/JibunKit/actions/runs/34440565104)でunit、iOSの二navigation実体の非干渉（52.260秒）、通常hostの通知遷移（68.971秒）、IPA/Feature/Records検証が成功。
 
 ## 残る差分
 
@@ -29,3 +29,5 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 ## 検証経過
 
 [34440305199](https://github.com/y-aplus/JibunKit/actions/runs/34440305199)（source `26a5d45`）は共有テストのコンパイルで失敗。CoreだけをimportするテストがCounterFeatureで定義されるMiniAppID.counterを参照していた。Coreテストは専用の明示IDへ変更し、同じ参照を持つiOS確認画面もMiniAppID("counter")へ変更した。CoreにCounterFeatureの依存は追加しない。このrunではscene routerの実行試験・iOS build/UIへ到達していないため、変更全体の検証待ちは継続する。
+
+34440565104（source `6a4d2fd`）で修正後のCIが成功。scene routerのcold start・選択/解除・再入の3unitも成功した。実window操作の証拠へ読み替えない。

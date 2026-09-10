@@ -242,10 +242,16 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "1.0.0"
+            "0.3.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "3"
+            "4"
+          require_equal "widget short version" \
+            "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
+            "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"
+          require_equal "widget build version" \
+            "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
+            "$(plist_value "$app/Info.plist" CFBundleVersion)"
 
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements JibunKitWidget.entitlements "$widget"

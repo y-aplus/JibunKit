@@ -8,7 +8,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.1.0](https://github.com/y-aplus/JibunKit/releases/tag/0.1.0)、mainは1.0に向けた開発中です。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.2.0](https://github.com/y-aplus/JibunKit/releases/tag/0.2.0)。mainでは0.3.0の出荷準備と、1.0に向けた開発を進めています。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。通知と詳細遷移の拡張、最終回帰・出荷確認は継続中です。[1.0の完成条件と残作業](docs/superpowers/plans/2026-09-08-jibunkit-1.0.md)を参照してください。
 
@@ -42,6 +42,9 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 | [Security Policy](SECURITY.md) | 脆弱性の非公開報告と公開前の安全境界 |
 | [変更履歴](CHANGELOG.md) | 利用者に影響する変更とrelease状態 |
 | [第三者notice](THIRD_PARTY_NOTICES.md) | 外部tool・SDK・導入toolの条件と非同梱の境界 |
+| [通信状態の接続](docs/network-integration.md) | Feature/profile別Cookie・HTTP認証・cacheと終了待ち |
+| [Runtimeと復元](docs/runtime-restore-integration.md) | タスク停止・非同期解放・選択復元の接続 |
+| [Sceneと画面状態](docs/scene-navigation.md) | window別navigationと通知先の選択 |
 | [公開・release](docs/releasing.md) | 公開前check、tag、公開切替、release後の対応確認 |
 | [元の検討メモ](personal-swiftui-superapp-plan.md) | ChatGPTが作成した参考資料。現在の仕様は上記の設計文書を優先 |
 

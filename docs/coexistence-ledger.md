@@ -28,7 +28,7 @@
 | D01 | ホスト活動状態・scene・Feature表示状態 | 未対応 | host集約phase配送は補完・CI検証済み。未表示の二Featureへの実イベント配送、再入時の順序一致まで確認済み。Feature/scene/instance別の寿命契約は残る。 |
 | D02 | タスク・購読・要求の所有権と取消 | 未対応 | MiniAppTaskScopeでowner別Task取消、実行中の片方だけの取消、他owner継続、owner解放をunitで確認済み。CI隔離hostでの二Featureの起動・片方の取消・他方継続/正常完了は[34320179116](https://github.com/y-aplus/JibunKit/actions/runs/34320179116)で成功。呼出時点のTask群を取消して全完了を待つcancelAllAndWaitは[34323337796](https://github.com/y-aplus/JibunKit/actions/runs/34323337796)でunit/build成功。別batch維持とcleanup完了待ちも[34323800250](https://github.com/y-aplus/JibunKit/actions/runs/34323800250)で成功。MiniAppRuntimeで新規受付閉鎖・Task完了待ち・資源の逆順後始末を追加し、idle leaseとの接続は34371355575のunit・iOS該当テストで成功（run全体はWeb保持失敗）。終了待ち途中の受付拒否・Task cleanup完了待ち・owner解放時の順序は34377803005でunit成功。同期/非同期の終了hookと共有復元経路の接続は提供済み。非同期解放待ち・復元前の解放順序は34430649082でunit成功。34439496158でURLSessionのgraceful終了・delegate追加解放後の保存、Runtimeの要求取消後のlogoutと他session維持が実HTTPで成功。各Featureの購読・要求・DB接続をこの寿命へ登録する作業、および非協調処理の扱いは残る。[接続ガイド](runtime-restore-integration.md)。 |
 | D03 | クラッシュ・ハング・メモリとhelper extension | 未対応 | 協調的緩和は未対応。helperによる追加補完可能性は今回新たに発見した実装判断用の検証課題。 |
-| D04 | 画面遷移・復帰・提示と複数scene | 未対応 | AppNavigationのsingletonを外し、WindowGroup内のviewがwindowごとの状態を所有する構造へ変更。process通知はMiniAppSceneRouterが活動中/直近sceneへ一件配送し、scene指定URLは当該scene内で処理する。起動前の保留、活動遷移・解除・再入のunitと二navigation実体のiOS試験、実通知回帰を追加しCI検証中。OS上の複数window運用・Feature別経路保持・提示調停・UIViewController接続は残る。[現在の契約](scene-navigation.md)。 |
+| D04 | 画面遷移・復帰・提示と複数scene | 未対応 | AppNavigationのsingletonを外し、WindowGroup内のviewがwindowごとの状態を所有する構造へ変更。process通知はMiniAppSceneRouterが活動中/直近sceneへ一件配送し、scene指定URLは当該scene内で処理する。34440565104で起動前保留・活動遷移/解除・再入のunit、二navigation実体のiOS試験（52.260秒）、実通知遷移回帰（68.971秒）が成功。OS上の複数window運用・Feature別経路保持・提示調停・UIViewController接続は残る。[現在の契約](scene-navigation.md)。 |
 | D05 | 画面外観・idle timer等のアプリ共有設定 | 未対応 | idle timerのFeature/操作別leaseを追加。他owner継続・同一owner複数要求・冪等release・解放時後始末のunitとiOS buildは[34366651143](https://github.com/y-aplus/JibunKit/actions/runs/34366651143)で成功。iOS共有設定の二Feature取得・片方解除・最終解除は[34367286197](https://github.com/y-aplus/JibunKit/actions/runs/34367286197)で成功（49.277秒）。Runtime終了時の自動解除接続は34371355575で成功（44.083秒）。実際の自動ロック・表示寿命との接続、外観設定全般は残る。 |
 | D06 | UserDefaults・通常ファイル・DB配置 | 未対応 | MiniAppContextのUserDefaults namespaceとMiniAppFilesは実装・限定検証済み。DB、Keychain、Web/ネットワーク状態までの一般契約は別D項目を含め未完。 |
 | D07 | 復元・移行・リセット中の処理停止 | 未対応 | 選択復元のstop/apply/resumeをDefinition経由でhostへ接続。製品BackupScreenで成功経路と停止・部分適用・再開・両失敗の4経路、他ownerのTask/データ維持を確認（34389357592）。プロセス共通の復元予約で重複planを変更前に拒否し、非重複は並行実行。予約解除と取消開始境界は34412140159でunit成功。複数owner途中取消の未着手保護、snapshot exportとの調停もunitで確認。実機JSON書出し・読込み・選択復元もユーザー確認済み。非同期資源解放待ちと復元の結合は34430649082でunit成功。実FeatureのDB接続・通常書込み・別processとの排他、移行/リセットへの適用は残る。[検証記録](verification/2026-09-10-runtime-lifetime.md)。 |
@@ -72,3 +72,24 @@
 - D02: MiniAppTaskScopeによるowner別Task取消・他owner継続・owner解放はunit確認済み。台帳初期化時点ではCI隔離hostのFeature間UI検証結果待ち。
 - D06: UserDefaults namespaceとMiniAppFilesは実装・限定検証済み。DBや他の状態分離はD07–D11等で別管理する。
 - D12/D13: URL/通知routingとnotification request namespaceの既存成果は維持する。一般callback、通知category/action等は未完として扱う。
+
+## 「未調査」で残っている具体的な確認
+
+基礎文献の棚卸しは固定調査記録にある。「未調査」は文献を一から読む指示でも、すべて実験だけが残るという意味でもない。下表は未確認の内容と次の確認作業を分ける。調査完了や補完不能を先に判定したものではない。
+
+- **仕様確認**: 対象API・署名・OS条件の根拠を追加確認する。
+- **比較実験**: 独立アプリ相当と統合後の挙動を、実機/Simulator/適切なホスト試験で比較する。
+- **設計検証**: 補完方式を組み込み、競合・取消・復帰まで成立するか試す。
+
+| ID | 残る確認の種類 | 次に確認する具体的な内容 |
+| --- | --- | --- |
+| D09 | 仕様確認・比較実験・設計検証 | Cookie全属性/永続化時点、非パスワード資格情報、backgroundへの再接続条件。公開APIの保持条件と二ownerの実通信を比較する。 |
+| D11 | 仕様確認・比較実験 | ASWebAuthenticationSessionの同時開始・提示先・callback/cancel配送を二Featureで比較し、標準session境界が保つ範囲とhost調停が必要な範囲を確定する。 |
+| D14 | 仕様確認・比較実験 | 対象署名でAPNs entitlementを使える条件、app単位tokenを複数Featureのサーバー識別へ接続する条件を確認。可否を一括推定せず、登録/配送の実証可能な条件を記録する。 |
+| D23 | 仕様確認・比較実験・設計検証 | カメラ/ARの同時利用・中断/復帰・資源解放を独立時と比較し、Feature所有者間の取得/競合/返却方式を検証する。 |
+| D24 | 仕様確認・比較実験 | Bluetooth restoration identifierの重複・再起動時のmanager復元・callback所有者を確認。実機と周辺機器が必要な試験を切り分ける。 |
+| D29 | 比較実験・設計検証 | 同一SDKの異なる設定/依存version、process-global delegate/resourcesについて具体的な二Feature構成を作り、衝突と接続・診断手順を検証する。 |
+| D30 | 仕様確認・比較実験・設計検証 | CloudKit等のcontainer/account/record所有権と署名条件を確認。同じ外部identityを使う二Featureの読書き・削除・復帰で差分を検証する。 |
+| D32 | 仕様確認・比較実験 | 局所的な計算・値変換等は、global状態・登録・外部資源を持たない条件を確認して個別に補完不要を判定する。領域全体を一括免除しない。 |
+
+`未対応`の項目にも未確認部分は残る。たとえばD03のhelper extensionの補完範囲、D04のOS上の複数window、D25の監視枠と代替方式は個別の比較実験・設計検証が必要。実装順にこの具体欄と各領域のガイドを更新し、完了した実験を未調査のまま放置しない。

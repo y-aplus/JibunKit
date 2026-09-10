@@ -4,9 +4,17 @@
 
 ## [Unreleased]
 
-### 開発中
+### 0.3.0出荷候補
 
-- Integrationへのホスト活動状態の配送を追加。複数Featureへの実イベント配送は検証中。
+- Feature/profile別Keychain・Cookie・HTTPパスワード資格情報の明示保存とnative URLCacheを追加。実HTTPとiOS process再起動で所有者分離を検証。
+- MiniAppRuntimeの受付停止・Task取消/完了待ち・同期/非同期資源解放と、native URLSessionの終了待ちを追加。
+- 選択復元のstop/apply/resume・重複予約・snapshot調停・取消/失敗段階の報告を追加。
+- 通知カテゴリ合成・動的更新・owner限定削除・foreground方針・custom action配送を追加。
+- host活動状態配送、idle timer lease、Feature/profile別WKWebsiteDataStore割当を追加。
+- singletonのNavigationPathを廃止し、window別の状態所有とprocess通知の一件配送へ変更。
+- 配布候補の本体/Widgetを0.3.0 build 4へ統一。1.0は引き続き未達。
+
+公開状態・検証範囲・既知の不足は[0.3候補記録](docs/verification/2026-09-10-0.3-release.md)を参照。
 
 ## [0.2.0] - 2026-09-09
 
@@ -70,5 +78,6 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.2.0
 [0.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.1.0

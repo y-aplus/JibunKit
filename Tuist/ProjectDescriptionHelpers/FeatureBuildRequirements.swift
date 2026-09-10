@@ -79,7 +79,7 @@ public struct FeatureBuildConfiguration: Sendable {
             infoPlist: merge(kind: "Info.plist", host: infoPlist,
                 contributions: features.map { ($0.owner, $0.infoPlist) },
                 resolutions: infoPlistResolutions,
-                stringSetKeys: ["UIBackgroundModes", "BGTaskSchedulerPermittedIdentifiers", "LSApplicationQueriesSchemes"]),
+                stringSetKeys: ["UIBackgroundModes", "BGTaskSchedulerPermittedIdentifiers", "LSApplicationQueriesSchemes", "NSUserActivityTypes"]),
             entitlements: merge(kind: "entitlements", host: entitlements,
                 contributions: features.map { ($0.owner, $0.entitlements) },
                 resolutions: entitlementResolutions,

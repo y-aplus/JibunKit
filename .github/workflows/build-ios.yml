@@ -211,6 +211,15 @@ jobs:
           if include_spotlight_probe:
               shutil.copyfile(spotlight_probe, 'Sources/JibunKit/SpotlightOwnershipProbe.swift')
               shutil.copyfile(spotlight_tests, 'UITests/SpotlightOwnershipUITests.swift')
+          spotlight_routing_probe = Path('Tests/TemplateIntegration/SpotlightRoutingProbe.swift')
+          spotlight_routing_tests = Path('Tests/TemplateIntegration/SpotlightRoutingUITests.swift')
+          if spotlight_routing_probe.exists() != spotlight_routing_tests.exists():
+              raise SystemExit('Spotlight routing integration fixtures must be added together')
+          include_spotlight_routing_probe = spotlight_routing_probe.exists()
+          if include_spotlight_routing_probe:
+              assert include_spotlight_probe, 'Spotlight routing probe reuses the native ownership query helper'
+              shutil.copyfile(spotlight_routing_probe, 'Sources/JibunKit/SpotlightRoutingProbe.swift')
+              shutil.copyfile(spotlight_routing_tests, 'UITests/SpotlightRoutingUITests.swift')
           web_storage_probe = Path('Tests/TemplateIntegration/WebStorageOwnershipProbe.swift')
           web_storage_tests = Path('Tests/TemplateIntegration/WebStorageOwnershipUITests.swift')
           if web_storage_probe.exists() != web_storage_tests.exists():
@@ -245,6 +254,8 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           if include_spotlight_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightOwnershipProbe.definition,'))
+          if include_spotlight_routing_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        SpotlightRoutingProbe.definitions[0],\n        SpotlightRoutingProbe.definitions[1],'))
           if include_web_storage_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        WebStorageOwnershipProbe.ownerADefinition,\n        WebStorageOwnershipProbe.ownerBDefinition,'))
           if include_background_probe:

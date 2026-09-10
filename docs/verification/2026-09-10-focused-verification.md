@@ -60,3 +60,7 @@ Windows上でworkflowの実際の埋込みPythonを一時checkoutへ実行し、
 D10の実ページ経由localStorage/Cookie比較のため、同じ隔離checkoutへ`WebStorageOwnershipProbe.swift`と`WebStorageOwnershipUITests.swift`を任意でcopyする。両方存在するときだけ`ownerADefinition`と`ownerBDefinition`を一時Registryへ登録し、片方だけはエラーにする。通常IPAは変更しない。
 
 Windowsでworkflowの実際の埋込みPython全体を一時checkoutへ実行し、両方なし・片方のみ・両方ありの3条件と二owner各1回の登録、通常Registryに追加されないことを確認した。native iOSの実ページ書込み・再起動保持・片側削除はD10担当branchの試験で確認する。
+
+## 背景実行の所有権検証接続
+
+D17の`BackgroundExecutionProbe.swift`と`BackgroundExecutionUITests.swift`にも同じ任意接続を追加した。両方がある場合だけ隔離hostへcopyし、`BackgroundExecutionProbe.definition`を登録する。Windowsで実際の埋込みPythonを一時checkoutへ実行し、両方なし・片方のみ拒否・両方ありのcopy/単一登録を確認。通常Registryには追加しない。native begin/endとRuntime終了の結果はD17担当branchで確認する。

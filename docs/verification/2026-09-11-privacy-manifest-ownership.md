@@ -16,10 +16,11 @@ Appleはprivacy manifestをapp/third-party SDK targetのresourceへ追加し、S
 
 ## Native checks
 
-`Tools/verify-privacy-manifest-ownership.py`はA/Bを個別に`swift build`し、各resource bundleのmanifestをplistとして読む。次にTuist hostを二構成でclean buildする。
+`Tools/verify-privacy-manifest-ownership.py`はA/Bを個別に`swift build`し、各resource bundleのmanifestをplistとして読む。次にTuist hostを二構成でclean buildし、さらに通常のFeature削除を模したincremental buildを行う。
 
 - A+B構成: app直下のSwiftPM resource bundlesにA/B、Widgetに直接依存するBを確認。
 - B-only構成: 依存を外し別DerivedDataへ新規buildする。appからA bundleだけが消え、app/WidgetのB manifestが内容・bytesとも維持されることを確認する。これはincremental build directoryからstale resourceを清掃する試験ではない。
+- Incremental構成: 同じproject rootとDerivedDataを維持し、`Project.swift`のA有無リテラルを`true`から`false`へ変更して`tuist generate`と`xcodebuild build`を再実行する。A bundleだけが除去され、app/WidgetのB manifest辞書が維持されることを確認する。
 
 独立buildで読んだA/B辞書を基準に、A+B appのA/B、WidgetのB、B-only app/WidgetのBを個別に照合する。
 
@@ -32,3 +33,5 @@ Run 34530020690, source `1c9eb0ef0e98491ccbc97009ebd7c1d5b3efe026`, はA+BとB-o
 Run 34530426724, source `8136f2f264bc6731cec7bf31e028f8f9d28b3879`, は別project root・別DerivedDataでも環境変数で評価したmanifestのA依存がB-only graphへ残ることを検出した。Tuistのmanifest評価キャッシュに左右されないよう、各clean rootの`Project.swift`へA有無をリテラルで明示して再検証する。
 
 Run 34530924876, source `eb5bd21def96039fedcae1eb57a0d17e19574ba6`, はXcode 26.6で成功した。独立A/B、統合app内A+B、Widget内Bを各manifest辞書まで照合し、別clean Tuist project root・別DerivedDataでAを構成から除いた後はA bundleだけが消え、app/Widget双方のB bundleと内容が維持された。ログ: `Privacy manifests verified: independent A/B, integrated app A+B, widget B, A removal preserves B`。
+
+Run 34532392126, source `8cd84e2d5957f6e92129bda8586be4358ab2e2ab`, はXcode 26.6で同一root・同一DerivedDataのincremental経路にも成功した。A+B build後、`Project.swift`のA有無リテラルを`false`へ変更し、同じ場所で`tuist generate`と`xcodebuild build`を再実行すると、Xcodeは`PrivacyFeatureA_PrivacyFeatureA.bundle`をstale fileとして除去した。検証はapp直下にBだけが残ること、そのbytesが変更前と一致すること、WidgetのB manifest辞書が独立Bと一致することを確認した。追加cleanは不要だった。ログ: `Privacy manifests verified: independent and clean ownership plus same-root incremental A removal preserves B`。

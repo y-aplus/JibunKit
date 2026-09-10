@@ -16,8 +16,10 @@ Featureごとの画面・保存・通知の共存と、nativeビルド設定の�
 
 IPAをSideStoreで再署名して導入します。本体/Widgetは0.4.0 build 5。本体/Widgetのbundle ID、App Group、Counter/Reminderの保存キーは維持しています。Zaikoと検証専用Feature、実機確認待ちのKeychain access-control拡張は含みません。
 
-各単位の検証は[差分台帳](https://github.com/y-aplus/JibunKit/blob/0.4.0/docs/coexistence-ledger.md)、候補全体のCI・source・配布IPAの対応は[公開記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-11-0.4-release.md)に記録します。公開準備中の候補です。
+各単位の検証は[差分台帳](https://github.com/y-aplus/JibunKit/blob/0.4.0/docs/coexistence-ledger.md)、出荷source・配布IPAの対応は[公開記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-11-0.4-release.md)を参照してください。[出荷CI](https://github.com/y-aplus/JibunKit/actions/runs/34531391110)では通常UI 11試験と、Files経由のJSON選択復元を含む出荷検証が成功しました。
+
+[JibunKit.ipaを直接ダウンロード](https://github.com/y-aplus/JibunKit/releases/download/0.4.0/JibunKit.ipa)（927,368 bytes）。SHA-256: `7a96190defae0991eba5a94ef2a185ee02800e7ac042ede2521961ecbb4ad6b0`。出荷sourceは`d22341646e111a6487f8f49ca791320f013bffd3`です。
 
 Feature作者が各部品を所有者へ接続して利用する開発環境です。同一processをOSの別アプリ相当に隔離するものではありません。OS上の複数window、音声/captureなど共有資源、一般callback等の補完は継続中です。実権限grantや署名による利用条件は、ビルド設定の合成とは別に確認が必要です。
 
-この候補IPA自体の実機確認は未実施です。SimulatorのRecords Quick Lookは既知のexpected failureを残し、previewの成功には数えていません。
+この版のIPA自体の実機確認は未実施です。Records/生成Featureの専用UI試験は今回の出荷CIでは実行せず、個別の過去CIを根拠としています。SimulatorのRecords Quick Lookは既知のexpected failureを残し、previewの成功には数えていません。

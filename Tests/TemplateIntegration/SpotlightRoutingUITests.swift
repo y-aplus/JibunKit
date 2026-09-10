@@ -37,8 +37,12 @@ final class SpotlightRoutingUITests: XCTestCase {
             // SpringBoard hosts the gesture, but the searchScreen and keyboard
             // belong to the separate Spotlight process on the CI runtime.
             let spotlight = XCUIApplication(bundleIdentifier: "com.apple.Spotlight")
-            let search = spotlight.searchFields.firstMatch
+            let search = spotlight.textFields["SpotlightSearchField"]
             XCTAssertTrue(search.waitForExistence(timeout: 15), spotlight.debugDescription)
+            let typingIntroduction = spotlight.otherElements["UIContinuousPathIntroductionView"]
+            if typingIntroduction.exists {
+                typingIntroduction.buttons["Continue"].tap()
+            }
             search.tap()
             if let old = search.value as? String, !old.isEmpty {
                 search.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count))

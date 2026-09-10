@@ -29,6 +29,10 @@ source `ce45761`を[34514127926](https://github.com/y-aplus/JibunKit/actions/run
 
 Simulatorログでは19:03:35に`com.apple.Spotlight`がforegroundとなり、同36.082に`searchScreen`がready、同36.949にそのprocessがキーボード入力先になっている。検索画面は表示されたが、テストが`com.apple.springboard`の子要素から検索欄を探していた。検索欄・結果の問い合わせを実際の`com.apple.Spotlight`へ修正し、ホームへ移る操作とスワイプはSpringBoardのままとする。製品配送コードは変更しない。
 
+## 3回目CIと検索欄の型
+
+`34518648791`は118.113秒で検索欄の存在確認（line 41）に失敗。Spotlight processの取得は成功し、失敗時のaccessibility treeには`TextField`、identifier `SpotlightSearchField`、Keyboard Focusedが記録されている。検索欄を`searchFields.firstMatch`で探していたため一致しなかった。実際の型とidentifierへ修正する。同じtreeに`UIContinuousPathIntroductionView`とその`Continue`ボタンもあるため、この初回キーボード案内が存在する場合だけ閉じる。一般のContinueボタンや未確認の座標は使わない。結果選択・配送の検証は引き続き未完。
+
 ## 証拠の境界
 
 2回目のsourceは`3042cae`。検索process参照を修正した`efa4d27`を[34518648791](https://github.com/y-aplus/JibunKit/actions/runs/34518648791)へ送った。再検証も`gh run watch`完了後に親threadへqueue通知する。

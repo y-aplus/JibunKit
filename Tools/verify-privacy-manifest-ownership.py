@@ -37,15 +37,21 @@ for owner in ["FeatureA", "FeatureB"]:
     independent[owner] = read_manifest(manifests[0])
 
 with tempfile.TemporaryDirectory(prefix="jibunkit-privacy-manifest-") as temp:
-    root = Path(temp)
-    (root / "Tuist").mkdir()
-    for name in ["FeatureA", "FeatureB"]:
-        shutil.copytree(fixtures / name, root / name, ignore=shutil.ignore_patterns(".build"))
-    shutil.copyfile(fixtures / "HostProject.swift.fixture", root / "Project.swift")
-    shutil.copyfile(fixtures / "App.swift", root / "App.swift")
-    shutil.copyfile(fixtures / "Widget.swift", root / "Widget.swift")
+    temp_root = Path(temp)
+
+    def make_project(label):
+        root = temp_root / label
+        root.mkdir()
+        (root / "Tuist").mkdir()
+        for name in ["FeatureA", "FeatureB"]:
+            shutil.copytree(fixtures / name, root / name, ignore=shutil.ignore_patterns(".build"))
+        shutil.copyfile(fixtures / "HostProject.swift.fixture", root / "Project.swift")
+        shutil.copyfile(fixtures / "App.swift", root / "App.swift")
+        shutil.copyfile(fixtures / "Widget.swift", root / "Widget.swift")
+        return root
 
     def build(include_a, label):
+        root = make_project(label)
         run([args.tuist, "generate", "--no-open"], root,
             {"PRIVACY_INCLUDE_A": "1" if include_a else "0"})
         derived = root / f"Build-{label}"

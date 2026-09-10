@@ -27,13 +27,18 @@
 | 状況 | 現在の共有経路の動作 | Feature側の責任 |
 | --- | --- | --- |
 | 別の復元・snapshot作成と対象が重複 | 停止・適用前にConflictを返す | 同じ保存先には同じcoordinatorを使う |
-| stopがthrow | apply/resumeを呼ばない | stopの失敗時に利用可能な状態へ戻す |
+| stopがthrow | 任意のrecoverAfterFailedStopを待ち、apply/resumeを呼ばない | callbackを登録するか、stop自身で利用可能な状態へ戻す |
+| stop後の回復もthrow | 両方の理由を保持し、stopAndRecoveryとして未復元・利用状態への回復失敗を報告 | 部分停止した資源を診断し、利用受付を安全な状態に保つ |
 | applyがthrow | resumeを試み、後続Featureは変更しない | 部分変更を想定した保存層の回復 |
 | resumeがthrow | データ適用済みと再開失敗を区別して報告 | 再接続失敗後の利用制限・回復 |
 | 取消済みで開始前 | 何も変更せず終了 | 取消を無視する独自入口を作らない |
 | 複数Feature途中で取消 | 着手済みの再開を終え、次の着手前に中止 | 完了済みを全体rollbackと誤認しない |
 
 ## 検証済みの範囲と残件
+
+`recoverAfterFailedStop`は停止途中で失敗した資源のための任意callbackで、正常に停止した後の`resume`とは別である。登録しなければ従来通りstop自身が回復する。callbackが成功しても復元は失敗として終了し、後続Featureは開始しない。実行中は同じcoordinatorの復元・snapshot予約を保持し、取消されても回復の完了を待つ。callback内の取消に弱いAPIはFeatureが扱う必要がある。通常書込みの受付までこの予約で自動制御するものではない。
+
+DB接続の状態確認、必要な再接続、新しいRuntime作成、UI以外の受付再開をこの順序で行う。閉じられた接続も生きた接続もある途中状態から、検査なしに一律再生成してはならない。[停止失敗回復の検証記録](verification/2026-09-11-restore-stop-recovery.md)を参照。
 
 - unit: 受付閉鎖、Task完了待ち、同期/非同期解放順序、同時shutdown合流、重複予約拒否、取消、snapshotとの競合、他owner継続。
 - CIの実画面: 選択復元の成功と4つの失敗経路、AのRuntime再開とBのTask/データ維持。

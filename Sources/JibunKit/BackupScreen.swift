@@ -247,6 +247,8 @@ struct BackupScreen: View {
                     detail = "このアプリの復元を始める前に中止しました。このアプリの保存データは変更していません。"
                 case .stop:
                     detail = "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。"
+                case .stopAndRecovery:
+                    detail = "保存データは復元していません。このアプリの停止に失敗し、利用できる状態へ戻すこともできませんでした。"
                 case .apply:
                     detail = "保存データの復元に失敗しました。一部が変更されている可能性があります。"
                 case .resume:

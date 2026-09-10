@@ -41,6 +41,16 @@ final class LifecycleProbeState {
     func stopForRestore(owner: String) async throws {
         if owner == "lifecycle-a", restoreFault == "stop" { throw MiniAppBackupError.invalidEntry }
         await shutdown()
+        if owner == "lifecycle-a", ["stop-after-shutdown", "stop-recovery"].contains(restoreFault) {
+            throw MiniAppBackupError.invalidEntry
+        }
+    }
+
+    func recoverAfterFailedStop(owner: String) throws {
+        // The old pre-stop failure leaves the original runtime usable.
+        guard runtime.isClosed else { return }
+        if owner == "lifecycle-a", restoreFault == "stop-recovery" { throw MiniAppBackupError.invalidEntry }
+        resumeAfterRestore()
     }
 
     func resumeForRestore(owner: String) throws {
@@ -176,7 +186,8 @@ enum LifecycleProbeIntegration {
         return MiniAppDefinition(id: context.id, title: id, systemImage: "clock",
                           backup: backup,
                           restoreLifecycle: MiniAppRestoreLifecycle(stop: { try await state.stopForRestore(owner: id) },
-                              resume: { try await state.resumeForRestore(owner: id) }),
+                              resume: { try await state.resumeForRestore(owner: id) },
+                              recoverAfterFailedStop: { try await state.recoverAfterFailedStop(owner: id) }),
                           appendDestination: { destination, path in
                               guard let value = Int(destination), value > 0 else { return false }
                               path.append(value)

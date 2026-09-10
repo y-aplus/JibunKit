@@ -2,6 +2,37 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testFailedStopRecoveryKeepsReservationUntilFinishedEvenAfterCancellation() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let owner = MiniAppID("a")
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { XCTFail("Failed stop applied") }])
+        let lifecycle = MiniAppRestoreLifecycle(stop: { throw MiniAppBackupError.invalidEntry },
+            resume: { XCTFail("Normal resume ran") }, recoverAfterFailedStop: { await gate.block() })
+        let request = Task { try await plan.apply(lifecycles: [owner: lifecycle], coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        request.cancel()
+        let snapshot = MiniAppBackupProvider(id: owner, export: {
+            XCTFail("Read during partial shutdown recovery")
+            throw MiniAppBackupError.invalidEntry
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await snapshot.exportEntry(coordinator: coordinator)
+            XCTFail("Recovery reservation released too early")
+        } catch let failure as MiniAppRestoreCoordinator.Conflict {
+            XCTAssertEqual(failure.owners, [owner])
+        }
+        let other = try MiniAppRestorePlan(prepared: [MiniAppID("b"): MiniAppPreparedRestore {}])
+        try await other.apply(coordinator: coordinator)
+        await gate.release()
+        do {
+            try await request.value
+            XCTFail("Expected failed stop")
+        } catch let failure as MiniAppRestoreFailure { XCTAssertEqual(failure.stage, .stop) }
+        let retry = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
+        try await retry.apply(coordinator: coordinator)
+    }
+
     func testFailedAndInvalidExportsReleaseTheirOwner() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let owner = MiniAppID("a")

@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Featureとhostの言語別InfoPlist.stringsを合成し、app/Widgetへ別々に組み込む。言語・keyごとの衝突を明示解決でき、削除済み設定は次回生成で除去する。CIは固定文言でなく、各targetの生成設定と実bundleの一致を確認する。
+
 - UIKitの短時間バックグラウンド実行tokenをFeature/処理ごとに所有し、個別完了・期限切れ・Runtime終了・解放時に終了するAPIを追加。他Featureのtokenを維持し、重複終了を防ぐ。OSの実行時間枠はhost全体で共有する。
 
 - Core SpotlightのFeature別item/domain識別子と所有者限定削除を追加。native属性を保持し、Aの削除後もBの検索結果が残ることを署名付きiOS hostで検証。検索結果から所有Featureの詳細へ配送し、別Featureの経路を保持。host終了後の検索結果からの起動も検証した。

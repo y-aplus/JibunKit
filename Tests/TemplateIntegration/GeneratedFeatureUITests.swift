@@ -3,6 +3,55 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testSceneIdleRequestSuspendsResumesAndPreservesOtherOwner() {
+        continueAfterFailure = false
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_SCENE_IDLE_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func expect(_ id: String, _ value: String) {
+            let text = app.staticTexts.matching(identifier: id)
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func read(_ value: String) {
+            tap("scene.idle.read")
+            expect("scene.idle.result", value)
+        }
+        func select(_ owner: String) {
+            tap("miniapp.switch.open")
+            tap("miniapp.switch.\(owner)")
+        }
+        tap("miniapp.lifecycle-a")
+        tap("scene.idle.request")
+        read("disabled:lifecycle-a")
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.activate()
+        expect("scene.idle.background", "released")
+        read("disabled:lifecycle-a")
+        select("lifecycle-b")
+        read("enabled:")
+        tap("scene.idle.manual")
+        read("disabled:lifecycle-b")
+        select("lifecycle-a")
+        read("disabled:lifecycle-a,lifecycle-b")
+        tap("scene.idle.shutdown")
+        expect("scene.idle.result", "disabled:lifecycle-b")
+        select("lifecycle-b")
+        tap("scene.idle.manual-release")
+        read("enabled:")
+        select("lifecycle-a")
+        tap("scene.idle.request")
+        expect("scene.idle.error", "closed")
+        read("enabled:")
+    }
+
     func testSceneActivityFollowsSelectionAndBackgroundWithoutStoppingOtherWork() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")

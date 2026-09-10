@@ -12,6 +12,22 @@ import WebKit
 final class LifecycleProbeState {
     var events: [String] = []
     var sceneEvents: [MiniAppSceneActivity] = []
+    var sceneIdle: MiniAppSceneIdleTimer?
+    var sceneIdleError = "none"
+    var sceneIdleBackgroundReleased = false
+
+    func receiveSceneIdle(_ activity: MiniAppSceneActivity) {
+        guard ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" else { return }
+        do {
+            if sceneIdle == nil {
+                sceneIdle = try runtime.makeSceneIdleTimer(for: activity.featureID, using: .shared)
+            }
+            sceneIdle?.receive(activity)
+            if activity.phase == .background && activity.isSelected {
+                sceneIdleBackgroundReleased = !UIApplication.shared.isIdleTimerDisabled
+            }
+        } catch { sceneIdleError = String(describing: error) }
+    }
     var restoredValue = "original"
     var showingRestore = false
     var idleLease: MiniAppIdleTimerLease?
@@ -167,7 +183,7 @@ enum LifecycleProbeIntegration {
                               return true
                           },
                           onHostPhaseChange: { state.receive($0) },
-                          onSceneActivityChange: { state.sceneEvents.append($0) },
+                          onSceneActivityChange: { state.sceneEvents.append($0); state.receiveSceneIdle($0) },
                           onNotificationAction: { action in
                               if case let .custom(identifier) = action.kind { state.lastAction = identifier }
                           },
@@ -181,7 +197,9 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             Group {
-            if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
+            if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" {
+                SceneIdleTimerProbeView(context: context, state: state)
+            } else if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
                 sceneActivityProbe
             } else if ProcessInfo.processInfo.environment["JIBUNKIT_NAVIGATION_PROBE"] == "1" {
                 NavigationRetentionProbeView(owner: context.id.rawValue)
@@ -588,6 +606,38 @@ private struct NetworkCookieProbeView: View {
                 result = "ready"
             } catch { result = "error: \(error)" }
         }
+    }
+}
+
+private struct SceneIdleTimerProbeView: View {
+    let context: MiniAppContext
+    let state: LifecycleProbeState
+    @State private var result = "unread"
+    var body: some View {
+        VStack {
+            Text(result).accessibilityIdentifier("scene.idle.result")
+            Text(state.sceneIdleError).accessibilityIdentifier("scene.idle.error")
+            Text(state.sceneIdleBackgroundReleased ? "released" : "unseen")
+                .accessibilityIdentifier("scene.idle.background")
+            Button("Request while selected") {
+                do {
+                    guard let scope = state.sceneIdle else { state.sceneIdleError = "missing scope"; return }
+                    try scope.setRequested(true)
+                } catch { state.sceneIdleError = String(describing: error) }
+                read()
+            }.accessibilityIdentifier("scene.idle.request")
+            Button("Manual request") { state.acquireIdle(context: context); read() }
+                .accessibilityIdentifier("scene.idle.manual")
+            Button("Release manual") { state.idleLease?.release(); state.idleLease = nil; read() }
+                .accessibilityIdentifier("scene.idle.manual-release")
+            Button("Shutdown") { Task { await state.shutdown(); read() } }
+                .accessibilityIdentifier("scene.idle.shutdown")
+            Button("Read", action: read).accessibilityIdentifier("scene.idle.read")
+        }
+    }
+    private func read() {
+        let owners = MiniAppIdleTimer.shared.activeOwners.map(\.rawValue).sorted().joined(separator: ",")
+        result = "\(UIApplication.shared.isIdleTimerDisabled ? "disabled" : "enabled"):\(owners)"
     }
 }
 

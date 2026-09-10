@@ -40,7 +40,7 @@ public struct MiniAppBackupProvider: Sendable {
 }
 
 public struct MiniAppRestoreFailure: Error, Sendable {
-    public enum Stage: Sendable, Equatable { case cancelledBeforeStart, stop, apply, resume, applyAndResume }
+    public enum Stage: Sendable, Equatable { case cancelledBeforeStart, stop, stopAndRecovery, apply, resume, applyAndResume }
     public let completed: [MiniAppID]
     public let failed: MiniAppID
     public let reason: String
@@ -105,8 +105,8 @@ public struct MiniAppRestorePlan: Sendable {
                 completed.append(id)
             } catch {
                 let stage: MiniAppRestoreFailure.Stage
-                if error is MiniAppRestoreLifecycle.StopFailure {
-                    stage = .stop
+                if let failure = error as? MiniAppRestoreLifecycle.StopFailure {
+                    stage = failure.recoveryReason == nil ? .stop : .stopAndRecovery
                 } else if let failure = error as? MiniAppRestoreLifecycle.Failure {
                     stage = failure.restoreReason == nil ? .resume : .applyAndResume
                 } else {

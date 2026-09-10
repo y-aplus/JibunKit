@@ -47,6 +47,59 @@ final class MiniAppRestoreLifecycleTests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    func testFailedStopRecoveryPreservesBothReasonsAndDoesNotStartLaterOwner() async throws {
+        let owner = MiniAppID("a")
+        for recoveryFails in [false, true] {
+            let events = RestoreEvents()
+            let plan = try MiniAppRestorePlan(prepared: [
+                owner: MiniAppPreparedRestore { XCTFail("Apply after failed stop") },
+                MiniAppID("b"): MiniAppPreparedRestore { XCTFail("Later owner changed") }
+            ])
+            let lifecycle = MiniAppRestoreLifecycle(stop: {
+                await events.append("stop")
+                throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "store still busy"])
+            }, resume: { XCTFail("Normal resume after failed stop") }, recoverAfterFailedStop: {
+                await events.append("recover")
+                if recoveryFails {
+                    throw NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "connection unavailable"])
+                }
+            })
+            do {
+                try await plan.apply(lifecycles: [owner: lifecycle], coordinator: MiniAppRestoreCoordinator())
+                XCTFail("Stop failure must still be reported after recovery")
+            } catch let failure as MiniAppRestoreFailure {
+                XCTAssertEqual(failure.stage, recoveryFails ? .stopAndRecovery : .stop)
+                XCTAssertTrue(failure.reason.contains("store still busy"))
+                XCTAssertEqual(failure.reason.contains("connection unavailable"), recoveryFails)
+                XCTAssertEqual(failure.failed, owner)
+                XCTAssertTrue(failure.completed.isEmpty)
+            }
+            let observed = await events.values
+            XCTAssertEqual(observed, ["stop", "recover"])
+        }
+    }
+
+    func testSuccessfulStopNeverUsesFailedStopRecoveryEvenWhenApplyFails() async throws {
+        for applyFails in [false, true] {
+            let events = RestoreEvents()
+            let lifecycle = MiniAppRestoreLifecycle(stop: { await events.append("stop") },
+                resume: { await events.append("resume") },
+                recoverAfterFailedStop: { XCTFail("Recovery belongs only to failed stop") })
+            do {
+                try await lifecycle.perform {
+                    await events.append("apply")
+                    if applyFails { throw Fault.restore }
+                }
+                XCTAssertFalse(applyFails)
+            } catch let failure as Fault {
+                XCTAssertTrue(applyFails)
+                XCTAssertEqual(failure, .restore)
+            }
+            let observed = await events.values
+            XCTAssertEqual(observed, ["stop", "apply", "resume"])
+        }
+    }
+
     func testPlanPreservesCombinedFailureAndDoesNotRunLaterOwner() async throws {
         let owner = MiniAppID("a")
         let plan = try MiniAppRestorePlan(prepared: [

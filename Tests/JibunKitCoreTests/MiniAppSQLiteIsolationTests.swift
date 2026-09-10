@@ -82,6 +82,73 @@ final class MiniAppSQLiteIsolationTests: XCTestCase {
         try files.prepareDirectory()
         return files
     }
+
+    @MainActor
+    func testBusyDatabaseCloseRecoversRuntimeWithoutApplyingOrChangingOtherOwner() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = try files("database-a", root: root)
+        let b = try files("database-b", root: root)
+        let first = try SQLiteRestoreOwner(a.fileURL(named: "store.sqlite"))
+        let second = try SQLiteRestoreOwner(b.fileURL(named: "store.sqlite"))
+        defer { first.dispose(); second.dispose() }
+        let oldRuntime = first.runtime
+        let statement = try first.database.prepare("SELECT value FROM entry")
+        defer { sqlite3_finalize(statement) }
+        let id = MiniAppID("database-a")
+        let lifecycle = MiniAppRestoreLifecycle(stop: { try await first.stop() },
+            resume: { XCTFail("Normal resume must not run") },
+            recoverAfterFailedStop: { try await first.recover() })
+        let plan = try MiniAppRestorePlan(prepared: [id: MiniAppPreparedRestore {
+            XCTFail("A live database must not be replaced")
+        }])
+        do {
+            try await plan.apply(lifecycles: [id: lifecycle], coordinator: MiniAppRestoreCoordinator())
+            XCTFail("Expected native BUSY close failure")
+        } catch let failure as MiniAppRestoreFailure {
+            XCTAssertEqual(failure.stage, .stop)
+            XCTAssertEqual(first.closeStatus, Int(SQLITE_BUSY))
+        }
+        XCTAssertTrue(oldRuntime.isClosed)
+        XCTAssertFalse(first.runtime.isClosed)
+        XCTAssertFalse(second.runtime.isClosed)
+        XCTAssertFalse(first.runtime === oldRuntime)
+        // Exercise new work through each owner's runtime and the still-live databases.
+        let firstWork = try first.runtime.start { try? await first.write(6) }
+        let otherWork = try second.runtime.start { try? await second.write(8) }
+        await firstWork.value
+        await otherWork.value
+        XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 6)
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+        await first.runtime.shutdown()
+        await second.runtime.shutdown()
+    }
+}
+
+@MainActor
+private final class SQLiteRestoreOwner {
+    let database: NativeSQLiteFixture
+    var runtime = MiniAppRuntime()
+    var closeStatus: Int?
+
+    init(_ url: URL) throws {
+        database = try NativeSQLiteFixture(url)
+        try database.exec("CREATE TABLE entry(value INTEGER); INSERT INTO entry VALUES(5)")
+    }
+    func stop() async throws {
+        await runtime.shutdown()
+        do { try database.close() } catch {
+            closeStatus = (error as NSError).code
+            throw error
+        }
+    }
+    func recover() throws {
+        // Native BUSY leaves the connection alive; verify it before reopening admission.
+        _ = try database.scalar("SELECT value FROM entry")
+        runtime = MiniAppRuntime()
+    }
+    func write(_ value: Int) throws { try database.exec("UPDATE entry SET value=\(value)") }
+    func dispose() { try? database.close() }
 }
 
 private final class NativeSQLiteFixture {

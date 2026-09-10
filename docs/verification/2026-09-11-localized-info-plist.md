@@ -17,3 +17,5 @@ Appleは用途説明を含む人向けInfo.plist値のlocalizeを推奨し、各
 native Tuist helper testは、ja/enの同値保持、異値衝突時のlocale/key/owner付き拒否、hostの明示resolution、余剰resolution/空locale/key拒否、app/widget分離を確認する。
 
 build probeはappと埋込みwidget extensionを実際に生成・buildする。両bundleの`en.lproj`/`ja.lproj`を確認し、Foundation `Bundle`でlocalizationを指定して`InfoPlist.strings`をnative読戻しする。appでは解決済み`NSCameraUsageDescription`、widgetではtarget固有`CFBundleDisplayName`を比較する。Python辞書の合成結果だけでは成功扱いしない。
+
+Run 34523984820, source `8445cebba4b773829c7d7fc65452273570c3ce32`, はhelper検査とTuist生成を通過したが、fixtureがresourceをTuist管理対象の`Derived/`へ書いたためgenerate後に入力fileが消え、Xcode buildで失敗した。生成先をTuistが清掃しない`GeneratedResources/`へ変更する。

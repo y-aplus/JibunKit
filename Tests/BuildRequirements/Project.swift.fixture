@@ -32,17 +32,17 @@ let widgetBuild = try FeatureBuildConfiguration(features: [
 ]).compose(infoPlist: [
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
 ], entitlements: [:])
-try build.writeLocalizedInfoPlistStrings(to: "Derived/AppInfo")
-try widgetBuild.writeLocalizedInfoPlistStrings(to: "Derived/WidgetInfo")
+try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
+try widgetBuild.writeLocalizedInfoPlistStrings(to: "GeneratedResources/WidgetInfo")
 
 let project = Project(name: "BuildRequirementProbe", targets: [
     .target(name: "BuildRequirementProbe", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.build-probe", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: build.infoPlist), sources: ["App.swift"],
-        resources: ["Derived/AppInfo/**"], entitlements: .dictionary(build.entitlements),
+        resources: ["GeneratedResources/AppInfo/**"], entitlements: .dictionary(build.entitlements),
         dependencies: [.target(name: "BuildRequirementProbeWidget")]),
     .target(name: "BuildRequirementProbeWidget", destinations: .iOS, product: .appExtension,
         bundleId: "com.jibunkit.build-probe.Widget", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: widgetBuild.infoPlist), sources: ["Widget.swift"],
-        resources: ["Derived/WidgetInfo/**"])
+        resources: ["GeneratedResources/WidgetInfo/**"])
 ])

@@ -1,0 +1,30 @@
+import ProjectDescription
+
+let project = Project(name: "WebAuthenticationNative", targets: [
+    .target(
+        name: "WebAuthenticationNative",
+        destinations: .iOS,
+        product: .app,
+        bundleId: "com.jibunkit.web-auth-native-probe",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: [
+            "CFBundleURLTypes": [[
+                "CFBundleURLName": "com.jibunkit.web-auth-native-probe",
+                "CFBundleURLSchemes": ["jibunkit-auth-probe"],
+            ]],
+            "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
+            "UILaunchScreen": [:],
+        ]),
+        sources: ["App.swift"]
+    ),
+    .target(
+        name: "WebAuthenticationNativeUITests",
+        destinations: .iOS,
+        product: .uiTests,
+        bundleId: "com.jibunkit.web-auth-native-probe.ui-tests",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .default,
+        sources: ["UITests.swift"],
+        dependencies: [.target(name: "WebAuthenticationNative")]
+    ),
+])

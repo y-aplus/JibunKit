@@ -122,6 +122,8 @@ public struct FeatureBuildConfiguration: Sendable {
                 result[key] = .array(strings.sorted().map { .string($0) })
             } else if let resolution = resolutions[key] {
                 result[key] = resolution
+            } else if kind == "Info.plist", key == "CFBundleURLTypes" {
+                result[key] = try mergeURLTypes(requests)
             } else if let first = requests.first?.1, requests.allSatisfy({ $0.1 == first }) {
                 result[key] = first
             } else {
@@ -130,6 +132,43 @@ public struct FeatureBuildConfiguration: Sendable {
             }
         }
         return result
+    }
+
+    /// Preserve native declarations as dictionaries, rather than flattening
+    /// schemes and losing their names, roles, icons, or custom metadata.
+    private func mergeURLTypes(_ requests: [(String, Plist.Value)]) throws -> Plist.Value {
+        var declarations: [[String: Plist.Value]] = []
+        var named: [String: (owner: String, declaration: [String: Plist.Value])] = [:]
+        for (owner, value) in requests {
+            guard case let .array(values) = value else {
+                throw Failure("\(owner) must supply a dictionary array for CFBundleURLTypes")
+            }
+            for value in values {
+                guard case let .dictionary(declaration) = value else {
+                    throw Failure("\(owner) must supply a dictionary array for CFBundleURLTypes")
+                }
+                if let schemes = declaration["CFBundleURLSchemes"] {
+                    guard case let .array(values) = schemes,
+                          values.allSatisfy({ value in
+                              if case .string = value { return true }
+                              return false
+                          }) else {
+                        throw Failure("\(owner) must supply a string array for CFBundleURLSchemes")
+                    }
+                }
+                if let value = declaration["CFBundleURLName"] {
+                    guard case let .string(name) = value else {
+                        throw Failure("\(owner) must supply a string for CFBundleURLName")
+                    }
+                    if let previous = named[name], previous.declaration != declaration {
+                        throw Failure("Conflicting CFBundleURLTypes name \(name) requested by \(previous.owner), \(owner); add an explicit resolution")
+                    }
+                    named[name] = (owner, declaration)
+                }
+                if !declarations.contains(declaration) { declarations.append(declaration) }
+            }
+        }
+        return .array(declarations.map { .dictionary($0) })
     }
 
     private func mergeLocalizedInfoPlist(

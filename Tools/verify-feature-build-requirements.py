@@ -58,6 +58,13 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-build-requirements-") as temp:
     assert info["NSCameraUsageDescription"] == "Camera takes photos; Scanner scans documents"
     assert info["UIBackgroundModes"] == ["audio", "processing"]
     assert info["BGTaskSchedulerPermittedIdentifiers"] == ["com.jibunkit.build-scanner.refresh"]
+    assert info["CFBundleURLTypes"] == [
+        {"CFBundleURLName": "com.jibunkit.host", "CFBundleURLSchemes": ["host"]},
+        {"CFBundleURLName": "com.jibunkit.camera", "CFBundleURLSchemes": ["camera", "shared"],
+         "CFBundleTypeRole": "Viewer", "CFBundleURLIconFile": "CameraIcon"},
+        {"CFBundleURLName": "com.jibunkit.scanner", "CFBundleURLSchemes": ["scanner", "shared"],
+         "CFBundleTypeRole": "Editor"},
+    ]
     readback = root / "bundle-readback"
     run(["swiftc", repo / "Tests/BuildRequirements/BundleReadback.swift", "-o", readback])
     run([readback, app, "en", "NSCameraUsageDescription", "Use camera to scan documents"])
@@ -65,6 +72,9 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-build-requirements-") as temp:
     extensions = list(app.glob("PlugIns/*.appex"))
     assert len(extensions) == 1, extensions
     widget = extensions[0]
+    with (widget / "Info.plist").open("rb") as file:
+        assert "CFBundleURLTypes" not in plistlib.load(file)
+    print("Native URL declarations preserve host, Feature schemes/roles/icons, and target separation")
     run([readback, widget, "en", "CFBundleDisplayName", "Build Probe Widget"])
     run([readback, widget, "ja", "CFBundleDisplayName", "ビルド検証ウィジェット"])
     app_localizations = {path.name for path in app.glob("*.lproj")}

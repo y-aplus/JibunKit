@@ -30,6 +30,31 @@ final class LifecycleProbeState {
     }
     var restoredValue = "original"
     var showingRestore = false
+    var storeAccessStatus = "idle"
+    private var storeAccessInput: AsyncStream<Void>.Continuation?
+
+    func startStoreAccess(owner: MiniAppID) {
+        guard storeAccessStatus != "running", storeAccessStatus != "starting" else { return }
+        let channel = AsyncStream<Void>.makeStream()
+        storeAccessInput = channel.continuation
+        storeAccessStatus = "starting"
+        do {
+            try runtime.start { [self] in
+                do {
+                    try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: owner) { [self] in
+                        await setStoreAccessStatus("running")
+                        for await _ in channel.stream { }
+                        try Task.checkCancellation()
+                        await finishStoreWrite()
+                    }
+                    await setStoreAccessStatus("completed")
+                } catch { await setStoreAccessStatus("failed") }
+            }
+        } catch { storeAccessStatus = "failed" }
+    }
+    func finishStoreAccess() { storeAccessInput?.finish(); storeAccessInput = nil }
+    private func setStoreAccessStatus(_ value: String) { storeAccessStatus = value }
+    private func finishStoreWrite() { restoredValue = "written" }
     var idleLease: MiniAppIdleTimerLease?
     var taskStatus = "idle"
     var categories = "unread"
@@ -208,7 +233,9 @@ enum LifecycleProbeIntegration {
                               return id == "lifecycle-a" ? [] : [.list]
                           }) { _ in
             Group {
-            if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" {
+            if ProcessInfo.processInfo.environment["JIBUNKIT_STORE_ACCESS_PROBE"] == "1" {
+                StoreAccessProbeView(context: context, state: state)
+            } else if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_IDLE_PROBE"] == "1" {
                 SceneIdleTimerProbeView(context: context, state: state)
             } else if ProcessInfo.processInfo.environment["JIBUNKIT_SCENE_ACTIVITY_PROBE"] == "1" {
                 sceneActivityProbe
@@ -288,6 +315,29 @@ enum LifecycleProbeIntegration {
         case nil: phase = "disconnected"
         }
         return "\(phase):\(activity.isSelected ? 1 : 0)"
+    }
+}
+
+private struct StoreAccessProbeView: View {
+    let context: MiniAppContext
+    let state: LifecycleProbeState
+    @State private var showingRestore = false
+    var body: some View {
+        VStack {
+            Text(state.storeAccessStatus).accessibilityIdentifier("store.access.status")
+            Text(state.restoredValue).accessibilityIdentifier("runtime.restored.value")
+            Button("Begin write") { state.startStoreAccess(owner: context.id) }
+                .accessibilityIdentifier("store.access.start")
+            Button("Finish write", action: state.finishStoreAccess)
+                .accessibilityIdentifier("store.access.finish")
+            Button("Restore probe") { showingRestore = true }
+                .accessibilityIdentifier("runtime.restore.open")
+        }
+        .sheet(isPresented: $showingRestore) {
+            BackupScreen(definitions: LifecycleProbeIntegration.definitions, importedBackup: try! MiniAppBackup(entries: [
+                MiniAppBackupEntry(id: context.id, schemaVersion: 1, payload: Data("restored".utf8))
+            ]))
+        }
     }
 }
 

@@ -2,6 +2,86 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testOrdinaryAccessesOverlapAndKeepRestoreExcludedUntilLastExit() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let a = MiniAppID("a")
+        let firstGate = RestoreCoordinatorGate()
+        let secondGate = RestoreCoordinatorGate()
+        let first = Task { try await coordinator.withStoreAccess(for: a) { await firstGate.block() } }
+        await firstGate.waitUntilBlocked()
+        let second = Task { try await coordinator.withStoreAccess(for: a) { await secondGate.block() } }
+        await secondGate.waitUntilBlocked()
+        let other = try await coordinator.withStoreAccess(for: MiniAppID("b")) { "other proceeds" }
+        XCTAssertEqual(other, "other proceeds")
+        let plan = try MiniAppRestorePlan(prepared: [a: MiniAppPreparedRestore {}])
+        for phase in 0..<2 {
+            do {
+                try await plan.apply(coordinator: coordinator)
+                XCTFail("Restore overlapped admitted access")
+            } catch let failure as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(failure.owners, [a]) }
+            if phase == 0 {
+                first.cancel()
+                await firstGate.release()
+                try await first.value
+            }
+        }
+        second.cancel()
+        let snapshot = MiniAppBackupProvider(id: a, export: {
+            XCTFail("Snapshot read during admitted access")
+            throw MiniAppBackupError.invalidEntry
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await snapshot.exportEntry(coordinator: coordinator)
+            XCTFail("Cancellation prematurely released access")
+        } catch is MiniAppRestoreCoordinator.Conflict {}
+        await secondGate.release()
+        try await second.value
+        try await plan.apply(coordinator: coordinator)
+    }
+
+    func testExclusiveRestoreRejectsNewAccessButOtherOwnerContinues() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let gate = RestoreCoordinatorGate()
+        let a = MiniAppID("a")
+        let plan = try MiniAppRestorePlan(prepared: [a: MiniAppPreparedRestore { await gate.block() }])
+        let restore = Task { try await plan.apply(coordinator: coordinator) }
+        await gate.waitUntilBlocked()
+        do {
+            try await coordinator.withStoreAccess(for: a) { XCTFail("Read/write entered during restore") }
+            XCTFail("Expected conflict")
+        } catch let failure as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(failure.owners, [a]) }
+        let other = try await coordinator.withStoreAccess(for: MiniAppID("b")) { 42 }
+        XCTAssertEqual(other, 42)
+        await gate.release()
+        try await restore.value
+        let result = try await coordinator.withStoreAccess(for: a) { "available" }
+        XCTAssertEqual(result, "available")
+    }
+
+    func testFailedCancelledAndInvalidAccessDoNotLeakAdmission() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let a = MiniAppID("a")
+        do {
+            try await coordinator.withStoreAccess(for: a) { throw CancellationError() }
+            XCTFail("Expected operation error")
+        } catch is CancellationError {}
+        do {
+            try await coordinator.withStoreAccess(for: MiniAppID("invalid/id")) { XCTFail("Invalid owner accepted") }
+            XCTFail("Expected invalid owner")
+        } catch let failure as MiniAppBackupError { XCTAssertEqual(failure, .invalidEntry) }
+        let gate = RestoreCoordinatorGate()
+        let request = Task {
+            await gate.block()
+            try await coordinator.withStoreAccess(for: a) { XCTFail("Cancelled operation admitted") }
+        }
+        await gate.waitUntilBlocked()
+        request.cancel()
+        await gate.release()
+        do { try await request.value; XCTFail("Expected cancellation") } catch is CancellationError {}
+        let plan = try MiniAppRestorePlan(prepared: [a: MiniAppPreparedRestore {}])
+        try await plan.apply(coordinator: coordinator)
+    }
+
     func testFailedStopRecoveryKeepsReservationUntilFinishedEvenAfterCancellation() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let gate = RestoreCoordinatorGate()

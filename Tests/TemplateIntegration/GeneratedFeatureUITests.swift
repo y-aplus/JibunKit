@@ -327,6 +327,62 @@ final class GeneratedFeatureUITests: XCTestCase {
         }
     }
 
+    func testOrdinaryStoreAccessBlocksRestoreUntilFinishedAndPreservesOtherOwner() {
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launchEnvironment["JIBUNKIT_STORE_ACCESS_PROBE"] = "1"
+        app.launch()
+        func tap(_ id: String) {
+            let button = app.buttons[id]
+            XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
+            button.tap()
+        }
+        func status(_ value: String) {
+            let text = app.staticTexts.matching(identifier: "store.access.status")
+                .matching(NSPredicate(format: "label == %@", value)).firstMatch
+            XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
+        }
+        func restore() {
+            tap("runtime.restore.open")
+            let selection = app.switches["backup.restore.lifecycle-a"]
+            XCTAssertTrue(selection.waitForExistence(timeout: 10))
+            selection.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            tap("backup.restore")
+            app.alerts.buttons["置き換えて復元"].tap()
+        }
+        for owner in ["lifecycle-b", "lifecycle-a"] {
+            tap("miniapp.\(owner)")
+            tap("store.access.start")
+            status("running")
+            if owner == "lifecycle-b" { app.navigationBars.buttons["ミニアプリ"].tap() }
+        }
+        restore()
+        let conflict = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "lifecycle-aはデータを使用中です。")).firstMatch
+        XCTAssertTrue(conflict.waitForExistence(timeout: 10), app.debugDescription)
+        tap("閉じる")
+        status("running")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+        tap("store.access.finish")
+        status("completed")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "written")
+        restore()
+        XCTAssertTrue(app.staticTexts["lifecycle-aを復元しました。"].waitForExistence(timeout: 10), app.debugDescription)
+        tap("閉じる")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "restored")
+        // A accepts a fresh ordinary operation after the restore's runtime restart.
+        tap("store.access.start")
+        status("running")
+        tap("store.access.finish")
+        status("completed")
+        app.navigationBars.buttons["ミニアプリ"].tap()
+        tap("miniapp.lifecycle-b")
+        status("running")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
+        tap("store.access.finish")
+        status("completed")
+        XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "written")
+    }
+
     func testSelectedRestoreStopsAndRestartsOnlyItsRuntime() {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

@@ -183,7 +183,7 @@ struct BackupScreen: View {
                     exportingArchive = true
                 }
             } catch is MiniAppRestoreCoordinator.Conflict {
-                status = "選択したアプリは別のバックアップ作成または復元を実行中です。完了してからもう一度お試しください。ファイルは書き出していません。"
+                status = "選択したアプリはデータを使用中です。処理が完了してからもう一度お試しください。ファイルは書き出していません。"
             } catch { status = "バックアップを作成できませんでした。ファイルは書き出していません。" }
         }
     }
@@ -238,7 +238,7 @@ struct BackupScreen: View {
                 status = "復元の開始前に中止しました。保存データは変更していません。"
             } catch let error as MiniAppRestoreCoordinator.Conflict {
                 let names = error.owners.sorted { $0.rawValue < $1.rawValue }.map(title).joined(separator: "、")
-                status = "\(names)は別のバックアップ作成または復元を実行中です。完了してからもう一度選択してください。今回の復元では保存データを変更していません。"
+                status = "\(names)はデータを使用中です。処理が完了してからもう一度選択してください。今回の復元では保存データを変更していません。"
             } catch let error as MiniAppRestoreFailure {
                 let completed = error.completed.map(title).joined(separator: "、")
                 let detail: String

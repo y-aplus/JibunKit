@@ -123,6 +123,72 @@ final class MiniAppSQLiteIsolationTests: XCTestCase {
         await first.runtime.shutdown()
         await second.runtime.shutdown()
     }
+
+    @MainActor
+    func testAdmittedNativeTransactionPreventsRestoreAndSnapshotUntilCommit() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = try files("database-a", root: root)
+        let b = try files("database-b", root: root)
+        let first = try SQLiteRestoreOwner(a.fileURL(named: "store.sqlite"))
+        let second = try SQLiteRestoreOwner(b.fileURL(named: "store.sqlite"))
+        defer { first.dispose(); second.dispose() }
+        try first.database.exec("PRAGMA journal_mode=WAL")
+        let reader = try NativeSQLiteFixture(a.fileURL(named: "store.sqlite"))
+        defer { try? reader.close() }
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("database-a")
+        let gate = SQLiteAccessGate()
+        let writer = Task {
+            try await coordinator.withStoreAccess(for: owner) {
+                try await MainActor.run { try first.database.exec("BEGIN IMMEDIATE; UPDATE entry SET value=7") }
+                await gate.block()
+                try await MainActor.run { try first.database.exec("COMMIT") }
+            }
+        }
+        await gate.waitUntilBlocked()
+        XCTAssertEqual(try reader.scalar("SELECT value FROM entry"), 5)
+        let plan = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore { try await first.write(9) }])
+        do {
+            try await plan.apply(coordinator: coordinator)
+            XCTFail("Restore entered a live transaction")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        let snapshot = MiniAppBackupProvider(id: owner, export: {
+            XCTFail("Snapshot entered a live transaction")
+            throw MiniAppBackupError.invalidEntry
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        do {
+            _ = try await snapshot.exportEntry(coordinator: coordinator)
+            XCTFail("Expected snapshot conflict")
+        } catch is MiniAppRestoreCoordinator.Conflict {}
+        try await coordinator.withStoreAccess(for: MiniAppID("database-b")) { try await second.write(8) }
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+        await gate.release()
+        try await writer.value
+        XCTAssertEqual(try reader.scalar("SELECT value FROM entry"), 7)
+        try await plan.apply(coordinator: coordinator)
+        XCTAssertEqual(try reader.scalar("SELECT value FROM entry"), 9)
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+    }
+}
+
+private actor SQLiteAccessGate {
+    private var blocked = false
+    private var started: CheckedContinuation<Void, Never>?
+    private var finish: CheckedContinuation<Void, Never>?
+    func block() async {
+        await withCheckedContinuation { continuation in
+            finish = continuation
+            blocked = true
+            started?.resume()
+            started = nil
+        }
+    }
+    func waitUntilBlocked() async {
+        if blocked { return }
+        await withCheckedContinuation { started = $0 }
+    }
+    func release() { finish?.resume(); finish = nil }
 }
 
 @MainActor

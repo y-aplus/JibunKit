@@ -4,10 +4,14 @@ import ProjectDescriptionHelpers
 let build = try FeatureBuildConfiguration(features: [
     .init(owner: "camera", infoPlist: [
         "NSCameraUsageDescription": "Take photos", "UIBackgroundModes": ["audio"],
+        "CFBundleURLTypes": [["CFBundleURLName": "com.jibunkit.camera", "CFBundleURLSchemes": ["camera", "shared"],
+                              "CFBundleTypeRole": "Viewer", "CFBundleURLIconFile": "CameraIcon"]],
     ], entitlements: ["com.apple.security.application-groups": ["group.com.jibunkit.build-camera"]]),
     .init(owner: "scanner", infoPlist: [
         "NSCameraUsageDescription": "Scan documents", "UIBackgroundModes": ["processing", "audio"],
         "BGTaskSchedulerPermittedIdentifiers": ["com.jibunkit.build-scanner.refresh"],
+        "CFBundleURLTypes": [["CFBundleURLName": "com.jibunkit.scanner", "CFBundleURLSchemes": ["scanner", "shared"],
+                              "CFBundleTypeRole": "Editor"]],
     ], localizedInfoPlist: [
         "en": ["NSCameraUsageDescription": "Scan documents", "CFBundleDisplayName": "Build Probe"],
         "ja": ["NSCameraUsageDescription": "書類を撮影", "CFBundleDisplayName": "ビルド検証"],
@@ -21,7 +25,9 @@ localizedInfoPlistResolutions: [
     "en": ["NSCameraUsageDescription": "Use camera to scan documents"],
     "ja": ["NSCameraUsageDescription": "カメラで書類を撮影します"],
 ])
-    .compose(infoPlist: ["UILaunchScreen": [:]], entitlements: [
+    .compose(infoPlist: ["UILaunchScreen": [:],
+        "CFBundleURLTypes": [["CFBundleURLName": "com.jibunkit.host", "CFBundleURLSchemes": ["host"]]],
+    ], entitlements: [
         "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
     ])
 let widgetBuild = try FeatureBuildConfiguration(features: [

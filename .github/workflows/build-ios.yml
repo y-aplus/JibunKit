@@ -15,6 +15,14 @@ on:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
         default: ''
+      package_intents_validation:
+        description: Compare independent and combined package App Intents (requires simulator_tests)
+        type: boolean
+        default: false
+      web_authentication_validation:
+        description: Run native web authentication comparison (requires simulator_tests)
+        type: boolean
+        default: false
       feature_ui_test_filter:
         description: Optional generated-host Xcode test identifier (empty runs all Feature integration tests)
         type: string
@@ -74,6 +82,18 @@ jobs:
           fi
 
           test "$forbidden" -eq 0
+
+      - name: Validate package App Intents inputs
+        if: inputs.package_intents_validation && !inputs.simulator_tests
+        run: |
+          echo "package_intents_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate web authentication inputs
+        if: inputs.web_authentication_validation && !inputs.simulator_tests
+        run: |
+          echo "web_authentication_validation requires simulator_tests" >&2
+          exit 1
 
       - name: Validate focused UI inputs
         if: inputs.focused_ui_validation
@@ -239,6 +259,15 @@ jobs:
           if include_background_probe:
               shutil.copyfile(background_probe, 'Sources/JibunKit/BackgroundExecutionProbe.swift')
               shutil.copyfile(background_tests, 'UITests/BackgroundExecutionUITests.swift')
+          url_probe = Path('Tests/TemplateIntegration/URLRoutingProbe.swift')
+          url_tests = Path('Tests/TemplateIntegration/URLRoutingUITests.swift')
+          url_build = Path('Tests/TemplateIntegration/URLRoutingBuildRequirements.swift.fixture')
+          include_url_probe = url_probe.exists()
+          assert len({url_probe.exists(), url_tests.exists(), url_build.exists()}) == 1, 'URL routing fixtures must be added together'
+          if include_url_probe:
+              shutil.copyfile(url_probe, 'Sources/JibunKit/URLRoutingProbe.swift')
+              shutil.copyfile(url_tests, 'UITests/URLRoutingUITests.swift')
+              shutil.copyfile(url_build, 'Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -263,6 +292,8 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        WebStorageOwnershipProbe.ownerADefinition,\n        WebStorageOwnershipProbe.ownerBDefinition,'))
           if include_background_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        BackgroundExecutionProbe.definition,'))
+          if include_url_probe:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        URLRoutingProbe.definitions[0],\n        URLRoutingProbe.definitions[1],'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -434,13 +465,23 @@ jobs:
           xcrun simctl bootstatus "$sim_id" -b
 
       - name: Verify native web authentication handoff
-        if: inputs.simulator_tests && inputs.feature_validation
+        if: inputs.simulator_tests && inputs.web_authentication_validation
         shell: bash
         run: |
           set -euo pipefail
           if [[ -f Tools/verify-web-authentication-native.py ]]; then
             python3 Tools/verify-web-authentication-native.py --simulator-id "$SIMULATOR_ID" \
               2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
+          fi
+
+      - name: Verify package App Intents
+        if: inputs.simulator_tests && inputs.package_intents_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f Tools/verify-package-app-intents.py ]]; then
+            python3 Tools/verify-package-app-intents.py --simulator-id "$SIMULATOR_ID" \
+              2>&1 | tee "$RUNNER_TEMP/package-app-intents.log"
           fi
 
       - name: Build and install standalone Counter
@@ -606,13 +647,24 @@ jobs:
           retention-days: 14
 
       - name: Upload web authentication diagnostics
-        if: always() && inputs.simulator_tests && inputs.feature_validation
+        if: always() && inputs.simulator_tests && inputs.web_authentication_validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: Web-authentication-diagnostics
           path: |
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload package App Intents diagnostics
+        if: always() && inputs.simulator_tests && inputs.package_intents_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Package-App-Intents-diagnostics
+          path: |
+            ${{ runner.temp }}/package-app-intents.log
+            ${{ runner.temp }}/PackageAppIntents
           if-no-files-found: ignore
           retention-days: 7
 

@@ -1,5 +1,8 @@
 import XCTest
 import JibunKitCore
+#if canImport(WebKit)
+import WebKit
+#endif
 
 final class MiniAppWebDataTests: XCTestCase {
     func testPersistentIdentifierIsStableAndSeparatesOwnersAndProfiles() {

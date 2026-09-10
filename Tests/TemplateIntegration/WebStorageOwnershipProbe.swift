@@ -77,7 +77,11 @@ private struct WebStorageOwnershipProbeView: View {
             do {
                 let value = try await webView.evaluateJavaScript(script)
                 guard token == operation else { return }
-                result = String(describing: value)
+                guard let pageResult = value as? String else {
+                    result = "failed: page returned no string result"
+                    return
+                }
+                result = pageResult
             } catch {
                 guard token == operation else { return }
                 result = "failed: \(error)"

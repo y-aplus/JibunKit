@@ -40,3 +40,5 @@ run 34502642235、source `3a6ad5d19839e43d6dc1d31bb6b267d5e48aff93`は待機時�
 run 34504654303、source `adfa5ca31945e58f2836499953c9cce2d0a24ea7`でもmetadata比較が失敗した。CIではapp processの標準出力がtest logへ現れないため、identifier、item直下domain、attribute-set domain、title、textの実値をerror associated valueへ含め、UI testのaccessibility treeから取得できるようにした。
 
 run 34506962479、source `f9c15a9968b691d3b05adc45a6fa0545678b0340`の実値では、二項目のidentifier、item直下domain、attribute-set domain、固有titleはすべて期待どおりで、`textContent`だけが明示取得しても`nil`だった。実index比較はqueryで確実に返るnative title/domain/identifierを証拠に使う。wrapperが完全なnative attribute setを変換せずcopyすること、およびtitle/keywordsの保持はpure native testで別途確認する。
+
+run 34509301964、source `0c7f557f38a466b4be5978efa0afd700c8f0ff72`は全工程success。共有feature logic、独立Feature packages、native Feature template、Xcode build、IPA、simulator integrationを通過した。署名済み隔離hostでは`SpotlightOwnershipUITests.testNativeIndexPreservesOtherOwnerAfterOwnedDeletion`が52.529秒で成功し、`SPOTLIGHT_OWNERSHIP_UI result=passed`を記録した。これにより、同一local IDのA/Bを実indexへ登録・読戻しし、A domainのみ削除後にBのidentifier/domain/native titleが残ることを確認した。全index削除APIは使用していない。

@@ -1,6 +1,6 @@
 # D07 通常の保存操作と復元の受付調停
 
-状態: 実装済み、CI待ち。
+状態: 共有unit、native SQLite、生成hostの使用中拒否/完了後の復元/他owner継続、通常回帰が成功。
 
 既存coordinatorの排他的な復元/snapshot予約と、Featureごとの通常アクセス件数を組み合わせた。`withStoreAccess`は通常アクセス同士を直列化せず、復元/snapshotとの交差だけをConflictにする。既存providerを使うhostは、登録された通常操作がある場合も変更前に拒否し、データ使用中と表示する。
 
@@ -14,7 +14,7 @@
 
 Windowsではdiff/selectorの検査を行う。Swift/macOS・iOS UI・IPAはCIで確認する。通常画面の回帰とRecordsの既存試験を合わせ、選択外UIや実機を検証済みとしない。
 
-source `2aecc3f`を[34506390553](https://github.com/y-aplus/JibunKit/actions/runs/34506390553)へ送った。生成hostは`MigrationUITests/GeneratedFeatureUITests/testOrdinaryStoreAccessBlocksRestoreUntilFinishedAndPreservesOtherOwner`、通常hostは`MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults`。両selectorの存在検査とdiff検査が成功。gh run watchとcodex queueで完了時に再開する。
+source `2aecc3f`の[34506390553](https://github.com/y-aplus/JibunKit/actions/runs/34506390553)は成功。共有142試験が失敗0、native SQLite transactionの比較は0.055秒。生成hostの`testOrdinaryStoreAccessBlocksRestoreUntilFinishedAndPreservesOtherOwner`は61.558秒、通常host検索/起動回帰は99.389秒、Records編集/保持は64.881秒で成功した。iOS/Widgetビルド・IPA検査も成功。両selectorの存在検査とdiff検査を経て実行し、gh run watchとcodex queueから完了通知を受けた。
 
 ## 残る範囲
 

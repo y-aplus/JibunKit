@@ -39,20 +39,17 @@ final class AppNavigation {
 
     func path(for owner: MiniAppID?) -> NavigationPath {
         guard let owner else { return NavigationPath() }
-        return paths[owner] ?? NavigationPath([owner])
+        return paths[owner] ?? NavigationPath()
     }
 
     /// A departing NavigationStack may still write its binding. Its captured
     /// owner must never update the newly selected Feature's path.
     func update(_ path: NavigationPath, for owner: MiniAppID?) {
         guard let owner, owner == activeID else { return }
-        if path.isEmpty {
-            // A native back/pop to the launcher explicitly unwinds this stack.
-            paths.removeValue(forKey: owner)
-            select(nil)
-        } else {
-            paths[owner] = path
-        }
+        // An empty path is this Feature's root, not the launcher. The Feature
+        // root is actual stack content, so its destination registrations exist
+        // before SwiftUI resolves an incoming multi-level path.
+        paths[owner] = path
     }
 
     func showList() { select(nil) }

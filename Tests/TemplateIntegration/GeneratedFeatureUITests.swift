@@ -3,6 +3,20 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    func testFeatureRootNavigationRegression() throws {
+        continueAfterFailure = false
+        try testRecordsUsesIndependentHostStorage()
+        testFeatureNavigationRetainsPathsAcrossSwitches()
+        testSceneNavigationObjectsAndNotificationTargetStayIndependent()
+        try testGeneratedFeatureCoexistsAndRoutesInHost()
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.terminate()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jkrouteprobe://url-a/detail")))
+        let detail = app.staticTexts.matching(identifier: "url.route.location")
+            .matching(NSPredicate(format: "label == %@", "url-a:detail")).firstMatch
+        XCTAssertTrue(detail.waitForExistence(timeout: 15), app.debugDescription)
+    }
+
     func testNativeNotificationRequestPayloadsReachOnlyTheirOwners() {
         continueAfterFailure = false
         // Both fixtures now validate the native request before marking receipt.
@@ -122,18 +136,18 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap("scene.navigation.a.push")
         tap("scene.navigation.b.open")
         tap("scene.navigation.b.push")
-        expect("A=2 B=2")
+        expect("A=1 B=1")
         tap("scene.navigation.route")
-        expect("A=2 B=0")
+        expect("A=1 B=0")
         tap("scene.navigation.b.open")
-        expect("A=2 B=2")
+        expect("A=1 B=1")
         tap("scene.navigation.activate-a")
         tap("scene.navigation.route")
-        expect("A=0 B=2")
+        expect("A=0 B=1")
         tap("scene.navigation.a.open")
         tap("scene.navigation.remove-a")
         tap("scene.navigation.route")
-        expect("A=2 B=0")
+        expect("A=1 B=0")
     }
 
     func testFeatureNavigationRetainsPathsAcrossSwitches() {

@@ -64,12 +64,13 @@ public struct MiniAppDefinition: Identifiable {
         rootView(MiniAppContext(id: id))
     }
 
-    /// Integration appends its Feature's native navigation values after the root.
+    /// Integration appends its Feature's native navigation values to an empty
+    /// path. The root View is stack content, not an element in this path.
     /// Returning false rejects an unsupported identifier without changing the host.
     @MainActor
     public func navigationPath(for destination: String) -> NavigationPath? {
         guard let appendDestination else { return nil }
-        var path = NavigationPath([id])
+        var path = NavigationPath()
         guard appendDestination(destination, &path) else { return nil }
         return path
     }

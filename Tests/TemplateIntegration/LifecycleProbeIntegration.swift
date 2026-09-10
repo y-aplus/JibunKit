@@ -424,12 +424,12 @@ private struct NavigationRetentionPage: View {
         navigation.open(a)
         guard navigation.path == originalA else { return "list lost A" }
         navigation.resetCurrentPath()
-        guard navigation.path == NavigationPath([a]) else { return "reset did not reach root" }
+        guard navigation.activeID == a, navigation.path.isEmpty else { return "reset did not reach root" }
         navigation.open(b)
         guard navigation.path == originalB else { return "reset A changed B" }
         navigation.pathBinding.wrappedValue = NavigationPath()
         navigation.open(b)
-        guard navigation.path == NavigationPath([b]) else { return "native pop did not unwind B" }
+        guard navigation.activeID == b, navigation.path.isEmpty else { return "native pop did not unwind B" }
         return "passed"
     }
 }

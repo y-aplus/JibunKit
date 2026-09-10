@@ -16,6 +16,8 @@ process単位の通知には対象sceneが直接渡されないため、`AppScen
 
 ## 同じscene内のFeature切替
 
+選択中FeatureのViewがNavigationStackのrootとなり、Feature固有の`navigationDestination`はそのstack内へ登録する。pathには詳細値だけを保持し、空はFeature rootを意味する。`MiniAppDefinition.navigationPath(for:)`/`appendDestination`へ渡すpathも空から開始する。Feature作者がhostのMiniAppIDをpathへ追加する必要はない。rootの「ミニアプリ」buttonで一覧へ戻り、詳細画面からrootへの戻りは通常のnative navigationで行う。
+
 `AppNavigation`はMiniAppID別の`NavigationPath`をscene内で所有する。画面下部の「ミニアプリを切り替え」から他Featureを選ぶと、対象の最後の値ベースの経路へ戻る。「ミニアプリ一覧」も経路を保持し、一覧から再度選択すると復帰する。通常の戻る操作は経路を一段ずつ戻す操作であり、戻した詳細を自動的に復活させない。「このアプリの最初の画面へ」は選択中のFeatureだけをrootへ戻す。
 
 行先なしのURL/通知は従来どおり対象Featureのrootを明示的に開く（切替メニューによる経路再開とは区別する）。具体的なdestinationを持つURL/通知は、Integrationによる検証に成功した場合だけ、そのFeatureの経路を指定先へ置換する。不正/非対応のdestinationは表示中・保存中の経路を変更しない。他Featureの経路は維持する。

@@ -1,0 +1,21 @@
+# Generated host regression triage
+
+CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnative stepが成功した後、GeneratedFeatureUITestsの21テスト中3テストで計5 assertionが失敗し、run全体は時間上限でcancelledとなった。テストが既存であることは失敗原因が既知であることを意味しない。
+
+## Records詳細URL: host修正・検証待ち
+
+`testRecordsUsesIndependentHostStorage`の通常row選択では本文を表示できたが、Counterからの`jibunkit://mini-app/records?destination=...`では本文を表示できず、815/816行の二assertionが失敗。保存値そのものの欠落はこのログからは示されていない。
+
+同runのsimulator-app.log 23:05:37.896に、SwiftUIがUUIDの`navigationDestination`をNavigationStack外の配置として無視した記録がある。hostは一覧をstack rootにし、MiniAppIDを最初のpath要素としてFeature rootを生成していた。複数階層への一括URL遷移に対し、Feature固有のdestination登録が安定して利用できない構造だった。
+
+選択Feature自体をNavigationStackのrootに置き、pathにはFeatureの詳細値だけを格納する。empty pathはFeature rootを意味し、rootの「ミニアプリ」buttonが一覧へ戻る。世代付きbinding、Feature別経路保持、不正destination拒否は維持する。Feature型の列挙や遅延timerによる二段階pushは追加しない。
+
+回帰はRecords詳細URL、値ベース経路保持/stale binding、scene別navigation実体、生成Notesの切替を一つのfocused batchで確認する。通常hostの通知遷移も対象にする。Swift/XcodeはCIで検証し、ここでは未成功。
+
+## 通知action: 未解決
+
+`testNativeNotificationRequestPayloadsReachOnlyTheirOwners`のnotification cardは見つかったが、左swipe後のViewボタンを検出できなかった（611行）。そのためこのrunはnative action callbackの成功証拠ではない。OS画面操作と通知配置の証拠から追加調査する。D11のcallback処理との因果関係は未確認。
+
+## Web再起動保持: 未解決
+
+`testWebDataPersistsAndClearingPreservesOtherFeature`で、A/Bとも再起動前のnative cookie読戻しは成功したが、後の再起動読戻しでprofile/default両方がmissing（488行の二assertion）。`isPersistent=true`、`sessionOnly=false`、期限ありを記録している。識別子付きprofileだけの欠落ではなく、比較用default storeも同じ結果だった。原因未確定であり、JibunKitの分離に問題がないとも、単なるテスト不安定とも断定しない。

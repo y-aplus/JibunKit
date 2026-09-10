@@ -125,3 +125,31 @@ accept only a result beginning with `passed:` that includes all of:
 `update=after`, `protected-read=rejected`, `protected-update=...`,
 `protected=present`, and `other=other`. A `failed:` result is evidence of a
 failed check, not a skip.
+
+## Current device-QA package
+
+The isolated `codex/keychain-device-check` branch was rebuilt from the current
+product branch after the project moved to composed Feature build requirements.
+Only that QA branch registers `KeychainAccessControlProbe.definition` and adds
+an `NSFaceIDUsageDescription` contribution named `keychain-device-check` to
+`EnabledFeatureBuildRequirements.app`. The product Registry and enabled build
+requirements remain unchanged.
+
+[GitHub Actions run 34515083966](https://github.com/y-aplus/JibunKit/actions/runs/34515083966)
+successfully built and packaged source `16ec143`. The IPA SHA-256 is
+`9f559ce6d7ae34c09665b808b3d9dc923893132f227fbb78d35d74f7fd9163f6`.
+Inspection confirmed that the app contains the probe and the composed Face ID
+usage description. CI produces an ad-hoc-signed IPA without an embedded
+provisioning profile; use the ordinary SideStore re-sign/install flow rather
+than treating this CI signature as device-installable. No paid Developer
+Program membership is assumed.
+
+On a passcode-protected iPhone with Face ID or Touch ID enrolled, install the
+re-signed IPA, open **Keychain access control**, and tap **Run access-control
+probe** once. Record the entire result. Accept only a line beginning `passed:`
+that contains `update=after`, `protected-read=rejected`,
+`protected-update=...`, `protected=present`, and `other=other`.
+
+Packaging is complete, but this device result has not yet been obtained.
+Simulator behavior is not substituted for it, and the native/user-presence
+comparison has not been relaxed.

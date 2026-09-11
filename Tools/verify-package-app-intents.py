@@ -33,19 +33,43 @@ def metadata(app, label):
         shortcuts.extend(data.get("autoShortcuts", []))
     return actions, shortcuts
 
+def capture_shortcut_extraction(derived):
+    # Keep the compiler's extracted constants for diagnosis if app-level
+    # metadata fails to include a Feature-owned shortcut provider.
+    for index, path in enumerate(sorted(derived.rglob("*.swiftconstvalues"))):
+        destination = evidence / f"const-values-{index}-{path.name}"
+        shutil.copyfile(path, destination)
+        with (evidence / "const-values-paths.txt").open("a", encoding="utf-8") as listing:
+            listing.write(f"{destination.name}: {path.relative_to(derived)}\n")
+
 with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     root = Path(temp)
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
-    (root / "Tuist").mkdir()
+    helpers = root / "Tuist/ProjectDescriptionHelpers"
+    helpers.mkdir(parents=True)
+    helper = repo / "Tuist/ProjectDescriptionHelpers/FeatureAppShortcuts.swift"
+    shutil.copyfile(helper, helpers / helper.name)
+    checks = root / "source-composition-checks"
+    run(["swiftc", "-swift-version", "6", helper,
+         root / "SourceCompositionChecks.swift", "-o", checks], root)
+    run([checks], root)
     (root / "Project.swift.fixture").rename(root / "Project.swift")
     run(["tuist", "generate", "--no-open"], root)
+    shutil.copytree(root / "Generated", evidence / "Generated", dirs_exist_ok=True)
     derived = root / "DerivedBuild"
     results = {}
-    for scheme in ["StandaloneA", "StandaloneB", "Combined"]:
-        run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
-             "-scheme", scheme, "-configuration", "Release", "-destination", "generic/platform=iOS",
-             "-derivedDataPath", derived, "CODE_SIGNING_ALLOWED=NO"], root)
+    schemes = ["StandaloneA", "StandaloneB", "Combined",
+               "OwnedShortcutsA", "OwnedShortcutsB", "OwnedShortcutsCombined"]
+    for scheme in schemes:
+        try:
+            run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
+                 "-scheme", scheme, "-configuration", "Release", "-destination", "generic/platform=iOS",
+                 "-derivedDataPath", derived, "CODE_SIGNING_ALLOWED=NO"], root)
+        except subprocess.CalledProcessError:
+            capture_shortcut_extraction(derived)
+            raise
         results[scheme] = metadata(derived / f"Build/Products/Release-iphoneos/{scheme}.app", scheme)
+    capture_shortcut_extraction(derived)
 
     a, _ = results["StandaloneA"]
     b, _ = results["StandaloneB"]
@@ -66,6 +90,50 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
         assert key not in other, f"Foreign package action leaked into independent {owner} baseline"
     assert len(a) == 1 and len(b) == 1 and len(combined) == 2, (a.keys(), b.keys(), combined.keys())
     print("Native package App Intents metadata: independent A/B match combined actions and both App Shortcuts", flush=True)
+
+    # Inspect the app-level output specifically. Combining metadata from all
+    # embedded bundles could falsely hide missing host shortcut registration.
+    owned = {}
+    for scheme in schemes[3:]:
+        path = derived / f"Build/Products/Release-iphoneos/{scheme}.app/Metadata.appintents/extract.actionsdata"
+        assert path.is_file(), f"Missing app-level shortcut metadata: {path}"
+        data = json.loads(path.read_bytes())
+        owned[scheme] = data
+        print(f"Package shortcut provider {scheme}: provider={data.get('autoShortcutProviderMangledName')} "
+              f"shortcuts={data.get('autoShortcuts', [])}", flush=True)
+
+    merged = owned["OwnedShortcutsCombined"]
+    expected_shortcuts = {}
+    for owner in ["A", "B"]:
+        standalone = owned[f"OwnedShortcuts{owner}"]
+        shortcuts = standalone.get("autoShortcuts", [])
+        assert len(shortcuts) == 1, (owner, shortcuts)
+        shortcut = shortcuts[0]
+        key = shortcut["actionIdentifier"]
+        assert key not in expected_shortcuts, f"Package shortcut identity collision: {key}"
+        expected_shortcuts[key] = shortcut
+        assert standalone["actions"][key]["fullyQualifiedTypeName"] == f"IntentFeature{owner}.Feature{owner}AddValueIntent"
+        assert merged["actions"][key]["fullyQualifiedTypeName"] == standalone["actions"][key]["fullyQualifiedTypeName"]
+    actual_shortcuts = merged.get("autoShortcuts", [])
+    assert len(actual_shortcuts) == 2, actual_shortcuts
+    assert {item["actionIdentifier"]: item for item in actual_shortcuts} == expected_shortcuts, \
+        "Package-owned shortcut metadata differs between independent and combined apps"
+    print("Package-owned App Shortcuts: both native app-level definitions survive combined inclusion", flush=True)
+
+    # Remove A's Shortcut contribution without cleaning DerivedData. Its Intent
+    # package stays linked, so this tests Shortcut removal, not Feature removal.
+    project = root / "Project.swift"
+    project.write_text(project.read_text().replace("let includeShortcutA = true", "let includeShortcutA = false"))
+    run(["tuist", "generate", "--no-open"], root)
+    run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
+         "-scheme", "OwnedShortcutsCombined", "-configuration", "Release",
+         "-destination", "generic/platform=iOS", "-derivedDataPath", derived,
+         "CODE_SIGNING_ALLOWED=NO"], root)
+    remaining_app = derived / "Build/Products/Release-iphoneos/OwnedShortcutsCombined.app"
+    _, remaining_shortcuts = metadata(remaining_app, "RemovedShortcutA")
+    assert remaining_shortcuts == owned["OwnedShortcutsB"]["autoShortcuts"], remaining_shortcuts
+    shutil.copytree(root / "Generated", evidence / "GeneratedAfterRemoval", dirs_exist_ok=True)
+    print("Shortcut contribution removal: A removed and B preserved without a clean build", flush=True)
 
     result_bundle = evidence / "IntentExecution.xcresult"
     command = ["xcodebuild", "test", "-workspace", root / "PackageIntents.xcworkspace",

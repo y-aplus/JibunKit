@@ -1,0 +1,3 @@
+AppShortcut(intent: IntentFeatureA.FeatureAAddValueIntent(),
+            phrases: ["Add A in \(.applicationName)"],
+            shortTitle: "Add A", systemImageName: "plus.circle")

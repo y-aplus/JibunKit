@@ -1,0 +1,61 @@
+# Package別App Shortcuts Providerの合成
+
+状態: Package Provider、配列転送、個別property参照のnative比較結果を記録済み。Feature所有のSwift式を標準Providerへ配置するTuist補助処理を実装、CI検証待ち。以降の節は比較経緯を示す。
+
+34540791430では二PackageのIntentを一つのhost AppShortcutsProviderから参照できた。一方、FeatureがProviderを所有したまま二つを統合できるかは未検証だった。
+
+## 比較する構成
+
+既存IntentFeatureA/Bを変更せず、それぞれのPackageにShortcuts専用productを追加する。各productは既存Intentを参照する一つのAppShortcutsProviderと、既存IntentPackageをincludedPackagesへ含むAppIntentsPackageを公開する。
+
+- OwnedShortcutsA/B: 対応する一方のPackageを含む単独app。
+- OwnedShortcutsCombined: 二つのPackageを含むapp。初回構成ではhost側にProviderを置かず、次の構成ではhost Providerが両PackageのappShortcuts配列を参照する。AppShortcutの定義・phrase・title・symbolはコピーしない。
+- 既存StandaloneA/B/Combined: Intent metadataとhost Provider経路の回帰。
+
+TuistとXcode標準のmetadata抽出を使用する。app直下のMetadata.appintentsを読み、単独時のShortcutが一件ずつ存在し、統合後の二件がactionIdentifierを含めそのまま残ることを確認する。embedded bundleのmetadataを集めただけでhost登録成功と誤認しない。provider名とShortcut本体も証拠へ記録する。
+
+## 判定と限界
+
+native buildが複数Providerを拒否する、片方を落とす、metadataを変える場合はその結果を記録し、hostで標準APIを組み立てる補完経路を次に検証する。ビルド成功だけでOS上のShortcuts/Siri実行や表示まで完了とはしない。既存Intentのperform()所有Store試験は継続するが、ProviderのOS発見とは別の証拠である。
+
+[Apple App Shortcuts](https://developer.apple.com/documentation/appintents/app-shortcuts)はProviderをSwift Package/libraryに定義する経路を説明するが、複数PackageのProvider合成が維持されるかは今回のnative比較対象である。
+
+## 結果
+
+[34546542109](https://github.com/y-aplus/JibunKit/actions/runs/34546542109)、source `95db26d17985680e497962e2d1e2de393f1c341c` は失敗。6 targetはnative build成功したが、OwnedShortcutsA/B/Combinedのapp直下metadataはすべてautoShortcutsが空、autoShortcutProviderMangledNameも存在しなかった。actionsはA/B/両方が正しく存在した。XcodeもNo AppShortcuts foundを記録。既存のhost Provider付きCombinedは二つのShortcutを出力しているため、検証側のfield名の誤りではない。
+
+単独構成でも空であり、複数Providerだけの競合とは言えない。このrunはShortcuts appの実表示・実行を試していないので、Package ProviderのOS上での利用全般が不可能とも判定しない。native Shortcut検査で停止したため、後続perform()試験と通常UI回帰は未実行。
+
+## 次の接続比較
+
+各OwnedShortcuts targetに小さなhost AppShortcutsProviderを置く。単独は対応PackageのappShortcutsを返し、統合は二配列を結合して返す。FeatureのSwift標準定義を再利用したままnative抽出できるかを確認する。必要metadataのassertionは緩めず、一方だけのShortcutを成功にしない。抽出失敗時もコンパイラのswiftconstvaluesをartifactへ保存し、コンパイル時抽出とapp-level集約のどちらが欠けるか調べられるようにした。結果待ち。
+
+## 配列転送の結果と次の比較
+
+[34547458901](https://github.com/y-aplus/JibunKit/actions/runs/34547458901)、source `c89d44ba1941eeceb5d1512e9e6b55f016e71def` は失敗。OwnedShortcutsAのSwiftコンパイル後、appintentsmetadataprocessorが `'AppShortcutsProvider' property 'appShortcuts' requires builder syntax` として抽出を拒否した。swiftconstvaluesでも既存成功CombinedはBuilder、配列を返すOwnedShortcutsAはTypeProperty参照となっている。Swiftの型として正しい配列転送でもnative metadataの要求は別にある。
+
+次はFeature側で個々のAppShortcutを公開propertyに置き、host Providerのbuilder内で一つずつ参照する。builder構文を保ったproperty参照をApple抽出が解決できるかを検証する。文言・画像・Intentの構築は引き続きFeature側が所有する。現状で公開APIの一般的制限やJibunKitの推奨接続方式には確定しない。検証用compiler抽出情報とmetadataを保存し、必須の二Shortcut比較を継続する。
+
+## 個別property参照の結果とソース組込み
+
+[34548340797](https://github.com/y-aplus/JibunKit/actions/runs/34548340797)、source `887ae39` は失敗。Swift型チェックは通ったが、Package側Providerのbuilder内のproperty参照に対しApple抽出が `Expected an 'AppShortcut' initialization call` と報告した。少なくとも検証した形では、通常Swift式として返せることとShortcut metadataを生成できることは別である。
+
+次の実装では、`FeatureAppShortcuts.writeProvider`がFeature側のnative Swift fragmentを一つの標準Providerへ配置する。AppShortcutの初期化式、phrase、画像、型指定を変換せず、単独A/Bと統合appが同じ定義元を使う。試行した未使用のPackage Provider productは取り除く。Intent本体のPackageは既存のまま。
+
+補助処理の試験で原文保持、重複owner・欠落ファイルの拒否と旧出力保持、片方削除・全件削除を確認する。native比較は従来の単独/統合metadata検査を保ち、同一DerivedDataのままShortcut Aの寄与だけを外して再生成/buildし、Bのmetadataのみ残ることを追加確認する。ここではAのIntent Package自体はリンクしたままで、Feature全体の削除成功とは扱わない。生成ソースもartifactに保存する。
+
+[利用方法](../guides/feature-app-shortcuts.md)。現在はCI待ちで、OS Shortcuts/Siriからの発見・実行は別の未検証事項。
+
+## 生成ファイル名の修正
+
+[34549515446](https://github.com/y-aplus/JibunKit/actions/runs/34549515446)、source `47f514c24ffe0082c1a89be83c0d359a6cad123e` は補助処理の原文保持/拒否/削除試験を通過した後、OwnedShortcutsAのコンパイルで停止。生成Providerと既存Package登録ファイルのbasenameがともに`OwnedShortcutsA.swift`だったため、Swiftが重複ファイル名として拒否した。A/B/Combinedの生成ファイルを`ComposedShortcuts*.swift`へ改名し、明示source指定も合わせた。metadata比較にはまだ到達しておらず、合成成功とはしない。
+
+## ソース合成の成功証拠
+
+[34550748042](https://github.com/y-aplus/JibunKit/actions/runs/34550748042)、source `920a3d2a7e74b87a69e383f1e72a758fe75101f7` は成功。補助処理の原文保持・拒否時の旧出力保持・寄与削除試験を通過し、6 targetのnative iOS buildが成功した。
+
+取得したapp直下metadataはOwnedShortcutsAがAの1件、OwnedShortcutsBがBの1件、OwnedShortcutsCombinedが両方の2件。統合後の各Shortcut辞書（actionIdentifier、phrase、shortTitle、画像、availability）が単独時と一致し、Intent型も対応Packageの型を維持した。同一DerivedDataでAのShortcut寄与だけを削除して再生成/buildすると、RemovedShortcutAにはBだけが残った。AのIntent Packageはリンクしたままであり、Feature全体の削除の証明ではない。
+
+共有167試験は失敗0。直接perform()による所有Storeと戻り値の試験は0.035秒、通常hostの検索/起動回帰は43.316秒で成功。通常IPA・独立Counterも成功。正常終了と必須assertionに加え、Package-App-Intents-diagnostics artifactの4つのmetadata JSONを取得して内容を確認した。
+
+本単位はFeature所有のShortcut式を生成時にhostへ合成する利用可能なhelperと比較fixtureを追加する。通常CounterのProviderは既存のままで、通常hostへの自動登録やOS Shortcuts/Siriからの発見・実行、AppEntity/queryまで完了したとはしない。

@@ -229,3 +229,13 @@ authenticated read, and other-owner retention path. Authentication
 cancellation, biometric re-enrollment, passcode changes, device-locked access,
 and re-registration after those state changes remain outside this run and are
 not claimed as verified.
+
+After aligning the macOS shared test with the device-confirmed rule that a
+protected non-interactive lookup may itself be rejected, [GitHub Actions run
+34551805751](https://github.com/y-aplus/JibunKit/actions/runs/34551805751)
+successfully tested the shared feature logic and completed the normal Xcode
+26.6 iOS build, IPA verification, and artifact upload for source `d7bf350`.
+The test requires the post-update read to return an authentication rejection
+and explicitly rejects `errSecItemNotFound`; it does not convert rejection to a
+successful or missing lookup. Simulator UI tests were not requested for this
+shared-test and build-only verification.

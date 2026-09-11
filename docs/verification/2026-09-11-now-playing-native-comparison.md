@@ -1,0 +1,47 @@
+# Native Now Playing ownership comparison (2026-09-11)
+
+## Question
+
+Can two Features rely on the standard `MPNowPlayingSession` boundaries for independent players, Now Playing metadata, remote-command targets, and active-session selection, or does the host need an owner coordinator first?
+
+## Standard API boundary
+
+Apple defines `MPNowPlayingSession` as the object for managing Now Playing information and remote commands for multiple players. Each `AVPlayer` may belong to only one session. Each session exposes its own `nowPlayingInfoCenter` and `remoteCommandCenter`, plus `canBecomeActive`, `isActive`, and `becomeActiveIfPossible()` for asking the system to select it.
+
+Manual metadata and automatic publishing are mutually exclusive. The fixture sets `automaticallyPublishesNowPlayingInfo = false` before writing each session's `nowPlayingInfoCenter`.
+
+Remote command block registration returns a target token. Cleanup must call `removeTarget(_:)` on the same session command; broad `removeTarget(nil)` would remove unrelated targets and is not used.
+
+## Native fixture
+
+`NowPlayingOwnershipProbe` constructs two real `AVPlayer` instances and two real `MPNowPlayingSession` instances in the signed generated host. It verifies:
+
+1. each session retains only its own player;
+2. the session Now Playing info centers and remote command centers are distinct objects;
+3. setting Feature B metadata does not replace Feature A metadata;
+4. command registration returns distinct target tokens, and A removes only its token from A's command;
+5. removing A's player preserves B's player and metadata;
+6. active-session requests complete consistently with `isActive`, and no two sessions report active simultaneously.
+
+The activation result is intentionally not required to be `true`: eligibility and final system selection remain native policy. The fixture also cannot synthesize a genuine Control Center or accessory command through public API, so it verifies session/target ownership and cleanup but not OS command delivery. Control Center presentation, command dispatch, audio-session arbitration, lock-screen behavior, interruptions, and device-only behavior remain unverified.
+
+No coordinator is proposed unless this native comparison demonstrates a missing standard boundary.
+
+## Generated-host integration required
+
+The shared workflow/host owner needs to:
+
+1. copy `NowPlayingOwnershipProbe.swift` into `Sources/JibunKit`;
+2. copy `NowPlayingOwnershipUITests.swift` into `UITests`;
+3. insert `NowPlayingOwnershipProbe.definition` into the temporary `MiniAppRegistry`;
+4. run `MigrationUITests/NowPlayingOwnershipUITests/testTwoNativeNowPlayingSessionsKeepFeatureStateIndependent`.
+
+Native CI result pending.
+
+## Apple references
+
+- [`MPNowPlayingSession`](https://developer.apple.com/documentation/mediaplayer/mpnowplayingsession)
+- [`MPNowPlayingSession.remoteCommandCenter`](https://developer.apple.com/documentation/mediaplayer/mpnowplayingsession/remotecommandcenter)
+- [`MPNowPlayingSession.becomeActiveIfPossible(completion:)`](https://developer.apple.com/documentation/mediaplayer/mpnowplayingsession/becomeactiveifpossible%28completion%3A%29)
+- [`MPRemoteCommand`](https://developer.apple.com/documentation/mediaplayer/mpremotecommand)
+- [`MPRemoteCommand.removeTarget(_:action:)`](https://developer.apple.com/documentation/mediaplayer/mpremotecommand/removetarget%28_%3Aaction%3A%29)

@@ -25,11 +25,15 @@ callbackをcore registryへ転送する。FeatureのDefinition/Registry、画面
 - 遅延した二回目の`finish()`はhost completionを再実行しない
 - A registrationの取消はfuture factoryだけを外し、Aのpending completionはdelegateの
   finishまで保持、Bの接続とcompletionも維持
+- A取消後・replacement登録前の同session後着callbackも既存pendingへ結合し、delegate
+  finishまでcompletionを保留
 - 同じFeature/profileの再登録後、古いregistrationの取消と古いevents tokenが新しい
   factory/pending eventを終了させない
 - unknown identifierとfactory失敗でもhost completionを一回解放
 - コンパイル可能な標準`URLSessionDelegate` fixtureでcold生成とwarm session/delegate
   再利用の両方を通し、`urlSessionDidFinishEvents`からのみcompletionを解放
+- host completionから同期的にwarm再接続しても、delegateが古いtokenを先にproperty
+  から外すため新tokenを消さず、次のnative finishまで保持
 
 ここでnative configurationを作る試験とiOS host buildはAPI接続を確認するが、実転送を
 発生させるprovider試験ではない。

@@ -23,7 +23,8 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
     func testFactoriesReconnectWithoutScreenAndNativeDelegateFinishesWarmSessionEvents() async throws {
         let registry = MiniAppBackgroundURLSessionReconnectRegistry()
         let factory = NativeReconnectFixture()
-        let completion = CompletionSpy()
+        let firstFinished = expectation(description: "cold native delegate completion")
+        let completion = CompletionSpy(expectation: firstFinished)
         let registration = try registry.register(
             context: context("feature-a"),
             profile: UUID().uuidString,
@@ -42,10 +43,11 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         let firstSession = try XCTUnwrap(factory.session)
         XCTAssertEqual(firstSession.configuration.identifier, registration.identifier)
         factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: firstSession)
-        for _ in 0..<10 where completion.count == 0 { await Task.yield() }
+        await fulfillment(of: [firstFinished], timeout: 1)
         XCTAssertEqual(completion.count, 1)
 
-        let warmCompletion = CompletionSpy()
+        let warmFinished = expectation(description: "warm native delegate completion")
+        let warmCompletion = CompletionSpy(expectation: warmFinished)
         XCTAssertEqual(registry.handleEvents(
             identifier: registration.identifier,
             completionHandler: warmCompletion.call
@@ -53,8 +55,46 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         XCTAssertTrue(factory.session === firstSession)
         XCTAssertEqual(factory.identifiers, [registration.identifier, registration.identifier])
         factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: firstSession)
-        for _ in 0..<10 where warmCompletion.count == 0 { await Task.yield() }
+        await fulfillment(of: [warmFinished], timeout: 1)
         XCTAssertEqual(warmCompletion.count, 1)
+        withExtendedLifetime(registration) {}
+    }
+
+    func testReentrantCompletionKeepsWarmReplacementEventsConnected() async throws {
+        let registry = MiniAppBackgroundURLSessionReconnectRegistry()
+        let factory = NativeReconnectFixture()
+        let registration = try registry.register(
+            context: context("feature-a"),
+            profile: UUID().uuidString,
+            reconnect: factory.reconnect
+        )
+        let reentered = expectation(description: "completion synchronously reconnects")
+        let nextFinished = expectation(description: "reentrant event finishes")
+        let nextCompletion = CompletionSpy(expectation: nextFinished)
+        let firstCompletion = ReentrantCompletionSpy(
+            registry: registry,
+            identifier: registration.identifier,
+            nextCompletion: nextCompletion,
+            expectation: reentered
+        )
+
+        XCTAssertEqual(registry.handleEvents(
+            identifier: registration.identifier,
+            completionHandler: firstCompletion.call
+        ), .connected)
+        let session = try XCTUnwrap(factory.session)
+        factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: session)
+        await fulfillment(of: [reentered], timeout: 1)
+
+        XCTAssertEqual(firstCompletion.count, 1)
+        XCTAssertEqual(firstCompletion.result, .connected)
+        XCTAssertEqual(nextCompletion.count, 0)
+        XCTAssertTrue(factory.session === session)
+        XCTAssertTrue(factory.delegate.hasPendingEvents)
+
+        factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: session)
+        await fulfillment(of: [nextFinished], timeout: 1)
+        XCTAssertEqual(nextCompletion.count, 1)
         withExtendedLifetime(registration) {}
     }
 
@@ -95,7 +135,7 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         withExtendedLifetime(registration) {}
     }
 
-    func testCancellingOneOwnerCompletesOnlyItsPendingEvent() throws {
+    func testCancellingOneOwnerKeepsItsPendingEventUntilDelegateFinish() throws {
         let registry = MiniAppBackgroundURLSessionReconnectRegistry()
         let aFactory = ReconnectFactorySpy()
         let bFactory = ReconnectFactorySpy()
@@ -113,10 +153,18 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
 
         a.cancel()
         a.cancel()
+        let aLateCompletion = CompletionSpy()
+        XCTAssertEqual(registry.handleEvents(
+            identifier: a.identifier,
+            completionHandler: aLateCompletion.call
+        ), .joinedPending)
         XCTAssertEqual(aCompletion.count, 0)
+        XCTAssertEqual(aLateCompletion.count, 0)
         XCTAssertEqual(bCompletion.count, 0)
+        XCTAssertEqual(aFactory.events.count, 1)
         XCTAssertTrue(try XCTUnwrap(aFactory.events.first).finish())
         XCTAssertEqual(aCompletion.count, 1)
+        XCTAssertEqual(aLateCompletion.count, 1)
         XCTAssertTrue(try XCTUnwrap(bFactory.events.first).finish())
         XCTAssertEqual(bCompletion.count, 1)
 
@@ -167,6 +215,7 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
             completionHandler: nextCompletion.call
         ), .connected)
         XCTAssertEqual(newFactory.events.count, 1)
+        XCTAssertFalse(oldEvents.finish())
         XCTAssertEqual(nextCompletion.count, 0)
         XCTAssertTrue(try XCTUnwrap(newFactory.events.first).finish())
         XCTAssertEqual(nextCompletion.count, 1)
@@ -221,7 +270,47 @@ private final class ReconnectFactorySpy {
 @MainActor
 private final class CompletionSpy {
     private(set) var count = 0
-    func call() { count += 1 }
+    private let expectation: XCTestExpectation?
+
+    init(expectation: XCTestExpectation? = nil) {
+        self.expectation = expectation
+    }
+
+    func call() {
+        count += 1
+        expectation?.fulfill()
+    }
+}
+
+@MainActor
+private final class ReentrantCompletionSpy {
+    private(set) var count = 0
+    private(set) var result: MiniAppBackgroundURLSessionReconnectRegistry.HandlingResult?
+    private let registry: MiniAppBackgroundURLSessionReconnectRegistry
+    private let identifier: String
+    private let nextCompletion: CompletionSpy
+    private let expectation: XCTestExpectation
+
+    init(
+        registry: MiniAppBackgroundURLSessionReconnectRegistry,
+        identifier: String,
+        nextCompletion: CompletionSpy,
+        expectation: XCTestExpectation
+    ) {
+        self.registry = registry
+        self.identifier = identifier
+        self.nextCompletion = nextCompletion
+        self.expectation = expectation
+    }
+
+    func call() {
+        count += 1
+        result = registry.handleEvents(
+            identifier: identifier,
+            completionHandler: nextCompletion.call
+        )
+        expectation.fulfill()
+    }
 }
 
 @MainActor
@@ -248,11 +337,13 @@ private final class NativeReconnectFixture {
 
 private final class NativeReconnectDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
     @MainActor var events: MiniAppBackgroundURLSessionEvents?
+    @MainActor var hasPendingEvents: Bool { events != nil }
 
     nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         Task { @MainActor in
-            events?.finish()
+            let finishedEvents = events
             events = nil
+            finishedEvents?.finish()
         }
     }
 }

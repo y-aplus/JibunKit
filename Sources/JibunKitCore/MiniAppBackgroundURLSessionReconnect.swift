@@ -158,19 +158,19 @@ public final class MiniAppBackgroundURLSessionReconnectRegistry {
         identifier rawIdentifier: String,
         completionHandler: @escaping @MainActor @Sendable () -> Void
     ) -> HandlingResult {
-        guard let identifier = try? MiniAppBackgroundURLSessionIdentifier(rawValue: rawIdentifier),
-              let handler = handlers[rawIdentifier],
-              handler.owner == identifier.owner
-        else {
-            completionHandler()
-            return .unknownSession
-        }
         if let pending = pending[rawIdentifier] {
             guard pending.events.append(completion: completionHandler) else {
                 completionHandler()
                 return .unknownSession
             }
             return .joinedPending
+        }
+        guard let identifier = try? MiniAppBackgroundURLSessionIdentifier(rawValue: rawIdentifier),
+              let handler = handlers[rawIdentifier],
+              handler.owner == identifier.owner
+        else {
+            completionHandler()
+            return .unknownSession
         }
 
         let eventID = UUID()

@@ -10,8 +10,9 @@ final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, Sendable {
 
     func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
         Task { @MainActor in
-            backgroundEvents?.finish()
+            let finishedEvents = backgroundEvents
             backgroundEvents = nil
+            finishedEvents?.finish()
         }
     }
 }
@@ -66,8 +67,14 @@ completionを追加します。delegateの`finish()`までどのcompletionも呼
 registrationの取消はfuture factory登録だけを外します。進行中のpending OS eventは
 delegateの`finish()`まで保持し、早期にcompletionを呼びません。取消後に同じ
 Feature/profileを再登録しても、古いregistrationの遅延cancel/deinitが新しいfactoryを
-削除しません。Feature固有の転送取消はFeatureがnative task/sessionへ行い、この
+削除しません。取消後・再登録前に同じsessionの後着host callbackが届いた場合も、既存
+pending batchへ合流してdelegateのfinishまで待ちます。Feature固有の転送取消はFeatureがnative task/sessionへ行い、この
 registryを全Feature共通の取消スイッチとして使わないでください。
+
+`finish()`はhost completionを同期的に呼ぶため、そのcompletionから次のwarm callback
+接続が再入する可能性があります。delegate propertyを先に`nil`へ戻し、取り出した古い
+tokenへ`finish()`を呼ぶ順序を維持してください。逆順にすると、再入で接続した新tokenを
+古いcallbackが`nil`で上書きできます。
 
 この基盤はOSがbackground転送を実行する時刻、強制終了後の継続、ネットワーク条件、
 再起動配送を保証しません。provider/unit試験とiOS buildはowner routingとnative API

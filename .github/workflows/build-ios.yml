@@ -23,6 +23,10 @@ on:
         description: Compare independent and combined package Widgets (requires simulator_tests)
         type: boolean
         default: false
+      package_resources_validation:
+        description: Compare independent, combined, and removed package resources (requires simulator_tests)
+        type: boolean
+        default: false
       web_authentication_validation:
         description: Run native web authentication comparison (requires simulator_tests)
         type: boolean
@@ -109,6 +113,12 @@ jobs:
         if: inputs.package_widgets_validation && !inputs.simulator_tests
         run: |
           echo "package_widgets_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate package resource inputs
+        if: inputs.package_resources_validation && !inputs.simulator_tests
+        run: |
+          echo "package_resources_validation requires simulator_tests" >&2
           exit 1
 
       - name: Validate web authentication inputs
@@ -566,6 +576,36 @@ jobs:
           set -euo pipefail
           python3 Tools/verify-package-widgets-native.py --simulator-id "$SIMULATOR_ID" \
             2>&1 | tee "$RUNNER_TEMP/package-widgets.log"
+
+      - name: Verify package resources and localization
+        if: inputs.simulator_tests && inputs.package_resources_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe="$RUNNER_TEMP/package-resource-check"
+          derived="$RUNNER_TEMP/PackageResourceDerivedData"
+
+          run_probe() {
+            local mode="$1"
+            local label="$2"
+            python3 Tools/prepare-package-resource-probe.py --mode "$mode" --output "$probe"
+            tuist generate --path "$probe" --no-open
+            rm -rf "$RUNNER_TEMP/PackageResource-$label.xcresult"
+            xcodebuild test -workspace "$probe/PackageResourceProbe.xcworkspace" -scheme PackageResourceProbe \
+              -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+              -derivedDataPath "$derived" -resultBundlePath "$RUNNER_TEMP/PackageResource-$label.xcresult" \
+              -only-testing:PackageResourceUITests/PackageResourceUITests/testConfiguredPackageReadsOwnResources \
+              -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+              2>&1 | tee "$RUNNER_TEMP/package-resource-$label.log"
+          }
+
+          run_probe a a-only
+          run_probe b b-only
+          run_probe combined combined
+          stale_before="$(find "$derived" -type d -name '*ResourceFeatureA*.bundle' | wc -l | tr -d ' ')"
+          run_probe b b-after-a-removal
+          stale_after="$(find "$derived" -type d -name '*ResourceFeatureA*.bundle' | wc -l | tr -d ' ')"
+          echo "PACKAGE_RESOURCE_STALE_A_BUNDLES before=$stale_before after=$stale_after"
 
       - name: Build and install standalone Counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')

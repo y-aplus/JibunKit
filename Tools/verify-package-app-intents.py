@@ -1,5 +1,6 @@
 """Compare native package intent metadata in independent and integrated apps."""
 import argparse
+import difflib
 import json
 import os
 from pathlib import Path
@@ -17,6 +18,14 @@ evidence.mkdir(exist_ok=True)
 
 def run(command, cwd):
     subprocess.run([str(part) for part in command], cwd=cwd, check=True)
+
+def require_equal(actual, expected, label):
+    if actual != expected:
+        print("".join(difflib.unified_diff(
+            json.dumps(expected, indent=2, sort_keys=True).splitlines(keepends=True),
+            json.dumps(actual, indent=2, sort_keys=True).splitlines(keepends=True),
+            fromfile=f"independent {label}", tofile=f"combined {label}")), flush=True)
+        raise AssertionError(f"Native metadata changed: {label}")
 
 def metadata(app, label):
     paths = list(app.rglob("Metadata.appintents/extract.actionsdata"))
@@ -88,8 +97,35 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
         assert any(item["actionIdentifier"] == key for item in shortcuts), (key, shortcuts)
         other = b if owner == "A" else a
         assert key not in other, f"Foreign package action leaked into independent {owner} baseline"
-    assert len(a) == 1 and len(b) == 1 and len(combined) == 2, (a.keys(), b.keys(), combined.keys())
+    for owner, standalone in [("A", a), ("B", b)]:
+        type_name = f"IntentFeature{owner}.Feature{owner}ReadEntryIntent"
+        identifiers = [key for key, value in standalone.items()
+                       if value["fullyQualifiedTypeName"] == type_name]
+        assert len(identifiers) == 1, (type_name, standalone)
+        key = identifiers[0]
+        assert key in combined, (key, combined)
+        for field in ["identifier", "fullyQualifiedTypeName", "title", "parameters", "outputType", "supportedModes"]:
+            require_equal(combined[key][field], standalone[key][field], f"{key}.{field}")
+        assert key not in (b if owner == "A" else a), f"Foreign entity intent leaked: {key}"
+    assert len(a) == 2 and len(b) == 2 and len(combined) == 4, (a.keys(), b.keys(), combined.keys())
     print("Native package App Intents metadata: independent A/B match combined actions and both App Shortcuts", flush=True)
+
+    # Compare native app-level entity and query identities, not just direct
+    # Swift dispatch. Same unqualified names must remain distinct after linking.
+    entity_metadata = {}
+    for scheme in ["StandaloneA", "StandaloneB", "Combined"]:
+        path = derived / f"Build/Products/Release-iphoneos/{scheme}.app/Metadata.appintents/extract.actionsdata"
+        entity_metadata[scheme] = json.loads(path.read_bytes())
+    for section in ["entities", "queries"]:
+        independent_a = entity_metadata["StandaloneA"][section]
+        independent_b = entity_metadata["StandaloneB"][section]
+        joined = entity_metadata["Combined"][section]
+        assert isinstance(independent_a, dict) and independent_a, (section, independent_a)
+        assert isinstance(independent_b, dict) and independent_b, (section, independent_b)
+        assert set(independent_a).isdisjoint(independent_b), \
+            f"Native {section} identity collision: {set(independent_a) & set(independent_b)}"
+        require_equal(joined, {**independent_a, **independent_b}, section)
+    print("Native same-named package AppEntity/query metadata: independent identities and combined preservation", flush=True)
 
     # Inspect the app-level output specifically. Combining metadata from all
     # embedded bundles could falsely hide missing host shortcut registration.
@@ -140,7 +176,7 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
                "-scheme", "IntentExecutionTests", "-configuration", "Debug",
                "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                "-derivedDataPath", root / "SimulatorBuild", "-resultBundlePath", result_bundle,
-               "-only-testing:IntentExecutionTests/IntentExecutionTests/testPackageIntentExecutionChangesOnlyItsOwner",
+               "-only-testing:IntentExecutionTests/IntentExecutionTests",
                "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"]
     result = subprocess.run([str(part) for part in command], cwd=root,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -148,4 +184,6 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     (evidence / "execution.log").write_text(result.stdout, encoding="utf-8")
     assert result.returncode == 0, f"Native intent execution failed: {result.returncode}"
     assert "testPackageIntentExecutionChangesOnlyItsOwner]' passed" in result.stdout, "No passing native XCTest evidence"
+    assert "testSameNamedEntityQueriesResolveOnlyTheirOwner]' passed" in result.stdout, "No passing entity/query XCTest evidence"
     print("Native package intent perform() calls preserved owner storage and returned values", flush=True)
+    print("Native entity/query execution: same local IDs, search, suggestions, edit and deletion remained owner-scoped", flush=True)

@@ -1,0 +1,66 @@
+#if canImport(BackgroundTasks) && os(iOS)
+import BackgroundTasks
+import Foundation
+
+@MainActor
+private final class SystemBackgroundTask: MiniAppBackgroundTaskNative {
+    private let task: BGTask
+    private var bridgedExpirationHandler: (@MainActor @Sendable () -> Void)?
+
+    init(_ task: BGTask) { self.task = task }
+
+    var expirationHandler: (@MainActor @Sendable () -> Void)? {
+        get { bridgedExpirationHandler }
+        set {
+            bridgedExpirationHandler = newValue
+            task.expirationHandler = newValue.map { handler in
+                { MiniAppBackgroundTaskActorBridge.deliverExpiration(handler) }
+            }
+        }
+    }
+
+    func setTaskCompleted(success: Bool) { task.setTaskCompleted(success: success) }
+}
+
+@MainActor
+private final class SystemBackgroundTaskScheduler: MiniAppBackgroundTaskScheduling {
+    private let scheduler: BGTaskScheduler
+
+    init(_ scheduler: BGTaskScheduler) { self.scheduler = scheduler }
+
+    func register(
+        identifier: String,
+        kind: MiniAppBackgroundTaskKind,
+        launch: @escaping @MainActor (any MiniAppBackgroundTaskNative) -> Void
+    ) -> Bool {
+        scheduler.register(forTaskWithIdentifier: identifier, using: .main) { task in
+            Task { @MainActor in launch(SystemBackgroundTask(task)) }
+        }
+    }
+
+    func submit(_ request: MiniAppBackgroundTaskRequest, kind: MiniAppBackgroundTaskKind) throws {
+        let native: BGTaskRequest
+        switch kind {
+        case .appRefresh:
+            native = BGAppRefreshTaskRequest(identifier: request.identifier)
+        case .processing:
+            let processing = BGProcessingTaskRequest(identifier: request.identifier)
+            processing.requiresNetworkConnectivity = request.requiresNetworkConnectivity
+            processing.requiresExternalPower = request.requiresExternalPower
+            native = processing
+        }
+        native.earliestBeginDate = request.earliestBeginDate
+        try scheduler.submit(native)
+    }
+
+    func cancel(identifier: String) {
+        scheduler.cancel(taskRequestWithIdentifier: identifier)
+    }
+}
+
+public extension MiniAppBackgroundTaskCenter {
+    convenience init(scheduler: BGTaskScheduler = .shared) {
+        self.init(scheduler: SystemBackgroundTaskScheduler(scheduler))
+    }
+}
+#endif

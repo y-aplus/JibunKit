@@ -492,6 +492,7 @@ private struct WebDataProbeView: View {
     @State private var baselineReady = false
     @State private var baselineView: WKWebView
     @State private var diagnostic = "not-read"
+    @State private var baselineResult = "unread"
 
     init(context: MiniAppContext) {
         self.context = context
@@ -515,10 +516,12 @@ private struct WebDataProbeView: View {
             Text(diagnostic).accessibilityIdentifier("webdata.diagnostic")
             Text(pageReady && baselineReady ? "page-ready" : "page-loading").accessibilityIdentifier("webdata.page")
             Text(result).accessibilityIdentifier("webdata.result")
+            Text(baselineResult).accessibilityIdentifier("webdata.baseline")
             Button("Save cookie") {
                 Task {
+                    let value = ProcessInfo.processInfo.environment["JIBUNKIT_WEB_COOKIE_VALUE"] ?? context.id.rawValue
                     let cookie = HTTPCookie(properties: [.domain: "jibunkit.example", .path: "/",
-                        .name: "account", .value: context.id.rawValue,
+                        .name: "account", .value: value,
                         .expires: Date().addingTimeInterval(86400)])!
                     await webView.configuration.websiteDataStore.httpCookieStore.setCookie(cookie)
                     var baselineProperties = cookie.properties!
@@ -534,6 +537,7 @@ private struct WebDataProbeView: View {
                     let cookies = await webView.configuration.websiteDataStore.httpCookieStore.allCookies()
                     let baseline = await baselineView.configuration.websiteDataStore.httpCookieStore.allCookies()
                     let baselineValue = baseline.first { $0.name == "baseline-" + context.id.rawValue }?.value ?? "missing"
+                    baselineResult = baselineValue
                     let stored = cookies.first { $0.name == "account" && $0.domain == "jibunkit.example" }
                     result = stored?.value ?? "missing"
                     diagnostic = "owner=\(context.id.rawValue) profile=\(result) default=\(baselineValue) profileCookieCount=\(cookies.count) sessionOnly=\(stored?.isSessionOnly.description ?? "nil")"

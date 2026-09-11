@@ -7,6 +7,30 @@ import RecordsBackupIntegration
 import ZIPFoundation
 
 final class MiniAppBackupArchiveTests: XCTestCase, @unchecked Sendable {
+    func testNamedArchiveRemainsReadableAndRejectsPathsBeforeExporting() async throws {
+        let value = Value()
+        let name = "JibunKit-backup-20260911-123456.zip"
+        let archive = try await MiniAppBackupArchive.export(selected: [MiniAppID("counter")],
+            providers: [payloadProvider(value)], fileProviders: [], filename: name)
+        XCTAssertEqual(archive.url.lastPathComponent, name)
+        let loaded = try MiniAppBackupArchive.load(from: archive.url)
+        XCTAssertEqual(loaded.entries.map(\.id), [MiniAppID("counter")])
+
+        let forbidden = MiniAppBackupProvider(id: MiniAppID("counter"), export: {
+            XCTFail("Invalid filename must be rejected before a provider is called")
+            throw CocoaError(.fileReadUnknown)
+        }, prepare: { _ in MiniAppPreparedRestore {} })
+        for invalid in ["", ".", "..", "../outside.zip", "/outside.zip", "folder/backup.zip", "folder\\backup.zip", "bad\0.zip"] {
+            do {
+                _ = try await MiniAppBackupArchive.export(selected: [MiniAppID("counter")],
+                    providers: [forbidden], fileProviders: [], filename: invalid)
+                XCTFail("Invalid archive name accepted: \(invalid)")
+            } catch let error as CocoaError {
+                XCTAssertEqual(error.code, .fileWriteInvalidFileName)
+            }
+        }
+    }
+
     func testArchiveForwardsCoordinationToBothSnapshotFormats() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let owner = MiniAppID("snapshot")

@@ -66,7 +66,16 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["backup.import"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "JibunKit-backup")).firstMatch
+        // This test runs once on a fresh CI simulator, after the ZIP round trip.
+        // Require exactly one dated JSON; never select an arbitrary earlier ZIP or JSON.
+        let jsonFiles = app.cells.matching(NSPredicate(format: "label MATCHES %@",
+            #"JibunKit-backup-[0-9]{8}-[0-9]{6}\.json(,.*)?"#))
+        XCTAssertTrue(jsonFiles.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(jsonFiles.count, 1, "Expected only this test's JSON export: \(app.debugDescription)")
+        let filename = try XCTUnwrap(jsonFiles.firstMatch.label.split(separator: ",").first).description
+        // Reuse the exact name for both imports, independently of Files view mode.
+        let file = app.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@",
+                                                 filename, filename + ",")).firstMatch
         func selectBackupFile() {
             tap(app.buttons["OverflowBarButtonItem"])
             capture("backup-files-view-menu")

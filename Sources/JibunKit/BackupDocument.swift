@@ -12,7 +12,7 @@ struct BackupArchiveDocument: Transferable {
         FileRepresentation(exportedContentType: .zip) { item in
             SentTransferredFile(item.file.url)
         }
-        .suggestedFileName("JibunKit-backup.zip")
+        .suggestedFileName { $0.file.url.lastPathComponent }
     }
 }
 

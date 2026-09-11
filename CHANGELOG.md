@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-09-11
+
+- 添付付きZIPバックアップも日付入りの保存名を実ファイルと転送候補へ渡し、固定名による上書き・改名の手間を防ぐ。
+
 - Feature間のAppEntity/queryの名前衝突を標準の永続識別子で避ける手順とnative比較を追加。統合で消えたIntent/entity/queryや誤った参照を、単独版metadataと照合する検査ツールを提供。
 
 - MiniAppDefinitionへ任意のonHostLaunchを追加。画面生成に依存することなく、host起動時にFeatureのnative登録処理を呼び出す。

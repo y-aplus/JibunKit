@@ -15,7 +15,7 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         }
         try b.register(
             identifier: "com.example.b.processing",
-            kind: .processing(requiresNetworkConnectivity: true, requiresExternalPower: false)
+            kind: .processing
         ) { task in
             launches.append("b:\(task.identifier)")
         }
@@ -35,19 +35,32 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         try a.register(identifier: "com.example.a.refresh", kind: .appRefresh) { _ in }
         try a.register(
             identifier: "com.example.a.processing",
-            kind: .processing(requiresNetworkConnectivity: true, requiresExternalPower: true)
+            kind: .processing
         ) { _ in }
 
         try a.submit(.init(identifier: "com.example.a.refresh", earliestBeginDate: date))
-        try a.submit(.init(identifier: "com.example.a.processing"))
+        try a.submit(.init(
+            identifier: "com.example.a.processing",
+            requiresNetworkConnectivity: true,
+            requiresExternalPower: true
+        ))
+        try a.submit(.init(
+            identifier: "com.example.a.processing",
+            requiresNetworkConnectivity: false,
+            requiresExternalPower: false
+        ))
 
         XCTAssertEqual(scheduler.submissions.map(\.request), [
             .init(identifier: "com.example.a.refresh", earliestBeginDate: date),
-            .init(identifier: "com.example.a.processing"),
+            .init(identifier: "com.example.a.processing", requiresNetworkConnectivity: true,
+                  requiresExternalPower: true),
+            .init(identifier: "com.example.a.processing", requiresNetworkConnectivity: false,
+                  requiresExternalPower: false),
         ])
         XCTAssertEqual(scheduler.submissions.map(\.kind), [
             .appRefresh,
-            .processing(requiresNetworkConnectivity: true, requiresExternalPower: true),
+            .processing,
+            .processing,
         ])
         XCTAssertThrowsError(try b.submit(.init(identifier: "com.example.a.refresh"))) {
             XCTAssertEqual($0 as? MiniAppBackgroundTaskCenter.Failure, .identifierNotOwned)
@@ -60,8 +73,7 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         let a = center.tasks(for: context("feature-a"))
         let b = center.tasks(for: context("feature-b"))
         try a.register(identifier: "com.example.a.refresh", kind: .appRefresh) { _ in }
-        try a.register(identifier: "com.example.a.processing", kind: .processing(
-            requiresNetworkConnectivity: false, requiresExternalPower: false)) { _ in }
+        try a.register(identifier: "com.example.a.processing", kind: .processing) { _ in }
         try b.register(identifier: "com.example.b.refresh", kind: .appRefresh) { _ in }
 
         a.cancelAllPendingRequests()
@@ -89,8 +101,7 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         let tasks = center.tasks(for: context("feature-a"))
         var expirationCount = 0
         var launched: MiniAppBackgroundTaskExecution?
-        try tasks.register(identifier: "com.example.a.processing", kind: .processing(
-            requiresNetworkConnectivity: false, requiresExternalPower: false)) { task in
+        try tasks.register(identifier: "com.example.a.processing", kind: .processing) { task in
             launched = task
             task.onExpiration = { expirationCount += 1 }
         }
@@ -105,6 +116,24 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         native.expire()
 
         XCTAssertEqual(expirationCount, 1)
+        XCTAssertEqual(native.completions, [false])
+    }
+
+    func testNativeTaskRetainsExecutionUntilExpirationCompletesThenReleasesCycle() throws {
+        let scheduler = BackgroundTaskSchedulerSpy()
+        let center = MiniAppBackgroundTaskCenter(scheduler: scheduler)
+        let tasks = center.tasks(for: context("feature-a"))
+        weak var execution: MiniAppBackgroundTaskExecution?
+        try tasks.register(identifier: "com.example.a.refresh", kind: .appRefresh) { task in
+            execution = task
+            task.onExpiration = { task.complete(success: false) }
+        }
+
+        let native = scheduler.launch("com.example.a.refresh")
+        XCTAssertNotNil(execution, "Native expiration ownership must retain execution after launch returns")
+        native.expire()
+
+        XCTAssertNil(execution, "Completion must clear native and Feature closure retention")
         XCTAssertEqual(native.completions, [false])
     }
 

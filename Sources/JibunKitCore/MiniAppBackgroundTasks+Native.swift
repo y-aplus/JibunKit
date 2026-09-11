@@ -28,7 +28,7 @@ private final class SystemBackgroundTaskScheduler: MiniAppBackgroundTaskScheduli
         launch: @escaping @MainActor (any MiniAppBackgroundTaskNative) -> Void
     ) -> Bool {
         scheduler.register(forTaskWithIdentifier: identifier, using: .main) { task in
-            MainActor.assumeIsolated { launch(SystemBackgroundTask(task)) }
+            Task { @MainActor in launch(SystemBackgroundTask(task)) }
         }
     }
 
@@ -37,10 +37,10 @@ private final class SystemBackgroundTaskScheduler: MiniAppBackgroundTaskScheduli
         switch kind {
         case .appRefresh:
             native = BGAppRefreshTaskRequest(identifier: request.identifier)
-        case let .processing(network, power):
+        case .processing:
             let processing = BGProcessingTaskRequest(identifier: request.identifier)
-            processing.requiresNetworkConnectivity = network
-            processing.requiresExternalPower = power
+            processing.requiresNetworkConnectivity = request.requiresNetworkConnectivity
+            processing.requiresExternalPower = request.requiresExternalPower
             native = processing
         }
         native.earliestBeginDate = request.earliestBeginDate
@@ -58,4 +58,3 @@ public extension MiniAppBackgroundTaskCenter {
     }
 }
 #endif
-

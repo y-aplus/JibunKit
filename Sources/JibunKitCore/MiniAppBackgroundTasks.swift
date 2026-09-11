@@ -2,16 +2,25 @@ import Foundation
 
 public enum MiniAppBackgroundTaskKind: Equatable, Sendable {
     case appRefresh
-    case processing(requiresNetworkConnectivity: Bool, requiresExternalPower: Bool)
+    case processing
 }
 
 public struct MiniAppBackgroundTaskRequest: Equatable, Sendable {
     public let identifier: String
     public let earliestBeginDate: Date?
+    public let requiresNetworkConnectivity: Bool
+    public let requiresExternalPower: Bool
 
-    public init(identifier: String, earliestBeginDate: Date? = nil) {
+    public init(
+        identifier: String,
+        earliestBeginDate: Date? = nil,
+        requiresNetworkConnectivity: Bool = false,
+        requiresExternalPower: Bool = false
+    ) {
         self.identifier = identifier
         self.earliestBeginDate = earliestBeginDate
+        self.requiresNetworkConnectivity = requiresNetworkConnectivity
+        self.requiresExternalPower = requiresExternalPower
     }
 }
 
@@ -32,8 +41,10 @@ protocol MiniAppBackgroundTaskScheduling: AnyObject {
     func cancel(identifier: String)
 }
 
-/// One OS-launched task. Expiration and completion are each delivered at most
-/// once even if a provider repeats either signal.
+/// One OS-launched task. The native expiration handler retains this execution
+/// until `complete(success:)` clears the cycle. Feature work may retain it too,
+/// but must eventually complete it; dropping the launch-handler argument does
+/// not imply success. Expiration and completion are each delivered at most once.
 @MainActor
 public final class MiniAppBackgroundTaskExecution {
     public let identifier: String
@@ -46,7 +57,7 @@ public final class MiniAppBackgroundTaskExecution {
     fileprivate init(identifier: String, native: any MiniAppBackgroundTaskNative) {
         self.identifier = identifier
         self.native = native
-        native.expirationHandler = { [weak self] in self?.expire() }
+        native.expirationHandler = { self.expire() }
     }
 
     /// Returns false after the first completion and never completes the native
@@ -56,6 +67,7 @@ public final class MiniAppBackgroundTaskExecution {
         guard !isCompleted else { return false }
         isCompleted = true
         native.expirationHandler = nil
+        onExpiration = nil
         native.setTaskCompleted(success: success)
         return true
     }

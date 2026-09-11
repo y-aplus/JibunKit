@@ -191,3 +191,10 @@ line. A `passed:` result must additionally include `protected-add=...` and
 `stage=...` and, where a native comparison applies, both `wrapper=...` and
 `native=...`. Physical-device success remains unverified until that result is
 reported.
+
+The diagnostic IPA is published separately as the
+[`keychain-device-check-20260911-r2` prerelease](https://github.com/y-aplus/JibunKit/releases/tag/keychain-device-check-20260911-r2),
+with a direct
+[`JibunKit.ipa` download](https://github.com/y-aplus/JibunKit/releases/download/keychain-device-check-20260911-r2/JibunKit.ipa).
+The earlier prerelease remains an immutable record of the first failed run and
+must not be used for this follow-up.

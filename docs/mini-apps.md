@@ -58,6 +58,18 @@ static let all = makeRegistry([
 
 リマインダーでは、`ReminderStore`が`reminder.message`だけを扱う。カウンターの`counter.value`とは同じApp Group内でもキーが分かれ、統合テストで独立した保存と再読込みを確認している。
 
+## Packageのリソースと翻訳
+
+画像・JSON・翻訳などをSwift Packageのresourcesとして宣言し、そのPackage内の`Bundle.module`で読む。
+同じファイル名や翻訳キーを他Featureが使っていても、ホストの`Bundle.main`へ集める必要はない。
+JibunKitのapp/Widgetは`CFBundleAllowMixedLocalizations = true`を設定しており、Package固有の翻訳を
+ホストの表示名の対応言語へ揃える必要はない。同じ設定要求は合成でき、異なる値の要求は衝突として扱う。
+
+二PackageのJSON・通常の翻訳選択を単独/統合/A除去後で比較し、実際の生成JibunKitホストでは
+英語・日本語と、ホストに翻訳がないフランス語の値を確認した。
+[検証記録](verification/2026-09-11-package-resource-localization.md)を参照。
+Widgetについてはビルド済み設定の確認までで、翻訳の描画・更新はこの検証に含まない。
+
 ## ローカル通知も追加する
 
 通知の受け取り口はホストに1つだけ置く。既存の`NotificationAppDelegate`が起動時にnotification centerのdelegateを設定し、通知payloadのミニアプリIDを`AppNavigation`へ渡す。新しいミニアプリのためにapp delegateを増やさない。

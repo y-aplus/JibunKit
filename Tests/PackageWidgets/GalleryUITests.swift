@@ -1,4 +1,5 @@
 import XCTest
+import Vision
 
 @MainActor
 final class GalleryUITests: XCTestCase {
@@ -17,55 +18,149 @@ final class GalleryUITests: XCTestCase {
             let titleText = "Feature \(widget)"
             let title = springboard.staticTexts[titleText].firstMatch
             guard select(appName: appName, widgetName: titleText, on: springboard) else { return }
-            let previewValue = springboard.staticTexts[widget == "A" ? "A:11" : "B:22"].firstMatch
+            let appHeader = springboard.otherElements[appName].firstMatch
+            let preview = springboard.buttons.matching(
+                NSPredicate(
+                    format: "label CONTAINS %@ AND label CONTAINS %@",
+                    appName, titleText
+                )
+            ).firstMatch
+            let expectedValue = widget == "A" ? "A:11" : "B:22"
             guard require(title, timeout: 10, on: springboard) else { return }
-            guard require(previewValue, timeout: 10, on: springboard) else { return }
-            guard isVisible(title, in: springboard), isVisible(previewValue, in: springboard) else {
+            guard require(appHeader, timeout: 10, on: springboard) else { return }
+            guard require(preview, timeout: 10, on: springboard) else { return }
+            guard isVisible(title, in: springboard), isVisible(appHeader, in: springboard),
+                  isVisible(preview, in: springboard) else {
                 recordFailure(on: springboard, message: "Expected Widget preview is not visible: \(widget)")
                 return
             }
+            let previewScreenshot = springboard.screenshot()
+            guard assertText(
+                expected: [expectedValue],
+                in: previewScreenshot,
+                region: preview.frame,
+                screenFrame: springboard.frame,
+                evidenceName: "\(appName)-\(widget)-preview"
+            ) else { return }
             let add = addWidgetControl(in: springboard)
-            if add.waitForExistence(timeout: 5) {
-                guard isVisible(add, in: springboard) else {
-                    recordFailure(on: springboard, message: "Observed Add Widget label is outside the preview")
-                    return
-                }
-                print("ADD WIDGET CONTROL: \(add.debugDescription)")
-                add.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-            } else {
-                let frame = springboard.frame
-                guard abs(frame.width - 402) < 1, abs(frame.height - 874) < 1 else {
-                    recordFailure(on: springboard, message: "Refusing preview fallback on unexpected frame: \(frame)")
-                    return
-                }
-                print("ADD WIDGET CONTROL: absent after preview identity \(titleText) / \(previewValue.label); using verified fixture coordinate")
-                springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.905)).tap()
+            guard require(add, timeout: 5, on: springboard) else { return }
+            guard isVisible(add, in: springboard) else {
+                recordFailure(on: springboard, message: "Observed Add Widget Button is outside the preview")
+                return
             }
+            print("ADD WIDGET CONTROL: \(add.debugDescription)")
+            add.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             guard waitUntilAbsent(title, timeout: 10, on: springboard) else { return }
-            guard require(springboard.staticTexts[widget == "A" ? "A:11" : "B:22"],
-                          timeout: 15, on: springboard) else { return }
         }
 
-        if expected.contains("A") {
-            guard require(springboard.staticTexts["A:11"], timeout: 15, on: springboard) else { return }
-        }
-        if expected.contains("B") {
-            guard require(springboard.staticTexts["B:22"], timeout: 15, on: springboard) else { return }
-        }
+        let initialValues = expected.map { $0 == "A" ? "A:11" : "B:22" }
+        guard waitForText(
+            expected: initialValues,
+            absent: [],
+            timeout: 15,
+            on: springboard,
+            evidenceName: "\(appName)-widget-render"
+        ) else { return }
 
         if expected.contains("A") && expected.contains("B") {
             app.activate()
             app.buttons["widget-fixture.update-a"].tap()
             guard require(app.staticTexts["a-updated"], timeout: 5, on: app) else { return }
             springboard.activate()
-            guard require(springboard.staticTexts["A:33"], timeout: 20, on: springboard) else { return }
-            guard require(springboard.staticTexts["B:22"], timeout: 1, on: springboard) else { return }
+            guard waitForText(
+                expected: ["A:33", "B:22"],
+                absent: ["A:11"],
+                timeout: 20,
+                on: springboard,
+                evidenceName: "\(appName)-widget-updated"
+            ) else { return }
         }
+    }
 
-        let evidence = XCTAttachment(screenshot: springboard.screenshot())
-        evidence.name = "\(appName)-widget-render"
-        evidence.lifetime = .keepAlways
-        add(evidence)
+    private func waitForText(
+        expected: [String],
+        absent: [String],
+        timeout: TimeInterval,
+        on application: XCUIApplication,
+        evidenceName: String
+    ) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        var screenshot: XCUIScreenshot
+        var recognized: [String]
+        repeat {
+            screenshot = application.screenshot()
+            recognized = recognizeText(in: screenshot, region: application.frame, screenFrame: application.frame)
+            let normalized = normalize(recognized.joined(separator: " "))
+            if expected.allSatisfy({ normalized.contains(normalize($0)) }) &&
+                absent.allSatisfy({ !normalized.contains(normalize($0)) }) {
+                attachOCR(screenshot: screenshot, recognized: recognized, name: evidenceName)
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(1))
+        } while Date() < deadline
+
+        attachOCR(screenshot: screenshot, recognized: recognized, name: evidenceName)
+        XCTFail("OCR mismatch for \(evidenceName); expected=\(expected), absent=\(absent), recognized=\(recognized)")
+        return false
+    }
+
+    private func assertText(
+        expected: [String],
+        in screenshot: XCUIScreenshot,
+        region: CGRect,
+        screenFrame: CGRect,
+        evidenceName: String
+    ) -> Bool {
+        let recognized = recognizeText(in: screenshot, region: region, screenFrame: screenFrame)
+        let normalized = normalize(recognized.joined(separator: " "))
+        attachOCR(screenshot: screenshot, recognized: recognized, name: evidenceName)
+        guard expected.allSatisfy({ normalized.contains(normalize($0)) }) else {
+            XCTFail("OCR mismatch for \(evidenceName); expected=\(expected), recognized=\(recognized)")
+            return false
+        }
+        return true
+    }
+
+    private func recognizeText(
+        in screenshot: XCUIScreenshot,
+        region: CGRect,
+        screenFrame: CGRect
+    ) -> [String] {
+        guard let image = screenshot.image.cgImage else {
+            return ["<screenshot has no CGImage>"]
+        }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = false
+        request.recognitionLanguages = ["en-US"]
+        request.regionOfInterest = CGRect(
+            x: (region.minX - screenFrame.minX) / screenFrame.width,
+            y: 1 - ((region.maxY - screenFrame.minY) / screenFrame.height),
+            width: region.width / screenFrame.width,
+            height: region.height / screenFrame.height
+        )
+        do {
+            try VNImageRequestHandler(cgImage: image, options: [:]).perform([request])
+            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        } catch {
+            return ["<Vision error: \(error)>"]
+        }
+    }
+
+    private func normalize(_ text: String) -> String {
+        text.filter { !$0.isWhitespace }
+    }
+
+    private func attachOCR(screenshot: XCUIScreenshot, recognized: [String], name: String) {
+        let image = XCTAttachment(screenshot: screenshot)
+        image.name = name
+        image.lifetime = .keepAlways
+        add(image)
+        let text = XCTAttachment(string: recognized.joined(separator: "\n"))
+        text.name = "\(name)-recognized-text"
+        text.lifetime = .keepAlways
+        add(text)
+        print("OCR \(name): \(recognized)")
     }
 
     private func openGallery(on springboard: XCUIApplication) -> Bool {
@@ -131,7 +226,7 @@ final class GalleryUITests: XCTestCase {
     }
 
     private func addWidgetControl(in springboard: XCUIApplication) -> XCUIElement {
-        springboard.descendants(matching: .any).matching(
+        springboard.buttons.matching(
             NSPredicate(
                 format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@",
                 "Add Widget", "ウィジェットを追加"

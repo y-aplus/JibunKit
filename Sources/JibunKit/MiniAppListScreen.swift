@@ -20,39 +20,23 @@ struct MiniAppListScreen: View {
     var body: some View {
         let owner = navigation.activeID
         NavigationStack(path: navigation.pathBinding) {
-            List {
-                ForEach(matchingApps) { miniApp in
-                    Button { navigation.open(miniApp.id) } label: {
-                        Label(miniApp.title, systemImage: miniApp.systemImage)
+            if let owner, let miniApp = MiniAppRegistry.definition(for: owner) {
+                miniApp.makeDestination()
+                    .navigationTitle(miniApp.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        if navigation.path.isEmpty {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button { navigation.showList() } label: {
+                                    Label("ミニアプリ", systemImage: "chevron.left")
+                                }
+                                .accessibilityLabel("ミニアプリ")
+                                .accessibilityIdentifier("miniapp.back-to-list")
+                            }
+                        }
                     }
-                    .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
-                }
-            }
-            .navigationTitle("ミニアプリ")
-            .searchable(text: $searchText, prompt: "アプリ名・IDで検索")
-            .overlay {
-                if matchingApps.isEmpty && !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    ContentUnavailableView.search(text: searchText)
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("バックアップ", systemImage: "externaldrive") { showingBackup = true }
-                        .accessibilityIdentifier("backup.open")
-                }
-            }
-            .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.all) }
-            .navigationDestination(for: MiniAppID.self) { miniAppID in
-                if let miniApp = MiniAppRegistry.definition(for: miniAppID) {
-                    miniApp.makeDestination()
-                        .navigationTitle(miniApp.title)
-                        .navigationBarTitleDisplayMode(.inline)
-                } else {
-                    ContentUnavailableView(
-                        "ミニアプリを開けません",
-                        systemImage: "questionmark.app"
-                    )
-                }
+            } else {
+                launcher
             }
         }
         // Feature-local destination types may be identical in different apps.
@@ -86,6 +70,31 @@ struct MiniAppListScreen: View {
                 .background(.bar)
             }
         }
+    }
+
+    private var launcher: some View {
+        List {
+            ForEach(matchingApps) { miniApp in
+                Button { navigation.open(miniApp.id) } label: {
+                    Label(miniApp.title, systemImage: miniApp.systemImage)
+                }
+                .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
+            }
+        }
+        .navigationTitle("ミニアプリ")
+        .searchable(text: $searchText, prompt: "アプリ名・IDで検索")
+        .overlay {
+            if matchingApps.isEmpty && !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("バックアップ", systemImage: "externaldrive") { showingBackup = true }
+                    .accessibilityIdentifier("backup.open")
+            }
+        }
+        .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.all) }
     }
 }
 #endif

@@ -3,6 +3,38 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    private func revealLauncherRow(_ row: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
+        // iOS 26's bottom search field can cover a row whose accessibility
+        // element still reports isHittable. Bring the whole row into view.
+        for _ in 0..<5 {
+            let search = app.searchFields.firstMatch
+            let bottom = search.exists ? search.frame.minY : app.frame.maxY - 40
+            let top = app.navigationBars.firstMatch.frame.maxY
+            if row.frame.minY > top && row.frame.maxY < bottom { return }
+            if row.frame.minY <= top {
+                app.collectionViews.firstMatch.swipeDown()
+            } else {
+                app.collectionViews.firstMatch.swipeUp()
+            }
+        }
+        XCTFail("Launcher row remains covered: \(row.debugDescription)\n\(app.debugDescription)")
+    }
+
+    func testFeatureRootNavigationRegression() throws {
+        continueAfterFailure = false
+        try testRecordsUsesIndependentHostStorage()
+        testFeatureNavigationRetainsPathsAcrossSwitches()
+        testSceneNavigationObjectsAndNotificationTargetStayIndependent()
+        try testGeneratedFeatureCoexistsAndRoutesInHost()
+        let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+        app.terminate()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jkrouteprobe://url-a/detail")))
+        let detail = app.staticTexts.matching(identifier: "url.route.location")
+            .matching(NSPredicate(format: "label == %@", "url-a:detail")).firstMatch
+        XCTAssertTrue(detail.waitForExistence(timeout: 15), app.debugDescription)
+    }
+
     func testNativeNotificationRequestPayloadsReachOnlyTheirOwners() {
         continueAfterFailure = false
         // Both fixtures now validate the native request before marking receipt.
@@ -122,18 +154,18 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap("scene.navigation.a.push")
         tap("scene.navigation.b.open")
         tap("scene.navigation.b.push")
-        expect("A=2 B=2")
+        expect("A=1 B=1")
         tap("scene.navigation.route")
-        expect("A=2 B=0")
+        expect("A=1 B=0")
         tap("scene.navigation.b.open")
-        expect("A=2 B=2")
+        expect("A=1 B=1")
         tap("scene.navigation.activate-a")
         tap("scene.navigation.route")
-        expect("A=0 B=2")
+        expect("A=0 B=1")
         tap("scene.navigation.a.open")
         tap("scene.navigation.remove-a")
         tap("scene.navigation.route")
-        expect("A=2 B=0")
+        expect("A=1 B=0")
     }
 
     func testFeatureNavigationRetainsPathsAcrossSwitches() {
@@ -780,14 +812,16 @@ final class GeneratedFeatureUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        func tap(_ element: XCUIElement) {
+        func tap(_ element: XCUIElement, launcherRow: Bool = false) {
             XCTAssertTrue(element.waitForExistence(timeout: 10))
+            if launcherRow { revealLauncherRow(element, in: app) }
             element.tap()
         }
-        tap(app.buttons["miniapp.counter"])
+        tap(app.buttons["miniapp.counter"], launcherRow: true)
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         let counterValue = app.staticTexts["counter.value"].label
         tap(app.navigationBars.buttons["ミニアプリ"])
-        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["miniapp.records"], launcherRow: true)
         tap(app.buttons["records.add"])
         let title = "Hosted-" + UUID().uuidString.prefix(8)
         tap(app.textFields["records.title"])
@@ -797,7 +831,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.buttons["records.save"])
         app.terminate()
         app.launch()
-        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["miniapp.records"], launcherRow: true)
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "records.row.", String(title))).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         let recordID = String(row.identifier.dropFirst("records.row.".count))
@@ -807,7 +841,16 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
         tap(app.navigationBars.buttons["記録"])
         tap(app.navigationBars.buttons["ミニアプリ"])
-        tap(app.buttons["miniapp.counter"])
+        let counterRow = app.buttons["miniapp.counter"]
+        revealLauncherRow(counterRow, in: app)
+        // The blank trailing part of a launcher row is also a selection target.
+        print("COUNTER-ROW frame=\(counterRow.frame) hittable=\(counterRow.isHittable)")
+        let launcher = XCTAttachment(screenshot: app.screenshot())
+        launcher.name = "records-return-launcher"
+        launcher.lifetime = .keepAlways
+        add(launcher)
+        counterRow.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(app.staticTexts["counter.value"].label, counterValue)
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/records?destination=invalid")))
         XCTAssertTrue(app.staticTexts["counter.value"].exists)
@@ -824,11 +867,13 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertTrue(notes.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["miniapp.counter"].exists)
         XCTAssertTrue(app.buttons["miniapp.reminder"].exists)
+        revealLauncherRow(notes, in: app)
         notes.tap()
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons["ミニアプリ"].tap()
         let counter = app.buttons["miniapp.counter"]
         XCTAssertTrue(counter.waitForExistence(timeout: 5))
+        revealLauncherRow(counter, in: app)
         counter.tap()
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/notes")))

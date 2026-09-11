@@ -3,9 +3,9 @@ import XCTest
 final class BackgroundURLSessionNativeUITests: XCTestCase {
     func testTwoOwnersDownloadAndCancellationRemainsScoped() {
         let app = XCUIApplication()
-        app.launchEnvironment["BACKGROUND_URLSESSION_BASE_URL"] = ProcessInfo.processInfo.environment[
-            "BACKGROUND_URLSESSION_BASE_URL"
-        ]
+        let baseURL = "__BACKGROUND_URLSESSION_BASE_URL__"
+        XCTAssertFalse(baseURL.hasPrefix("__"), "Native fixture base URL was not injected")
+        app.launchEnvironment["BACKGROUND_URLSESSION_BASE_URL"] = baseURL
         app.launch()
         app.buttons["background-urlsession.run"].tap()
 
@@ -19,4 +19,3 @@ final class BackgroundURLSessionNativeUITests: XCTestCase {
         )
     }
 }
-

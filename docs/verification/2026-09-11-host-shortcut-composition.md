@@ -17,3 +17,11 @@
 ## 最初の通常host検証
 
 [34552604139](https://github.com/y-aplus/JibunKit/actions/runs/34552604139)、source `6ce59a1cb2b3a2c36550a2a413862cb6d69999ee` はiOS build後の互換性検査で失敗。Provider名の一致は通過したが、AddCounterValueIntentの辞書一致が失敗した。Intent実装は変更していないものの、差分を取得できていないため無害とは判断しない。現在の検査は失敗時のactual metadataを保存していなかったため、JSON artifact保存とfield単位のdiff表示を追加する。比較条件は維持し、次の診断は共有試験/通常buildのみで、到達しないSimulatorを予約しない。
+
+## 不一致の特定と比較方法
+
+[34552915930](https://github.com/y-aplus/JibunKit/actions/runs/34552915930)、source `8d0a4f8c439d184a264e7e79fc557492dd979bae` のactual metadataを取得した。差分は`parameters[0].resolvableInputTypes`の順序だけで、基準のprimitive type identifier列`[7, 2, 0]`が`[0, 2, 7]`になっていた。その他のIntent辞書、Provider identity、Shortcut辞書は一致した。
+
+合成前の独立したcontrol IPAも取得して比較した。34552157327では`[7, 2, 0]`、34551805751では`[2, 7, 0]`だった。両者のCounter Intent/手書きProviderソースは同一であり、この並びの変動は合成機構の導入に固有ではない。数値の意味を推測して除外せず、native入力型の各辞書全体を保持してこの配列だけsortして比較する。引数順・phrase順など他の配列は変更しない。重複も残すため型の欠落/追加は検出する。
+
+比較ツールに、入力型の順序変更だけは通り、型の欠落/重複・Intent identity・戻り値・phrase・Providerの変更は落ちる回帰試験を追加した。取得済みactual metadataもローカルで再比較する。製品Swiftを追加変更せず、次のCIで通常IPA・単独/統合Shortcut・通常UI回帰を再検証する。

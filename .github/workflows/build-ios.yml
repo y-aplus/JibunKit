@@ -374,6 +374,7 @@ jobs:
           require_executable "widget executable" "$widget/$widget_executable"
           require_nonempty "App Intents metadata" "$metadata"
           cp "$metadata" "$RUNNER_TEMP/host-app-intents.json"
+          python3 -m unittest discover -s Tools/tests -p test_host_shortcut_compatibility.py
           python3 Tools/verify-host-shortcut-compatibility.py "$metadata"
 
           app_architecture="$(file "$app/$app_executable")"

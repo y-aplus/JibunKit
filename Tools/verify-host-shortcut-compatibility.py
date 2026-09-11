@@ -1,5 +1,6 @@
 """Check Counter's public Shortcut contract against its pre-composition IPA."""
 import argparse
+import copy
 import difflib
 import json
 from pathlib import Path
@@ -22,8 +23,22 @@ def require_equal(actual_value, expected_value, label):
 
 require_equal(actual.get("autoShortcutProviderMangledName"), baseline["autoShortcutProviderMangledName"],
               "Counter Shortcut provider identity changed")
+
+def normalized_input_types(action):
+    # Native extraction changes this allowed-type list's order even when the
+    # Intent and hand-written provider sources are unchanged. Keep duplicates
+    # and every other array (including parameter/phrase order) intact.
+    action = copy.deepcopy(action)
+    if isinstance(action, dict):
+        for parameter in action.get("parameters", []):
+            types = parameter.get("resolvableInputTypes")
+            if isinstance(types, list):
+                parameter["resolvableInputTypes"] = sorted(types, key=lambda value: json.dumps(value, sort_keys=True))
+    return action
+
 for identifier, expected in baseline["actions"].items():
-    require_equal(actual.get("actions", {}).get(identifier), expected,
+    require_equal(normalized_input_types(actual.get("actions", {}).get(identifier)),
+                  normalized_input_types(expected),
                   f"Existing Intent contract changed: {identifier}")
     shortcuts = [item for item in actual.get("autoShortcuts", []) if item["actionIdentifier"] == identifier]
     expected_shortcuts = [item for item in baseline["autoShortcuts"] if item["actionIdentifier"] == identifier]

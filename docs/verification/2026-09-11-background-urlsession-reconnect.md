@@ -26,7 +26,15 @@ callbackをcore registryへ転送する。FeatureのDefinition/Registry、画面
 - unknown identifierとfactory失敗でもhost completionを一回解放
 
 ここでnative configurationを作る試験とiOS host buildはAPI接続を確認するが、実転送を
-発生させるprovider試験ではない。CI結果は実行後に追記する。
+発生させるprovider試験ではない。
+
+[GitHub Actions run 34552504692](https://github.com/y-aplus/JibunKit/actions/runs/34552504692)
+はsource `9a66cdf3d6de7b39474e5e9725c1f4fe819a59ff`をXcode 26.6で検証し、
+新規5試験を0 failureで完了した。共有feature logic、build requirements、独立Feature
+packages、通常iOS app/Widget build、arm64・bundle ID・App Group・App Intents・署名・
+IPA整合性、artifact uploadも成功した。Simulator UIはこのnative callback接続の検証へ
+不要なため実行していない。生成IPAのworkflow内SHA-256は
+`21b095df6b5b6e1e642ec0b22aa4b47940e33ec2d6dcdc327fd1e174218a969f`。
 
 ## 未確認境界
 

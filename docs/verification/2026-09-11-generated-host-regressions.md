@@ -38,3 +38,7 @@ CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnativ
 - Recordsの既知Simulator Quick Lookはexpected failure。実機での確認済み範囲とは別に、Simulator未解決を維持する。
 
 generated hostは上記batchだけであり全件成功とはしない。通知actionの反復操作とWeb保持の過去の不安定性はこのrunの完了対象外。通知は[別の検証](2026-09-11-notification-ui-regression.md)、Webは[終了時点比較](2026-09-11-web-cookie-termination-comparison.md)へ進んでいる。
+
+## 通知の連続操作に関する追加証拠
+
+[34547236843](https://github.com/y-aplus/JibunKit/actions/runs/34547236843)、source `b8e66168beb053f0309fd2825aee2c01c7efa000`で、独自action→foreground通知の配送/後始末→独自actionの順を一つのXCTestに固定して成功（187.611秒）。両回とも内容・所有者配送・他Feature表示を検証し、通知カードと展開actionの画像を保存した。製品callbackとOS操作gestureは変更していない。過去のOS表示失敗の原因は未確定であり、全generated suite成功の代替にはしない。[詳細](2026-09-11-notification-ui-regression.md)。

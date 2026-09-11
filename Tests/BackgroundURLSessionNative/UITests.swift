@@ -11,8 +11,9 @@ final class BackgroundURLSessionNativeUITests: XCTestCase {
         app.buttons["background-urlsession.run"].tap()
 
         let result = app.staticTexts["background-urlsession.result"]
-        let passed = NSPredicate(format: "label BEGINSWITH 'passed:'")
-        expectation(for: passed, evaluatedWith: result)
+        let finished = NSPredicate(
+            format: "label BEGINSWITH 'passed:' OR label BEGINSWITH 'failed:'")
+        expectation(for: finished, evaluatedWith: result)
         waitForExpectations(timeout: 30)
         XCTAssertEqual(
             result.label,

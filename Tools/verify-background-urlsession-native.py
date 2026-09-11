@@ -72,7 +72,6 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-background-urlsession-native-"
             "-resultBundlePath", str(Path(os.environ["RUNNER_TEMP"]) / "BackgroundURLSessionNative.xcresult"),
             "-parallel-testing-enabled", "NO",
             f"-only-testing:{test_identifier}",
-            "CODE_SIGNING_ALLOWED=NO",
         ]
         result = subprocess.run(
             command,

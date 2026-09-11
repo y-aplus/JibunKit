@@ -3,6 +3,7 @@ import Foundation
 
 // Both packages deliberately use the same Swift entity/query names and local IDs.
 public struct Entry: AppEntity {
+    public static let persistentIdentifier = "com.jibunkit.intent-fixture.a.entry"
     public static let typeDisplayRepresentation: TypeDisplayRepresentation = "Feature A entry"
     public static let defaultQuery = EntryQuery()
     public let id: String
@@ -25,6 +26,7 @@ public enum EntryStore {
 }
 
 public struct EntryQuery: EntityStringQuery {
+    public static let persistentIdentifier = "com.jibunkit.intent-fixture.a.entry-query"
     public init() {}
 
     @MainActor

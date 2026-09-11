@@ -31,3 +31,18 @@ Counter metadata互換性はそのまま実行する。
 Swiftから直接query/performを呼ぶ試験はOS Shortcutsの選択UI・保存済みentity解決・Siri配送の
 実行証拠ではない。native metadataの登録と直接実行をそれぞれ記録する。
 同名Intent型、OS側の候補選択、Widget/Controlへの接続は今回の比較範囲に含めない。
+
+## デフォルト識別子の衝突を確認
+
+[34557984363](https://github.com/y-aplus/JibunKit/actions/runs/34557984363)、source
+`11330b51519c8c6983274aadd5329ae4d4a7ef3c` は6つのnative app buildとIntent辞書比較まで成功し、
+entity identifierの衝突で失敗した。単独A/Bはそれぞれ`entities.Entry`と`queries.EntryQuery`を持つ。
+統合appではentityが`IntentFeatureB.Entry`、queryが`IntentFeatureA.EntryQuery`の一件ずつになり、
+A/B両Intentのentity引数は同じ`Entry`を参照していた。単なる比較ツールの順序差ではなく、
+app metadataから片方の定義が失われた。Swift実行試験には未到達。
+
+Appleの公開[PersistentlyIdentifiable](https://developer.apple.com/documentation/appintents/persistentlyidentifiable)
+と[persistentIdentifier](https://developer.apple.com/documentation/appintents/persistentlyidentifiable/persistentidentifier)
+に従い、entityとqueryへそれぞれFeature所有の安定した文字列を明示して再比較する。
+Swiftの`Entry`/`EntryQuery`型名とレコードの`shared-id`は変更しない。デフォルトの名前衝突を
+JibunKit固有の不変制約とは扱わず、標準の識別子指定で補えるかを検証する。通常Counterの既存識別子は変更しない。

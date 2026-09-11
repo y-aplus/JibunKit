@@ -106,6 +106,30 @@ private enum ProbeFailure: Error {
     case cancellationNotScoped([String])
 }
 
+private struct PendingSnapshot: Sendable {
+    enum Kind: Equatable, Sendable { case refresh, processing }
+
+    let identifier: String
+    let kind: Kind
+    let earliestBeginDate: Date?
+    let requiresNetworkConnectivity: Bool
+    let requiresExternalPower: Bool
+
+    init(_ request: BGTaskRequest) {
+        identifier = request.identifier
+        earliestBeginDate = request.earliestBeginDate
+        if let processing = request as? BGProcessingTaskRequest {
+            kind = .processing
+            requiresNetworkConnectivity = processing.requiresNetworkConnectivity
+            requiresExternalPower = processing.requiresExternalPower
+        } else {
+            kind = .refresh
+            requiresNetworkConnectivity = false
+            requiresExternalPower = false
+        }
+    }
+}
+
 @MainActor
 private enum BackgroundTasksProbe {
     static func run() async throws -> String {
@@ -133,13 +157,13 @@ private enum BackgroundTasksProbe {
         try BGTaskScheduler.shared.submit(nativeProcessing)
 
         let initial = try await pendingByIdentifier()
-        try verify(initial[FixtureIDs.wrapperA], kind: BGAppRefreshTaskRequest.self,
+        try verify(initial[FixtureIDs.wrapperA], kind: .refresh,
                    earliest: wrapperDate, network: false, power: false)
-        try verify(initial[FixtureIDs.wrapperB], kind: BGProcessingTaskRequest.self,
+        try verify(initial[FixtureIDs.wrapperB], kind: .processing,
                    earliest: wrapperDate, network: true, power: true)
-        try verify(initial[FixtureIDs.nativeA], kind: BGAppRefreshTaskRequest.self,
+        try verify(initial[FixtureIDs.nativeA], kind: .refresh,
                    earliest: nativeDate, network: false, power: false)
-        try verify(initial[FixtureIDs.nativeB], kind: BGProcessingTaskRequest.self,
+        try verify(initial[FixtureIDs.nativeB], kind: .processing,
                    earliest: nativeDate, network: true, power: true)
 
         try FixtureHost.a.cancel(identifier: FixtureIDs.wrapperA)
@@ -153,30 +177,30 @@ private enum BackgroundTasksProbe {
         return "passed: wrapper-a=refresh wrapper-b=processing native-a=refresh native-b=processing a-cancelled b-pending"
     }
 
-    private static func pendingByIdentifier() async throws -> [String: BGTaskRequest] {
+    private static func pendingByIdentifier() async throws -> [String: PendingSnapshot] {
         let requests = await withCheckedContinuation { continuation in
-            BGTaskScheduler.shared.getPendingTaskRequests { continuation.resume(returning: $0) }
+            BGTaskScheduler.shared.getPendingTaskRequests { requests in
+                continuation.resume(returning: requests.map(PendingSnapshot.init))
+            }
         }
         return Dictionary(uniqueKeysWithValues: requests.map { ($0.identifier, $0) })
     }
 
     private static func verify(
-        _ request: BGTaskRequest?,
-        kind: BGTaskRequest.Type,
+        _ request: PendingSnapshot?,
+        kind: PendingSnapshot.Kind,
         earliest: Date,
         network: Bool,
         power: Bool
     ) throws {
         guard let request else { throw ProbeFailure.missingRequest(String(describing: kind)) }
-        guard type(of: request) == kind else { throw ProbeFailure.wrongKind(request.identifier) }
+        guard request.kind == kind else { throw ProbeFailure.wrongKind(request.identifier) }
         guard let actualDate = request.earliestBeginDate,
               abs(actualDate.timeIntervalSince(earliest)) < 2
         else { throw ProbeFailure.wrongEarliestDate(request.identifier) }
-        if let processing = request as? BGProcessingTaskRequest {
-            guard processing.requiresNetworkConnectivity == network,
-                  processing.requiresExternalPower == power
-            else { throw ProbeFailure.wrongConditions(request.identifier) }
-        } else if network || power {
+        guard request.requiresNetworkConnectivity == network,
+              request.requiresExternalPower == power
+        else {
             throw ProbeFailure.wrongConditions(request.identifier)
         }
     }

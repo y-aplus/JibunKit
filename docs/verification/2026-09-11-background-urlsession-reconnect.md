@@ -60,6 +60,15 @@ build、署名・IPA整合性、artifact uploadも成功した。workflow内IPA 
 `70bacf3f7bb7d828c8edec4ff5b847cd4024ba46e1213e338edc20535d2a7bbb`。
 この結果も実OS background転送やcold launch配送の実証には読み替えない。
 
+追加レビューで、取消後・再登録前の後着callbackを既存pendingへ結合する順序、
+reentrant completionが接続した新tokenをdelegateが消さない転送順、旧tokenの
+新pending非干渉、expectationによるnative delegate完了待ちを加えた。
+[GitHub Actions run 34553772146](https://github.com/y-aplus/JibunKit/actions/runs/34553772146)
+はsource `3fb9dc8c049d52bb0909ec0b0f46573f7979e565`をXcode 26.6で検証し、
+新規7試験を0 failureで完了した。共有feature logic、通常iOS app/Widget build、
+署名・IPA整合性、artifact uploadも成功した。workflow内IPA SHA-256は
+`4ef7901b07ff9b0621c154916baea162ea4cd3752e944d18d9ed73aec18050ce`。
+
 ## 未確認境界
 
 OSによるbackground upload/download、アプリ終了後の継続、cold launchでのdelegate

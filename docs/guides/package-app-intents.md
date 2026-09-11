@@ -60,3 +60,18 @@ public struct EntryQuery: EntityStringQuery {
 既存公開型の永続識別子を不用意に変更しない。改名・移動・独立appからの統合時は以前の識別子との互換性を確認する。毎回のUUID生成やhost名からの自動再生成は使わない。独自メタデータ書換えやquery転送機構は不要。
 
 Apple標準: [PersistentlyIdentifiable](https://developer.apple.com/documentation/appintents/persistentlyidentifiable)、[persistentIdentifier](https://developer.apple.com/documentation/appintents/persistentlyidentifiable/persistentidentifier)。
+
+## 統合で消えた定義を検出する
+
+通常のbuild成功だけでは同名定義の衝突を検出できなかったため、意図した単独版のnative metadataと統合版を比較するツールを用意した。
+
+```sh
+python3 Tools/verify-app-intents-integration.py \
+  --baseline /path/to/StandaloneA.app/Metadata.appintents/extract.actionsdata \
+  --baseline /path/to/StandaloneB.app/Metadata.appintents/extract.actionsdata \
+  --integrated /path/to/Combined.app/Metadata.appintents/extract.actionsdata
+```
+
+引数には統合後も残す予定の定義を持つ、Xcode生成JSONを指定する。検査はIntent/entity/queryのidentifier衝突、統合後の型の欠落・置換、entity引数・query・property参照の変化を拒否し、衝突した識別子と型名を示す。複数baselineが同じ型・参照を含む場合は重複登録として扱わず、統合版の追加定義も許容する。異なる単独appの無関係なhost専用Intentまでbaselineへ含める用途ではない。
+
+これは明示したbaselineの保持検査であり、全依存関係の自動発見や、Shortcut文言・Siri実行・既存workflow互換性の包括検査ではない。出力metadataだけを渡して既に失われた定義を推測することもできない。既存Package比較CIはこの検査に加え、entity/query辞書全体の比較とiOS直接実行を続ける。

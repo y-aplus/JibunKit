@@ -80,6 +80,11 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
         results[scheme] = metadata(derived / f"Build/Products/Release-iphoneos/{scheme}.app", scheme)
     capture_shortcut_extraction(derived)
 
+    run(["python3", repo / "Tools/verify-app-intents-integration.py",
+         "--baseline", derived / "Build/Products/Release-iphoneos/StandaloneA.app/Metadata.appintents/extract.actionsdata",
+         "--baseline", derived / "Build/Products/Release-iphoneos/StandaloneB.app/Metadata.appintents/extract.actionsdata",
+         "--integrated", derived / "Build/Products/Release-iphoneos/Combined.app/Metadata.appintents/extract.actionsdata"], root)
+
     a, _ = results["StandaloneA"]
     b, _ = results["StandaloneB"]
     combined, shortcuts = results["Combined"]

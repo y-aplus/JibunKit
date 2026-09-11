@@ -50,3 +50,30 @@ The `Package-Widget-diagnostics` artifact is ID `10185620484`, SHA-256
 
 The run did not open or inspect the Simulator widget gallery. Gallery discoverability
 is unverified and is not inferred from successful extension compilation or metadata.
+
+## Stored-value isolation follow-up
+
+Run [34566580764](https://github.com/y-aplus/JibunKit/actions/runs/34566580764), source
+`97cc705475d2697737cc85abb54b2706fa6650b8`, passed after strengthening the fixture.
+Both packages now use `MiniAppContext.storageKey(_:)` with the identical local key
+`shared-value` against one real `UserDefaults` suite. The test wrote A=11 and B=22,
+read those values through each package's Timeline provider, updated A to 33, and verified
+B remained 22. `testPackageTimelinesRemainOwnerScoped` passed in 0.025 seconds.
+
+The same run verified these required bundle-ID relationships:
+
+- `com.jibunkit.fixture.standalone-a.Widget` is embedded by
+  `com.jibunkit.fixture.standalone-a`.
+- `com.jibunkit.fixture.standalone-b.Widget` is embedded by
+  `com.jibunkit.fixture.standalone-b`.
+- `com.jibunkit.fixture.combined.Widget` is embedded by
+  `com.jibunkit.fixture.combined`.
+
+Every xcodebuild invocation now captures stdout to the diagnostic artifact before
+raising on a nonzero exit. The normal search regression passed in 60.418 seconds.
+`Package-Widget-diagnostics` artifact ID `10186680931` has SHA-256
+`75243901567c1dd86cb676ba97558a039b86c44de6c48507addd339ae0ba9a35`.
+
+No gallery UI was directly observed in this headless CI run. Binary strings establish
+that the stable kind constants were linked into each extension; they do not establish
+WidgetKit registration, gallery discovery, rendering, or installation.

@@ -39,6 +39,8 @@ The bounded core tests compare two Feature owners and verify:
 
 CI run [34550935682](https://github.com/y-aplus/JibunKit/actions/runs/34550935682), source `5c3d3a094ca8a5257ac98923b306f4d0ffb1db5a`, passed. All six focused ownership/lifecycle tests passed as part of 173 shared tests. FeatureBuildRequirements verification, native Feature template verification, generated workspace build, Xcode build, signing, and packaging also passed. This validates compilation of the iOS `BackgroundTasks` provider without claiming that the OS will choose to launch a submitted request.
 
+Follow-up CI run [34551664876](https://github.com/y-aplus/JibunKit/actions/runs/34551664876), source `d14a7afa5f56736dedafdc4326904ca934f8e3be`, passed after moving processing conditions onto each submitted request and adding the execution-retention test. All seven BackgroundTasks tests passed as part of 174 shared tests; the same build-requirement, native-template, generated-workspace, Xcode build, signing, and packaging stages passed. The iOS adapter explicitly hops from the scheduler's launch queue into `MainActor` before creating and delivering the execution.
+
 Apple references:
 
 - [`BGTaskScheduler.register(forTaskWithIdentifier:using:launchHandler:)`](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/register%28fortaskwithidentifier%3Ausing%3Alaunchhandler%3A%29)

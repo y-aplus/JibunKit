@@ -426,10 +426,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.4.0"
+            "0.5.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "5"
+            "6"
           require_equal "widget short version" \
             "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"

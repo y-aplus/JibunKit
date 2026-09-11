@@ -53,3 +53,13 @@ Apple references:
 - [`BGTaskScheduler`](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler)
 - [`BGTask.expirationHandler`](https://developer.apple.com/documentation/backgroundtasks/bgtask/expirationhandler)
 - [`BGProcessingTaskRequest`](https://developer.apple.com/documentation/backgroundtasks/bgprocessingtaskrequest)
+
+## Shared pending-request capacity
+
+Apple's [submit contract](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submit%28_%3A%29?language=objc)
+allows one pending refresh request and ten processing requests per app. The current API preserves
+ownership and native request semantics; it does not multiply those OS slots or arbitrate multiple
+Features competing for the single refresh slot. OS quota is an unavoidable shared boundary, while
+fair admission/coalescing of Feature requests is a separate, still-unimplemented host responsibility
+to evaluate. A direct-native baseline must run sequentially with the wrapper baseline so the test
+itself does not exhaust the refresh quota.

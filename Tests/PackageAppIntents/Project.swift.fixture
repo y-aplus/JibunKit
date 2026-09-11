@@ -1,4 +1,16 @@
 import ProjectDescription
+import ProjectDescriptionHelpers
+
+let shortcutA = FeatureAppShortcuts(owner: "a", imports: ["IntentFeatureA"],
+    sourceFile: "FeatureA/AppShortcuts.swift.fragment")
+let shortcutB = FeatureAppShortcuts(owner: "b", imports: ["IntentFeatureB"],
+    sourceFile: "FeatureB/AppShortcuts.swift.fragment")
+let includeShortcutA = true
+try FeatureAppShortcuts.writeProvider([shortcutA], to: "Generated/OwnedShortcutsA.swift")
+try FeatureAppShortcuts.writeProvider([shortcutB], to: "Generated/OwnedShortcutsB.swift")
+try FeatureAppShortcuts.writeProvider(includeShortcutA ? [shortcutA, shortcutB] : [shortcutB],
+    to: "Generated/OwnedShortcutsCombined.swift")
+
 
 let project = Project(name: "PackageIntents", packages: [
     .package(path: "FeatureA"), .package(path: "FeatureB"),
@@ -23,18 +35,18 @@ let project = Project(name: "PackageIntents", packages: [
     .target(name: "OwnedShortcutsA", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.a", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
-        sources: ["App.swift", "OwnedShortcutsA.swift"],
-        dependencies: [.package(product: "IntentFeatureAShortcuts")]),
+        sources: ["App.swift", "OwnedShortcutsA.swift", "Generated/OwnedShortcutsA.swift"],
+        dependencies: [.package(product: "IntentFeatureA")]),
     .target(name: "OwnedShortcutsB", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.b", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
-        sources: ["App.swift", "OwnedShortcutsB.swift"],
-        dependencies: [.package(product: "IntentFeatureBShortcuts")]),
+        sources: ["App.swift", "OwnedShortcutsB.swift", "Generated/OwnedShortcutsB.swift"],
+        dependencies: [.package(product: "IntentFeatureB")]),
     .target(name: "OwnedShortcutsCombined", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.combined", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
-        sources: ["App.swift", "OwnedShortcutsCombined.swift"],
-        dependencies: [.package(product: "IntentFeatureAShortcuts"), .package(product: "IntentFeatureBShortcuts")]),
+        sources: ["App.swift", "OwnedShortcutsCombined.swift", "Generated/OwnedShortcutsCombined.swift"],
+        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
 ], schemes: [
     .scheme(name: "IntentExecutionTests", shared: true,
             buildAction: .buildAction(targets: ["Combined"]),

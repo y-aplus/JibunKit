@@ -45,9 +45,17 @@ def capture_shortcut_extraction(derived):
 with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     root = Path(temp)
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
-    (root / "Tuist").mkdir()
+    helpers = root / "Tuist/ProjectDescriptionHelpers"
+    helpers.mkdir(parents=True)
+    helper = repo / "Tuist/ProjectDescriptionHelpers/FeatureAppShortcuts.swift"
+    shutil.copyfile(helper, helpers / helper.name)
+    checks = root / "source-composition-checks"
+    run(["swiftc", "-swift-version", "6", helper,
+         root / "SourceCompositionChecks.swift", "-o", checks], root)
+    run([checks], root)
     (root / "Project.swift.fixture").rename(root / "Project.swift")
     run(["tuist", "generate", "--no-open"], root)
+    shutil.copytree(root / "Generated", evidence / "Generated", dirs_exist_ok=True)
     derived = root / "DerivedBuild"
     results = {}
     schemes = ["StandaloneA", "StandaloneB", "Combined",
@@ -111,6 +119,21 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     assert {item["actionIdentifier"]: item for item in actual_shortcuts} == expected_shortcuts, \
         "Package-owned shortcut metadata differs between independent and combined apps"
     print("Package-owned App Shortcuts: both native app-level definitions survive combined inclusion", flush=True)
+
+    # Remove A's Shortcut contribution without cleaning DerivedData. Its Intent
+    # package stays linked, so this tests Shortcut removal, not Feature removal.
+    project = root / "Project.swift"
+    project.write_text(project.read_text().replace("let includeShortcutA = true", "let includeShortcutA = false"))
+    run(["tuist", "generate", "--no-open"], root)
+    run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
+         "-scheme", "OwnedShortcutsCombined", "-configuration", "Release",
+         "-destination", "generic/platform=iOS", "-derivedDataPath", derived,
+         "CODE_SIGNING_ALLOWED=NO"], root)
+    remaining_app = derived / "Build/Products/Release-iphoneos/OwnedShortcutsCombined.app"
+    _, remaining_shortcuts = metadata(remaining_app, "RemovedShortcutA")
+    assert remaining_shortcuts == owned["OwnedShortcutsB"]["autoShortcuts"], remaining_shortcuts
+    shutil.copytree(root / "Generated", evidence / "GeneratedAfterRemoval", dirs_exist_ok=True)
+    print("Shortcut contribution removal: A removed and B preserved without a clean build", flush=True)
 
     result_bundle = evidence / "IntentExecution.xcresult"
     command = ["xcodebuild", "test", "-workspace", root / "PackageIntents.xcworkspace",

@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class BackgroundURLSessionNativeUITests: XCTestCase {
     func testTwoOwnersDownloadAndCancellationRemainsScoped() {
         let app = XCUIApplication()

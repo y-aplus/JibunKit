@@ -69,6 +69,7 @@ private enum BackgroundURLSessionProbe {
         let bSurvivor = b.start(
             request: request(baseURL: baseURL, path: "owner-b-survivor", owner: "owner-b"))
         held.cancel()
+        _ = try await URLSession.shared.data(from: baseURL.appending(path: "release/\(gate)"))
 
         do {
             _ = try await a.result(for: held)
@@ -78,7 +79,6 @@ private enum BackgroundURLSessionProbe {
         }
         let bSurvivorURL = try await b.result(for: bSurvivor)
         try verify(bSurvivorURL, owner: "owner-b", directory: b.destinationDirectory)
-        _ = try await URLSession.shared.data(from: baseURL.appending(path: "release/\(gate)"))
 
         guard a.completedTaskCount == 1, a.cancelledTaskCount == 1,
               b.completedTaskCount == 2, b.cancelledTaskCount == 0
@@ -199,4 +199,3 @@ private final class BackgroundDownloadOwner: NSObject, URLSessionDownloadDelegat
         }
     }
 }
-

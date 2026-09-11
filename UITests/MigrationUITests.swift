@@ -53,12 +53,6 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(export.isEnabled)
         tap(export)
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
-        let nameField = app.textFields["DOCPicker.filenameTextField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 10))
-        let suggestedName = try XCTUnwrap(nameField.value as? String)
-        XCTAssertNotNil(suggestedName.range(
-            of: #"^JibunKit-backup-[0-9]{8}-[0-9]{6}(\.json)?$"#, options: .regularExpression))
-        let filename = suggestedName.hasSuffix(".json") ? suggestedName : suggestedName + ".json"
         capture("backup-file-exporter")
         tap(app.buttons["保存"])
         XCTAssertTrue(app.staticTexts["バックアップを書き出しました。"].waitForExistence(timeout: 20))
@@ -72,8 +66,14 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["backup.import"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        // Files includes the extension before its comma-separated type description.
-        // Match this export, even when an earlier ZIP backup is in the same folder.
+        // This test runs once on a fresh CI simulator, after the ZIP round trip.
+        // Require exactly one dated JSON; never select an arbitrary earlier ZIP or JSON.
+        let jsonFiles = app.cells.matching(NSPredicate(format: "label MATCHES %@",
+            #"JibunKit-backup-[0-9]{8}-[0-9]{6}\.json(,.*)?"#))
+        XCTAssertTrue(jsonFiles.firstMatch.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertEqual(jsonFiles.count, 1, "Expected only this test's JSON export: \(app.debugDescription)")
+        let filename = try XCTUnwrap(jsonFiles.firstMatch.label.split(separator: ",").first).description
+        // Reuse the exact name for both imports, independently of Files view mode.
         let file = app.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@",
                                                  filename, filename + ",")).firstMatch
         func selectBackupFile() {

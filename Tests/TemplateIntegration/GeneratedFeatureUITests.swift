@@ -812,16 +812,16 @@ final class GeneratedFeatureUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        func tap(_ element: XCUIElement) {
+        func tap(_ element: XCUIElement, launcherRow: Bool = false) {
             XCTAssertTrue(element.waitForExistence(timeout: 10))
-            if element.identifier.hasPrefix("miniapp.") { revealLauncherRow(element, in: app) }
+            if launcherRow { revealLauncherRow(element, in: app) }
             element.tap()
         }
-        tap(app.buttons["miniapp.counter"])
+        tap(app.buttons["miniapp.counter"], launcherRow: true)
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         let counterValue = app.staticTexts["counter.value"].label
         tap(app.navigationBars.buttons["ミニアプリ"])
-        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["miniapp.records"], launcherRow: true)
         tap(app.buttons["records.add"])
         let title = "Hosted-" + UUID().uuidString.prefix(8)
         tap(app.textFields["records.title"])
@@ -831,7 +831,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.buttons["records.save"])
         app.terminate()
         app.launch()
-        tap(app.buttons["miniapp.records"])
+        tap(app.buttons["miniapp.records"], launcherRow: true)
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@ AND label CONTAINS %@", "records.row.", String(title))).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         let recordID = String(row.identifier.dropFirst("records.row.".count))

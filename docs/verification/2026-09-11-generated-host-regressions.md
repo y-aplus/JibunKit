@@ -16,6 +16,8 @@ CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnativ
 
 再試行34543883790（source `b78459d`）も同じ選択で失敗したが、原因を示す画面を取得できた。`records-return-launcher`（exported `418D5424-E6F0-494D-81C4-7E947848F1FD.png`）でCounter行は下部検索バーに覆われている。行frameは `(16,796,370,52.33)`、`isHittable=true`だった。tap後のaccessibility treeには検索欄のKeyboard FocusedとKeyboardがあり、Counterではなく検索欄を押したことが確認できる。全幅contentShapeの追加を撤回し、テストで行全体を検索バーとnavigation barの間へスクロールしてからtapする。待ち時間の延長では回避できない座標の重なりであり、Records詳細URLの修正は引き続き未検証。
 
+34545556537（source `3549c59`）では、補助処理がprefixだけで対象を判定したため、`miniapp.back-to-list`まで一覧行として扱い、Counter画面に存在しないCollectionViewをscrollして失敗した。これはテスト補助処理の誤り。Records回帰内の実際の一覧行操作だけが明示的にscrollを依頼する形へ変更し、戻るbuttonやFeature内操作には適用しない。
+
 ## 通知action: 未解決
 
 `testNativeNotificationRequestPayloadsReachOnlyTheirOwners`のnotification cardは見つかったが、左swipe後のViewボタンを検出できなかった（611行）。そのためこのrunはnative action callbackの成功証拠ではない。OS画面操作と通知配置の証拠から追加調査する。D11のcallback処理との因果関係は未確認。

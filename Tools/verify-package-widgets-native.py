@@ -145,6 +145,13 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
         ], root, capture=True, check=False)
         print(result.stdout, end="")
         (evidence / f"{scheme}-gallery.log").write_text(result.stdout, encoding="utf-8")
+        attachments = evidence / f"{scheme}-gallery-attachments"
+        exported = run([
+            "xcrun", "xcresulttool", "export", "attachments",
+            "--path", result_bundle, "--output-path", attachments,
+        ], root, capture=True, check=False)
+        (evidence / f"{scheme}-attachments-export.log").write_text(
+            exported.stdout, encoding="utf-8")
         for bundle_id in installed_bundle_ids:
             run(["xcrun", "simctl", "uninstall", args.simulator_id, bundle_id], root, check=False)
         pass_marker = (

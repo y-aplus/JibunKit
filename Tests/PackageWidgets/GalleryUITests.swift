@@ -14,12 +14,36 @@ final class GalleryUITests: XCTestCase {
         springboard.activate()
         for widget in expected {
             guard openGallery(on: springboard) else { return }
-            guard select(appName: appName, widgetName: "Feature \(widget)", on: springboard) else { return }
-            let add = springboard.buttons.matching(
-                NSPredicate(format: "label IN %@", ["Add Widget", "ウィジェットを追加"])
-            ).firstMatch
-            guard require(add, timeout: 10, on: springboard) else { return }
-            add.tap()
+            let titleText = "Feature \(widget)"
+            let title = springboard.staticTexts[titleText].firstMatch
+            guard select(appName: appName, widgetName: titleText, on: springboard) else { return }
+            let previewValue = springboard.staticTexts[widget == "A" ? "A:11" : "B:22"]
+            guard require(title, timeout: 10, on: springboard) else { return }
+            guard require(previewValue, timeout: 10, on: springboard) else { return }
+            guard isVisible(title, in: springboard), isVisible(previewValue, in: springboard) else {
+                recordFailure(on: springboard, message: "Expected Widget preview is not visible: \(widget)")
+                return
+            }
+            let add = addWidgetControl(in: springboard)
+            if add.waitForExistence(timeout: 5) {
+                guard isVisible(add, in: springboard) else {
+                    recordFailure(on: springboard, message: "Observed Add Widget label is outside the preview")
+                    return
+                }
+                print("ADD WIDGET CONTROL: \(add.debugDescription)")
+                add.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            } else {
+                let frame = springboard.frame
+                guard abs(frame.width - 402) < 1, abs(frame.height - 874) < 1 else {
+                    recordFailure(on: springboard, message: "Refusing preview fallback on unexpected frame: \(frame)")
+                    return
+                }
+                print("ADD WIDGET CONTROL: absent after preview identity \(titleText) / \(previewValue.label); using verified fixture coordinate")
+                springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.905)).tap()
+            }
+            guard waitUntilAbsent(title, timeout: 10, on: springboard) else { return }
+            guard require(springboard.staticTexts[widget == "A" ? "A:11" : "B:22"],
+                          timeout: 15, on: springboard) else { return }
         }
 
         if expected.contains("A") {
@@ -80,11 +104,7 @@ final class GalleryUITests: XCTestCase {
         // do not guess at an unobserved parent cell type.
         result.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        let add = springboard.buttons.matching(
-            NSPredicate(format: "label IN %@", ["Add Widget", "ウィジェットを追加"])
-        ).firstMatch
         let widget = springboard.staticTexts[widgetName].firstMatch
-        if widgetName == "Feature A", add.waitForExistence(timeout: 5) { return true }
         for _ in 0..<3 where !isVisible(widget, in: springboard) {
             springboard.swipeLeft()
         }
@@ -94,6 +114,29 @@ final class GalleryUITests: XCTestCase {
             return false
         }
         return true
+    }
+
+    private func waitUntilAbsent(
+        _ element: XCUIElement,
+        timeout: TimeInterval,
+        on application: XCUIApplication
+    ) -> Bool {
+        let expectation = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "exists == false"), object: element)
+        guard XCTWaiter.wait(for: [expectation], timeout: timeout) == .completed else {
+            recordFailure(on: application, message: "Widget gallery preview did not close")
+            return false
+        }
+        return true
+    }
+
+    private func addWidgetControl(in springboard: XCUIApplication) -> XCUIElement {
+        springboard.descendants(matching: .any).matching(
+            NSPredicate(
+                format: "label CONTAINS[c] %@ OR label CONTAINS[c] %@",
+                "Add Widget", "ウィジェットを追加"
+            )
+        ).firstMatch
     }
 
     private func isVisible(_ element: XCUIElement, in application: XCUIApplication) -> Bool {
@@ -115,6 +158,10 @@ final class GalleryUITests: XCTestCase {
     }
 
     private func recordFailure(on application: XCUIApplication, message: String) {
+        print("UI FAILURE: \(message)")
+        print("ACCESSIBILITY HIERARCHY BEGIN")
+        print(application.debugDescription)
+        print("ACCESSIBILITY HIERARCHY END")
         let screenshot = XCTAttachment(screenshot: application.screenshot())
         screenshot.name = "failure"
         screenshot.lifetime = .keepAlways

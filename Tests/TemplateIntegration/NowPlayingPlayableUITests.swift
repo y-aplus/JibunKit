@@ -3,13 +3,20 @@ import XCTest
 /// Copied only into the temporary signed Feature-validation host by CI.
 @MainActor
 final class NowPlayingPlayableUITests: XCTestCase {
-    func testPlayableSessionAdvancesBeforeControlCenterInspection() {
+    func testPlayableSessionAdvancesAndRecordsControlCenterAvailability() {
         let app = launchPlayableProbe()
         let result = playbackReady(in: app)
         XCTAssertTrue(result.waitForExistence(timeout: 20), app.debugDescription)
         XCTAssertTrue(result.label.contains("item=ready"), result.label)
         XCTAssertTrue(result.label.contains("control=playing"), result.label)
         print("NOW_PLAYING_PLAYBACK_BASELINE \(result.label)")
+
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        openControlCenter(springboard)
+        attachEvidence(springboard, name: "Now Playing availability after confirmed playback")
+        let availability = springboard.staticTexts["Feature A"].waitForExistence(timeout: 5)
+            ? "available" : "unavailable"
+        print("NOW_PLAYING_CONTROL_CENTER_AVAILABILITY \(availability)")
     }
 
     func testNativeControlCenterRoutesSingleAndDualSessions() throws {

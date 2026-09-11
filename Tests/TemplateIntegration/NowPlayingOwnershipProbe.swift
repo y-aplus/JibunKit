@@ -68,6 +68,7 @@ final class NowPlayingOwnershipProbeState {
         print("NOW_PLAYING_NATIVE_RESULT \(result)")
     }
 }
+
 @MainActor
 enum NowPlayingOwnershipProbe {
     private static let state = NowPlayingOwnershipProbeState()

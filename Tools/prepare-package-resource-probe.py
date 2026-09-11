@@ -24,7 +24,8 @@ def main() -> None:
 
     imports = []
     expressions = []
-    expected = []
+    expected_english = []
+    expected_japanese = []
     dependencies = []
     packages = []
     for owner in ("A", "B"):
@@ -34,10 +35,12 @@ def main() -> None:
         imports.append(f"import {module}")
         expressions.extend([
             f'try {module}Values.jsonOwner()',
-            f'{module}Values.greeting(locale: "en")',
-            f'{module}Values.greeting(locale: "ja")',
+            f'{module}Values.greeting()',
+            f'{module}Values.explicitGreeting(locale: "en")',
+            f'{module}Values.explicitGreeting(locale: "ja")',
         ])
-        expected.extend([owner, f"Hello from {owner}", f"{owner}からこんにちは"])
+        expected_english.extend([owner, f"Hello from {owner}", f"Hello from {owner}", f"{owner}からこんにちは"])
+        expected_japanese.extend([owner, f"{owner}からこんにちは", f"Hello from {owner}", f"{owner}からこんにちは"])
         dependencies.append(f'.package(product: "{module}")')
         packages.append(f'.package(path: "Packages/Feature{owner}")')
 
@@ -54,7 +57,8 @@ struct ProbeView: View {{
     private var result: String {{
         do {{
             let actual = [{', '.join(expressions)}]
-            let expected = {expected!r}
+            let expected = Locale.preferredLanguages.first?.hasPrefix("ja") == true
+                ? {expected_japanese!r} : {expected_english!r}
             return actual == expected ? "passed: {args.mode} " + actual.joined(separator: "|") : "failed: {args.mode} " + actual.joined(separator: "|")
         }} catch {{ return "failed: {args.mode} \\(error)" }}
     }}
@@ -72,7 +76,12 @@ let project = Project(
     targets: [
         .target(name: "PackageResourceProbe", destinations: .iOS, product: .app,
                 bundleId: "com.jibunkit.package-resource-probe", deploymentTargets: .iOS("26.0"),
-                infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]), sources: ["Sources/**"],
+                infoPlist: .extendingDefault(with: [
+                    "UILaunchScreen": [:],
+                    "CFBundleDevelopmentRegion": "en",
+                    "CFBundleLocalizations": ["en", "ja"],
+                    "CFBundleAllowMixedLocalizations": true,
+                ]), sources: ["Sources/**"],
                 dependencies: [{', '.join(dependencies)}]),
         .target(name: "PackageResourceUITests", destinations: .iOS, product: .uiTests,
                 bundleId: "com.jibunkit.package-resource-probe.uitests", deploymentTargets: .iOS("26.0"),

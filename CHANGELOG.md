@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- BackgroundTasksの登録・pending取消・実行中処理をFeatureごとに所有するAPIを追加。処理ごとの通信/電源条件を保持し、期限通知と完了を重複させず、完了まで処理を保持する。
+
 - Feature所有の標準Swift App Shortcut式を、一つのhost Providerへ合成するTuist helperを追加。単独/統合metadataの一致と、一方の寄与削除後の他方保持を検証。
 
 - Keychainに標準SecAccessControlと操作ごとのLAContextを渡せるようにし、既存itemの保護とFeature別の取得・削除範囲を維持。実機で認証なしの読取/更新拒否と、認証後の元の値・別Featureの値の保持を確認。

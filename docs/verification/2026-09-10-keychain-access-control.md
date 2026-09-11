@@ -171,3 +171,23 @@ The same IPA is published as the
 [`keychain-device-check-20260911` prerelease](https://github.com/y-aplus/JibunKit/releases/tag/keychain-device-check-20260911),
 with a direct
 [`JibunKit.ipa` download](https://github.com/y-aplus/JibunKit/releases/download/keychain-device-check-20260911/JibunKit.ipa).
+
+## Staged diagnostic follow-up
+
+[GitHub Actions run 34551018802](https://github.com/y-aplus/JibunKit/actions/runs/34551018802)
+successfully built and packaged the staged diagnostic probe from source
+`5d6bc32f4b8fa540809a54ecde5b7e387243659c`. Simulator tests were deliberately
+not repeated. The 901,598-byte IPA has SHA-256
+`ba40be62adfb7bbc823bc21cf5bf179b672be450192aefb1d915649eb9f42f6e`.
+Local archive inspection found the probe's stage diagnostics and
+`NSFaceIDUsageDescription`, and found no embedded provisioning profile.
+
+Use this follow-up IPA, not the earlier prerelease asset, for the next device
+run. Install it through the ordinary SideStore re-signing flow, open **Keychain
+access control**, tap **Run access-control probe** once, complete any requested
+Face ID, Touch ID, or passcode authentication, and record the entire final
+line. A `passed:` result must additionally include `protected-add=...` and
+`protected-attributes=...`. A `failed:` result should now include the failing
+`stage=...` and, where a native comparison applies, both `wrapper=...` and
+`native=...`. Physical-device success remains unverified until that result is
+reported.

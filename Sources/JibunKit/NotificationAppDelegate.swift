@@ -23,6 +23,17 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         return true
     }
 
+    func application(
+        _ application: UIApplication,
+        handleEventsForBackgroundURLSession identifier: String,
+        completionHandler: @escaping @Sendable () -> Void
+    ) {
+        MiniAppBackgroundURLSessionReconnectRegistry.shared.handleEvents(
+            identifier: identifier,
+            completionHandler: completionHandler
+        )
+    }
+
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,

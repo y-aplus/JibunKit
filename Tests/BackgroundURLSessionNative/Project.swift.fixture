@@ -1,0 +1,41 @@
+import ProjectDescription
+
+let project = Project(
+    name: "BackgroundURLSessionNative",
+    packages: [.package(path: "__JIBUNKIT_PATH__")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
+    targets: [
+        .target(
+            name: "BackgroundURLSessionNative",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "com.jibunkit.background-urlsession-native",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: [
+                "UILaunchScreen": [:],
+                "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
+            ]),
+            sources: ["App.swift"],
+            dependencies: [.package(product: "JibunKitCore")]
+        ),
+        .target(
+            name: "BackgroundURLSessionNativeUITests",
+            destinations: .iOS,
+            product: .uiTests,
+            bundleId: "com.jibunkit.background-urlsession-native-tests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["UITests.swift"],
+            dependencies: [.target(name: "BackgroundURLSessionNative")]
+        ),
+    ],
+    schemes: [
+        .scheme(
+            name: "BackgroundURLSessionNative",
+            shared: true,
+            buildAction: .buildAction(targets: ["BackgroundURLSessionNative"]),
+            testAction: .targets(["BackgroundURLSessionNativeUITests"], configuration: .debug)
+        ),
+    ]
+)
+

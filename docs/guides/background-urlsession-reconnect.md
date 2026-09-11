@@ -28,10 +28,14 @@ final class DownloadConnection {
             profile: profile
         ) { [weak self] identifier, events in
             guard let self else { throw ConnectionError.released }
+            delegate.backgroundEvents = events
+            if let session {
+                precondition(session.configuration.identifier == identifier)
+                return
+            }
             let configuration = URLSessionConfiguration.background(
                 withIdentifier: identifier
             )
-            delegate.backgroundEvents = events
             session = URLSession(
                 configuration: configuration,
                 delegate: delegate,
@@ -53,14 +57,18 @@ Featureの既存delegateはdownload/data/authentication等を従来どおり処�
 `urlSessionDidFinishEvents(forBackgroundURLSession:)`から`finish()`を一度転送します。
 completionをsession生成直後に呼んではいけません。
 
-同じidentifierへの重複host callbackは後着completionだけを即時終了し、処理中の
-接続を奪いません。`finish()`は一回だけ有効で、完了後は同じidentifierの次のOS
-callbackを受け付けます。registrationの取消はそのFeature/profileのpending
-completionだけを終了し、別ownerを取消しません。Feature固有の転送取消はFeatureが
-native task/sessionへ行い、このregistryを全Feature共通の取消スイッチとして使わない
-でください。
+同じidentifierへの重複host callbackはfactoryを再実行せず、処理中のpending batchへ
+completionを追加します。delegateの`finish()`までどのcompletionも呼ばず、その時点で
+各completionを一回ずつ解放します。完了後は同じidentifierの次のOS callbackを受け
+付けます。上の例はprocess再生成後だけsessionを作成し、同じprocessのwarm callback
+では既存session/delegateを再利用してevents tokenだけを接続します。
+
+registrationの取消はfuture factory登録だけを外します。進行中のpending OS eventは
+delegateの`finish()`まで保持し、早期にcompletionを呼びません。取消後に同じ
+Feature/profileを再登録しても、古いregistrationの遅延cancel/deinitが新しいfactoryを
+削除しません。Feature固有の転送取消はFeatureがnative task/sessionへ行い、この
+registryを全Feature共通の取消スイッチとして使わないでください。
 
 この基盤はOSがbackground転送を実行する時刻、強制終了後の継続、ネットワーク条件、
 再起動配送を保証しません。provider/unit試験とiOS buildはowner routingとnative API
 接続の検証であり、実際のOS転送・cold launch配送の実機証拠ではありません。
-

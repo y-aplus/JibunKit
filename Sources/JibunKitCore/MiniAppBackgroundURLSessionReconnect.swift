@@ -63,7 +63,7 @@ public extension MiniAppContext {
 @MainActor
 public final class MiniAppBackgroundURLSessionEvents {
     private let id: UUID
-    private var completion: (@MainActor @Sendable () -> Void)?
+    private var completions: [@MainActor @Sendable () -> Void]?
     private let didFinish: @MainActor @Sendable (UUID) -> Void
 
     fileprivate init(
@@ -72,17 +72,25 @@ public final class MiniAppBackgroundURLSessionEvents {
         didFinish: @escaping @MainActor @Sendable (UUID) -> Void
     ) {
         self.id = id
-        self.completion = completion
+        completions = [completion]
         self.didFinish = didFinish
+    }
+
+    fileprivate func append(
+        completion: @escaping @MainActor @Sendable () -> Void
+    ) -> Bool {
+        guard completions != nil else { return false }
+        completions?.append(completion)
+        return true
     }
 
     /// Returns true only for the call which owns and invokes the host completion.
     @discardableResult
     public func finish() -> Bool {
-        guard let completion else { return false }
-        self.completion = nil
+        guard let completions else { return false }
+        self.completions = nil
         didFinish(id)
-        completion()
+        for completion in completions { completion() }
         return true
     }
 }
@@ -95,7 +103,7 @@ public final class MiniAppBackgroundURLSessionEvents {
 public final class MiniAppBackgroundURLSessionReconnectRegistry {
     public enum Failure: Error, Equatable { case duplicateRegistration }
     public enum HandlingResult: Equatable {
-        case connected, unknownSession, duplicateCallback, reconnectFailed
+        case connected, unknownSession, joinedPending, reconnectFailed
     }
     public typealias Reconnect = @MainActor @Sendable (
         _ identifier: String,
@@ -111,7 +119,12 @@ public final class MiniAppBackgroundURLSessionReconnectRegistry {
     }
 
     private var handlers: [String: Handler] = [:]
-    private var pending: [String: MiniAppBackgroundURLSessionEvents] = [:]
+    private struct Pending {
+        let eventID: UUID
+        let events: MiniAppBackgroundURLSessionEvents
+    }
+
+    private var pending: [String: Pending] = [:]
 
     public init() {}
 
@@ -152,9 +165,12 @@ public final class MiniAppBackgroundURLSessionReconnectRegistry {
             completionHandler()
             return .unknownSession
         }
-        guard pending[rawIdentifier] == nil else {
-            completionHandler()
-            return .duplicateCallback
+        if let pending = pending[rawIdentifier] {
+            guard pending.events.append(completion: completionHandler) else {
+                completionHandler()
+                return .unknownSession
+            }
+            return .joinedPending
         }
 
         let eventID = UUID()
@@ -165,7 +181,7 @@ public final class MiniAppBackgroundURLSessionReconnectRegistry {
                 self?.finish(identifier: rawIdentifier, eventID: finishedID)
             }
         )
-        pending[rawIdentifier] = events
+        pending[rawIdentifier] = Pending(eventID: eventID, events: events)
         do {
             try handler.reconnect(rawIdentifier, events)
             return .connected
@@ -178,13 +194,11 @@ public final class MiniAppBackgroundURLSessionReconnectRegistry {
     fileprivate func cancel(identifier: String, registrationID: UUID) {
         guard handlers[identifier]?.registrationID == registrationID else { return }
         handlers.removeValue(forKey: identifier)
-        pending[identifier]?.finish()
     }
 
     private func finish(identifier: String, eventID: UUID) {
-        guard let events = pending[identifier] else { return }
+        guard pending[identifier]?.eventID == eventID else { return }
         pending.removeValue(forKey: identifier)
-        _ = events // Identity is enforced by the token's private event ID.
     }
 }
 
@@ -205,8 +219,9 @@ public final class MiniAppBackgroundURLSessionRegistration {
         self.registrationID = registrationID
     }
 
-    /// Removes only this Feature/profile factory and completes its pending host
-    /// callback once. Other owners and profiles remain connected.
+    /// Removes only this Feature/profile factory. A pending callback remains
+    /// owned by its delegate token until urlSessionDidFinishEvents is forwarded.
+    /// Other owners and profiles remain connected.
     public func cancel() {
         guard !isCancelled else { return }
         isCancelled = true

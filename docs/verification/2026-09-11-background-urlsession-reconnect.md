@@ -19,11 +19,17 @@ callbackをcore registryへ転送する。FeatureのDefinition/Registry、画面
 
 - 同じFeature/profileのidentifier安定性、別owner/profileとの非衝突、復号したowner対応
 - 画面生成なしでfactoryを呼び、native background configurationへ同じidentifierを渡す
-- 同一sessionへの重複callbackは処理中factoryを再生成せず、後着completionだけ一回終了
+- 同一sessionへの重複callbackはfactoryを再生成せず同じpending batchへ合流し、native
+  delegateのfinishまで全completionを保留してから各一回終了
 - `urlSessionDidFinishEvents`相当の`finish()`後は、同じidentifierの次のeventを再接続可能
 - 遅延した二回目の`finish()`はhost completionを再実行しない
-- A registrationの取消はAのpending completionだけを終了し、Bの接続とcompletionを維持
+- A registrationの取消はfuture factoryだけを外し、Aのpending completionはdelegateの
+  finishまで保持、Bの接続とcompletionも維持
+- 同じFeature/profileの再登録後、古いregistrationの取消と古いevents tokenが新しい
+  factory/pending eventを終了させない
 - unknown identifierとfactory失敗でもhost completionを一回解放
+- コンパイル可能な標準`URLSessionDelegate` fixtureでcold生成とwarm session/delegate
+  再利用の両方を通し、`urlSessionDidFinishEvents`からのみcompletionを解放
 
 ここでnative configurationを作る試験とiOS host buildはAPI接続を確認するが、実転送を
 発生させるprovider試験ではない。

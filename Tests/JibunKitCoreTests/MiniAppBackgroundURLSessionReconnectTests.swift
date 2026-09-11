@@ -20,13 +20,13 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         XCTAssertThrowsError(try MiniAppBackgroundURLSessionIdentifier(rawValue: "foreign.session"))
     }
 
-    func testFactoriesReconnectWithoutScreenAndNativeConfigurationKeepsIdentifier() throws {
+    func testFactoriesReconnectWithoutScreenAndNativeDelegateFinishesWarmSessionEvents() async throws {
         let registry = MiniAppBackgroundURLSessionReconnectRegistry()
-        let factory = ReconnectFactorySpy()
+        let factory = NativeReconnectFixture()
         let completion = CompletionSpy()
         let registration = try registry.register(
             context: context("feature-a"),
-            profile: "primary",
+            profile: UUID().uuidString,
             reconnect: factory.reconnect
         )
 
@@ -39,16 +39,22 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         )
         XCTAssertEqual(factory.identifiers, [registration.identifier])
         XCTAssertEqual(completion.count, 0)
-
-        #if canImport(Darwin)
-        let configuration = URLSessionConfiguration.background(
-            withIdentifier: registration.identifier
-        )
-        XCTAssertEqual(configuration.identifier, registration.identifier)
-        #endif
-
-        XCTAssertTrue(try XCTUnwrap(factory.events.first).finish())
+        let firstSession = try XCTUnwrap(factory.session)
+        XCTAssertEqual(firstSession.configuration.identifier, registration.identifier)
+        factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: firstSession)
+        for _ in 0..<10 where completion.count == 0 { await Task.yield() }
         XCTAssertEqual(completion.count, 1)
+
+        let warmCompletion = CompletionSpy()
+        XCTAssertEqual(registry.handleEvents(
+            identifier: registration.identifier,
+            completionHandler: warmCompletion.call
+        ), .connected)
+        XCTAssertTrue(factory.session === firstSession)
+        XCTAssertEqual(factory.identifiers, [registration.identifier, registration.identifier])
+        factory.delegate.urlSessionDidFinishEvents(forBackgroundURLSession: firstSession)
+        for _ in 0..<10 where warmCompletion.count == 0 { await Task.yield() }
+        XCTAssertEqual(warmCompletion.count, 1)
         withExtendedLifetime(registration) {}
     }
 
@@ -68,15 +74,16 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         XCTAssertEqual(registry.handleEvents(
             identifier: registration.identifier,
             completionHandler: duplicateCompletion.call
-        ), .duplicateCallback)
+        ), .joinedPending)
         XCTAssertEqual(firstCompletion.count, 0)
-        XCTAssertEqual(duplicateCompletion.count, 1)
+        XCTAssertEqual(duplicateCompletion.count, 0)
         XCTAssertEqual(factory.events.count, 1)
 
         let firstEvents = try XCTUnwrap(factory.events.first)
         XCTAssertTrue(firstEvents.finish())
         XCTAssertFalse(firstEvents.finish())
         XCTAssertEqual(firstCompletion.count, 1)
+        XCTAssertEqual(duplicateCompletion.count, 1)
 
         XCTAssertEqual(registry.handleEvents(
             identifier: registration.identifier,
@@ -106,9 +113,10 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
 
         a.cancel()
         a.cancel()
-        XCTAssertEqual(aCompletion.count, 1)
+        XCTAssertEqual(aCompletion.count, 0)
         XCTAssertEqual(bCompletion.count, 0)
-        XCTAssertFalse(try XCTUnwrap(aFactory.events.first).finish())
+        XCTAssertTrue(try XCTUnwrap(aFactory.events.first).finish())
+        XCTAssertEqual(aCompletion.count, 1)
         XCTAssertTrue(try XCTUnwrap(bFactory.events.first).finish())
         XCTAssertEqual(bCompletion.count, 1)
 
@@ -119,6 +127,50 @@ final class MiniAppBackgroundURLSessionReconnectTests: XCTestCase {
         ), .unknownSession)
         XCTAssertEqual(unknownCompletion.count, 1)
         withExtendedLifetime(b) {}
+    }
+
+    func testOldRegistrationCancellationCannotRemoveReplacementOrFinishNewPendingEvent() async throws {
+        let registry = MiniAppBackgroundURLSessionReconnectRegistry()
+        let oldFactory = ReconnectFactorySpy()
+        let newFactory = ReconnectFactorySpy()
+        let oldCompletion = CompletionSpy()
+        let newCompletion = CompletionSpy()
+        let context = context("feature-a")
+        var old: MiniAppBackgroundURLSessionRegistration? = try registry.register(
+            context: context, profile: "primary", reconnect: oldFactory.reconnect)
+        let identifier = try XCTUnwrap(old?.identifier)
+        XCTAssertEqual(registry.handleEvents(
+            identifier: identifier, completionHandler: oldCompletion.call), .connected)
+
+        old?.cancel()
+        let replacement = try registry.register(
+            context: context, profile: "primary", reconnect: newFactory.reconnect)
+        old = nil
+        await Task.yield()
+        XCTAssertEqual(registry.handleEvents(
+            identifier: replacement.identifier,
+            completionHandler: newCompletion.call
+        ), .joinedPending)
+        XCTAssertTrue(newFactory.events.isEmpty)
+        XCTAssertEqual(oldCompletion.count, 0)
+        XCTAssertEqual(newCompletion.count, 0)
+
+        let oldEvents = try XCTUnwrap(oldFactory.events.first)
+        XCTAssertTrue(oldEvents.finish())
+        XCTAssertFalse(oldEvents.finish())
+        XCTAssertEqual(oldCompletion.count, 1)
+        XCTAssertEqual(newCompletion.count, 1)
+
+        let nextCompletion = CompletionSpy()
+        XCTAssertEqual(registry.handleEvents(
+            identifier: replacement.identifier,
+            completionHandler: nextCompletion.call
+        ), .connected)
+        XCTAssertEqual(newFactory.events.count, 1)
+        XCTAssertEqual(nextCompletion.count, 0)
+        XCTAssertTrue(try XCTUnwrap(newFactory.events.first).finish())
+        XCTAssertEqual(nextCompletion.count, 1)
+        withExtendedLifetime(replacement) {}
     }
 
     func testDuplicateRegistrationAndReconnectFailureReleaseCompletions() throws {
@@ -170,6 +222,39 @@ private final class ReconnectFactorySpy {
 private final class CompletionSpy {
     private(set) var count = 0
     func call() { count += 1 }
+}
+
+@MainActor
+private final class NativeReconnectFixture {
+    let delegate = NativeReconnectDelegate()
+    private(set) var identifiers: [String] = []
+    private(set) var session: URLSession?
+
+    func reconnect(identifier: String, events: MiniAppBackgroundURLSessionEvents) {
+        identifiers.append(identifier)
+        delegate.events = events
+        if let session {
+            precondition(session.configuration.identifier == identifier)
+            return
+        }
+        let configuration = URLSessionConfiguration.background(withIdentifier: identifier)
+        session = URLSession(
+            configuration: configuration,
+            delegate: delegate,
+            delegateQueue: nil
+        )
+    }
+}
+
+private final class NativeReconnectDelegate: NSObject, URLSessionDelegate, @unchecked Sendable {
+    @MainActor var events: MiniAppBackgroundURLSessionEvents?
+
+    nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
+        Task { @MainActor in
+            events?.finish()
+            events = nil
+        }
+    }
 }
 
 private enum ReconnectError: Error { case failed }

@@ -27,7 +27,7 @@ Counter metadata互換性はそのまま実行する。
 
 ## 証拠の範囲
 
-実装を用意しCI検証待ち。ローカルWindowsではSwift/iOS実行を検証していない。
+下記CIでnative metadataとiOS直接実行を確認した。ローカルWindowsではSwift/iOS実行を検証していない。
 Swiftから直接query/performを呼ぶ試験はOS Shortcutsの選択UI・保存済みentity解決・Siri配送の
 実行証拠ではない。native metadataの登録と直接実行をそれぞれ記録する。
 同名Intent型、OS側の候補選択、Widget/Controlへの接続は今回の比較範囲に含めない。
@@ -46,3 +46,19 @@ Appleの公開[PersistentlyIdentifiable](https://developer.apple.com/documentati
 に従い、entityとqueryへそれぞれFeature所有の安定した文字列を明示して再比較する。
 Swiftの`Entry`/`EntryQuery`型名とレコードの`shared-id`は変更しない。デフォルトの名前衝突を
 JibunKit固有の不変制約とは扱わず、標準の識別子指定で補えるかを検証する。通常Counterの既存識別子は変更しない。
+
+## 明示した永続識別子で成功
+
+[34558958859](https://github.com/y-aplus/JibunKit/actions/runs/34558958859)、source
+`635680cc3e3a0afd73efa8f6479ce3b4d4bca06f` が成功した。A/Bのentityはそれぞれ
+`com.jibunkit.intent-fixture.a.entry` / `com.jibunkit.intent-fixture.b.entry`、queryは各`.entry-query`。
+単独A/Bのentity/query辞書全体が統合appにもそのまま残り、entity引数の参照も各ownerを保持した。
+queryの`fullyQualifiedIdentifier`とentityの`defaultQueryIdentifier`はnativeのモジュール付き型名を維持している。
+
+同名entity/queryのiOS直接実行は0.036秒、従来のIntent所有Store実行は0.033秒で成功。
+共有186件は既知Keychain2件skip、失敗0。通常app/Widget/IPAとCounter互換性、独立Counter、
+通常検索回帰（37.272秒）、従来のShortcut合成・同一DerivedDataでのA寄与削除/B保持も通過した。
+
+対処は標準`persistentIdentifier`の明示で足り、entity型名やレコードIDの一律変更、独自query dispatcherは不要だった。
+保存済みShortcutの互換性があるため、公開済みの永続識別子を統合のたびに生成し直す方針にはしない。
+同名entity/queryは今回の方法で検証済みだが、OS Shortcuts選択UIや同名Intent型を検証済みに広げない。

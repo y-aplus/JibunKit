@@ -162,6 +162,7 @@ struct BackupScreen: View {
         formatter.timeZone = .current
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         exportFilename = "JibunKit-backup-\(formatter.string(from: Date()))"
+        let archiveFilename = exportFilename + ".zip"
         busy = true
         status = nil
         Task {
@@ -177,7 +178,8 @@ struct BackupScreen: View {
                     exporting = true
                 } else {
                     let file = try await Task.detached {
-                        try await MiniAppBackupArchive.export(selected: ids, providers: selected, fileProviders: selectedFiles)
+                        try await MiniAppBackupArchive.export(selected: ids, providers: selected, fileProviders: selectedFiles,
+                                                              filename: archiveFilename)
                     }.value
                     archive = BackupArchiveDocument(file: file)
                     exportingArchive = true

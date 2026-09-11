@@ -137,14 +137,13 @@ final class BackupRestoreUITests: XCTestCase {
         waitForExpectations(timeout: 10)
         tap(app.buttons["backup.export"])
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
-        let filename = "JibunKit-ZIP-test-" + UUID().uuidString
-        let nameField = app.textFields.firstMatch
+        let nameField = app.textFields["DOCPicker.filenameTextField"]
         XCTAssertTrue(nameField.waitForExistence(timeout: 10))
-        tap(nameField)
-        if let text = nameField.value as? String {
-            nameField.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: text.count))
-        }
-        nameField.typeText(filename)
+        let suggestedName = nameField.value as? String ?? ""
+        XCTAssertNotNil(suggestedName.range(
+            of: #"^JibunKit-backup-[0-9]{8}-[0-9]{6}(\.zip)?$"#, options: .regularExpression),
+            "ZIP must offer a dated filename without requiring manual rename: \(suggestedName)")
+        let filename = suggestedName.hasSuffix(".zip") ? String(suggestedName.dropLast(4)) : suggestedName
         tap(app.buttons["保存"])
         XCTAssertTrue(app.staticTexts["バックアップを書き出しました。"].waitForExistence(timeout: 20))
         tap(app.buttons["閉じる"])

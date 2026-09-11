@@ -94,7 +94,11 @@ public enum MiniAppBackupArchive {
     /// Snapshots are gathered sequentially, then streamed into a standard ZIP.
     /// When both contracts exist for an ID, new exports prefer the file provider.
     public static func export(selected: Set<MiniAppID>, providers: [MiniAppBackupProvider], fileProviders: [MiniAppFileBackupProvider],
-                              coordinator: MiniAppRestoreCoordinator = .shared) async throws -> MiniAppBackupFile {
+                              filename: String = "backup.zip", coordinator: MiniAppRestoreCoordinator = .shared) async throws -> MiniAppBackupFile {
+        guard !filename.isEmpty, filename != ".", filename != "..",
+              !filename.contains("/"), !filename.contains("\\"), !filename.utf8.contains(0) else {
+            throw CocoaError(.fileWriteInvalidFileName)
+        }
         let workspace = try BackupWorkspace()
         let root = workspace.directory.appendingPathComponent("contents", isDirectory: true)
         try FileManager.default.createDirectory(at: root.appendingPathComponent("features"), withIntermediateDirectories: true)
@@ -125,7 +129,7 @@ public enum MiniAppBackupArchive {
         }
         let manifest = Manifest(format: "JibunKitFileBackup", version: 1, createdAt: .now, entries: items)
         try JSONEncoder().encode(manifest).write(to: root.appendingPathComponent("manifest.json"), options: .atomic)
-        let url = workspace.directory.appendingPathComponent("backup.zip")
+        let url = workspace.directory.appendingPathComponent(filename)
         try writeZIP(from: root, to: url)
         return MiniAppBackupFile(url: url, workspace: workspace)
     }

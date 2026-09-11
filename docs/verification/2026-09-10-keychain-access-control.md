@@ -150,9 +150,10 @@ probe** once. Record the entire result. Accept only a line beginning `passed:`
 that contains `update=after`, `protected-read=rejected`,
 `protected-update=...`, `protected=present`, and `other=other`.
 
-Packaging is complete, but this device result has not yet been obtained.
-Simulator behavior is not substituted for it, and the native/user-presence
-comparison has not been relaxed.
+At the time this first package was produced, the device result had not yet been
+obtained. Simulator behavior was not substituted for it, and the
+native/user-presence comparison was not relaxed. The later physical-device
+result is recorded below.
 
 The first physical-device run returned
 `failed: Error Domain=NSOSStatusErrorDomain Code=-25308 “(null)”`. This is a
@@ -189,8 +190,8 @@ Face ID, Touch ID, or passcode authentication, and record the entire final
 line. A `passed:` result must additionally include `protected-add=...` and
 `protected-attributes=...`. A `failed:` result should now include the failing
 `stage=...` and, where a native comparison applies, both `wrapper=...` and
-`native=...`. Physical-device success remains unverified until that result is
-reported.
+`native=...`. This was the acceptance rule before the physical-device result
+recorded below was reported.
 
 The diagnostic IPA is published separately as the
 [`keychain-device-check-20260911-r2` prerelease](https://github.com/y-aplus/JibunKit/releases/tag/keychain-device-check-20260911-r2),
@@ -222,3 +223,9 @@ unconditionally threw when its protected attributes lookup was rejected. The
 r2 probe records that same rejection, compares it with native Security, and
 continues to the authenticated retention check instead of losing the operation
 stage. No protection condition was relaxed between the two runs.
+
+This result verifies the exercised create, non-interactive read/update, final
+authenticated read, and other-owner retention path. Authentication
+cancellation, biometric re-enrollment, passcode changes, device-locked access,
+and re-registration after those state changes remain outside this run and are
+not claimed as verified.

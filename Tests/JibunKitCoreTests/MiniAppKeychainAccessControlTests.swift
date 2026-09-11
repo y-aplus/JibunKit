@@ -85,7 +85,19 @@ final class MiniAppKeychainAccessControlTests: XCTestCase {
             )
         }
 
-        XCTAssertNotNil(try attributes(for: account, in: protected, authenticationContext: nonInteractiveContext))
+        let verificationContext = LAContext()
+        verificationContext.interactionNotAllowed = true
+        XCTAssertThrowsError(try protected.data(
+            for: account,
+            authenticationContext: verificationContext
+        )) { error in
+            let status = (error as? MiniAppKeychain.Failure)?.status
+            XCTAssertNotEqual(status, errSecItemNotFound)
+            XCTAssertTrue(
+                status == errSecInteractionNotAllowed || status == errSecAuthFailed,
+                "Unexpected protected read status after rejected update: \(String(describing: status))"
+            )
+        }
         XCTAssertEqual(try other.data(for: account), Data("other".utf8))
     }
 

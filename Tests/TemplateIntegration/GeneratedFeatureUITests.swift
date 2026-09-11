@@ -4,21 +4,43 @@ import XCTest
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
     private func revealLauncherRow(_ row: XCUIElement, in app: XCUIApplication) {
-        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
-        // iOS 26's bottom search field can cover a row whose accessibility
-        // element still reports isHittable. Bring the whole row into view.
-        for _ in 0..<5 {
-            let search = app.searchFields.firstMatch
-            let bottom = search.exists ? search.frame.minY : app.frame.maxY - 40
-            let top = app.navigationBars.firstMatch.frame.maxY
-            if row.frame.minY > top && row.frame.maxY < bottom { return }
-            if row.frame.minY <= top {
-                app.collectionViews.firstMatch.swipeDown()
-            } else {
-                app.collectionViews.firstMatch.swipeUp()
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
+
+        // A long lazy launcher does not materialize every row in its initial
+        // accessibility tree. Only inspect a frame after the row exists.
+        func positionMaterializedRow() -> Bool {
+            guard row.exists else { return false }
+            for _ in 0..<6 {
+                guard row.exists else { return false }
+                // iOS 26's bottom search field can cover a row whose
+                // accessibility element still reports isHittable.
+                let frame = row.frame
+                let search = app.searchFields.firstMatch
+                let bottom = search.exists ? search.frame.minY : app.frame.maxY - 40
+                let top = app.navigationBars.firstMatch.frame.maxY
+                if frame.minY > top && frame.maxY < bottom { return true }
+                if frame.minY <= top {
+                    list.swipeDown()
+                } else {
+                    list.swipeUp()
+                }
             }
+            return false
         }
-        XCTFail("Launcher row remains covered: \(row.debugDescription)\n\(app.debugDescription)")
+
+        if positionMaterializedRow() { return }
+        // First cover rows above the current position, then sweep from the
+        // top toward rows below it. Both searches are deliberately bounded.
+        for _ in 0..<8 {
+            list.swipeDown()
+            if positionMaterializedRow() { return }
+        }
+        for _ in 0..<20 {
+            list.swipeUp()
+            if positionMaterializedRow() { return }
+        }
+        XCTFail("Launcher row was not found or remains covered: \(row.debugDescription)\n\(app.debugDescription)")
     }
 
     func testFeatureRootNavigationRegression() throws {
@@ -880,22 +902,24 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         let notes = app.buttons["miniapp.notes"]
-        XCTAssertTrue(notes.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["miniapp.counter"].exists)
-        XCTAssertTrue(app.buttons["miniapp.reminder"].exists)
+        for row in [notes, app.buttons["miniapp.counter"], app.buttons["miniapp.reminder"]] {
+            revealLauncherRow(row, in: app)
+            XCTAssertTrue(row.exists, app.debugDescription)
+        }
         revealLauncherRow(notes, in: app)
         notes.tap()
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons["ミニアプリ"].tap()
         let counter = app.buttons["miniapp.counter"]
-        XCTAssertTrue(counter.waitForExistence(timeout: 5))
         revealLauncherRow(counter, in: app)
+        XCTAssertTrue(counter.exists, app.debugDescription)
         counter.tap()
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/notes")))
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["counter.value"].exists)
         app.navigationBars.buttons["ミニアプリ"].tap()
-        XCTAssertTrue(notes.waitForExistence(timeout: 5))
+        revealLauncherRow(notes, in: app)
+        XCTAssertTrue(notes.exists, app.debugDescription)
     }
 }

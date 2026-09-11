@@ -49,14 +49,16 @@ final class NowPlayingOwnershipProbeState {
         let activatedB = await sessionB.becomeActiveIfPossible()
         let bActivationWasConsistent = !activatedB || sessionB.isActive
         let activeSelectionWasExclusive = !(sessionA.isActive && sessionB.isActive)
+        print("NOW_PLAYING_NATIVE_ACTIVATION a-request=\(activatedA) a-active=\(sessionA.isActive) " +
+              "b-request=\(activatedB) b-active=\(sessionB.isActive)")
 
-        // Removing A's player and command target must not mutate B's session.
-        sessionA.removePlayer(playerA)
-        guard sessionA.players.isEmpty,
+        // Removing A's command target must not mutate either player association
+        // or B's Now Playing metadata.
+        guard sessionA.players.count == 1, sessionA.players[0] === playerA,
               sessionB.players.count == 1, sessionB.players[0] === playerB,
               sessionB.nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String == "Feature B" else {
             sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)
-            result = "failed: cross-owner-removal"
+            result = "failed: cross-owner-command-removal"
             return
         }
         sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)

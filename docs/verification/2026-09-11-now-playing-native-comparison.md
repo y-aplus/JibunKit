@@ -20,7 +20,7 @@ Remote command block registration returns a target token. Cleanup must call `rem
 2. the session Now Playing info centers and remote command centers are distinct objects;
 3. setting Feature B metadata does not replace Feature A metadata;
 4. command registration returns distinct target tokens, and A removes only its token from A's command;
-5. removing A's player preserves B's player and metadata;
+5. removing A's command target preserves both player associations and B's metadata;
 6. active-session requests complete consistently with `isActive`, and no two sessions report active simultaneously.
 
 The activation result is intentionally not required to be `true`: eligibility and final system selection remain native policy. The fixture also cannot synthesize a genuine Control Center or accessory command through public API, so it verifies session/target ownership and cleanup but not OS command delivery. Control Center presentation, command dispatch, audio-session arbitration, lock-screen behavior, interruptions, and device-only behavior remain unverified.
@@ -48,4 +48,8 @@ Native CI result pending.
 
 ## Parent integration
 
-The temporary generated host now copies both fixtures and places the probe first in its launcher. The active-session exclusivity check captures the state immediately after B requests activation, before removing A. The UI result includes both native activation return values and XCTest records that label in the log, so a pass with two denied requests cannot be mistaken for successful activation. Production Registry and app sources do not include the probe. CI is pending.
+The temporary generated host now copies both fixtures and places the probe first in its launcher. The active-session exclusivity check captures the state immediately after B requests activation. The UI result includes both native activation return values and XCTest records that label in the log, so a pass with two denied requests cannot be mistaken for successful activation. Production Registry and app sources do not include the probe. CI is pending.
+
+The first native run, [34553746620](https://github.com/y-aplus/JibunKit/actions/runs/34553746620), reached both activation requests: MediaRemote answered A in about 30 ms and B in about 3 ms. It then crashed inside `MPNowPlayingSession.removePlayer(_:)` because the framework attempted to remove an unregistered `currentItem` observer from an itemless `AVPlayer`. The activation wait was not the timeout source; XCTest waited because the app had terminated before publishing its final result.
+
+The comparison intentionally keeps the itemless players so eligibility and activation behavior without playable content remain observable. It removes the unrelated `removePlayer(_:)` mutation and instead verifies that A's command-target cleanup preserves both session/player associations and B's metadata. The fixture logs request results and actual `isActive` state immediately after B's selection request.

@@ -1,0 +1,39 @@
+# BackgroundTasks ownership verification (2026-09-11)
+
+## Scope
+
+This D15 unit covers standard `BGAppRefreshTask` and `BGProcessingTask` registration and launch delivery, owner-limited pending request cancellation, expiration delivery, and completion exactly once. It is separate from D17's UIKit background-time assertions in `MiniAppBackgroundExecution`.
+
+## Apple boundary
+
+`BGTaskScheduler` is process-wide. Every permitted identifier must be registered before application launch finishes, and Apple requires each identifier to be registered only once. Submission asks the system to schedule work; it does not guarantee a launch time or that a submitted request will run. When the system launches a task it supplies `BGTask`, whose expiration handler is the warning boundary and whose `setTaskCompleted(success:)` reports the final result.
+
+The host therefore owns one `MiniAppBackgroundTaskCenter`. It creates an owner-limited `MiniAppBackgroundTasks` handle for each `MiniAppContext`. Registration records one owner and request kind for each native identifier before forwarding the registration to the provider. A second owner cannot claim the same identifier.
+
+## Native/provider boundary
+
+The iOS provider preserves the standard request types:
+
+- `.appRefresh` creates `BGAppRefreshTaskRequest`;
+- `.processing` creates `BGProcessingTaskRequest` and forwards network and external-power requirements;
+- both forward `earliestBeginDate`;
+- cancellation calls `cancel(taskRequestWithIdentifier:)`, never process-wide `cancelAllTaskRequests()`.
+
+The core center does not simulate or promise OS launch opportunity. Tests replace only the provider boundary so launch, expiration, completion, submission options, and cancellation can be deterministic.
+
+## Build requirements
+
+Every registered identifier must also appear in the composed host Info.plist under `BGTaskSchedulerPermittedIdentifiers`. Processing tasks additionally require the applicable `UIBackgroundModes` entry. The existing `FeatureBuildConfiguration` string-set composition and its build-requirement probe already merge and verify these keys; runtime registration does not mutate Info.plist.
+
+## Verification
+
+The bounded core tests compare two Feature owners and verify:
+
+1. each native launch reaches only the handler registered for that identifier;
+2. refresh and processing request types and options survive submission;
+3. one owner's bulk cancellation touches only its registered identifiers;
+4. duplicate cross-owner registration is rejected before a second native registration attempt;
+5. expiration and native completion are each delivered at most once;
+6. a provider-rejected registration does not retain an ownership claim.
+
+CI evidence pending.

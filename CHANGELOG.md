@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- 通常CounterのShortcut定義をFeature側へ移し、既存の公開IntentとProvider識別子・引数・文言を保持したままhostへ合成する。
+
 - BackgroundTasksの登録・pending取消・実行中処理をFeatureごとに所有するAPIを追加。処理ごとの通信/電源条件を保持し、期限通知と完了を重複させず、完了まで処理を保持する。
 
 - Feature所有の標準Swift App Shortcut式を、一つのhost Providerへ合成するTuist helperを追加。単独/統合metadataの一致と、一方の寄与削除後の他方保持を検証。

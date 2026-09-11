@@ -12,7 +12,7 @@
 
 通常IPA検査で`verify-host-shortcut-compatibility.py`を実行し、既存CounterのProvider名・Intent metadata全体・Shortcut辞書がこの基準と一致することを必須とする。将来追加される別Intentは拒否しない。既存Intentの意図的な仕様変更時は、基準を機械的に再作成せず互換性を判断する。
 
-ローカルでは変更前metadataを受理し、Intentの型名を変えたmetadataを拒否することを確認。Swift/Tuist生成、通常iOS/Widget/IPA、二Feature合成比較、既存画面回帰はCI待ち。OS Shortcutsに以前から保存されたworkflowの実行互換性までをmetadataだけで実証したとはしない。
+ローカルでは変更前metadataを受理し、Intentの型名を変えたmetadataを拒否することを確認。Swift/Tuist生成、通常iOS/Widget/IPA、二Feature合成比較、既存画面回帰は下記CIで確認した。OS Shortcutsに以前から保存されたworkflowの実行互換性までをmetadataだけで実証したとはしない。
 
 ## 最初の通常host検証
 
@@ -25,3 +25,11 @@
 合成前の独立したcontrol IPAも取得して比較した。34552157327では`[7, 2, 0]`、34551805751では`[2, 7, 0]`だった。両者のCounter Intent/手書きProviderソースは同一であり、この並びの変動は合成機構の導入に固有ではない。数値の意味を推測して除外せず、native入力型の各辞書全体を保持してこの配列だけsortして比較する。引数順・phrase順など他の配列は変更しない。重複も残すため型の欠落/追加は検出する。
 
 比較ツールに、入力型の順序変更だけは通り、型の欠落/重複・Intent identity・戻り値・phrase・Providerの変更は落ちる回帰試験を追加した。取得済みactual metadataもローカルで再比較する。製品Swiftを追加変更せず、次のCIで通常IPA・単独/統合Shortcut・通常UI回帰を再検証する。
+
+## 通常host接続の検証完了
+
+[34553604092](https://github.com/y-aplus/JibunKit/actions/runs/34553604092)、source `43b6aff` が成功した。通常IPAの既存Counter Provider・Intent identity・引数・戻り値・phraseが合成前IPAと一致し、比較ツールの2試験も成功（0.777秒）。共有179件は既知のKeychain entitlement不足2件skip、失敗0件。
+
+単独/統合のPackage App Intents・Shortcut比較、寄与削除後の保持、native perform()の所有Store/戻り値（0.016秒）、通常app/Widgetのbuild・IPA検査、独立Counterを通過した。通常UI11件は失敗0件（462.377秒）、別実行のFiles経由Counter復元も成功（153.815秒）。generated Feature全体のUI回帰や、OS Shortcutsアプリに保存済みのworkflow実行はこのrunの検証範囲に含めない。
+
+Counterの既存公開Intent型は維持し、Shortcut式の所有元だけをFeature側へ移せた。OS表示/実行の実機検証とD27全体の未検証事項は引き続き台帳で追う。

@@ -5,12 +5,18 @@ import Foundation
 @MainActor
 private final class SystemBackgroundTask: MiniAppBackgroundTaskNative {
     private let task: BGTask
+    private var bridgedExpirationHandler: (@MainActor @Sendable () -> Void)?
 
     init(_ task: BGTask) { self.task = task }
 
-    var expirationHandler: (() -> Void)? {
-        get { task.expirationHandler }
-        set { task.expirationHandler = newValue }
+    var expirationHandler: (@MainActor @Sendable () -> Void)? {
+        get { bridgedExpirationHandler }
+        set {
+            bridgedExpirationHandler = newValue
+            task.expirationHandler = newValue.map { handler in
+                { MiniAppBackgroundTaskActorBridge.deliverExpiration(handler) }
+            }
+        }
     }
 
     func setTaskCompleted(success: Bool) { task.setTaskCompleted(success: success) }

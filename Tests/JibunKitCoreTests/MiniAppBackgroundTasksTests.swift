@@ -65,6 +65,11 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         XCTAssertThrowsError(try b.submit(.init(identifier: "com.example.a.refresh"))) {
             XCTAssertEqual($0 as? MiniAppBackgroundTaskCenter.Failure, .identifierNotOwned)
         }
+        XCTAssertThrowsError(try a.submit(.init(
+            identifier: "com.example.a.refresh", requiresNetworkConnectivity: true
+        ))) {
+            XCTAssertEqual($0 as? MiniAppBackgroundTaskCenter.Failure, .unsupportedRequestOptions)
+        }
     }
 
     func testOwnerCancellationCannotCancelAnotherOwnersPendingRequests() throws {
@@ -119,22 +124,39 @@ final class MiniAppBackgroundTasksTests: XCTestCase {
         XCTAssertEqual(native.completions, [false])
     }
 
-    func testNativeTaskRetainsExecutionUntilExpirationCompletesThenReleasesCycle() throws {
+    func testCenterRetainsExecutionAfterNativeClearsExpirationUntilAsyncCleanupCompletes() throws {
         let scheduler = BackgroundTaskSchedulerSpy()
         let center = MiniAppBackgroundTaskCenter(scheduler: scheduler)
         let tasks = center.tasks(for: context("feature-a"))
         weak var execution: MiniAppBackgroundTaskExecution?
+        var expirationCount = 0
         try tasks.register(identifier: "com.example.a.refresh", kind: .appRefresh) { task in
             execution = task
-            task.onExpiration = { task.complete(success: false) }
+            task.onExpiration = { expirationCount += 1 }
         }
 
         let native = scheduler.launch("com.example.a.refresh")
-        XCTAssertNotNil(execution, "Native expiration ownership must retain execution after launch returns")
+        XCTAssertNotNil(execution, "Center must retain execution after launch returns")
         native.expire()
 
-        XCTAssertNil(execution, "Completion must clear native and Feature closure retention")
+        XCTAssertNotNil(execution, "OS clearing its expiration handler must not release in-flight work")
+        XCTAssertNil(native.expirationHandler)
+        XCTAssertEqual(expirationCount, 1)
+        execution?.complete(success: false)
+
+        XCTAssertNil(execution, "Completion must release the center's in-flight ownership")
         XCTAssertEqual(native.completions, [false])
+    }
+
+    func testExpirationBridgeHopsFromBackgroundThreadToMainActor() async {
+        let delivered = expectation(description: "expiration delivered")
+        await Task.detached {
+            MiniAppBackgroundTaskActorBridge.deliverExpiration {
+                XCTAssertTrue(Thread.isMainThread)
+                delivered.fulfill()
+            }
+        }.value
+        await fulfillment(of: [delivered], timeout: 5)
     }
 
     func testRejectedNativeRegistrationDoesNotClaimIdentifier() throws {
@@ -196,9 +218,13 @@ private final class BackgroundTaskSchedulerSpy: MiniAppBackgroundTaskScheduling 
 
 @MainActor
 private final class BackgroundTaskNativeSpy: MiniAppBackgroundTaskNative {
-    var expirationHandler: (() -> Void)?
+    var expirationHandler: (@MainActor @Sendable () -> Void)?
     var completions: [Bool] = []
 
     func setTaskCompleted(success: Bool) { completions.append(success) }
-    func expire() { expirationHandler?() }
+    func expire() {
+        let expirationHandler = expirationHandler
+        self.expirationHandler = nil
+        expirationHandler?()
+    }
 }

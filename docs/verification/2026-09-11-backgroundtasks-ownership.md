@@ -21,6 +21,8 @@ The iOS provider preserves the standard request types:
 
 The core center does not simulate or promise OS launch opportunity. Tests replace only the provider boundary so launch, expiration, completion, submission options, and cancellation can be deterministic.
 
+Apple does not document an actor or queue guarantee for `BGTask.expirationHandler`, and documents that the manager clears it after invocation. The native adapter therefore hops every expiration signal explicitly to `MainActor`. The host center, rather than the native closure, retains each in-flight execution until `complete(success:)`; this also supports asynchronous expiration cleanup after the OS has cleared its handler.
+
 ## Build requirements
 
 Every registered identifier must also appear in the composed host Info.plist under `BGTaskSchedulerPermittedIdentifiers`. Processing tasks additionally require the applicable `UIBackgroundModes` entry. The existing `FeatureBuildConfiguration` string-set composition and its build-requirement probe already merge and verify these keys; runtime registration does not mutate Info.plist.
@@ -31,11 +33,13 @@ The bounded core tests compare two Feature owners and verify:
 
 1. each native launch reaches only the handler registered for that identifier;
 2. refresh and processing request types and options survive submission, including changing processing conditions between submissions of one identifier;
-3. one owner's bulk cancellation touches only its registered identifiers;
-4. duplicate cross-owner registration is rejected before a second native registration attempt;
-5. expiration and native completion are each delivered at most once;
-6. the native expiration handler retains an execution after the launch callback returns, while completion clears that retention cycle;
-7. a provider-rejected registration does not retain an ownership claim.
+3. processing-only network or power requirements on an app-refresh request fail explicitly rather than being discarded;
+4. one owner's bulk cancellation touches only its registered identifiers;
+5. duplicate cross-owner registration is rejected before a second native registration attempt;
+6. expiration and native completion are each delivered at most once;
+7. the center retains an execution after the OS-equivalent expiration handler is cleared, then releases it on completion;
+8. an expiration signal originating off the main thread reaches its handler on `MainActor`;
+9. a provider-rejected registration does not retain an ownership claim.
 
 CI run [34550935682](https://github.com/y-aplus/JibunKit/actions/runs/34550935682), source `5c3d3a094ca8a5257ac98923b306f4d0ffb1db5a`, passed. All six focused ownership/lifecycle tests passed as part of 173 shared tests. FeatureBuildRequirements verification, native Feature template verification, generated workspace build, Xcode build, signing, and packaging also passed. This validates compilation of the iOS `BackgroundTasks` provider without claiming that the OS will choose to launch a submitted request.
 

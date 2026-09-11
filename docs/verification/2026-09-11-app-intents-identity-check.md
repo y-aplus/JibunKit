@@ -28,4 +28,13 @@ Appleのmetadataを生成・修正しない。命名や構造をSwiftソース�
 既存Package App Intentsの6target build後、明示したStandaloneA/B app直下のmetadataと
 Combined app直下のmetadataを比較する。従来のentity/query全辞書比較、Shortcut比較、iOS
 直接実行は削除しない。通常製品コードは変更せず、既存のpackage_intents_validation経路で確認する。
-新しい接続のCI結果は待機中。OS Shortcutsからの解決・表示や実行をこの検査の成功とは混同しない。
+新しい接続のCI結果は下記で確認した。OS Shortcutsからの解決・表示や実行をこの検査の成功とは混同しない。
+
+## CI結果
+
+[34560212788](https://github.com/y-aplus/JibunKit/actions/runs/34560212788)、source
+`acdfe718c761117f6c4641a6f5f3f2886c9678d7` が成功した。実際の単独/統合native metadataから
+8定義の識別子と参照を確認し、回帰入力の4試験も成功（0.108秒）。既存のentity/query全辞書比較、
+Shortcut合成・寄与削除、iOS query/perform（0.019/0.020秒）も通過した。
+共有186件は既知Keychain2件skip/失敗0、通常IPAとCounter互換性、通常検索回帰75.136秒を確認。
+通常UI全件やgenerated host全体の再検証をしたrunではない。

@@ -36,4 +36,11 @@ The bounded core tests compare two Feature owners and verify:
 5. expiration and native completion are each delivered at most once;
 6. a provider-rejected registration does not retain an ownership claim.
 
-CI evidence pending.
+CI run [34550935682](https://github.com/y-aplus/JibunKit/actions/runs/34550935682), source `5c3d3a094ca8a5257ac98923b306f4d0ffb1db5a`, passed. All six focused ownership/lifecycle tests passed as part of 173 shared tests. FeatureBuildRequirements verification, native Feature template verification, generated workspace build, Xcode build, signing, and packaging also passed. This validates compilation of the iOS `BackgroundTasks` provider without claiming that the OS will choose to launch a submitted request.
+
+Apple references:
+
+- [`BGTaskScheduler.register(forTaskWithIdentifier:using:launchHandler:)`](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/register%28fortaskwithidentifier%3Ausing%3Alaunchhandler%3A%29)
+- [`BGTaskScheduler`](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler)
+- [`BGTask.expirationHandler`](https://developer.apple.com/documentation/backgroundtasks/bgtask/expirationhandler)
+- [`BGProcessingTaskRequest`](https://developer.apple.com/documentation/backgroundtasks/bgprocessingtaskrequest)

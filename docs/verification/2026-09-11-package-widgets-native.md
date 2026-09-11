@@ -5,10 +5,15 @@ This bounded D26 fixture gives two independent Swift packages ownership of their
 It compares standalone A, standalone B, and one combined Widget extension whose standard
 `WidgetBundle` includes both package types.
 
+Both packages use the same local key, `shared-value`, and the existing
+`MiniAppContext.storageKey(_:)` contract to address values stored in a shared
+`UserDefaults` suite. The Timeline comparison writes different A/B values, updates A,
+and requires B's provider output to remain unchanged.
+
 The native build must show that each standalone host embeds one extension and the
 combined host embeds one extension—not one extension per Feature. Binary kind ownership
-and provider timeline output are compared separately so successful compilation is not
-mistaken for gallery visibility.
+is only link evidence; provider timeline output is compared separately. Neither is
+treated as WidgetKit registration or gallery visibility.
 
 The fixture does not change Counter, the production registry, code generation, or the
 App Intents contract. Simulator widget-gallery presence is recorded only if directly
@@ -20,7 +25,7 @@ Run [34563868864](https://github.com/y-aplus/JibunKit/actions/runs/34563868864),
 `9429c659d7511e785f25faa7a77041f9d6ea38fd`, passed on Xcode 26.6 and iPhone 17
 Simulator (iOS 26.5).
 
-Native Release builds produced:
+Native Release builds produced the following host/extension parent-child pairs:
 
 - `StandaloneA.app` with exactly one `StandaloneAWidget.appex`, containing only
   `com.jibunkit.fixture.feature-a.widget`.
@@ -35,8 +40,9 @@ Widgets do not require one extension per Feature or a custom generator; a standa
 host-owned `WidgetBundle` can compose both package types into one extension.
 
 Focused `TimelineTests/testPackageTimelinesRemainOwnerScoped` passed in 0.003 seconds.
-It verified distinct kinds and owner-prefixed `owner-a.shared-value` /
-`owner-b.shared-value` timeline entries. The normal search regression
+The original run verified distinct kinds and owner-prefixed `owner-a.shared-value` /
+`owner-b.shared-value` timeline entries. A follow-up run below replaces those constant
+entry checks with real shared-suite writes and provider reads. The normal search regression
 `MigrationUITests/testMiniAppSearchFiltersAndOpensResults` also passed in 35.367 seconds.
 
 The `Package-Widget-diagnostics` artifact is ID `10185620484`, SHA-256

@@ -6,6 +6,7 @@ let extensionInfo: InfoPlist = .extendingDefault(with: [
 
 func widgetExtension(
     name: String,
+    hostBundleID: String,
     source: SourceFileGlob,
     dependencies: [TargetDependency]
 ) -> Target {
@@ -13,7 +14,7 @@ func widgetExtension(
         name: name,
         destinations: .iOS,
         product: .appExtension,
-        bundleId: "com.jibunkit.fixture.\(name)",
+        bundleId: "\(hostBundleID).Widget",
         deploymentTargets: .iOS("26.0"),
         infoPlist: extensionInfo,
         sources: [source],
@@ -21,12 +22,12 @@ func widgetExtension(
     )
 }
 
-func host(name: String, widget: String) -> Target {
+func host(name: String, bundleID: String, widget: String) -> Target {
     .target(
         name: name,
         destinations: .iOS,
         product: .app,
-        bundleId: "com.jibunkit.fixture.\(name)",
+        bundleId: bundleID,
         deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
         sources: ["HostApp.swift"],
@@ -39,15 +40,15 @@ let project = Project(
     packages: [.package(path: "FeatureA"), .package(path: "FeatureB")],
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
-        widgetExtension(name: "StandaloneAWidget", source: "StandaloneA.swift",
+        widgetExtension(name: "StandaloneAWidget", hostBundleID: "com.jibunkit.fixture.standalone-a", source: "StandaloneA.swift",
                         dependencies: [.package(product: "WidgetFeatureA")]),
-        widgetExtension(name: "StandaloneBWidget", source: "StandaloneB.swift",
+        widgetExtension(name: "StandaloneBWidget", hostBundleID: "com.jibunkit.fixture.standalone-b", source: "StandaloneB.swift",
                         dependencies: [.package(product: "WidgetFeatureB")]),
-        widgetExtension(name: "CombinedWidget", source: "Combined.swift",
+        widgetExtension(name: "CombinedWidget", hostBundleID: "com.jibunkit.fixture.combined", source: "Combined.swift",
                         dependencies: [.package(product: "WidgetFeatureA"), .package(product: "WidgetFeatureB")]),
-        host(name: "StandaloneA", widget: "StandaloneAWidget"),
-        host(name: "StandaloneB", widget: "StandaloneBWidget"),
-        host(name: "Combined", widget: "CombinedWidget"),
+        host(name: "StandaloneA", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget"),
+        host(name: "StandaloneB", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget"),
+        host(name: "Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget"),
         .target(
             name: "TimelineTests",
             destinations: .iOS,

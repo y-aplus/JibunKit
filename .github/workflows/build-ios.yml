@@ -23,6 +23,10 @@ on:
         description: Run native web authentication comparison (requires simulator_tests)
         type: boolean
         default: false
+      background_urlsession_validation:
+        description: Compare native background downloads (requires simulator_tests)
+        type: boolean
+        default: false
       feature_ui_test_filter:
         description: Optional generated-host Xcode test identifier (empty runs all Feature integration tests)
         type: string
@@ -93,6 +97,12 @@ jobs:
         if: inputs.web_authentication_validation && !inputs.simulator_tests
         run: |
           echo "web_authentication_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate background URLSession inputs
+        if: inputs.background_urlsession_validation && !inputs.simulator_tests
+        run: |
+          echo "background_urlsession_validation requires simulator_tests" >&2
           exit 1
 
       - name: Validate focused UI inputs
@@ -470,6 +480,14 @@ jobs:
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b
 
+      - name: Verify native background URLSession ownership
+        if: inputs.simulator_tests && inputs.background_urlsession_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/verify-background-urlsession-native.py --simulator-id "$SIMULATOR_ID" \
+            2>&1 | tee "$RUNNER_TEMP/background-urlsession-native.log"
+
       - name: Verify native web authentication handoff
         if: inputs.simulator_tests && inputs.web_authentication_validation
         shell: bash
@@ -658,6 +676,17 @@ jobs:
             ${{ runner.temp }}/host-app-intents.json
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Upload background URLSession diagnostics
+        if: always() && inputs.simulator_tests && inputs.background_urlsession_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Background-URLSession-diagnostics
+          path: |
+            ${{ runner.temp }}/background-urlsession-native.log
+            ${{ runner.temp }}/BackgroundURLSessionNative.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload web authentication diagnostics
         if: always() && inputs.simulator_tests && inputs.web_authentication_validation

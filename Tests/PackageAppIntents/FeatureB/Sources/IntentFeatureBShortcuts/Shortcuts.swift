@@ -8,9 +8,13 @@ public struct FeatureBShortcutsPackage: AppIntentsPackage {
 }
 
 public struct FeatureBShortcuts: AppShortcutsProvider {
-    public static var appShortcuts: [AppShortcut] {
+    public static var addValue: AppShortcut {
         AppShortcut(intent: FeatureBAddValueIntent(),
                     phrases: ["Add B in \(.applicationName)"],
                     shortTitle: "Add B", systemImageName: "plus.square")
+    }
+
+    public static var appShortcuts: [AppShortcut] {
+        addValue
     }
 }

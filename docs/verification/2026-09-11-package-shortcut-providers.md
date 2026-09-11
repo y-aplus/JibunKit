@@ -1,6 +1,6 @@
 # Package別App Shortcuts Providerの合成
 
-状態: Package Providerだけの初回構成ではapp-level Shortcut metadata欠落を確認。hostから定義を参照する次の構成はCI未検証。製品への新しい制約や独自generatorは追加しない。
+状態: Package Providerだけの初回構成ではapp-level Shortcut metadata欠落を確認。hostの配列参照もnative抽出に拒否され、個別Shortcut参照をbuilder内に置く構成はCI未検証。製品への新しい制約や独自generatorは追加しない。
 
 34540791430では二PackageのIntentを一つのhost AppShortcutsProviderから参照できた。一方、FeatureがProviderを所有したまま二つを統合できるかは未検証だった。
 
@@ -29,3 +29,9 @@ native buildが複数Providerを拒否する、片方を落とす、metadataを�
 ## 次の接続比較
 
 各OwnedShortcuts targetに小さなhost AppShortcutsProviderを置く。単独は対応PackageのappShortcutsを返し、統合は二配列を結合して返す。FeatureのSwift標準定義を再利用したままnative抽出できるかを確認する。必要metadataのassertionは緩めず、一方だけのShortcutを成功にしない。抽出失敗時もコンパイラのswiftconstvaluesをartifactへ保存し、コンパイル時抽出とapp-level集約のどちらが欠けるか調べられるようにした。結果待ち。
+
+## 配列転送の結果と次の比較
+
+[34547458901](https://github.com/y-aplus/JibunKit/actions/runs/34547458901)、source `c89d44ba1941eeceb5d1512e9e6b55f016e71def` は失敗。OwnedShortcutsAのSwiftコンパイル後、appintentsmetadataprocessorが `'AppShortcutsProvider' property 'appShortcuts' requires builder syntax` として抽出を拒否した。swiftconstvaluesでも既存成功CombinedはBuilder、配列を返すOwnedShortcutsAはTypeProperty参照となっている。Swiftの型として正しい配列転送でもnative metadataの要求は別にある。
+
+次はFeature側で個々のAppShortcutを公開propertyに置き、host Providerのbuilder内で一つずつ参照する。builder構文を保ったproperty参照をApple抽出が解決できるかを検証する。文言・画像・Intentの構築は引き続きFeature側が所有する。現状で公開APIの一般的制限やJibunKitの推奨接続方式には確定しない。検証用compiler抽出情報とmetadataを保存し、必須の二Shortcut比較を継続する。

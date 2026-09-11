@@ -2,7 +2,7 @@
 
 CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnative stepが成功した後、GeneratedFeatureUITestsの21テスト中3テストで計5 assertionが失敗し、run全体は時間上限でcancelledとなった。テストが既存であることは失敗原因が既知であることを意味しない。
 
-## Records詳細URL: host修正・検証待ち
+## Records詳細URL: host修正・CI検証済み
 
 `testRecordsUsesIndependentHostStorage`の通常row選択では本文を表示できたが、Counterからの`jibunkit://mini-app/records?destination=...`では本文を表示できず、815/816行の二assertionが失敗。保存値そのものの欠落はこのログからは示されていない。
 
@@ -25,3 +25,16 @@ CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnativ
 ## Web再起動保持: 未解決
 
 `testWebDataPersistsAndClearingPreservesOtherFeature`で、A/Bとも再起動前のnative cookie読戻しは成功したが、後の再起動読戻しでprofile/default両方がmissing（488行の二assertion）。`isPersistent=true`、`sessionOnly=false`、期限ありを記録している。識別子付きprofileだけの欠落ではなく、比較用default storeも同じ結果だった。原因未確定であり、JibunKitの分離に問題がないとも、単なるテスト不安定とも断定しない。
+
+## 修正後の成功証拠
+
+[34547138490](https://github.com/y-aplus/JibunKit/actions/runs/34547138490)、source `4c608c6d7ed781f8aa013964e81427498349eb8e` は成功。Feature rootをstack内容へ移す製品修正と、検索バーを避けるテスト操作を含む。
+
+- testFeatureRootNavigationRegression: 214.357秒で成功。Recordsの保存/再起動/詳細URL・不正URL拒否、Counter値保持、Feature別経路の切替/戻る/reset/stale binding、二scene状態、生成Notesの切替、cold custom URLを確認。
+- Counter行はscroll後frame `(16,663.33,370,52.33)` となり、右側余白のtapからCounterへ遷移した。
+- 共有167試験、native build/IPA、生成Feature単独起動が成功。
+- 通常host UI 11件: 385.061秒。通知配送/遷移29.822秒、添付ZIP復元77.354秒を含む。
+- 独立したFiles経由の選択Counter復元: 126.136秒で成功。
+- Recordsの既知Simulator Quick Lookはexpected failure。実機での確認済み範囲とは別に、Simulator未解決を維持する。
+
+generated hostは上記batchだけであり全件成功とはしない。通知actionの反復操作とWeb保持の過去の不安定性はこのrunの完了対象外。通知は[別の検証](2026-09-11-notification-ui-regression.md)、Webは[終了時点比較](2026-09-11-web-cookie-termination-comparison.md)へ進んでいる。

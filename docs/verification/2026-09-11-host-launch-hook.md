@@ -38,3 +38,7 @@ The parent integration branch calls every hook from the existing AppDelegate lau
 ## CI evidence
 
 [34553408736](https://github.com/y-aplus/JibunKit/actions/runs/34553408736), source `a18634d7953fb85014f31a1a28f860c3e6b9e9d3`, passed. The two-Feature launch test passed in 22.928 seconds: both hooks ran before a probe root was constructed, and A remained at one after visiting B and returning. Shared tests: 179 executed, two documented Keychain entitlement skips, zero failures. Native Feature generation, generated host build, normal app/Widget/IPA, standalone Counter, and normal search/open regression (41.874 seconds) passed. Records tests retain the known Simulator Quick Look expected failure. This verifies the generic host launch boundary, not actual BackgroundTasks scheduling or background URLSession OS relaunch delivery.
+
+## main統合後の確認
+
+[34555893802](https://github.com/y-aplus/JibunKit/actions/runs/34555893802)、source `068298d` が成功。Background URLSession再接続・host launch hook・通常Counter Shortcut合成を含むmainで、共有186件（既知Keychain2件skip/失敗0）、通常app/Widget/IPAとCounter metadata互換性、generated hostの二Feature起動hook（28.148秒）、通常検索回帰（37.458秒）を確認した。このrunは通常UI全件の再実行ではない。

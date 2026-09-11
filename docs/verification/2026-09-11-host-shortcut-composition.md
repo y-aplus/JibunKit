@@ -33,3 +33,7 @@
 単独/統合のPackage App Intents・Shortcut比較、寄与削除後の保持、native perform()の所有Store/戻り値（0.016秒）、通常app/Widgetのbuild・IPA検査、独立Counterを通過した。通常UI11件は失敗0件（462.377秒）、別実行のFiles経由Counter復元も成功（153.815秒）。generated Feature全体のUI回帰や、OS Shortcutsアプリに保存済みのworkflow実行はこのrunの検証範囲に含めない。
 
 Counterの既存公開Intent型は維持し、Shortcut式の所有元だけをFeature側へ移せた。OS表示/実行の実機検証とD27全体の未検証事項は引き続き台帳で追う。
+
+## main統合後の確認
+
+[34555893802](https://github.com/y-aplus/JibunKit/actions/runs/34555893802)、source `068298d` が成功。Background URLSession再接続・host launch hook・通常Counter Shortcut合成を含むmainで、共有186件（既知Keychain2件skip/失敗0）、通常app/Widget/IPAとCounter metadata互換性、generated hostの二Feature起動hook（28.148秒）、通常検索回帰（37.458秒）を確認した。このrunは通常UI全件の再実行ではない。

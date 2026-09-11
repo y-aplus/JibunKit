@@ -7,10 +7,14 @@ final class PackageResourceUITests: XCTestCase {
             let app = XCUIApplication(bundleIdentifier: "com.jibunkit.package-resource-probe")
             app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
             app.launch()
+            let observed = app.staticTexts.matching(identifier: "package-resource.language")
+                .matching(NSPredicate(format: "label == %@", language)).firstMatch
+            XCTAssertTrue(observed.waitForExistence(timeout: 10),
+                          "requested \(language), observed UI:\n\(app.debugDescription)")
             let result = app.staticTexts["package-resource.result"]
             XCTAssertTrue(result.waitForExistence(timeout: 10), app.debugDescription)
             XCTAssertTrue(result.label.hasPrefix("passed:"), result.label)
-            print("PACKAGE_RESOURCE_RESULT language=\(language) \(result.label)")
+            print("PACKAGE_RESOURCE_RESULT requested=\(language) observed=\(observed.label) \(result.label)")
             app.terminate()
         }
     }

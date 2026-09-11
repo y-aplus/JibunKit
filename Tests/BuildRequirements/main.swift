@@ -96,6 +96,16 @@ require(otherTarget.infoPlist["CFBundleURLTypes"] == nil, "URL declarations leak
 let identical = try FeatureBuildConfiguration(features: [.init(owner: "same", infoPlist: ["CFBundleVersion": "4"])])
     .compose(infoPlist: base, entitlements: group)
 require(identical.infoPlist == base, "Identical setting rejected")
+let mixedLocalizationHost: [String: Plist.Value] = ["CFBundleAllowMixedLocalizations": true]
+let identicalMixedLocalization = try FeatureBuildConfiguration(features: [
+    .init(owner: "localized-feature", infoPlist: ["CFBundleAllowMixedLocalizations": true])
+]).compose(infoPlist: mixedLocalizationHost, entitlements: [:])
+require(identicalMixedLocalization.infoPlist == mixedLocalizationHost, "Identical mixed-localization setting rejected")
+reject("CFBundleAllowMixedLocalizations") {
+    _ = try FeatureBuildConfiguration(features: [
+        .init(owner: "localized-feature", infoPlist: ["CFBundleAllowMixedLocalizations": false])
+    ]).compose(infoPlist: mixedLocalizationHost, entitlements: [:])
+}
 let activities = try FeatureBuildConfiguration(features: [.init(owner: "activity", infoPlist: ["NSUserActivityTypes": ["custom", "native"]])])
     .compose(infoPlist: ["NSUserActivityTypes": ["native"]], entitlements: [:])
 require(activities.infoPlist["NSUserActivityTypes"] == ["custom", "native"], "Activity types lost host continuation")

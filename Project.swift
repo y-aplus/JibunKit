@@ -8,6 +8,7 @@ let sharedEntitlements: [String: Plist.Value] = [
 let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.5.0",
     "CFBundleVersion": "6", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "CFBundleAllowMixedLocalizations": true,
     "UILaunchScreen": [:],
     "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
     "CFBundleURLTypes": [[
@@ -21,6 +22,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
 let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: [
     "CFBundleShortVersionString": "0.5.0", "CFBundleVersion": "6",
     "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "CFBundleAllowMixedLocalizations": true,
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
 ], entitlements: sharedEntitlements, localizedInfoPlist: [
     "en": ["CFBundleDisplayName": "JibunKit Widget"],

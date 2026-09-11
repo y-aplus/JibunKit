@@ -373,6 +373,7 @@ jobs:
           require_executable "app executable" "$app/$app_executable"
           require_executable "widget executable" "$widget/$widget_executable"
           require_nonempty "App Intents metadata" "$metadata"
+          cp "$metadata" "$RUNNER_TEMP/host-app-intents.json"
           python3 Tools/verify-host-shortcut-compatibility.py "$metadata"
 
           app_architecture="$(file "$app/$app_executable")"
@@ -648,7 +649,9 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: Feature-build-requirement-diagnostics
-          path: ${{ runner.temp }}/feature-build-requirements.log
+          path: |
+            ${{ runner.temp }}/feature-build-requirements.log
+            ${{ runner.temp }}/host-app-intents.json
           if-no-files-found: ignore
           retention-days: 14
 

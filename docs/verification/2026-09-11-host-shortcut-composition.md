@@ -13,3 +13,7 @@
 通常IPA検査で`verify-host-shortcut-compatibility.py`を実行し、既存CounterのProvider名・Intent metadata全体・Shortcut辞書がこの基準と一致することを必須とする。将来追加される別Intentは拒否しない。既存Intentの意図的な仕様変更時は、基準を機械的に再作成せず互換性を判断する。
 
 ローカルでは変更前metadataを受理し、Intentの型名を変えたmetadataを拒否することを確認。Swift/Tuist生成、通常iOS/Widget/IPA、二Feature合成比較、既存画面回帰はCI待ち。OS Shortcutsに以前から保存されたworkflowの実行互換性までをmetadataだけで実証したとはしない。
+
+## 最初の通常host検証
+
+[34552604139](https://github.com/y-aplus/JibunKit/actions/runs/34552604139)、source `6ce59a1cb2b3a2c36550a2a413862cb6d69999ee` はiOS build後の互換性検査で失敗。Provider名の一致は通過したが、AddCounterValueIntentの辞書一致が失敗した。Intent実装は変更していないものの、差分を取得できていないため無害とは判断しない。現在の検査は失敗時のactual metadataを保存していなかったため、JSON artifact保存とfield単位のdiff表示を追加する。比較条件は維持し、次の診断は共有試験/通常buildのみで、到達しないSimulatorを予約しない。

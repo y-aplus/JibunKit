@@ -76,7 +76,9 @@ static let all = makeRegistry([
 
 通常画面の追加だけなら、Widget extensionやApp Intentの宣言は不要である。
 
-Widgetを追加する場合は、別extension target、Widget bundleへの登録、extensionの`Info.plist`、本体と同じApp Group entitlement、IPAへの組込み検査が追加で必要になる。共有値はfeatureの同じStoreを通して読む。Registryから生成されないため、Featureが所有する安定IDから同じContextを生成したshared Storeを使う。現在のカウンターWidgetが実例である。
+Widgetは本体とは別のWidget extension targetへ組み込む。Featureごとにextensionを増やすことは必須ではなく、既存extensionの標準`WidgetBundle`へ複数のWidget型を登録できる。Swift Packageが所有する二つの静的Widgetを一つのextensionへ組み込むbuildと、所有者別StoreからのTimeline読出しは[比較fixture](verification/2026-09-11-package-widgets-native.md)で確認済み。一般的なWidgetの一覧表示・更新配送やControlまで確認した証拠ではない。
+
+接続時はWidget targetのpackage dependency、WidgetBundleへの登録、extensionの`Info.plist`、本体と共有するApp Group entitlement、IPAへの組込みを確認する。共有値はFeatureの同じStoreを通して読む。Registryから自動生成されないため、Featureが所有する安定IDから同じContextを生成し、app/extension双方で同じApp Group suiteを使う。現在のカウンターWidgetが実例である。比較fixtureの単一process内UserDefaults試験だけではapp/extension間の共有は実証していない。
 
 App IntentはFeatureのSwift Packageに公開型として置き、標準`AppIntentsPackage.includedPackages`でapp targetへ接続できる。[Package内Intentの接続手順と検証範囲](guides/package-app-intents.md)を参照。自動提示するApp Shortcutには`AppShortcutsProvider`のphrase等も登録する。Xcodeが生成するnative metadataをIPAへ含め、Shortcuts実機確認用IPAはGitHub ActionsのmacOS／Xcode 26.6経路で生成する。現在の`AddCounterValueIntent`と`JibunKitShortcuts`はapp target内にある既存の互換経路で、Package内配置を禁止するものではない。Intentからも同じFeature所有Storeを使う。
 

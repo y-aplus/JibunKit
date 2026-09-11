@@ -45,6 +45,8 @@ CI run [34550935682](https://github.com/y-aplus/JibunKit/actions/runs/3455093568
 
 Follow-up CI run [34551664876](https://github.com/y-aplus/JibunKit/actions/runs/34551664876), source `d14a7afa5f56736dedafdc4326904ca934f8e3be`, passed after moving processing conditions onto each submitted request and adding the execution-retention test. All seven BackgroundTasks tests passed as part of 174 shared tests; the same build-requirement, native-template, generated-workspace, Xcode build, signing, and packaging stages passed. The iOS adapter explicitly hops from the scheduler's launch queue into `MainActor` before creating and delivering the execution.
 
+Final boundary CI run [34552410724](https://github.com/y-aplus/JibunKit/actions/runs/34552410724), source `65dd68e751bc8b93b0061551abcc29316db61c67`, passed after modeling the OS clearing its expiration handler, moving in-flight retention to the center, adding the off-main expiration bridge test, and rejecting processing-only options on refresh requests. All eight BackgroundTasks tests passed as part of 175 shared tests; build requirements, native template, generated workspace, Xcode build, signing, and packaging also passed.
+
 Apple references:
 
 - [`BGTaskScheduler.register(forTaskWithIdentifier:using:launchHandler:)`](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/register%28fortaskwithidentifier%3Ausing%3Alaunchhandler%3A%29)

@@ -45,3 +45,7 @@ native buildが複数Providerを拒否する、片方を落とす、metadataを�
 補助処理の試験で原文保持、重複owner・欠落ファイルの拒否と旧出力保持、片方削除・全件削除を確認する。native比較は従来の単独/統合metadata検査を保ち、同一DerivedDataのままShortcut Aの寄与だけを外して再生成/buildし、Bのmetadataのみ残ることを追加確認する。ここではAのIntent Package自体はリンクしたままで、Feature全体の削除成功とは扱わない。生成ソースもartifactに保存する。
 
 [利用方法](../guides/feature-app-shortcuts.md)。現在はCI待ちで、OS Shortcuts/Siriからの発見・実行は別の未検証事項。
+
+## 生成ファイル名の修正
+
+[34549515446](https://github.com/y-aplus/JibunKit/actions/runs/34549515446)、source `47f514c24ffe0082c1a89be83c0d359a6cad123e` は補助処理の原文保持/拒否/削除試験を通過した後、OwnedShortcutsAのコンパイルで停止。生成Providerと既存Package登録ファイルのbasenameがともに`OwnedShortcutsA.swift`だったため、Swiftが重複ファイル名として拒否した。A/B/Combinedの生成ファイルを`ComposedShortcuts*.swift`へ改名し、明示source指定も合わせた。metadata比較にはまだ到達しておらず、合成成功とはしない。

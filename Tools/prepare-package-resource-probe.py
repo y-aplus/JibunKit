@@ -24,8 +24,7 @@ def main() -> None:
 
     imports = []
     expressions = []
-    expected_english = []
-    expected_japanese = []
+    expected = []
     dependencies = []
     packages = []
     for owner in ("A", "B"):
@@ -35,10 +34,10 @@ def main() -> None:
         imports.append(f"import {module}")
         expressions.extend([
             f'try {module}Values.jsonOwner()',
-            f'{module}Values.greeting()',
+            f'{module}Values.greeting(locale: "en")',
+            f'{module}Values.greeting(locale: "ja")',
         ])
-        expected_english.extend([owner, f"Hello from {owner}"])
-        expected_japanese.extend([owner, f"{owner}からこんにちは"])
+        expected.extend([owner, f"Hello from {owner}", f"{owner}からこんにちは"])
         dependencies.append(f'.package(product: "{module}")')
         packages.append(f'.package(path: "Packages/Feature{owner}")')
 
@@ -55,8 +54,7 @@ struct ProbeView: View {{
     private var result: String {{
         do {{
             let actual = [{', '.join(expressions)}]
-            let expected = Locale.preferredLanguages.first?.hasPrefix("ja") == true
-                ? {expected_japanese!r} : {expected_english!r}
+            let expected = {expected!r}
             return actual == expected ? "passed: {args.mode} " + actual.joined(separator: "|") : "failed: {args.mode} " + actual.joined(separator: "|")
         }} catch {{ return "failed: {args.mode} \\(error)" }}
     }}

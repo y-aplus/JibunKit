@@ -10,8 +10,16 @@ final class HostLaunchHookUITests: XCTestCase {
         app.launch()
 
         assertLaunchCount(owner: "host-launch-a", app: app)
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        returnToList(app)
         assertLaunchCount(owner: "host-launch-b", app: app)
+        returnToList(app)
+        assertLaunchCount(owner: "host-launch-a", app: app)
+    }
+
+    private func returnToList(_ app: XCUIApplication) {
+        let back = app.buttons["miniapp.back-to-list"]
+        XCTAssertTrue(back.waitForExistence(timeout: 10), app.debugDescription)
+        back.tap()
     }
 
     private func assertLaunchCount(owner: String, app: XCUIApplication) {
@@ -23,4 +31,3 @@ final class HostLaunchHookUITests: XCTestCase {
         XCTAssertTrue(once.waitForExistence(timeout: 10), app.debugDescription)
     }
 }
-

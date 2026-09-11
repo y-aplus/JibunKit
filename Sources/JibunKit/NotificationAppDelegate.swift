@@ -14,11 +14,14 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         do {
+            for definition in MiniAppRegistry.all {
+                try definition.onHostLaunch?()
+            }
             let registrations = Dictionary(uniqueKeysWithValues:
                 MiniAppRegistry.all.map { ($0.id, $0.notificationCategories) })
             try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
         } catch {
-            preconditionFailure("Invalid Feature notification category registration: \(error)")
+            preconditionFailure("Invalid Feature launch registration: \(error)")
         }
         return true
     }

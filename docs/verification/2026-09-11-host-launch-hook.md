@@ -30,3 +30,7 @@ The generated-host integration needs these mechanical additions:
 4. invoke all `onHostLaunch` hooks inside the existing AppDelegate launch registration `do` block.
 
 `NotificationAppDelegate.swift` is intentionally unchanged in this branch so the owner of the shared launch path can coordinate this call with concurrent D16 work.
+
+## Host integration under verification
+
+The parent integration branch calls every hook from the existing AppDelegate launch registration block and reports failures as Feature launch registration errors. The fixture is copied only into the temporary generated host and its two definitions are placed at the top of the launcher, so the test does not depend on off-screen list rows. Each hook additionally requires that no probe root has yet been constructed; revisiting A after B must retain the same count. Normal production registration still contains only the existing Feature definitions. Native generated-host and normal host regression results are pending CI.

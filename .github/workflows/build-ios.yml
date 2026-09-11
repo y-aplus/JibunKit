@@ -215,6 +215,8 @@ jobs:
           import shutil
           shutil.copyfile('Tests/TemplateIntegration/GeneratedFeatureUITests.swift', 'UITests/GeneratedFeatureUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
+          shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookProbe.swift', 'Sources/JibunKit/HostLaunchHookProbe.swift')
+          shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookUITests.swift', 'UITests/HostLaunchHookUITests.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsNotifications.swift', 'Sources/JibunKit/RecordsNotifications.swift')
@@ -294,6 +296,7 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        BackgroundExecutionProbe.definition,'))
           if include_url_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        URLRoutingProbe.definitions[0],\n        URLRoutingProbe.definitions[1],'))
+          p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

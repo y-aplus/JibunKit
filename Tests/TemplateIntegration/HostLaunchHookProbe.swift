@@ -5,6 +5,7 @@ import SwiftUI
 @MainActor
 enum HostLaunchHookProbe {
     private static var launchCounts: [MiniAppID: Int] = [:]
+    private static var rootCreations = 0
 
     static let definitions = [
         definition(id: "host-launch-a", title: "Host launch A"),
@@ -18,14 +19,15 @@ enum HostLaunchHookProbe {
             title: title,
             systemImage: "bolt",
             onHostLaunch: {
+                precondition(rootCreations == 0, "Registration must precede every Feature root")
                 precondition(launchCounts[owner, default: 0] == 0,
                              "Host launch registration ran more than once for \(owner.rawValue)")
                 launchCounts[owner, default: 0] += 1
             }
         ) { _ in
-            Text(String(launchCounts[owner, default: 0]))
+            rootCreations += 1
+            return Text(String(launchCounts[owner, default: 0]))
                 .accessibilityIdentifier("host.launch.\(owner.rawValue).count")
         }
     }
 }
-

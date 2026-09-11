@@ -27,5 +27,7 @@ No request-content, owner-isolation, or other-feature assertion was removed or r
 
 ## Focused CI
 
-Pending focused generated-host UI validation of
-`MigrationUITests/GeneratedFeatureUITests/testNativeNotificationRequestPayloadsReachOnlyTheirOwners`.
+CI run `34543925004` passed. The generated-host log contains one discovered
+notification test entry: `testNativeNotificationRequestPayloadsReachOnlyTheirOwners`,
+which passed in 125.149 seconds. Neither former helper was discovered as an
+independent test. The complete workflow also passed.

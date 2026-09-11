@@ -13,6 +13,9 @@ public struct MiniAppDefinition: Identifiable {
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
     public let restoreLifecycle: MiniAppRestoreLifecycle?
+    /// Synchronous, screen-independent native registration performed by the
+    /// host during `application(_:didFinishLaunchingWithOptions:)`.
+    public let onHostLaunch: (@MainActor () throws -> Void)?
     public let onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)?
     public let onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler?
     public let onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)?
@@ -31,6 +34,7 @@ public struct MiniAppDefinition: Identifiable {
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         resolveIncomingURL: MiniAppURLRouter.Resolver? = nil,
+        onHostLaunch: (@MainActor () throws -> Void)? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler? = nil,
         onNotificationAction: (@MainActor (MiniAppNotificationAction) async -> Void)? = nil,
@@ -49,6 +53,7 @@ public struct MiniAppDefinition: Identifiable {
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.resolveIncomingURL = resolveIncomingURL
+        self.onHostLaunch = onHostLaunch
         self.onHostPhaseChange = onHostPhaseChange
         self.onSceneActivityChange = onSceneActivityChange
         self.onNotificationAction = onNotificationAction

@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- FeatureをNavigationStackのrootに置き、別Featureから詳細URLで開く際に遷移先の登録が無視される問題を修正。Feature固有のpathは詳細値だけを持ち、rootの「ミニアプリ」ボタンで一覧へ戻る。
+
 - Web認証の提示面ごとの任意調停とFeature接続別の取消・Runtime終了処理を追加。標準ASWebAuthenticationSessionのcallback形式と提示先を維持する。
 - Swift Package内のApp Intentsを標準AppIntentsPackageで接続する手順と、単独/統合metadata・所有Storeの比較検証を追加。
 

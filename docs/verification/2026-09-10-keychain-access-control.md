@@ -198,3 +198,27 @@ with a direct
 [`JibunKit.ipa` download](https://github.com/y-aplus/JibunKit/releases/download/keychain-device-check-20260911-r2/JibunKit.ipa).
 The earlier prerelease remains an immutable record of the first failed run and
 must not be used for this follow-up.
+
+## Physical-device result
+
+The user ran the r2 IPA on the physical device and reported the complete final
+line:
+
+```text
+passed: update=after protected-read=rejected protected-add=noninteractive-success protected-attributes=rejected--25308 protected-update=rejected--25308 protected=present other=other
+```
+
+This satisfies every required success token. The protected add succeeded
+without interaction. Subsequent non-interactive reads were rejected, and both
+the attributes lookup and data-only update returned `-25308`
+(`errSecInteractionNotAllowed`) from the wrapper and its native Security
+comparison. The probe only reaches `passed:` after those outcomes agree, an
+authenticated final read returns the original value after the rejected update,
+and the other owner's value remains unchanged. Thus the item retained
+`userPresence` protection and ownership isolation on this device.
+
+The result also explains the first run's generic `-25308`: the earlier probe
+unconditionally threw when its protected attributes lookup was rejected. The
+r2 probe records that same rejection, compares it with native Security, and
+continues to the authenticated retention check instead of losing the operation
+stage. No protection condition was relaxed between the two runs.

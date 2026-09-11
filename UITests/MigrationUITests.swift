@@ -53,6 +53,12 @@ final class MigrationUITests: XCTestCase {
         XCTAssertTrue(export.isEnabled)
         tap(export)
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
+        let nameField = app.textFields["DOCPicker.filenameTextField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 10))
+        let suggestedName = try XCTUnwrap(nameField.value as? String)
+        XCTAssertNotNil(suggestedName.range(
+            of: #"^JibunKit-backup-[0-9]{8}-[0-9]{6}(\.json)?$"#, options: .regularExpression))
+        let filename = suggestedName.hasSuffix(".json") ? suggestedName : suggestedName + ".json"
         capture("backup-file-exporter")
         tap(app.buttons["保存"])
         XCTAssertTrue(app.staticTexts["バックアップを書き出しました。"].waitForExistence(timeout: 20))
@@ -66,7 +72,10 @@ final class MigrationUITests: XCTestCase {
         tap(app.buttons["backup.import"])
         tap(app.buttons["ブラウズ"])
         tap(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "このiPhone内")).firstMatch)
-        let file = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", "JibunKit-backup")).firstMatch
+        // Files includes the extension before its comma-separated type description.
+        // Match this export, even when an earlier ZIP backup is in the same folder.
+        let file = app.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@",
+                                                 filename, filename + ",")).firstMatch
         func selectBackupFile() {
             tap(app.buttons["OverflowBarButtonItem"])
             capture("backup-files-view-menu")

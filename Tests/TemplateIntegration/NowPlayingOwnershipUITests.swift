@@ -17,8 +17,8 @@ final class NowPlayingOwnershipUITests: XCTestCase {
         run.tap()
 
         let passed = app.staticTexts.matching(identifier: "now-playing.result")
-            .matching(NSPredicate(format: "label == %@", "passed")).firstMatch
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "passed:")).firstMatch
         XCTAssertTrue(passed.waitForExistence(timeout: 20), app.debugDescription)
+        print("NOW_PLAYING_NATIVE_RESULT \(passed.label)")
     }
 }
-

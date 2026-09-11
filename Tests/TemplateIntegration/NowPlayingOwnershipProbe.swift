@@ -48,6 +48,7 @@ final class NowPlayingOwnershipProbeState {
         let aActivationWasConsistent = !activatedA || sessionA.isActive
         let activatedB = await sessionB.becomeActiveIfPossible()
         let bActivationWasConsistent = !activatedB || sessionB.isActive
+        let activeSelectionWasExclusive = !(sessionA.isActive && sessionB.isActive)
 
         // Removing A's player and command target must not mutate B's session.
         sessionA.removePlayer(playerA)
@@ -62,14 +63,14 @@ final class NowPlayingOwnershipProbeState {
 
         guard aActivationWasConsistent,
               bActivationWasConsistent,
-              !(sessionA.isActive && sessionB.isActive) else {
+              activeSelectionWasExclusive else {
             result = "failed: active-selection"
             return
         }
 
         print("NOW_PLAYING_NATIVE centers=independent players=independent targets=scoped " +
               "a-active=\(activatedA) b-active=\(activatedB)")
-        result = "passed"
+        result = "passed: centers=independent a-active=\(activatedA) b-active=\(activatedB)"
     }
 }
 

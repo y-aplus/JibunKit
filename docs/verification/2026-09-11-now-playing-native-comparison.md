@@ -45,3 +45,7 @@ Native CI result pending.
 - [`MPNowPlayingSession.becomeActiveIfPossible(completion:)`](https://developer.apple.com/documentation/mediaplayer/mpnowplayingsession/becomeactiveifpossible%28completion%3A%29)
 - [`MPRemoteCommand`](https://developer.apple.com/documentation/mediaplayer/mpremotecommand)
 - [`MPRemoteCommand.removeTarget(_:action:)`](https://developer.apple.com/documentation/mediaplayer/mpremotecommand/removetarget%28_%3Aaction%3A%29)
+
+## Parent integration
+
+The temporary generated host now copies both fixtures and places the probe first in its launcher. The active-session exclusivity check captures the state immediately after B requests activation, before removing A. The UI result includes both native activation return values and XCTest records that label in the log, so a pass with two denied requests cannot be mistaken for successful activation. Production Registry and app sources do not include the probe. CI is pending.

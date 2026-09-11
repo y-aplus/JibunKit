@@ -239,3 +239,7 @@ The test requires the post-update read to return an authentication rejection
 and explicitly rejects `errSecItemNotFound`; it does not convert rejection to a
 successful or missing lookup. Simulator UI tests were not requested for this
 shared-test and build-only verification.
+
+## Integrated main verification
+
+[34552157327](https://github.com/y-aplus/JibunKit/actions/runs/34552157327), source `7ab6ca50102f4f53346153d18b0fac096ee85023`, passed after integration into main. The shared suite executed 171 tests with the same two documented unsigned-host protected-item skips and zero failures. Normal iOS build, app/Widget IPA verification, standalone Counter, and the host search/open regression (49.503 seconds) passed. The physical-device r2 result above supplies the protected-item evidence; the skipped macOS cases do not. This run did not execute the full normal UI suite or the generated Feature suite.

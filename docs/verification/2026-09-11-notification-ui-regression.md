@@ -32,4 +32,18 @@ notification test entry: `testNativeNotificationRequestPayloadsReachOnlyTheirOwn
 which passed in 125.149 seconds. Neither former helper was discovered as an
 independent test. The complete workflow also passed.
 
-Shared tests: 167 passed. Normal host UI: 11 passed in 466.845 seconds. The separate Files selected-Counter restore passed in 154.300 seconds. Records' two tests passed with the known Simulator Quick Look expected failure. This is not a full generated-host suite pass. A deliberate two-cycle notification regression remains to check whether cleanup, recreation, and the OS action UI work repeatedly without reducing the semantic assertions.
+Shared tests: 167 passed. Normal host UI: 11 passed in 466.845 seconds. The separate Files selected-Counter restore passed in 154.300 seconds. Records' two tests passed with the known Simulator Quick Look expected failure. This is not a full generated-host suite pass.
+
+## Deliberate repeated-interaction regression
+
+`testNativeCustomActionRemainsUsableAfterPriorNotificationInteractions` fixes the failing full-suite order within one XCTest entry point instead of relying on discovery order:
+
+1. schedule and act on lifecycle A's native notification while lifecycle B remains visible;
+2. run both foreground notification owner checks and remove their delivered requests;
+3. recreate and act on lifecycle A's native notification again while lifecycle B remains visible.
+
+Both custom-action cycles retain the notification-content, visible-feature, non-owner, and owner-result assertions. Their attachment prefixes distinguish first-cycle and second-cycle evidence.
+
+CI run [34547236843](https://github.com/y-aplus/JibunKit/actions/runs/34547236843), source `b8e66168beb053f0309fd2825aee2c01c7efa000`, passed. The repeated notification test passed in 187.611 seconds and the complete workflow passed. Exported screenshots show `Action-lifecycle-a` in Notification Center and its expanded `Action` button in both cycles. No product callback or UI gesture implementation changed.
+
+This controlled repetition did not reproduce the earlier second-swipe dismissal. It establishes that cleanup, recreation, action delivery, and owner isolation can complete twice in the formerly failing order; it does not retroactively establish duplication as the cause of the one observed OS display failure.

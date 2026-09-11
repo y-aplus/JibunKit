@@ -104,6 +104,7 @@ private enum ProbeFailure: Error {
     case wrongConditions(String)
     case wrongEarliestDate(String)
     case cancellationNotScoped([String])
+    case submissionRejected(wrapperCode: Int?, nativeCode: Int?)
 }
 
 private struct PendingSnapshot: Sendable {
@@ -136,10 +137,28 @@ private enum BackgroundTasksProbe {
         let wrapperDate = Date().addingTimeInterval(600)
         let nativeDate = Date().addingTimeInterval(900)
 
-        try FixtureHost.a.submit(.init(
-            identifier: FixtureIDs.wrapperA,
-            earliestBeginDate: wrapperDate
-        ))
+        var wrapperErrorCode: Int?
+        do {
+            try FixtureHost.a.submit(.init(
+                identifier: FixtureIDs.wrapperA,
+                earliestBeginDate: wrapperDate
+            ))
+        } catch {
+            wrapperErrorCode = (error as NSError).code
+        }
+        let nativeRefresh = BGAppRefreshTaskRequest(identifier: FixtureIDs.nativeA)
+        nativeRefresh.earliestBeginDate = nativeDate
+        var nativeErrorCode: Int?
+        do { try BGTaskScheduler.shared.submit(nativeRefresh) }
+        catch { nativeErrorCode = (error as NSError).code }
+        if wrapperErrorCode != nil || nativeErrorCode != nil {
+            BGTaskScheduler.shared.cancelAllTaskRequests()
+            throw ProbeFailure.submissionRejected(
+                wrapperCode: wrapperErrorCode,
+                nativeCode: nativeErrorCode
+            )
+        }
+
         try FixtureHost.b.submit(.init(
             identifier: FixtureIDs.wrapperB,
             earliestBeginDate: wrapperDate,
@@ -147,9 +166,6 @@ private enum BackgroundTasksProbe {
             requiresExternalPower: true
         ))
 
-        let nativeRefresh = BGAppRefreshTaskRequest(identifier: FixtureIDs.nativeA)
-        nativeRefresh.earliestBeginDate = nativeDate
-        try BGTaskScheduler.shared.submit(nativeRefresh)
         let nativeProcessing = BGProcessingTaskRequest(identifier: FixtureIDs.nativeB)
         nativeProcessing.earliestBeginDate = nativeDate
         nativeProcessing.requiresNetworkConnectivity = true

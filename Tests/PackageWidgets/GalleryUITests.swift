@@ -90,9 +90,9 @@ final class GalleryUITests: XCTestCase {
         repeat {
             screenshot = application.screenshot()
             recognized = recognizeText(in: screenshot, region: application.frame, screenFrame: application.frame)
-            let normalized = normalize(recognized.joined(separator: " "))
-            if expected.allSatisfy({ normalized.contains(normalize($0)) }) &&
-                absent.allSatisfy({ !normalized.contains(normalize($0)) }) {
+            let values = normalizedValues(recognized)
+            if expected.allSatisfy({ values.contains(normalize($0)) }) &&
+                absent.allSatisfy({ !values.contains(normalize($0)) }) {
                 attachOCR(screenshot: screenshot, recognized: recognized, name: evidenceName)
                 return true
             }
@@ -112,9 +112,9 @@ final class GalleryUITests: XCTestCase {
         evidenceName: String
     ) -> Bool {
         let recognized = recognizeText(in: screenshot, region: region, screenFrame: screenFrame)
-        let normalized = normalize(recognized.joined(separator: " "))
+        let values = normalizedValues(recognized)
         attachOCR(screenshot: screenshot, recognized: recognized, name: evidenceName)
-        guard expected.allSatisfy({ normalized.contains(normalize($0)) }) else {
+        guard expected.allSatisfy({ values.contains(normalize($0)) }) else {
             XCTFail("OCR mismatch for \(evidenceName); expected=\(expected), recognized=\(recognized)")
             return false
         }
@@ -149,6 +149,10 @@ final class GalleryUITests: XCTestCase {
 
     private func normalize(_ text: String) -> String {
         text.filter { !$0.isWhitespace }
+    }
+
+    private func normalizedValues(_ recognized: [String]) -> Set<String> {
+        Set(recognized.map { normalize($0) })
     }
 
     private func attachOCR(screenshot: XCUIScreenshot, recognized: [String], name: String) {

@@ -36,7 +36,7 @@ struct JibunKitIntentPackages: AppIntentsPackage {
 
 二Packageの単独/統合appで、Xcodeが生成した識別子・型名・引数・戻り値・実行modeの一致と、iOS上の`perform()`から他Featureを変更しないことを検証した。[native fixtureと証拠](../verification/2026-09-11-package-app-intents.md)を参照。この初回の証拠にはOS Shortcuts/Siriからの起動、AppEntity query、同名型衝突、Widget/Controlへの接続を含めない。後続のentity/query比較は下記を参照。
 
-Intentの型名は他Featureと区別できる名前にする。既に利用中のIntentを移動・改名するときは、保存済みShortcutとの互換性を別途確認する。既存Counter intentは今回移動しておらず、元の識別子を維持している。
+Intentの永続識別子は他Featureと区別できる値にする。同名Swift型もmoduleを分け、標準persistentIdentifierを明示する方法でnative比較済み（[証拠](../verification/2026-09-11-same-named-package-intents.md)）。既に利用中のIntentを移動・改名するときは、保存済みShortcutとの互換性を別途確認する。既存Counter intentは今回移動しておらず、元の識別子を維持している。
 
 Apple標準の契約: [AppIntentsPackage](https://developer.apple.com/documentation/appintents/appintentspackage)、[App Shortcuts](https://developer.apple.com/documentation/appintents/app-shortcuts)。
 

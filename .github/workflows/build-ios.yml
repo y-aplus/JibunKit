@@ -163,9 +163,11 @@ jobs:
             python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" --allow-suite
           fi
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
-            python3 Tools/validate-focused-ui-test.py \
-              "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" --allow-suite \
-              --source-root UITests --source-root Tests/TemplateIntegration
+            IFS=',' read -r -a feature_filters <<< "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}"
+            for feature_filter in "${feature_filters[@]}"; do
+              python3 Tools/validate-focused-ui-test.py "$feature_filter" --allow-suite \
+                --source-root UITests --source-root Tests/TemplateIntegration
+            done
           fi
 
       - name: Select Xcode 26.6
@@ -249,6 +251,8 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookUITests.swift', 'UITests/HostLaunchHookUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipProbe.swift', 'Sources/JibunKit/NowPlayingOwnershipProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipUITests.swift', 'UITests/NowPlayingOwnershipUITests.swift')
+          shutil.copyfile('Tests/TemplateIntegration/NowPlayingPlayableProbe.swift', 'Sources/JibunKit/NowPlayingPlayableProbe.swift')
+          shutil.copyfile('Tests/TemplateIntegration/NowPlayingPlayableUITests.swift', 'UITests/NowPlayingPlayableUITests.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsNotifications.swift', 'Sources/JibunKit/RecordsNotifications.swift')
@@ -330,6 +334,7 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        URLRoutingProbe.definitions[0],\n        URLRoutingProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
+          p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -572,16 +577,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          IFS=',' read -r -a feature_filters <<< "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}"
+          selection=()
+          for feature_filter in "${feature_filters[@]}"; do
+            selection+=("-only-testing:$feature_filter")
+          done
           xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TemplateHost.xcresult" \
-            -only-testing:"${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" \
+            "${selection[@]}" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/template-host.log"
-          python3 Tools/validate-focused-ui-test.py \
-            "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}" --allow-suite \
-            --source-root "$RUNNER_TEMP/template-check/UITests" --log "$RUNNER_TEMP/template-host.log"
+          for feature_filter in "${feature_filters[@]}"; do
+            python3 Tools/validate-focused-ui-test.py "$feature_filter" --allow-suite \
+              --source-root "$RUNNER_TEMP/template-check/UITests" --log "$RUNNER_TEMP/template-host.log"
+          done
 
       - name: Build and install backup UI harness
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))

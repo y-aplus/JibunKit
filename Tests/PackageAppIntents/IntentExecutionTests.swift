@@ -32,20 +32,20 @@ final class IntentExecutionTests: XCTestCase {
         let savedA = try XCTUnwrap(a.first)
         let savedB = try XCTUnwrap(b.first)
         IntentFeatureA.EntryStore.titles["shared-id"] = "A changed"
-        let readA = try await FeatureAReadEntryIntent(entry: savedA).perform()
-        let readB = try await FeatureBReadEntryIntent(entry: savedB).perform()
+        let readA = try await IntentFeatureA.ReadEntryIntent(entry: savedA).perform()
+        let readB = try await IntentFeatureB.ReadEntryIntent(entry: savedB).perform()
         XCTAssertEqual(readA.value, "A changed")
         XCTAssertEqual(readB.value, "B first")
         IntentFeatureA.EntryStore.titles.removeValue(forKey: "shared-id")
         let removed = try await IntentFeatureA.EntryQuery().entities(for: ["shared-id"])
         XCTAssertTrue(removed.isEmpty)
         do {
-            _ = try await FeatureAReadEntryIntent(entry: savedA).perform()
+            _ = try await IntentFeatureA.ReadEntryIntent(entry: savedA).perform()
             XCTFail("Deleted A entity must not resolve to B's matching local ID")
-        } catch FeatureAReadEntryIntent.Failure.missingEntry {
+        } catch IntentFeatureA.ReadEntryIntent.Failure.missingEntry {
             // Expected application-level deleted-record behavior.
         }
-        let survivingB = try await FeatureBReadEntryIntent(entry: savedB).perform()
+        let survivingB = try await IntentFeatureB.ReadEntryIntent(entry: savedB).perform()
         XCTAssertEqual(survivingB.value, "B first")
         XCTAssertEqual(IntentFeatureB.EntryStore.titles.count, 2)
     }

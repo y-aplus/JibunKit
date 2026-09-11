@@ -103,10 +103,10 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
         other = b if owner == "A" else a
         assert key not in other, f"Foreign package action leaked into independent {owner} baseline"
     for owner, standalone in [("A", a), ("B", b)]:
-        type_name = f"IntentFeature{owner}.Feature{owner}ReadEntryIntent"
+        type_name = f"IntentFeature{owner}.ReadEntryIntent"
         identifiers = [key for key, value in standalone.items()
                        if value["fullyQualifiedTypeName"] == type_name]
-        assert len(identifiers) == 1, (type_name, standalone)
+        assert identifiers == [f"Feature{owner}ReadEntryIntent"], (type_name, identifiers)
         key = identifiers[0]
         assert key in combined, (key, combined)
         for field in ["identifier", "fullyQualifiedTypeName", "title", "parameters", "outputType", "supportedModes"]:

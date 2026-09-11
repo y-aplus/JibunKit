@@ -46,7 +46,9 @@ public struct EntryQuery: EntityStringQuery {
     }
 }
 
-public struct FeatureBReadEntryIntent: AppIntent {
+public struct ReadEntryIntent: AppIntent {
+    // Preserve the previously extracted public identity while the Swift name changes.
+    public static let persistentIdentifier = "FeatureBReadEntryIntent"
     public static let title: LocalizedStringResource = "Read Feature B entry"
     public static var supportedModes: IntentModes { [.background] }
     @Parameter(title: "Entry") public var entry: Entry

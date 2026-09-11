@@ -27,8 +27,7 @@ source `f2f15cbbae36357f0f6c2b71b2378959312e4435`, compiled and launched the fix
 Xcode 26.6 / iPhone 17 Simulator (iOS 26.5). Both independently attempted submissions
 were rejected at the native scheduler boundary:
 
-`failed: submissionRejected(wrapper: ... domain: "BGTaskSchedulerErrorDomain", code: 1,
-native: ... domain: "BGTaskSchedulerErrorDomain", code: 1)`
+`failed: submissionRejected(wrapperCode: Optional(1), nativeCode: Optional(1))`
 
 The focused XCTest failed, as intended for an unfulfilled native evidence requirement;
 the rejection was not changed into a skip or pass. Code 1 is
@@ -52,3 +51,18 @@ normal focused regression
 `MigrationUITests/testMiniAppSearchFiltersAndOpensResults` in 41.676 seconds, as well
 as shared tests, build, IPA packaging, and artifact publication. Keeping this green run
 separate preserves the native rejection as a real failed result rather than masking it.
+
+## Refresh-slot repair verification
+
+The follow-up implementation sequences the native and wrapper pairs so the two refresh
+requests never occupy the app-wide pending-refresh slot at the same time. It also
+replaces process-wide cleanup with cancellation of the four fixture identifiers and
+records both NSError domain and code on rejection.
+
+Run [34561372149](https://github.com/y-aplus/JibunKit/actions/runs/34561372149), source
+`2b4c7ea7e4091f79158d94ae513c0204bc28a476`, passed. Its explicit compile-only mode
+built the fixture app and UI test (`** TEST BUILD SUCCEEDED **`) without repeating the
+known-unsupported Simulator submission. The same run passed
+`MigrationUITests/testMiniAppSearchFiltersAndOpensResults` in 45.205 seconds plus the
+shared tests, build, and IPA packaging. The BackgroundTasks diagnostic artifact SHA-256
+is `cc74057ff2cda9f8e34cde121d473d36a6e5dfa5bd11c08f2c7cad447d924fc8`.

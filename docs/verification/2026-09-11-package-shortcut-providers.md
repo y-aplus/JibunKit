@@ -49,3 +49,13 @@ native buildが複数Providerを拒否する、片方を落とす、metadataを�
 ## 生成ファイル名の修正
 
 [34549515446](https://github.com/y-aplus/JibunKit/actions/runs/34549515446)、source `47f514c24ffe0082c1a89be83c0d359a6cad123e` は補助処理の原文保持/拒否/削除試験を通過した後、OwnedShortcutsAのコンパイルで停止。生成Providerと既存Package登録ファイルのbasenameがともに`OwnedShortcutsA.swift`だったため、Swiftが重複ファイル名として拒否した。A/B/Combinedの生成ファイルを`ComposedShortcuts*.swift`へ改名し、明示source指定も合わせた。metadata比較にはまだ到達しておらず、合成成功とはしない。
+
+## ソース合成の成功証拠
+
+[34550748042](https://github.com/y-aplus/JibunKit/actions/runs/34550748042)、source `920a3d2a7e74b87a69e383f1e72a758fe75101f7` は成功。補助処理の原文保持・拒否時の旧出力保持・寄与削除試験を通過し、6 targetのnative iOS buildが成功した。
+
+取得したapp直下metadataはOwnedShortcutsAがAの1件、OwnedShortcutsBがBの1件、OwnedShortcutsCombinedが両方の2件。統合後の各Shortcut辞書（actionIdentifier、phrase、shortTitle、画像、availability）が単独時と一致し、Intent型も対応Packageの型を維持した。同一DerivedDataでAのShortcut寄与だけを削除して再生成/buildすると、RemovedShortcutAにはBだけが残った。AのIntent Packageはリンクしたままであり、Feature全体の削除の証明ではない。
+
+共有167試験は失敗0。直接perform()による所有Storeと戻り値の試験は0.035秒、通常hostの検索/起動回帰は43.316秒で成功。通常IPA・独立Counterも成功。正常終了と必須assertionに加え、Package-App-Intents-diagnostics artifactの4つのmetadata JSONを取得して内容を確認した。
+
+本単位はFeature所有のShortcut式を生成時にhostへ合成する利用可能なhelperと比較fixtureを追加する。通常CounterのProviderは既存のままで、通常hostへの自動登録やOS Shortcuts/Siriからの発見・実行、AppEntity/queryまで完了したとはしない。

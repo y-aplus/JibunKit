@@ -1,6 +1,6 @@
 # Featureが所有するApp Shortcut定義
 
-状態: 実装・native比較を追加、CI検証待ち。既存Counterの公開Intent/Shortcutは変更していない。
+状態: 単独/統合のnative metadata比較と寄与削除をCI 34550748042で検証済み。既存Counterの公開Intent/Shortcutは変更していない。
 
 App Intent本体はSwift Package内に置き、標準の[AppIntentsPackage接続](package-app-intents.md)で利用する。一方、今回のXcodeではPackage Providerだけの組込みでappのShortcut metadataが空になり、配列転送やcomputed property参照も抽出に拒否された。[比較証拠](../verification/2026-09-11-package-shortcut-providers.md)。この差分には、Feature所有のSwift式を生成時に一つの標準Providerへ配置する方法を用意する。
 

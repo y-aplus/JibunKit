@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Feature間のAppEntity/queryの名前衝突を標準の永続識別子で避ける手順とnative比較を追加。統合で消えたIntent/entity/queryや誤った参照を、単独版metadataと照合する検査ツールを提供。
+
 - MiniAppDefinitionへ任意のonHostLaunchを追加。画面生成に依存することなく、host起動時にFeatureのnative登録処理を呼び出す。
 
 - Background URLSessionのFeature/profile別識別子とhostイベント再接続を追加。登録解除と進行中イベントの終了を分け、重複・遅延・再入でも各OS completionを一度だけ呼ぶ。

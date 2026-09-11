@@ -154,6 +154,19 @@ Packaging is complete, but this device result has not yet been obtained.
 Simulator behavior is not substituted for it, and the native/user-presence
 comparison has not been relaxed.
 
+The first physical-device run returned
+`failed: Error Domain=NSOSStatusErrorDomain Code=-25308 “(null)”`. This is a
+failure, not a successful or skipped check. The original probe allowed an
+attributes-only lookup of the protected item to escape as a generic error, so
+that result does not identify whether the wrapper and native Security API
+behaved differently. The follow-up probe reports a `stage=...` value for every
+protected operation, records wrapper and native `OSStatus` values side by side,
+accepts an attributes lookup rejected by both implementations as equivalent,
+and performs an authenticated final read to prove that the item and its
+expected value remain present. It retains `userPresence` and
+`kSecAttrAccessibleWhenUnlocked`; neither the protection nor the native
+comparison is weakened.
+
 The same IPA is published as the
 [`keychain-device-check-20260911` prerelease](https://github.com/y-aplus/JibunKit/releases/tag/keychain-device-check-20260911),
 with a direct

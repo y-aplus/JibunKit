@@ -29,6 +29,7 @@ def run(command, cwd, capture=False):
 with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
     root = Path(temp)
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
+    (root / "Tuist").mkdir()
     (root / "Project.swift.fixture").rename(root / "Project.swift")
     run([args.tuist, "generate", "--no-open"], root)
     derived = root / "DerivedBuild"

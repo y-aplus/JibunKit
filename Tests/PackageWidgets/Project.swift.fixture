@@ -1,0 +1,77 @@
+import ProjectDescription
+
+let extensionInfo: InfoPlist = .extendingDefault(with: [
+    "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
+])
+
+func widgetExtension(
+    name: String,
+    hostBundleID: String,
+    source: SourceFileGlob,
+    dependencies: [TargetDependency]
+) -> Target {
+    .target(
+        name: name,
+        destinations: .iOS,
+        product: .appExtension,
+        bundleId: "\(hostBundleID).Widget",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: extensionInfo,
+        sources: [source],
+        dependencies: dependencies
+    )
+}
+
+func host(name: String, bundleID: String, widget: String) -> Target {
+    .target(
+        name: name,
+        destinations: .iOS,
+        product: .app,
+        bundleId: bundleID,
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        sources: ["HostApp.swift"],
+        dependencies: [.target(name: widget)]
+    )
+}
+
+let project = Project(
+    name: "PackageWidgets",
+    packages: [.package(path: "FeatureA"), .package(path: "FeatureB")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
+    targets: [
+        widgetExtension(name: "StandaloneAWidget", hostBundleID: "com.jibunkit.fixture.standalone-a", source: "StandaloneA.swift",
+                        dependencies: [.package(product: "WidgetFeatureA")]),
+        widgetExtension(name: "StandaloneBWidget", hostBundleID: "com.jibunkit.fixture.standalone-b", source: "StandaloneB.swift",
+                        dependencies: [.package(product: "WidgetFeatureB")]),
+        widgetExtension(name: "CombinedWidget", hostBundleID: "com.jibunkit.fixture.combined", source: "Combined.swift",
+                        dependencies: [.package(product: "WidgetFeatureA"), .package(product: "WidgetFeatureB")]),
+        host(name: "StandaloneA", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget"),
+        host(name: "StandaloneB", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget"),
+        host(name: "Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget"),
+        .target(
+            name: "TimelineTests",
+            destinations: .iOS,
+            product: .unitTests,
+            bundleId: "com.jibunkit.fixture.timeline-tests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["TimelineTests.swift"],
+            dependencies: [
+                .package(product: "WidgetFeatureA"),
+                .package(product: "WidgetFeatureB"),
+            ]
+        ),
+    ],
+    schemes: [
+        .scheme(name: "StandaloneA", shared: true, buildAction: .buildAction(targets: ["StandaloneA"])),
+        .scheme(name: "StandaloneB", shared: true, buildAction: .buildAction(targets: ["StandaloneB"])),
+        .scheme(name: "Combined", shared: true, buildAction: .buildAction(targets: ["Combined"])),
+        .scheme(
+            name: "TimelineTests",
+            shared: true,
+            buildAction: .buildAction(targets: ["TimelineTests"]),
+            testAction: .targets(["TimelineTests"], configuration: .debug)
+        ),
+    ]
+)

@@ -19,6 +19,10 @@ on:
         description: Compare independent and combined package App Intents (requires simulator_tests)
         type: boolean
         default: false
+      package_widgets_validation:
+        description: Compare independent and combined package Widgets (requires simulator_tests)
+        type: boolean
+        default: false
       web_authentication_validation:
         description: Run native web authentication comparison (requires simulator_tests)
         type: boolean
@@ -99,6 +103,12 @@ jobs:
         if: inputs.package_intents_validation && !inputs.simulator_tests
         run: |
           echo "package_intents_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate package Widget inputs
+        if: inputs.package_widgets_validation && !inputs.simulator_tests
+        run: |
+          echo "package_widgets_validation requires simulator_tests" >&2
           exit 1
 
       - name: Validate web authentication inputs
@@ -549,6 +559,14 @@ jobs:
               2>&1 | tee "$RUNNER_TEMP/package-app-intents.log"
           fi
 
+      - name: Verify package Widgets
+        if: inputs.simulator_tests && inputs.package_widgets_validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/verify-package-widgets-native.py --simulator-id "$SIMULATOR_ID" \
+            2>&1 | tee "$RUNNER_TEMP/package-widgets.log"
+
       - name: Build and install standalone Counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
@@ -767,6 +785,17 @@ jobs:
             ${{ runner.temp }}/PackageAppIntents
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Upload package Widget diagnostics
+        if: always() && inputs.simulator_tests && inputs.package_widgets_validation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Package-Widget-diagnostics
+          path: |
+            ${{ runner.temp }}/package-widgets.log
+            ${{ runner.temp }}/PackageWidgets
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload backup picker diagnostics
         if: always() && inputs.simulator_tests

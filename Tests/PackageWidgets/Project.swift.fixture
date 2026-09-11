@@ -1,43 +1,73 @@
 import ProjectDescription
 
-let extensionInfo: InfoPlist = .extendingDefault(with: [
-    "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
-])
-
 func widgetExtension(
     name: String,
     hostBundleID: String,
     source: SourceFileGlob,
     dependencies: [TargetDependency]
 ) -> Target {
-    .target(
+    let appGroup = "group.\(hostBundleID)"
+    return .target(
         name: name,
         destinations: .iOS,
         product: .appExtension,
         bundleId: "\(hostBundleID).Widget",
         deploymentTargets: .iOS("26.0"),
-        infoPlist: extensionInfo,
+        infoPlist: .extendingDefault(with: [
+            "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
+            "JibunKitAppGroup": .string(appGroup),
+        ]),
         sources: [source],
+        entitlements: .dictionary([
+            "com.apple.security.application-groups": .array([.string(appGroup)]),
+        ]),
         dependencies: dependencies
     )
 }
 
-func host(name: String, bundleID: String, widget: String) -> Target {
-    .target(
+func host(name: String, displayName: String, bundleID: String, widget: String) -> Target {
+    let appGroup = "group.\(bundleID)"
+    return .target(
         name: name,
         destinations: .iOS,
         product: .app,
         bundleId: bundleID,
         deploymentTargets: .iOS("26.0"),
-        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": .string(displayName),
+            "JibunKitAppGroup": .string(appGroup),
+            "UILaunchScreen": [:],
+        ]),
         sources: ["HostApp.swift"],
-        dependencies: [.target(name: widget)]
+        entitlements: .dictionary([
+            "com.apple.security.application-groups": .array([.string(appGroup)]),
+        ]),
+        dependencies: [.target(name: widget), .package(product: "JibunKitCore")]
+    )
+}
+
+func galleryTests(name: String, host: String, appName: String, expectedWidgets: String) -> Target {
+    .target(
+        name: name,
+        destinations: .iOS,
+        product: .uiTests,
+        bundleId: "com.jibunkit.fixture.\(name.lowercased())",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: [
+            "ExpectedWidgets": .string(expectedWidgets),
+            "WidgetAppName": .string(appName),
+        ]),
+        sources: ["GalleryUITests.swift"],
+        dependencies: [.target(name: host)]
     )
 }
 
 let project = Project(
     name: "PackageWidgets",
-    packages: [.package(path: "FeatureA"), .package(path: "FeatureB")],
+    packages: [
+        .package(path: "FeatureA"), .package(path: "FeatureB"),
+        .package(path: "__JIBUNKIT_PATH__"),
+    ],
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
         widgetExtension(name: "StandaloneAWidget", hostBundleID: "com.jibunkit.fixture.standalone-a", source: "StandaloneA.swift",
@@ -46,9 +76,12 @@ let project = Project(
                         dependencies: [.package(product: "WidgetFeatureB")]),
         widgetExtension(name: "CombinedWidget", hostBundleID: "com.jibunkit.fixture.combined", source: "Combined.swift",
                         dependencies: [.package(product: "WidgetFeatureA"), .package(product: "WidgetFeatureB")]),
-        host(name: "StandaloneA", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget"),
-        host(name: "StandaloneB", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget"),
-        host(name: "Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget"),
+        host(name: "StandaloneA", displayName: "Widget Fixture A", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget"),
+        host(name: "StandaloneB", displayName: "Widget Fixture B", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget"),
+        host(name: "Combined", displayName: "Widget Fixture Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget"),
+        galleryTests(name: "StandaloneAGalleryUITests", host: "StandaloneA", appName: "Widget Fixture A", expectedWidgets: "A"),
+        galleryTests(name: "StandaloneBGalleryUITests", host: "StandaloneB", appName: "Widget Fixture B", expectedWidgets: "B"),
+        galleryTests(name: "CombinedGalleryUITests", host: "Combined", appName: "Widget Fixture Combined", expectedWidgets: "A,B"),
         .target(
             name: "TimelineTests",
             destinations: .iOS,
@@ -64,9 +97,12 @@ let project = Project(
         ),
     ],
     schemes: [
-        .scheme(name: "StandaloneA", shared: true, buildAction: .buildAction(targets: ["StandaloneA"])),
-        .scheme(name: "StandaloneB", shared: true, buildAction: .buildAction(targets: ["StandaloneB"])),
-        .scheme(name: "Combined", shared: true, buildAction: .buildAction(targets: ["Combined"])),
+        .scheme(name: "StandaloneA", shared: true, buildAction: .buildAction(targets: ["StandaloneA"]),
+                testAction: .targets(["StandaloneAGalleryUITests"], configuration: .debug)),
+        .scheme(name: "StandaloneB", shared: true, buildAction: .buildAction(targets: ["StandaloneB"]),
+                testAction: .targets(["StandaloneBGalleryUITests"], configuration: .debug)),
+        .scheme(name: "Combined", shared: true, buildAction: .buildAction(targets: ["Combined"]),
+                testAction: .targets(["CombinedGalleryUITests"], configuration: .debug)),
         .scheme(
             name: "TimelineTests",
             shared: true,

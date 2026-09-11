@@ -31,7 +31,11 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
     (root / "Tuist").mkdir()
     package_path = str(repo).replace("\\", "/")
-    for manifest in [root / "FeatureA/Package.swift", root / "FeatureB/Package.swift"]:
+    for manifest in [
+        root / "FeatureA/Package.swift",
+        root / "FeatureB/Package.swift",
+        root / "Project.swift.fixture",
+    ]:
         manifest.write_text(
             manifest.read_text().replace("__JIBUNKIT_PATH__", package_path),
             encoding="utf-8",
@@ -113,3 +117,42 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
     assert "testPackageTimelinesRemainOwnerScoped]' passed" in result.stdout
     assert "** TEST SUCCEEDED **" in result.stdout
     print("Package Timeline providers: identical local key names remain owner-prefixed and isolated")
+
+    gallery_cases = {
+        "StandaloneA": "StandaloneAGalleryUITests",
+        "StandaloneB": "StandaloneBGalleryUITests",
+        "Combined": "CombinedGalleryUITests",
+    }
+    installed_bundle_ids = [
+        "com.jibunkit.fixture.standalone-a",
+        "com.jibunkit.fixture.standalone-b",
+        "com.jibunkit.fixture.combined",
+    ]
+    gallery_failures = []
+    for scheme, test_target in gallery_cases.items():
+        for bundle_id in installed_bundle_ids:
+            run(["xcrun", "simctl", "uninstall", args.simulator_id, bundle_id], root, check=False)
+        result_bundle = evidence / f"{scheme}-gallery.xcresult"
+        result = run([
+            "xcodebuild", "test", "-workspace", "PackageWidgets.xcworkspace",
+            "-scheme", scheme, "-configuration", "Debug",
+            "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
+            "-derivedDataPath", root / "GalleryBuild",
+            "-resultBundlePath", result_bundle,
+            f"-only-testing:{test_target}/GalleryUITests/testWidgetsAreDiscoveredAndRenderedFromSharedStorage",
+            "-parallel-testing-enabled", "NO",
+            "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual",
+        ], root, capture=True, check=False)
+        print(result.stdout, end="")
+        (evidence / f"{scheme}-gallery.log").write_text(result.stdout, encoding="utf-8")
+        for bundle_id in installed_bundle_ids:
+            run(["xcrun", "simctl", "uninstall", args.simulator_id, bundle_id], root, check=False)
+        pass_marker = (
+            f"Test Case '-[{test_target}.GalleryUITests "
+            "testWidgetsAreDiscoveredAndRenderedFromSharedStorage]' passed"
+        )
+        if result.returncode != 0 or "** TEST SUCCEEDED **" not in result.stdout or pass_marker not in result.stdout:
+            gallery_failures.append(scheme)
+    if gallery_failures:
+        raise RuntimeError(f"Widget gallery validation failed: {', '.join(gallery_failures)}")
+    print("SpringBoard gallery: standalone A/B and combined Widgets were discovered and rendered App Group values")

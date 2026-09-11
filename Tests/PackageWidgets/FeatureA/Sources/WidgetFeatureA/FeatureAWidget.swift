@@ -21,7 +21,10 @@ public final class FeatureAStore: @unchecked Sendable {
     private let defaults: UserDefaults
     private let context = MiniAppContext(id: MiniAppID("owner-a"))
 
-    public init(defaults: UserDefaults = .standard) { self.defaults = defaults }
+    public convenience init() {
+        self.init(defaults: (try? MiniAppStorage.sharedDefaults()) ?? .standard)
+    }
+    public init(defaults: UserDefaults) { self.defaults = defaults }
     public var storageKey: String { context.storageKey(Self.localKey) }
     public func set(_ value: Int) {
         MiniAppStorage.withExclusiveAccess { defaults.set(value, forKey: storageKey) }

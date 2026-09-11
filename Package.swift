@@ -36,7 +36,8 @@ let package = Package(
             name: "RecordsBackupIntegrationTests",
             dependencies: ["RecordsBackupIntegration", "JibunKitCore", .product(name: "RecordsFeature", package: "Records")]
         ),
-        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"]),
+        .target(name: "CounterIntegration", dependencies: ["CounterFeature", "JibunKitCore"],
+                exclude: ["AppShortcuts.swift.fragment"]),
         .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),
         .target(
             name: "JibunKitCore"

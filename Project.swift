@@ -27,6 +27,11 @@ let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: 
     "ja": ["CFBundleDisplayName": "JibunKitウィジェット"],
 ])
 
+try FeatureAppShortcuts.writeProvider([
+    FeatureAppShortcuts(owner: "counter", imports: [],
+        sourceFile: "Sources/CounterIntegration/AppShortcuts.swift.fragment"),
+], to: "GeneratedFeatureSources/JibunKitShortcuts.swift")
+
 let generatedFeatureResources = "GeneratedFeatureResources"
 try appBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/App")
 try widgetBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Widget")
@@ -47,7 +52,7 @@ let project = Project(
             name: "JibunKit-App", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: appBuild.infoPlist),
-            sources: ["Sources/JibunKit/**"],
+            sources: ["Sources/JibunKit/**", "GeneratedFeatureSources/**"],
             resources: ["GeneratedFeatureResources/App/**"],
             entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),

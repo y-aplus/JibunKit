@@ -1,0 +1,143 @@
+{
+  "autoShortcutProviderMangledName": "12JibunKit_App0aB9ShortcutsV",
+  "autoShortcuts": [
+    {
+      "actionIdentifier": "AddCounterValueIntent",
+      "availabilityAnnotations": {
+        "LNPlatformNameWildcard": {
+          "introducedVersion": "*"
+        }
+      },
+      "phraseTemplates": [
+        {
+          "alternatives": [],
+          "key": "${applicationName}のカウンターに追加"
+        }
+      ],
+      "shortTitle": {
+        "alternatives": [],
+        "key": "カウンターに追加"
+      },
+      "systemImageName": "plus.circle"
+    }
+  ],
+  "actions": {
+    "AddCounterValueIntent": {
+      "actionConfiguration": {
+        "actionSummary": {
+          "wrapper": {
+            "otherParameterIdentifiers": [],
+            "summaryString": {
+              "formatString": "カウンターに ${amount} を追加",
+              "parameterIdentifiers": [
+                "amount"
+              ]
+            }
+          }
+        }
+      },
+      "assistantDefinedSchemaTraits": [],
+      "assistantDefinedSchemas": [],
+      "authenticationPolicy": 0,
+      "availabilityAnnotations": {
+        "LNPlatformNameWildcard": {
+          "introducedVersion": "*"
+        }
+      },
+      "descriptionMetadata": {
+        "descriptionText": {
+          "alternatives": [],
+          "key": "指定した数をカウンターへ追加し、更新後の値を返します。"
+        },
+        "searchKeywords": []
+      },
+      "effectiveBundleIdentifiers": [],
+      "fullyQualifiedTypeName": "JibunKit_App.AddCounterValueIntent",
+      "identifier": "AddCounterValueIntent",
+      "isAuthPolExplicit": false,
+      "isDiscoverable": true,
+      "mangledTypeName": "12JibunKit_App21AddCounterValueIntentV",
+      "mangledTypeNameByBundleIdentifier": {},
+      "mangledTypeNameByBundleIdentifierV2": {},
+      "mangledTypeNameV2": "12JibunKit_App21AddCounterValueIntentV",
+      "openAppWhenRun": false,
+      "outputFlags": 0,
+      "outputType": {
+        "primitive": {
+          "wrapper": {
+            "typeIdentifier": 2
+          }
+        }
+      },
+      "parameters": [
+        {
+          "capabilities": 0,
+          "dynamicOptionsSupport": 0,
+          "inputConnectionBehavior": 0,
+          "isInput": false,
+          "isOptional": false,
+          "name": "amount",
+          "resolvableInputTypes": [
+            {
+              "kindValue": 0,
+              "valueType": {
+                "primitive": {
+                  "wrapper": {
+                    "typeIdentifier": 7
+                  }
+                }
+              }
+            },
+            {
+              "kindValue": 0,
+              "valueType": {
+                "primitive": {
+                  "wrapper": {
+                    "typeIdentifier": 2
+                  }
+                }
+              }
+            },
+            {
+              "kindValue": 0,
+              "valueType": {
+                "primitive": {
+                  "wrapper": {
+                    "typeIdentifier": 0
+                  }
+                }
+              }
+            }
+          ],
+          "title": {
+            "alternatives": [],
+            "key": "追加する数"
+          },
+          "typeSpecificMetadata": [],
+          "valueType": {
+            "primitive": {
+              "wrapper": {
+                "typeIdentifier": 2
+              }
+            }
+          }
+        }
+      ],
+      "presentationStyle": 0,
+      "requiredCapabilities": [],
+      "supportedModes": 1,
+      "systemProtocolMetadata": [],
+      "systemProtocolMetadataV2": [],
+      "systemProtocols": [],
+      "title": {
+        "alternatives": [],
+        "key": "カウンターに追加"
+      },
+      "typeSpecificMetadata": [],
+      "visibilityMetadata": {
+        "assistantOnly": false,
+        "isDiscoverable": true
+      }
+    }
+  }
+}

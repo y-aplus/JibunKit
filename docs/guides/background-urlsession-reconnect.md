@@ -2,7 +2,7 @@
 
 background URLSessionは通常画面や`MiniAppRuntime`の寿命とは別にOSから再接続を
 要求されます。Featureは安定したprofile名を決め、host起動時にfactoryを登録して
-ください。画面の`onAppear`から登録してはいけません。
+ください。`MiniAppDefinition`の`onHostLaunch`から下記の`registerAtHostLaunch`を呼び、connectionをprocessの必要な寿命まで保持します。画面の`onAppear`から登録してはいけません。[host起動hookの検証](../verification/2026-09-11-host-launch-hook.md)。
 
 ```swift
 final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, Sendable {

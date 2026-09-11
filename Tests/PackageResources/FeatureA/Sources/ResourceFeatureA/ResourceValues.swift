@@ -7,7 +7,7 @@ public enum ResourceFeatureAValues {
         return object["owner"]!
     }
 
-    public static func greeting(locale: String) -> String {
-        String(localized: "shared.greeting", bundle: .module, locale: Locale(identifier: locale))
+    public static func greeting() -> String {
+        Bundle.module.localizedString(forKey: "shared.greeting", value: nil, table: nil)
     }
 }

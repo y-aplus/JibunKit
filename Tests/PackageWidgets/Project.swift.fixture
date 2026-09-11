@@ -6,7 +6,7 @@ let extensionInfo: InfoPlist = .extendingDefault(with: [
 
 func widgetExtension(
     name: String,
-    source: String,
+    source: SourceFileGlob,
     dependencies: [TargetDependency]
 ) -> Target {
     .target(

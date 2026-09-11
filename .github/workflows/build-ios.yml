@@ -31,6 +31,10 @@ on:
         description: Compare native BackgroundTasks pending requests (requires simulator_tests)
         type: boolean
         default: false
+      backgroundtasks_compile_only:
+        description: Compile BackgroundTasks fixture without runtime validation
+        type: boolean
+        default: false
       feature_ui_test_filter:
         description: Optional generated-host Xcode test identifier (empty runs all Feature integration tests)
         type: string
@@ -113,6 +117,12 @@ jobs:
         if: inputs.backgroundtasks_validation && !inputs.simulator_tests
         run: |
           echo "backgroundtasks_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate BackgroundTasks compile-only inputs
+        if: inputs.backgroundtasks_compile_only && !inputs.backgroundtasks_validation
+        run: |
+          echo "backgroundtasks_compile_only requires backgroundtasks_validation" >&2
           exit 1
 
       - name: Validate focused UI inputs
@@ -503,7 +513,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 Tools/verify-backgroundtasks-native.py --simulator-id "$SIMULATOR_ID" \
+          compile_flag=()
+          if [[ "${{ inputs.backgroundtasks_compile_only }}" == "true" ]]; then
+            compile_flag+=(--build-only)
+          fi
+          python3 Tools/verify-backgroundtasks-native.py --simulator-id "$SIMULATOR_ID" "${compile_flag[@]}" \
             2>&1 | tee "$RUNNER_TEMP/backgroundtasks-native.log"
 
       - name: Verify native web authentication handoff

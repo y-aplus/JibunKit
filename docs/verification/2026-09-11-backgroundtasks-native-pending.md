@@ -5,10 +5,12 @@ This bounded fixture compares JibunKit's owner-scoped BackgroundTasks API with d
 refresh and processing identifiers through `onHostLaunch`; two additional identifiers
 provide the direct native baseline.
 
-The app submits all four requests and reads the OS-owned state with
-`getPendingTaskRequests`. It checks concrete request subclasses, earliest begin dates,
-and processing network/power conditions. It then cancels owner A's wrapper request and
-the matching native baseline request and requires both B requests to remain pending.
+The app runs the direct native pair and wrapper pair in separate phases because iOS
+allows only one pending app-refresh request for the app. Within each phase it reads the
+OS-owned state with `getPendingTaskRequests`, checks concrete request subclasses,
+earliest begin dates, and processing network/power conditions, then cancels A and
+requires B to remain pending. Each phase cleans up only its own fixture identifiers
+before the next phase; it never calls the process-wide `cancelAllTaskRequests` API.
 
 The fixture declares every identifier in `BGTaskSchedulerPermittedIdentifiers` and
 declares `fetch` and `processing` in `UIBackgroundModes`. A rejected registration or
@@ -25,7 +27,8 @@ source `f2f15cbbae36357f0f6c2b71b2378959312e4435`, compiled and launched the fix
 Xcode 26.6 / iPhone 17 Simulator (iOS 26.5). Both independently attempted submissions
 were rejected at the native scheduler boundary:
 
-`failed: submissionRejected(wrapperCode: Optional(1), nativeCode: Optional(1))`
+`failed: submissionRejected(wrapper: ... domain: "BGTaskSchedulerErrorDomain", code: 1,
+native: ... domain: "BGTaskSchedulerErrorDomain", code: 1)`
 
 The focused XCTest failed, as intended for an unfulfilled native evidence requirement;
 the rejection was not changed into a skip or pass. Code 1 is

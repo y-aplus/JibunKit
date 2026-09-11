@@ -43,7 +43,9 @@ private enum FixtureHost {
     ]
 
     static func registerAtLaunch() throws {
-        BGTaskScheduler.shared.cancelAllTaskRequests()
+        for identifier in FixtureIDs.all {
+            BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: identifier)
+        }
         for definition in definitions { try definition.onHostLaunch?() }
         guard BGTaskScheduler.shared.register(
             forTaskWithIdentifier: FixtureIDs.nativeA,
@@ -104,7 +106,18 @@ private enum ProbeFailure: Error {
     case wrongConditions(String)
     case wrongEarliestDate(String)
     case cancellationNotScoped([String])
-    case submissionRejected(wrapperCode: Int?, nativeCode: Int?)
+    case submissionRejected(wrapper: SchedulerError?, native: SchedulerError?)
+}
+
+private struct SchedulerError: Error, Sendable {
+    let domain: String
+    let code: Int
+
+    init(_ error: Error) {
+        let native = error as NSError
+        domain = native.domain
+        code = native.code
+    }
 }
 
 private struct PendingSnapshot: Sendable {
@@ -137,60 +150,84 @@ private enum BackgroundTasksProbe {
         let wrapperDate = Date().addingTimeInterval(600)
         let nativeDate = Date().addingTimeInterval(900)
 
-        var wrapperErrorCode: Int?
+        let nativeError: SchedulerError?
         do {
-            try FixtureHost.a.submit(.init(
-                identifier: FixtureIDs.wrapperA,
-                earliestBeginDate: wrapperDate
-            ))
+            try await runNativePhase(earliest: nativeDate)
+            nativeError = nil
         } catch {
-            wrapperErrorCode = (error as NSError).code
+            guard (error as NSError).domain == "BGTaskSchedulerErrorDomain" else { throw error }
+            nativeError = SchedulerError(error)
+        }
+
+        let wrapperError: SchedulerError?
+        do {
+            try await runWrapperPhase(earliest: wrapperDate)
+            wrapperError = nil
+        } catch {
+            guard (error as NSError).domain == "BGTaskSchedulerErrorDomain" else { throw error }
+            wrapperError = SchedulerError(error)
+        }
+
+        if nativeError != nil || wrapperError != nil {
+            throw ProbeFailure.submissionRejected(wrapper: wrapperError, native: nativeError)
+        }
+        return "passed: wrapper-a=refresh wrapper-b=processing native-a=refresh native-b=processing a-cancelled b-pending"
+    }
+
+    private static func runNativePhase(earliest: Date) async throws {
+        defer {
+            BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: FixtureIDs.nativeA)
+            BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: FixtureIDs.nativeB)
         }
         let nativeRefresh = BGAppRefreshTaskRequest(identifier: FixtureIDs.nativeA)
-        nativeRefresh.earliestBeginDate = nativeDate
-        var nativeErrorCode: Int?
-        do { try BGTaskScheduler.shared.submit(nativeRefresh) }
-        catch { nativeErrorCode = (error as NSError).code }
-        if wrapperErrorCode != nil || nativeErrorCode != nil {
-            BGTaskScheduler.shared.cancelAllTaskRequests()
-            throw ProbeFailure.submissionRejected(
-                wrapperCode: wrapperErrorCode,
-                nativeCode: nativeErrorCode
-            )
-        }
-
-        try FixtureHost.b.submit(.init(
-            identifier: FixtureIDs.wrapperB,
-            earliestBeginDate: wrapperDate,
-            requiresNetworkConnectivity: true,
-            requiresExternalPower: true
-        ))
-
+        nativeRefresh.earliestBeginDate = earliest
+        try BGTaskScheduler.shared.submit(nativeRefresh)
         let nativeProcessing = BGProcessingTaskRequest(identifier: FixtureIDs.nativeB)
-        nativeProcessing.earliestBeginDate = nativeDate
+        nativeProcessing.earliestBeginDate = earliest
         nativeProcessing.requiresNetworkConnectivity = true
         nativeProcessing.requiresExternalPower = true
         try BGTaskScheduler.shared.submit(nativeProcessing)
 
         let initial = try await pendingByIdentifier()
-        try verify(initial[FixtureIDs.wrapperA], kind: .refresh,
-                   earliest: wrapperDate, network: false, power: false)
-        try verify(initial[FixtureIDs.wrapperB], kind: .processing,
-                   earliest: wrapperDate, network: true, power: true)
         try verify(initial[FixtureIDs.nativeA], kind: .refresh,
-                   earliest: nativeDate, network: false, power: false)
+                   earliest: earliest, network: false, power: false)
         try verify(initial[FixtureIDs.nativeB], kind: .processing,
-                   earliest: nativeDate, network: true, power: true)
+                   earliest: earliest, network: true, power: true)
 
-        try FixtureHost.a.cancel(identifier: FixtureIDs.wrapperA)
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: FixtureIDs.nativeA)
-        let afterCancellation = try await pendingByIdentifier()
-        let remaining = Set(afterCancellation.keys)
-        guard remaining == Set([FixtureIDs.wrapperB, FixtureIDs.nativeB]) else {
+        let remaining = Set(try await pendingByIdentifier().keys)
+        guard remaining.contains(FixtureIDs.nativeB), !remaining.contains(FixtureIDs.nativeA) else {
             throw ProbeFailure.cancellationNotScoped(remaining.sorted())
         }
-        BGTaskScheduler.shared.cancelAllTaskRequests()
-        return "passed: wrapper-a=refresh wrapper-b=processing native-a=refresh native-b=processing a-cancelled b-pending"
+    }
+
+    private static func runWrapperPhase(earliest: Date) async throws {
+        defer {
+            try? FixtureHost.a.cancel(identifier: FixtureIDs.wrapperA)
+            try? FixtureHost.b.cancel(identifier: FixtureIDs.wrapperB)
+        }
+        try FixtureHost.a.submit(.init(
+            identifier: FixtureIDs.wrapperA,
+            earliestBeginDate: earliest
+        ))
+        try FixtureHost.b.submit(.init(
+            identifier: FixtureIDs.wrapperB,
+            earliestBeginDate: earliest,
+            requiresNetworkConnectivity: true,
+            requiresExternalPower: true
+        ))
+
+        let initial = try await pendingByIdentifier()
+        try verify(initial[FixtureIDs.wrapperA], kind: .refresh,
+                   earliest: earliest, network: false, power: false)
+        try verify(initial[FixtureIDs.wrapperB], kind: .processing,
+                   earliest: earliest, network: true, power: true)
+
+        try FixtureHost.a.cancel(identifier: FixtureIDs.wrapperA)
+        let remaining = Set(try await pendingByIdentifier().keys)
+        guard remaining.contains(FixtureIDs.wrapperB), !remaining.contains(FixtureIDs.wrapperA) else {
+            throw ProbeFailure.cancellationNotScoped(remaining.sorted())
+        }
     }
 
     private static func pendingByIdentifier() async throws -> [String: PendingSnapshot] {

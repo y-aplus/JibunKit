@@ -42,6 +42,20 @@ IPA整合性、artifact uploadも成功した。Simulator UIはこのnative call
 不要なため実行していない。生成IPAのworkflow内SHA-256は
 `21b095df6b5b6e1e642ec0b22aa4b47940e33ec2d6dcdc327fd1e174218a969f`。
 
+統合レビュー後、重複host callbackのcompletionを即時終了する初版契約を修正した。
+同じpending eventへ全completionを結合し、native delegateのfinishまで保留する。
+registration取消もfuture factoryだけを解除し、進行中completionを早期終了しない。
+pendingはevent UUIDを照合して削除するため、旧tokenの遅延finishは新pendingを終了
+できない。標準`URLSessionDelegate` fixtureはcold時にsessionを生成し、warm callback
+では同じsession/delegateへ新しいevents tokenだけを接続する。
+
+[GitHub Actions run 34553184474](https://github.com/y-aplus/JibunKit/actions/runs/34553184474)
+は修正source `768f5048a91ddb6dc669988d5be4ed17036b246b`をXcode 26.6で
+検証し、新規6試験を0 failureで完了した。共有feature logic、通常iOS app/Widget
+build、署名・IPA整合性、artifact uploadも成功した。workflow内IPA SHA-256は
+`70bacf3f7bb7d828c8edec4ff5b847cd4024ba46e1213e338edc20535d2a7bbb`。
+この結果も実OS background転送やcold launch配送の実証には読み替えない。
+
 ## 未確認境界
 
 OSによるbackground upload/download、アプリ終了後の継続、cold launchでのdelegate

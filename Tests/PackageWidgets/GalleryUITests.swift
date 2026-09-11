@@ -17,7 +17,7 @@ final class GalleryUITests: XCTestCase {
             let titleText = "Feature \(widget)"
             let title = springboard.staticTexts[titleText].firstMatch
             guard select(appName: appName, widgetName: titleText, on: springboard) else { return }
-            let previewValue = springboard.staticTexts[widget == "A" ? "A:11" : "B:22"]
+            let previewValue = springboard.staticTexts[widget == "A" ? "A:11" : "B:22"].firstMatch
             guard require(title, timeout: 10, on: springboard) else { return }
             guard require(previewValue, timeout: 10, on: springboard) else { return }
             guard isVisible(title, in: springboard), isVisible(previewValue, in: springboard) else {

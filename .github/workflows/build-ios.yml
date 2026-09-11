@@ -229,6 +229,8 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookUITests.swift', 'UITests/HostLaunchHookUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipProbe.swift', 'Sources/JibunKit/NowPlayingOwnershipProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipUITests.swift', 'UITests/NowPlayingOwnershipUITests.swift')
+          shutil.copyfile('Tests/TemplateIntegration/NowPlayingPlayableProbe.swift', 'Sources/JibunKit/NowPlayingPlayableProbe.swift')
+          shutil.copyfile('Tests/TemplateIntegration/NowPlayingPlayableUITests.swift', 'UITests/NowPlayingPlayableUITests.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsMiniApp.swift', 'Sources/JibunKit/RecordsMiniApp.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsBackup.swift', 'Sources/JibunKit/RecordsBackup.swift')
           shutil.copyfile('Modules/Records/Integration/RecordsNotifications.swift', 'Sources/JibunKit/RecordsNotifications.swift')
@@ -310,6 +312,7 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        URLRoutingProbe.definitions[0],\n        URLRoutingProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
+          p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

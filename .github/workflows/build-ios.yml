@@ -373,6 +373,7 @@ jobs:
           require_executable "app executable" "$app/$app_executable"
           require_executable "widget executable" "$widget/$widget_executable"
           require_nonempty "App Intents metadata" "$metadata"
+          python3 Tools/verify-host-shortcut-compatibility.py "$metadata"
 
           app_architecture="$(file "$app/$app_executable")"
           widget_architecture="$(file "$widget/$widget_executable")"

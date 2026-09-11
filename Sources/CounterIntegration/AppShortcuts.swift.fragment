@@ -1,0 +1,8 @@
+AppShortcut(
+    intent: AddCounterValueIntent(),
+    phrases: [
+        "\(.applicationName)のカウンターに追加",
+    ],
+    shortTitle: "カウンターに追加",
+    systemImageName: "plus.circle"
+)

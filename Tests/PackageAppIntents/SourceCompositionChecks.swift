@@ -36,7 +36,7 @@ struct SourceCompositionChecks {
         precondition(!remaining.contains(sourceA) && !remaining.contains("import FeatureA") && remaining.contains(sourceB))
         try FeatureAppShortcuts.writeProvider([], to: output.path)
         let empty = try String(contentsOf: output, encoding: .utf8)
-        precondition(!empty.contains("struct JibunKitAppShortcuts"))
+        precondition(!empty.contains("struct JibunKitShortcuts"))
         print("Feature App Shortcuts composition: preservation, rejection, and removal passed")
     }
 }

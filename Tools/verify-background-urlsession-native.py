@@ -25,13 +25,23 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-background-urlsession-native-"
     shutil.copyfile(fixture / "UITests.swift", root / "UITests.swift")
 
     port_file = root / "network-port"
-    server = subprocess.Popen([
-        "python3", str(repo / "Tests/Fixtures/network_server.py"), str(port_file)
-    ])
+    server_log_path = Path(os.environ["RUNNER_TEMP"]) / "background-urlsession-server.log"
+    server_log = server_log_path.open("w", encoding="utf-8")
+    server = subprocess.Popen(
+        ["python3", str(repo / "Tests/Fixtures/network_server.py"), str(port_file)],
+        stdout=server_log,
+        stderr=subprocess.STDOUT,
+    )
     try:
-        for _ in range(100):
+        for _ in range(600):
             if port_file.exists():
                 break
+            if server.poll() is not None:
+                server_log.flush()
+                detail = server_log_path.read_text(encoding="utf-8", errors="replace")
+                raise RuntimeError(
+                    f"Loopback HTTP fixture exited before publishing its port: {detail}"
+                )
             time.sleep(0.05)
         if not port_file.exists():
             raise RuntimeError("Loopback HTTP fixture did not publish its port")
@@ -84,7 +94,9 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-background-urlsession-native-"
         if not passed_case or "** TEST SUCCEEDED **" not in result.stdout:
             raise RuntimeError("Focused native background URLSession test did not report passed")
     finally:
-        server.terminate()
-        server.wait(timeout=10)
+        if server.poll() is None:
+            server.terminate()
+            server.wait(timeout=10)
+        server_log.close()
 
 print("Native background URLSession verified: owner destinations and scoped cancellation")

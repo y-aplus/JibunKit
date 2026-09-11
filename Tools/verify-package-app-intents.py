@@ -33,6 +33,15 @@ def metadata(app, label):
         shortcuts.extend(data.get("autoShortcuts", []))
     return actions, shortcuts
 
+def capture_shortcut_extraction(derived):
+    # Keep the compiler's extracted constants for diagnosis if app-level
+    # metadata fails to include a Feature-owned shortcut provider.
+    for index, path in enumerate(sorted(derived.rglob("*.swiftconstvalues"))):
+        destination = evidence / f"const-values-{index}-{path.name}"
+        shutil.copyfile(path, destination)
+        with (evidence / "const-values-paths.txt").open("a", encoding="utf-8") as listing:
+            listing.write(f"{destination.name}: {path.relative_to(derived)}\n")
+
 with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     root = Path(temp)
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
@@ -44,10 +53,15 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     schemes = ["StandaloneA", "StandaloneB", "Combined",
                "OwnedShortcutsA", "OwnedShortcutsB", "OwnedShortcutsCombined"]
     for scheme in schemes:
-        run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
-             "-scheme", scheme, "-configuration", "Release", "-destination", "generic/platform=iOS",
-             "-derivedDataPath", derived, "CODE_SIGNING_ALLOWED=NO"], root)
+        try:
+            run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
+                 "-scheme", scheme, "-configuration", "Release", "-destination", "generic/platform=iOS",
+                 "-derivedDataPath", derived, "CODE_SIGNING_ALLOWED=NO"], root)
+        except subprocess.CalledProcessError:
+            capture_shortcut_extraction(derived)
+            raise
         results[scheme] = metadata(derived / f"Build/Products/Release-iphoneos/{scheme}.app", scheme)
+    capture_shortcut_extraction(derived)
 
     a, _ = results["StandaloneA"]
     b, _ = results["StandaloneB"]

@@ -1,6 +1,6 @@
 # Package別App Shortcuts Providerの合成
 
-状態: native比較fixtureを追加、CI未検証。製品への新しい制約や独自generatorは追加しない。
+状態: Package Providerだけの初回構成ではapp-level Shortcut metadata欠落を確認。hostから定義を参照する次の構成はCI未検証。製品への新しい制約や独自generatorは追加しない。
 
 34540791430では二PackageのIntentを一つのhost AppShortcutsProviderから参照できた。一方、FeatureがProviderを所有したまま二つを統合できるかは未検証だった。
 
@@ -9,7 +9,7 @@
 既存IntentFeatureA/Bを変更せず、それぞれのPackageにShortcuts専用productを追加する。各productは既存Intentを参照する一つのAppShortcutsProviderと、既存IntentPackageをincludedPackagesへ含むAppIntentsPackageを公開する。
 
 - OwnedShortcutsA/B: 対応する一方のPackageを含む単独app。
-- OwnedShortcutsCombined: 二つのPackageを含むapp。host側にはAppShortcutsProviderやAppShortcutのコピーを置かない。
+- OwnedShortcutsCombined: 二つのPackageを含むapp。初回構成ではhost側にProviderを置かず、次の構成ではhost Providerが両PackageのappShortcuts配列を参照する。AppShortcutの定義・phrase・title・symbolはコピーしない。
 - 既存StandaloneA/B/Combined: Intent metadataとhost Provider経路の回帰。
 
 TuistとXcode標準のmetadata抽出を使用する。app直下のMetadata.appintentsを読み、単独時のShortcutが一件ずつ存在し、統合後の二件がactionIdentifierを含めそのまま残ることを確認する。embedded bundleのmetadataを集めただけでhost登録成功と誤認しない。provider名とShortcut本体も証拠へ記録する。
@@ -22,4 +22,10 @@ native buildが複数Providerを拒否する、片方を落とす、metadataを�
 
 ## 結果
 
-CI待ち。
+[34546542109](https://github.com/y-aplus/JibunKit/actions/runs/34546542109)、source `95db26d17985680e497962e2d1e2de393f1c341c` は失敗。6 targetはnative build成功したが、OwnedShortcutsA/B/Combinedのapp直下metadataはすべてautoShortcutsが空、autoShortcutProviderMangledNameも存在しなかった。actionsはA/B/両方が正しく存在した。XcodeもNo AppShortcuts foundを記録。既存のhost Provider付きCombinedは二つのShortcutを出力しているため、検証側のfield名の誤りではない。
+
+単独構成でも空であり、複数Providerだけの競合とは言えない。このrunはShortcuts appの実表示・実行を試していないので、Package ProviderのOS上での利用全般が不可能とも判定しない。native Shortcut検査で停止したため、後続perform()試験と通常UI回帰は未実行。
+
+## 次の接続比較
+
+各OwnedShortcuts targetに小さなhost AppShortcutsProviderを置く。単独は対応PackageのappShortcutsを返し、統合は二配列を結合して返す。FeatureのSwift標準定義を再利用したままnative抽出できるかを確認する。必要metadataのassertionは緩めず、一方だけのShortcutを成功にしない。抽出失敗時もコンパイラのswiftconstvaluesをartifactへ保存し、コンパイル時抽出とapp-level集約のどちらが欠けるか調べられるようにした。結果待ち。

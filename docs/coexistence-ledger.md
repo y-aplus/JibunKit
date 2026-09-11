@@ -51,7 +51,7 @@
 | D24 | Bluetooth managerの復元と接続所有者 | 未調査 | 未調査。台帳への具体的な復元ID/所有者項目の追加が必要。 |
 | D25 | 位置情報・監視条件とアプリ単位の枠 | 未対応 | 初期台帳で不足していた「枠の統合」差分。登録・調停は未対応、別方式での補完範囲は未調査。 |
 | D26 | Widget・Control・既存extensionの組立て | 未対応 | Counter例と手動target定義あり。一般合成は未対応。追加手順の「別extension必須」と読める記述は修正候補。 |
-| D27 | App Intents・App Shortcuts・メタデータ | 未対応 | 34540791430で二Swift PackageのAppIntentsPackageを単独A/B・統合A+Bへ接続し、native metadataの識別子/型名/引数/戻り値/modeと二Shortcut参照を比較検証。iOSの直接perform()試験で所有Storeと戻り値を確認（0.014秒）。[接続ガイド](guides/package-app-intents.md)・[証拠](verification/2026-09-11-package-app-intents.md)。独自generatorやappへの実装コピーは不要。既存Counterは互換性のため元の型・配置を維持。OS Shortcuts/Siri実行、Package別Provider合成、AppEntity/query、同名型、Widget/Control接続は残る。 |
+| D27 | App Intents・App Shortcuts・メタデータ | 未対応 | 34540791430で二Swift PackageのAppIntentsPackageを単独A/B・統合A+Bへ接続し、native metadataの識別子/型名/引数/戻り値/modeと二Shortcut参照を比較検証。iOSの直接perform()試験で所有Storeと戻り値を確認（0.014秒）。[接続ガイド](guides/package-app-intents.md)・[証拠](verification/2026-09-11-package-app-intents.md)。独自generatorやappへの実装コピーは不要。既存Counterは互換性のため元の型・配置を維持。Package Providerの転送/参照はnative抽出に拒否されたため、Feature所有のSwift Shortcut式を一つの標準Providerへ配置するhelperを追加。34550748042で単独A/Bと統合のShortcut辞書一致、同一DerivedDataでA寄与削除後のB保持、perform() 0.035秒、共有167件/通常検索43.316秒が成功。[合成ガイド](guides/feature-app-shortcuts.md)・[比較証拠](verification/2026-09-11-package-shortcut-providers.md)。通常CounterのProviderは既存のまま。OS Shortcuts/Siri実行、通常hostへの接続、AppEntity/query、同名型、Widget/Control接続は残る。 |
 | D28 | Live Activities・AlarmKit等のシステム継続表示 | 未対応 | 初期棚卸しに明示されていない領域。未対応・個別条件未調査。 |
 | D29 | 依存ライブラリ・runtime globals・resources | 未調査 | Package/Tuist経路は整備。幅広いSDK衝突とruntime設定の共存は未調査。 |
 | D30 | 外部サービスidentity・CloudKit・データ出所 | 未調査 | 初期棚卸しでは不足していた外部identity/出所の項目。未調査。 |

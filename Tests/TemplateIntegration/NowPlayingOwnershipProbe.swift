@@ -9,80 +9,160 @@ import SwiftUI
 @Observable
 final class NowPlayingOwnershipProbeState {
     var result = "idle"
+    var aPlayCount = 0
+    var aPauseCount = 0
+    var bPlayCount = 0
+    var bPauseCount = 0
 
-    func run() async {
-        result = "running"
+    private var playerA: AVPlayer?
+    private var playerB: AVPlayer?
+    private var sessionA: MPNowPlayingSession?
+    private var sessionB: MPNowPlayingSession?
+    private var playTargetA: Any?
+    private var pauseTargetA: Any?
+    private var playTargetB: Any?
+    private var pauseTargetB: Any?
 
-        let playerA = AVPlayer()
-        let playerB = AVPlayer()
-        let sessionA = MPNowPlayingSession(players: [playerA])
-        let sessionB = MPNowPlayingSession(players: [playerB])
-        sessionA.automaticallyPublishesNowPlayingInfo = false
-        sessionB.automaticallyPublishesNowPlayingInfo = false
+    func prepareSingle() async {
+        reset()
+        do {
+            try configureAudioSession()
+            let player = AVPlayer(url: try makeToneFile(name: "feature-a", frequency: 440))
+            let session = MPNowPlayingSession(players: [player])
+            session.automaticallyPublishesNowPlayingInfo = false
+            session.nowPlayingInfoCenter.nowPlayingInfo = nowPlayingInfo(title: "Feature A")
+            playerA = player
+            sessionA = session
+            (playTargetA, pauseTargetA) = installTargets(on: session.remoteCommandCenter, player: player, owner: "A")
+            player.play()
+            let requested = await session.becomeActiveIfPossible()
+            result = "single-ready requested=\(requested) active=\(session.isActive)"
+            print("NOW_PLAYING_CONTROL_CENTER \(result)")
+        } catch {
+            result = "failed: single-setup \(error)"
+        }
+    }
 
-        guard sessionA.players.count == 1, sessionA.players[0] === playerA,
-              sessionB.players.count == 1, sessionB.players[0] === playerB,
-              sessionA.nowPlayingInfoCenter !== sessionB.nowPlayingInfoCenter,
-              sessionA.remoteCommandCenter !== sessionB.remoteCommandCenter else {
-            result = "failed: session-boundaries"
+    func prepareDual() async {
+        guard sessionA != nil else {
+            result = "failed: prepare-single-first"
             return
         }
-
-        sessionA.nowPlayingInfoCenter.nowPlayingInfo = [MPMediaItemPropertyTitle: "Feature A"]
-        sessionB.nowPlayingInfoCenter.nowPlayingInfo = [MPMediaItemPropertyTitle: "Feature B"]
-        guard sessionA.nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String == "Feature A",
-              sessionB.nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String == "Feature B" else {
-            result = "failed: now-playing-info"
-            return
+        do {
+            let player = AVPlayer(url: try makeToneFile(name: "feature-b", frequency: 660))
+            let session = MPNowPlayingSession(players: [player])
+            session.automaticallyPublishesNowPlayingInfo = false
+            session.nowPlayingInfoCenter.nowPlayingInfo = nowPlayingInfo(title: "Feature B")
+            playerB = player
+            sessionB = session
+            (playTargetB, pauseTargetB) = installTargets(on: session.remoteCommandCenter, player: player, owner: "B")
+            player.play()
+            let requested = await session.becomeActiveIfPossible()
+            result = "dual-ready requested=\(requested) a-active=\(sessionA?.isActive == true) b-active=\(session.isActive)"
+            print("NOW_PLAYING_CONTROL_CENTER \(result)")
+        } catch {
+            result = "failed: dual-setup \(error)"
         }
+    }
 
-        let targetA = sessionA.remoteCommandCenter.playCommand.addTarget { _ in .success }
-        let targetB = sessionB.remoteCommandCenter.playCommand.addTarget { _ in .success }
-        guard (targetA as AnyObject) !== (targetB as AnyObject) else {
-            result = "failed: command-targets"
-            return
+    func removeATargets() {
+        if let target = playTargetA { sessionA?.remoteCommandCenter.playCommand.removeTarget(target) }
+        if let target = pauseTargetA { sessionA?.remoteCommandCenter.pauseCommand.removeTarget(target) }
+        playTargetA = nil
+        pauseTargetA = nil
+        playerB?.play()
+        result = "a-targets-removed"
+        print("NOW_PLAYING_CONTROL_CENTER \(result)")
+    }
+
+    private func installTargets(on center: MPRemoteCommandCenter, player: AVPlayer, owner: String) -> (Any, Any) {
+        let play = center.playCommand.addTarget { [weak self, weak player] _ in
+            Task { @MainActor in
+                if owner == "A" { self?.aPlayCount += 1 } else { self?.bPlayCount += 1 }
+                player?.play()
+                self?.logCounts(owner: owner, command: "play")
+            }
+            return .success
         }
-        sessionA.remoteCommandCenter.playCommand.removeTarget(targetA)
-
-        let activatedA = await sessionA.becomeActiveIfPossible()
-        let aActiveAfterARequest = sessionA.isActive
-        let activatedB = await sessionB.becomeActiveIfPossible()
-        let aActiveAfterBRequest = sessionA.isActive
-        let bActiveAfterBRequest = sessionB.isActive
-        let activationSummary = "a-request=\(activatedA) a-state-after-a=\(aActiveAfterARequest) " +
-            "b-request=\(activatedB) a-state-after-b=\(aActiveAfterBRequest) " +
-            "b-state-after-b=\(bActiveAfterBRequest)"
-
-        // Removing A's command target must not mutate either player association
-        // or B's Now Playing metadata.
-        guard sessionA.players.count == 1, sessionA.players[0] === playerA,
-              sessionB.players.count == 1, sessionB.players[0] === playerB,
-              sessionB.nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String == "Feature B" else {
-            sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)
-            result = "failed: cross-owner-command-removal"
-            return
+        let pause = center.pauseCommand.addTarget { [weak self, weak player] _ in
+            Task { @MainActor in
+                if owner == "A" { self?.aPauseCount += 1 } else { self?.bPauseCount += 1 }
+                player?.pause()
+                self?.logCounts(owner: owner, command: "pause")
+            }
+            return .success
         }
-        sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)
+        return (play, pause)
+    }
 
-        result = "passed: \(activationSummary)"
-        print("NOW_PLAYING_NATIVE_RESULT \(result)")
+    private func logCounts(owner: String, command: String) {
+        print("NOW_PLAYING_CONTROL_CENTER delivered owner=\(owner) command=\(command) \(counts)")
+    }
+
+    private var counts: String {
+        "a-play=\(aPlayCount) a-pause=\(aPauseCount) b-play=\(bPlayCount) b-pause=\(bPauseCount)"
+    }
+
+    private func configureAudioSession() throws {
+        let audio = AVAudioSession.sharedInstance()
+        try audio.setCategory(.playback, mode: .default)
+        try audio.setActive(true)
+    }
+
+    private func nowPlayingInfo(title: String) -> [String: Any] {
+        [MPMediaItemPropertyTitle: title,
+         MPMediaItemPropertyArtist: "JibunKit native probe",
+         MPNowPlayingInfoPropertyPlaybackRate: 1.0,
+         MPMediaItemPropertyPlaybackDuration: 60.0,
+         MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0]
+    }
+
+    private func makeToneFile(name: String, frequency: Double) throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).wav")
+        if FileManager.default.fileExists(atPath: url.path) { return url }
+        let sampleRate = 8_000
+        let sampleCount = sampleRate * 60
+        let dataBytes = sampleCount * 2
+        var data = Data()
+        func append<T: FixedWidthInteger>(_ value: T) {
+            var littleEndian = value.littleEndian
+            withUnsafeBytes(of: &littleEndian) { data.append(contentsOf: $0) }
+        }
+        data.append(contentsOf: "RIFF".utf8)
+        append(UInt32(36 + dataBytes))
+        data.append(contentsOf: "WAVEfmt ".utf8)
+        append(UInt32(16)); append(UInt16(1)); append(UInt16(1))
+        append(UInt32(sampleRate)); append(UInt32(sampleRate * 2))
+        append(UInt16(2)); append(UInt16(16))
+        data.append(contentsOf: "data".utf8)
+        append(UInt32(dataBytes))
+        for index in 0..<sampleCount {
+            let phase = 2 * Double.pi * frequency * Double(index) / Double(sampleRate)
+            append(Int16(sin(phase) * 2_000))
+        }
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
+    private func reset() {
+        playerA?.pause(); playerB?.pause()
+        playerA = nil; playerB = nil; sessionA = nil; sessionB = nil
+        playTargetA = nil; pauseTargetA = nil; playTargetB = nil; pauseTargetB = nil
+        aPlayCount = 0; aPauseCount = 0; bPlayCount = 0; bPauseCount = 0
     }
 }
 
 @MainActor
 enum NowPlayingOwnershipProbe {
     private static let state = NowPlayingOwnershipProbeState()
-
-    static let definition = MiniAppDefinition(
-        id: MiniAppID("now-playing-probe"),
-        title: "Now Playing probe",
-        systemImage: "play.circle"
-    ) { _ in
+    static let definition = MiniAppDefinition(id: MiniAppID("now-playing-probe"), title: "Now Playing probe", systemImage: "play.circle") { _ in
         VStack {
             Text(state.result).accessibilityIdentifier("now-playing.result")
-            Button("Run native Now Playing comparison") {
-                Task { await state.run() }
-            }.accessibilityIdentifier("now-playing.run")
+            Text("a-play=\(state.aPlayCount) a-pause=\(state.aPauseCount) b-play=\(state.bPlayCount) b-pause=\(state.bPauseCount)")
+                .accessibilityIdentifier("now-playing.counts")
+            Button("Prepare single session") { Task { await state.prepareSingle() } }.accessibilityIdentifier("now-playing.prepare-single")
+            Button("Prepare dual sessions") { Task { await state.prepareDual() } }.accessibilityIdentifier("now-playing.prepare-dual")
+            Button("Remove Feature A targets") { state.removeATargets() }.accessibilityIdentifier("now-playing.remove-a-targets")
         }
     }
 }

@@ -1,0 +1,46 @@
+import ProjectDescription
+
+let project = Project(
+    name: "BackgroundTasksNative",
+    packages: [.package(path: "__JIBUNKIT_PATH__")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
+    targets: [
+        .target(
+            name: "BackgroundTasksNative",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "com.jibunkit.backgroundtasks-native",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: [
+                "UILaunchScreen": [:],
+                "UIBackgroundModes": ["fetch", "processing"],
+                "BGTaskSchedulerPermittedIdentifiers": [
+                    "com.jibunkit.backgroundtasks-native.owner-a.refresh",
+                    "com.jibunkit.backgroundtasks-native.owner-b.processing",
+                    "com.jibunkit.backgroundtasks-native.baseline-a.refresh",
+                    "com.jibunkit.backgroundtasks-native.baseline-b.processing",
+                ],
+            ]),
+            sources: ["App.swift"],
+            dependencies: [.package(product: "JibunKitCore")]
+        ),
+        .target(
+            name: "BackgroundTasksNativeUITests",
+            destinations: .iOS,
+            product: .uiTests,
+            bundleId: "com.jibunkit.backgroundtasks-native-tests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["UITests.swift"],
+            dependencies: [.target(name: "BackgroundTasksNative")]
+        ),
+    ],
+    schemes: [
+        .scheme(
+            name: "BackgroundTasksNative",
+            shared: true,
+            buildAction: .buildAction(targets: ["BackgroundTasksNative"]),
+            testAction: .targets(["BackgroundTasksNativeUITests"], configuration: .debug)
+        ),
+    ]
+)

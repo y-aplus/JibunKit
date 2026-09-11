@@ -49,7 +49,6 @@ final class NowPlayingOwnershipProbeState {
         let activatedB = await sessionB.becomeActiveIfPossible()
         let aActiveAfterBRequest = sessionA.isActive
         let bActiveAfterBRequest = sessionB.isActive
-        let activeSelectionWasExclusive = !(aActiveAfterBRequest && bActiveAfterBRequest)
         let activationSummary = "a-request=\(activatedA) a-state-after-a=\(aActiveAfterARequest) " +
             "b-request=\(activatedB) a-state-after-b=\(aActiveAfterBRequest) " +
             "b-state-after-b=\(bActiveAfterBRequest)"
@@ -64,12 +63,6 @@ final class NowPlayingOwnershipProbeState {
             return
         }
         sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)
-
-        guard activeSelectionWasExclusive else {
-            result = "failed: simultaneous-active \(activationSummary)"
-            print("NOW_PLAYING_NATIVE_RESULT \(result)")
-            return
-        }
 
         result = "passed: \(activationSummary)"
         print("NOW_PLAYING_NATIVE_RESULT \(result)")

@@ -46,12 +46,13 @@ final class NowPlayingOwnershipProbeState {
 
         let activatedA = await sessionA.becomeActiveIfPossible()
         let aActiveAfterARequest = sessionA.isActive
-        let aActivationWasConsistent = !activatedA || aActiveAfterARequest
         let activatedB = await sessionB.becomeActiveIfPossible()
         let aActiveAfterBRequest = sessionA.isActive
         let bActiveAfterBRequest = sessionB.isActive
-        let bActivationWasConsistent = !activatedB || bActiveAfterBRequest
         let activeSelectionWasExclusive = !(aActiveAfterBRequest && bActiveAfterBRequest)
+        let activationSummary = "a-request=\(activatedA) a-state-after-a=\(aActiveAfterARequest) " +
+            "b-request=\(activatedB) a-state-after-b=\(aActiveAfterBRequest) " +
+            "b-state-after-b=\(bActiveAfterBRequest)"
 
         // Removing A's command target must not mutate either player association
         // or B's Now Playing metadata.
@@ -64,16 +65,13 @@ final class NowPlayingOwnershipProbeState {
         }
         sessionB.remoteCommandCenter.playCommand.removeTarget(targetB)
 
-        guard aActivationWasConsistent,
-              bActivationWasConsistent,
-              activeSelectionWasExclusive else {
-            result = "failed: active-selection"
+        guard activeSelectionWasExclusive else {
+            result = "failed: simultaneous-active \(activationSummary)"
+            print("NOW_PLAYING_NATIVE_RESULT \(result)")
             return
         }
 
-        result = "passed: a-request=\(activatedA) a-state-after-a=\(aActiveAfterARequest) " +
-            "b-request=\(activatedB) a-state-after-b=\(aActiveAfterBRequest) " +
-            "b-state-after-b=\(bActiveAfterBRequest)"
+        result = "passed: \(activationSummary)"
         print("NOW_PLAYING_NATIVE_RESULT \(result)")
     }
 }

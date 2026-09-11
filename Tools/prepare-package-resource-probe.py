@@ -53,7 +53,15 @@ struct PackageResourceProbeApp: App {{
 }}
 
 struct ProbeView: View {{
-    var body: some View {{ Text(result).accessibilityIdentifier("package-resource.result") }}
+    var body: some View {{
+        VStack {{
+            Text(observedLanguage).accessibilityIdentifier("package-resource.language")
+            Text(result).accessibilityIdentifier("package-resource.result")
+        }}
+    }}
+    private var observedLanguage: String {{
+        Locale.preferredLanguages.first?.split(separator: "-").first.map(String.init) ?? "missing"
+    }}
     private var result: String {{
         do {{
             let actual = [{', '.join(expressions)}]

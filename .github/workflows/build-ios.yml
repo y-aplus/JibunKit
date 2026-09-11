@@ -24,7 +24,7 @@ on:
         type: boolean
         default: false
       package_resources_validation:
-        description: Compare independent, combined, and removed package resources (requires simulator_tests)
+        description: Compare package resources and generated-host localization (requires simulator_tests; host check also requires feature_validation)
         type: boolean
         default: false
       web_authentication_validation:
@@ -250,6 +250,8 @@ jobs:
       - name: Verify native Feature template
         if: inputs.feature_validation
         shell: bash
+        env:
+          PACKAGE_RESOURCES_VALIDATION: ${{ inputs.package_resources_validation }}
         run: |
           set -euo pipefail
           smoke="$RUNNER_TEMP/template-check"
@@ -264,6 +266,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateDerivedData" CODE_SIGNING_ALLOWED=NO
           python3 - <<'PY'
           from pathlib import Path
+          import os
           import shutil
           shutil.copyfile('Tests/TemplateIntegration/GeneratedFeatureUITests.swift', 'UITests/GeneratedFeatureUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
@@ -326,14 +329,29 @@ jobs:
               shutil.copyfile(url_probe, 'Sources/JibunKit/URLRoutingProbe.swift')
               shutil.copyfile(url_tests, 'UITests/URLRoutingUITests.swift')
               shutil.copyfile(url_build, 'Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift')
+          include_package_resources = os.environ['PACKAGE_RESOURCES_VALIDATION'] == 'true'
+          if include_package_resources:
+              shutil.copytree('Tests/PackageResources/FeatureA', 'PackageResourceFixtures/FeatureA')
+              shutil.copytree('Tests/PackageResources/FeatureB', 'PackageResourceFixtures/FeatureB')
+              shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostProbe.swift', 'Sources/JibunKit/PackageResourceHostProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostUITests.swift', 'UITests/PackageResourceHostUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
+          if include_package_resources:
+              s = s.replace('.package(path: "Modules/Records")]', '.package(path: "Modules/Records"), .package(path: "PackageResourceFixtures/FeatureA"), .package(path: "PackageResourceFixtures/FeatureB")]')
           app_marker = 'name: "JibunKit-App", destinations:'
           assert s.count(app_marker) == 1, 'Expected exactly one host app target'
           before_app, marker, app_and_rest = s.partition(app_marker)
           dependency_marker = 'dependencies: [.package(product: "JibunKitCore")'
           assert dependency_marker in app_and_rest, 'Expected host Core dependency'
-          app_and_rest = app_and_rest.replace(dependency_marker, 'dependencies: [.package(product: "RecordsFeature"), .package(product: "NotesFeature"), .package(product: "JibunKitCore")', 1)
+          injected_dependencies = ['.package(product: "RecordsFeature")', '.package(product: "NotesFeature")']
+          if include_package_resources:
+              injected_dependencies += ['.package(product: "ResourceFeatureA")', '.package(product: "ResourceFeatureB")']
+          app_and_rest = app_and_rest.replace(
+              dependency_marker,
+              'dependencies: [' + ', '.join(injected_dependencies) + ', .package(product: "JibunKitCore")',
+              1,
+          )
           s = before_app + marker + app_and_rest
           p.write_text(s)
           p = Path('Sources/JibunKit/MiniAppRegistry.swift')
@@ -352,6 +370,13 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        BackgroundExecutionProbe.definition,'))
           if include_url_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        URLRoutingProbe.definitions[0],\n        URLRoutingProbe.definitions[1],'))
+          if include_package_resources:
+              registry_end = '        ReminderMiniApp.definition,\n    ])'
+              assert p.read_text().count(registry_end) == 1, 'Expected exactly one host registry end'
+              p.write_text(p.read_text().replace(
+                  registry_end,
+                  '        ReminderMiniApp.definition,\n        PackageResourceHostProbe.definition,\n    ])',
+              ))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
@@ -360,6 +385,10 @@ jobs:
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
             -configuration Release -destination 'generic/platform=iOS' \
             -derivedDataPath "$RUNNER_TEMP/TemplateHostDerivedData" CODE_SIGNING_ALLOWED=NO
+          host_app="$RUNNER_TEMP/TemplateHostDerivedData/Build/Products/Release-iphoneos/JibunKit_App.app"
+          host_widget="$host_app/PlugIns/JibunKitWidget_Extension.appex"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_app/Info.plist")" = true
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
 
       - name: Generate Xcode workspace
         run: |
@@ -461,6 +490,12 @@ jobs:
           require_equal "widget build version" \
             "$(plist_value "$widget/Info.plist" CFBundleVersion)" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)"
+          require_equal "app mixed localizations" \
+            "$(plist_value "$app/Info.plist" CFBundleAllowMixedLocalizations)" \
+            "true"
+          require_equal "widget mixed localizations" \
+            "$(plist_value "$widget/Info.plist" CFBundleAllowMixedLocalizations)" \
+            "true"
           python3 Tools/verify-localized-info-plist.py GeneratedFeatureResources/App "$app"
           python3 Tools/verify-localized-info-plist.py GeneratedFeatureResources/Widget "$widget"
 

@@ -3,6 +3,24 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    private func revealLauncherRow(_ row: XCUIElement, in app: XCUIApplication) {
+        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
+        // iOS 26's bottom search field can cover a row whose accessibility
+        // element still reports isHittable. Bring the whole row into view.
+        for _ in 0..<5 {
+            let search = app.searchFields.firstMatch
+            let bottom = search.exists ? search.frame.minY : app.frame.maxY - 40
+            let top = app.navigationBars.firstMatch.frame.maxY
+            if row.frame.minY > top && row.frame.maxY < bottom { return }
+            if row.frame.minY <= top {
+                app.collectionViews.firstMatch.swipeDown()
+            } else {
+                app.collectionViews.firstMatch.swipeUp()
+            }
+        }
+        XCTFail("Launcher row remains covered: \(row.debugDescription)\n\(app.debugDescription)")
+    }
+
     func testFeatureRootNavigationRegression() throws {
         continueAfterFailure = false
         try testRecordsUsesIndependentHostStorage()
@@ -796,6 +814,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ element: XCUIElement) {
             XCTAssertTrue(element.waitForExistence(timeout: 10))
+            if element.identifier.hasPrefix("miniapp.") { revealLauncherRow(element, in: app) }
             element.tap()
         }
         tap(app.buttons["miniapp.counter"])
@@ -823,7 +842,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.navigationBars.buttons["記録"])
         tap(app.navigationBars.buttons["ミニアプリ"])
         let counterRow = app.buttons["miniapp.counter"]
-        XCTAssertTrue(counterRow.waitForExistence(timeout: 10), app.debugDescription)
+        revealLauncherRow(counterRow, in: app)
         // The blank trailing part of a launcher row is also a selection target.
         print("COUNTER-ROW frame=\(counterRow.frame) hittable=\(counterRow.isHittable)")
         let launcher = XCTAttachment(screenshot: app.screenshot())
@@ -848,11 +867,13 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertTrue(notes.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["miniapp.counter"].exists)
         XCTAssertTrue(app.buttons["miniapp.reminder"].exists)
+        revealLauncherRow(notes, in: app)
         notes.tap()
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons["ミニアプリ"].tap()
         let counter = app.buttons["miniapp.counter"]
         XCTAssertTrue(counter.waitForExistence(timeout: 5))
+        revealLauncherRow(counter, in: app)
         counter.tap()
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 5))
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/notes")))

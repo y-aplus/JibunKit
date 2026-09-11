@@ -14,6 +14,8 @@ CI 34537802126、source `aeeadc9d05a205d2affcbe935c05153eb435c5e8`はD11のnativ
 
 初回修正run 34542201985（source `b6e7ac7`）は共有159試験とnative build/IPAは成功したが、Records詳細から一覧へ戻りCounter行をtapした後も一覧が残り、counter.value取得で失敗した。詳細URLへは未到達。行のLabelを全幅の明示contentShapeにし、右側の余白からの選択と遷移完了待ちを回帰へ追加した。次回は行frame/hittableとタップ直前のスクリーンショットを記録する。現時点で失敗原因や修正成功は未確定。
 
+再試行34543883790（source `b78459d`）も同じ選択で失敗したが、原因を示す画面を取得できた。`records-return-launcher`（exported `418D5424-E6F0-494D-81C4-7E947848F1FD.png`）でCounter行は下部検索バーに覆われている。行frameは `(16,796,370,52.33)`、`isHittable=true`だった。tap後のaccessibility treeには検索欄のKeyboard FocusedとKeyboardがあり、Counterではなく検索欄を押したことが確認できる。全幅contentShapeの追加を撤回し、テストで行全体を検索バーとnavigation barの間へスクロールしてからtapする。待ち時間の延長では回避できない座標の重なりであり、Records詳細URLの修正は引き続き未検証。
+
 ## 通知action: 未解決
 
 `testNativeNotificationRequestPayloadsReachOnlyTheirOwners`のnotification cardは見つかったが、左swipe後のViewボタンを検出できなかった（611行）。そのためこのrunはnative action callbackの成功証拠ではない。OS画面操作と通知配置の証拠から追加調査する。D11のcallback処理との因果関係は未確認。

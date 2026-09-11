@@ -11,6 +11,20 @@ final class GeneratedFeatureUITests: XCTestCase {
         verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature()
     }
 
+    func testNativeCustomActionRemainsUsableAfterPriorNotificationInteractions() {
+        continueAfterFailure = false
+        // Reproduce the ordering from the failing full-suite run without relying
+        // on XCTest discovery order: custom action, foreground cleanup, then the
+        // same custom action again.
+        verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature(
+            attachmentPrefix: "custom-action-first"
+        )
+        verifyForegroundNotificationsConsultOnlyTheirOwner()
+        verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature(
+            attachmentPrefix: "custom-action-second"
+        )
+    }
+
     func testSceneIdleRequestSuspendsResumesAndPreservesOtherOwner() {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
@@ -569,7 +583,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("removed")
     }
 
-    private func verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature() {
+    private func verifyNativeCustomActionReachesOwnerWithoutReplacingVisibleFeature(
+        attachmentPrefix: String = "custom-action"
+    ) {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
@@ -594,7 +610,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             .containing(.staticText, identifier: "Action-lifecycle-a").firstMatch
         let visible = card.waitForExistence(timeout: 20)
         let evidence = XCTAttachment(screenshot: springboard.screenshot())
-        evidence.name = "custom-action-notification-center"
+        evidence.name = "\(attachmentPrefix)-notification-center"
         evidence.lifetime = .keepAlways
         add(evidence)
         guard visible else {
@@ -605,7 +621,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         let view = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["View", "表示"])).firstMatch
         guard view.waitForExistence(timeout: 5) else {
             let evidence = XCTAttachment(screenshot: springboard.screenshot())
-            evidence.name = "custom-action-swiped"
+            evidence.name = "\(attachmentPrefix)-swiped"
             evidence.lifetime = .keepAlways
             add(evidence)
             XCTFail("Notification View action unavailable: \(springboard.debugDescription)")
@@ -613,7 +629,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         }
         view.tap()
         let expanded = XCTAttachment(screenshot: springboard.screenshot())
-        expanded.name = "custom-action-expanded"
+        expanded.name = "\(attachmentPrefix)-expanded"
         expanded.lifetime = .keepAlways
         add(expanded)
         let action = springboard.buttons["Action"].firstMatch

@@ -34,3 +34,7 @@ The generated-host integration needs these mechanical additions:
 ## Host integration under verification
 
 The parent integration branch calls every hook from the existing AppDelegate launch registration block and reports failures as Feature launch registration errors. The fixture is copied only into the temporary generated host and its two definitions are placed at the top of the launcher, so the test does not depend on off-screen list rows. Each hook additionally requires that no probe root has yet been constructed; revisiting A after B must retain the same count. Normal production registration still contains only the existing Feature definitions. Native generated-host and normal host regression results are pending CI.
+
+## CI evidence
+
+[34553408736](https://github.com/y-aplus/JibunKit/actions/runs/34553408736), source `a18634d7953fb85014f31a1a28f860c3e6b9e9d3`, passed. The two-Feature launch test passed in 22.928 seconds: both hooks ran before a probe root was constructed, and A remained at one after visiting B and returning. Shared tests: 179 executed, two documented Keychain entitlement skips, zero failures. Native Feature generation, generated host build, normal app/Widget/IPA, standalone Counter, and normal search/open regression (41.874 seconds) passed. Records tests retain the known Simulator Quick Look expected failure. This verifies the generic host launch boundary, not actual BackgroundTasks scheduling or background URLSession OS relaunch delivery.

@@ -1,0 +1,25 @@
+# Package別App Shortcuts Providerの合成
+
+状態: native比較fixtureを追加、CI未検証。製品への新しい制約や独自generatorは追加しない。
+
+34540791430では二PackageのIntentを一つのhost AppShortcutsProviderから参照できた。一方、FeatureがProviderを所有したまま二つを統合できるかは未検証だった。
+
+## 比較する構成
+
+既存IntentFeatureA/Bを変更せず、それぞれのPackageにShortcuts専用productを追加する。各productは既存Intentを参照する一つのAppShortcutsProviderと、既存IntentPackageをincludedPackagesへ含むAppIntentsPackageを公開する。
+
+- OwnedShortcutsA/B: 対応する一方のPackageを含む単独app。
+- OwnedShortcutsCombined: 二つのPackageを含むapp。host側にはAppShortcutsProviderやAppShortcutのコピーを置かない。
+- 既存StandaloneA/B/Combined: Intent metadataとhost Provider経路の回帰。
+
+TuistとXcode標準のmetadata抽出を使用する。app直下のMetadata.appintentsを読み、単独時のShortcutが一件ずつ存在し、統合後の二件がactionIdentifierを含めそのまま残ることを確認する。embedded bundleのmetadataを集めただけでhost登録成功と誤認しない。provider名とShortcut本体も証拠へ記録する。
+
+## 判定と限界
+
+native buildが複数Providerを拒否する、片方を落とす、metadataを変える場合はその結果を記録し、hostで標準APIを組み立てる補完経路を次に検証する。ビルド成功だけでOS上のShortcuts/Siri実行や表示まで完了とはしない。既存Intentのperform()所有Store試験は継続するが、ProviderのOS発見とは別の証拠である。
+
+[Apple App Shortcuts](https://developer.apple.com/documentation/appintents/app-shortcuts)はProviderをSwift Package/libraryに定義する経路を説明するが、複数PackageのProvider合成が維持されるかは今回のnative比較対象である。
+
+## 結果
+
+CI待ち。

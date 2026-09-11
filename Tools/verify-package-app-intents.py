@@ -41,7 +41,9 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     run(["tuist", "generate", "--no-open"], root)
     derived = root / "DerivedBuild"
     results = {}
-    for scheme in ["StandaloneA", "StandaloneB", "Combined"]:
+    schemes = ["StandaloneA", "StandaloneB", "Combined",
+               "OwnedShortcutsA", "OwnedShortcutsB", "OwnedShortcutsCombined"]
+    for scheme in schemes:
         run(["xcodebuild", "build", "-workspace", root / "PackageIntents.xcworkspace",
              "-scheme", scheme, "-configuration", "Release", "-destination", "generic/platform=iOS",
              "-derivedDataPath", derived, "CODE_SIGNING_ALLOWED=NO"], root)
@@ -66,6 +68,35 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
         assert key not in other, f"Foreign package action leaked into independent {owner} baseline"
     assert len(a) == 1 and len(b) == 1 and len(combined) == 2, (a.keys(), b.keys(), combined.keys())
     print("Native package App Intents metadata: independent A/B match combined actions and both App Shortcuts", flush=True)
+
+    # Inspect the app-level output specifically. Combining metadata from all
+    # embedded bundles could falsely hide missing host shortcut registration.
+    owned = {}
+    for scheme in schemes[3:]:
+        path = derived / f"Build/Products/Release-iphoneos/{scheme}.app/Metadata.appintents/extract.actionsdata"
+        assert path.is_file(), f"Missing app-level shortcut metadata: {path}"
+        data = json.loads(path.read_bytes())
+        owned[scheme] = data
+        print(f"Package shortcut provider {scheme}: provider={data.get('autoShortcutProviderMangledName')} "
+              f"shortcuts={data.get('autoShortcuts', [])}", flush=True)
+
+    merged = owned["OwnedShortcutsCombined"]
+    expected_shortcuts = {}
+    for owner in ["A", "B"]:
+        standalone = owned[f"OwnedShortcuts{owner}"]
+        shortcuts = standalone.get("autoShortcuts", [])
+        assert len(shortcuts) == 1, (owner, shortcuts)
+        shortcut = shortcuts[0]
+        key = shortcut["actionIdentifier"]
+        assert key not in expected_shortcuts, f"Package shortcut identity collision: {key}"
+        expected_shortcuts[key] = shortcut
+        assert standalone["actions"][key]["fullyQualifiedTypeName"] == f"IntentFeature{owner}.Feature{owner}AddValueIntent"
+        assert merged["actions"][key]["fullyQualifiedTypeName"] == standalone["actions"][key]["fullyQualifiedTypeName"]
+    actual_shortcuts = merged.get("autoShortcuts", [])
+    assert len(actual_shortcuts) == 2, actual_shortcuts
+    assert {item["actionIdentifier"]: item for item in actual_shortcuts} == expected_shortcuts, \
+        "Package-owned shortcut metadata differs between independent and combined apps"
+    print("Package-owned App Shortcuts: both native app-level definitions survive combined inclusion", flush=True)
 
     result_bundle = evidence / "IntentExecution.xcresult"
     command = ["xcodebuild", "test", "-workspace", root / "PackageIntents.xcworkspace",

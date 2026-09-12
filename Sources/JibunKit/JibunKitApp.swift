@@ -8,9 +8,7 @@ struct JibunKitApp: App {
     @UIApplicationDelegateAdaptor(NotificationAppDelegate.self)
     private var notificationAppDelegate
     @Environment(\.scenePhase) private var scenePhase
-    @State private var lifecycle = MiniAppLifecycleDispatcher(
-        handlers: MiniAppRegistry.all.compactMap(\.onHostPhaseChange)
-    )
+    @State private var lifecycle = MiniAppRegistry.makeLifecycleDispatcher()
 
     var body: some Scene {
         WindowGroup {
@@ -31,13 +29,7 @@ struct JibunKitApp: App {
 private struct MiniAppSceneRoot: View {
     @State private var navigation = AppNavigation()
     @State private var registration: UUID?
-    @State private var activity = MiniAppSceneActivityDispatcher(
-        handlers: MiniAppRegistry.all.compactMap { definition in
-            definition.onSceneActivityChange.map {
-                MiniAppSceneActivityDispatcher.Registration(id: definition.id, handler: $0)
-            }
-        }
-    )
+    @State private var activity = MiniAppRegistry.makeSceneActivityDispatcher()
     @Environment(\.scenePhase) private var scenePhase
 
     private var activityPhase: MiniAppSceneActivity.Phase {
@@ -50,6 +42,7 @@ private struct MiniAppSceneRoot: View {
 
     var body: some View {
         MiniAppListScreen(navigation: navigation)
+            .environment(\.miniAppConsentStore, MiniAppRegistry.consents)
             // SwiftUI delivers this URL to a particular scene; keep that target.
             .onOpenURL { navigation.openURL($0) }
             .onContinueUserActivity(CSSearchableItemActionType) { userActivity in

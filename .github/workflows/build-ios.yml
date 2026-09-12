@@ -369,6 +369,12 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
+          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              shutil.copyfile('Tests/TemplateIntegration/P0BPresentationProbe.swift', 'Sources/JibunKit/P0BPresentationProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/P0BPresentationUITests.swift', 'UITests/P0BPresentationUITests.swift')
+          if 'P0BManagementFailureUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureProbe.swift', 'Sources/JibunKit/P0BManagementFailureProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureUITests.swift', 'UITests/P0BManagementFailureUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsUITests.swift', 'UITests/P0ARecordsUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ASQLiteProbe.swift', 'Sources/JibunKit/P0ASQLiteProbe.swift')
@@ -493,6 +499,12 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
+          if 'P0BManagementFailureUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BManagementFailureProbe.definition,'))
+          # Keep the focused presentation pair visible in both the launcher and
+          # switch menu while retaining every other coexistence registration.
+          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
           python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
           tuist generate --no-open

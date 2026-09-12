@@ -1,6 +1,8 @@
 #if os(iOS)
 import AppIntents
+import Foundation
 import CounterFeature
+import JibunKitCore
 
 struct AddCounterValueIntent: AppIntent {
     static let title: LocalizedStringResource = "カウンターに追加"
@@ -20,9 +22,20 @@ struct AddCounterValueIntent: AppIntent {
         self.amount = amount
     }
 
+    @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<Int> {
-        let updatedValue = try await CounterStore.shared.add(amount)
+        // Initialize persisted host admission even when Shortcuts cold-launches
+        // the app without constructing a Feature screen.
+        guard MiniAppRegistry.management.isEnabled(.counter) else { throw CounterUnavailable() }
+        let amount = amount
+        let updatedValue = try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .counter) {
+            try await CounterStore.shared.add(amount)
+        }
         return .result(value: updatedValue)
     }
+}
+
+private struct CounterUnavailable: LocalizedError {
+    var errorDescription: String? { "カウンターは無効化または削除されています。JibunKitの管理画面で再有効化してください。" }
 }
 #endif

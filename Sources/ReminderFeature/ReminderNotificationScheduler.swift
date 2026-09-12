@@ -8,6 +8,9 @@ public enum ReminderScheduleResult {
 }
 
 public struct ReminderNotificationScheduler: Sendable {
+    public static let permission = MiniAppPermissionDeclaration(
+        id: "notifications", title: "通知", purpose: "保存したメッセージを指定時刻に通知します。",
+        deniedBehavior: "メッセージの保存と閲覧は引き続き利用できます。")
     private let context: MiniAppContext
 
     public init(context: MiniAppContext) {
@@ -17,6 +20,7 @@ public struct ReminderNotificationScheduler: Sendable {
     public func schedule(message: String) async throws -> ReminderScheduleResult {
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
+        try Task.checkCancellation()
 
         switch settings.authorizationStatus {
         case .notDetermined:
@@ -41,6 +45,7 @@ public struct ReminderNotificationScheduler: Sendable {
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
         )
+        try Task.checkCancellation()
         try await center.add(request)
         return .scheduled
     }

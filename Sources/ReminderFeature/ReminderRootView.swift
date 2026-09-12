@@ -5,12 +5,17 @@ import SwiftUI
 public struct ReminderRootView: View {
     private let store: ReminderStore
     private let scheduler: ReminderNotificationScheduler
+    private let owner: MiniAppID
+    @Environment(\.miniAppConsentStore) private var consents
+    @Environment(\.miniAppLifetime) private var lifetime
 
     @State private var message = ""
     @State private var statusMessage: String?
     @State private var isError = false
+    @State private var requestingConsent = false
 
     public init(context: MiniAppContext) {
+        owner = context.id
         store = ReminderStore(context: context)
         scheduler = ReminderNotificationScheduler(context: context)
     }
@@ -23,14 +28,16 @@ public struct ReminderRootView: View {
 
             Section {
                 Button("保存") {
-                    Task {
-                        await save()
-                    }
+                    runOwned { await save() }
                 }
 
                 Button("10秒後に通知") {
-                    Task {
-                        await scheduleNotification()
+                    switch consents?.consent(for: owner, permissionID: ReminderNotificationScheduler.permission.id) {
+                    case .notDetermined?: requestingConsent = true
+                    case .denied?:
+                        statusMessage = "リマインダーでの通知利用を拒否しています。ミニアプリの管理で変更できます。"
+                        isError = true
+                    default: runOwned { await scheduleNotification() }
                     }
                 }
                 .buttonStyle(.borderedProminent)
@@ -46,6 +53,28 @@ public struct ReminderRootView: View {
         .navigationTitle("リマインダー")
         .task {
             await load()
+        }
+        .alert("リマインダーが通知を利用します", isPresented: $requestingConsent) {
+            Button("許可") {
+                consents?.setConsent(.allowed, for: owner, permissionID: ReminderNotificationScheduler.permission.id)
+                runOwned { await scheduleNotification() }
+            }
+            Button("拒否", role: .cancel) {
+                consents?.setConsent(.denied, for: owner, permissionID: ReminderNotificationScheduler.permission.id)
+            }
+        } message: {
+            Text(ReminderNotificationScheduler.permission.purpose + "\n拒否した場合: " + ReminderNotificationScheduler.permission.deniedBehavior)
+        }
+    }
+
+    @MainActor
+    private func runOwned(_ operation: @escaping @MainActor @Sendable () async -> Void) {
+        if let lifetime {
+            guard lifetime.isStartAllowed, let runtime = lifetime.runtime else { return }
+            do { try runtime.start { await operation() } }
+            catch { statusMessage = "このアプリは終了しています"; isError = true }
+        } else {
+            Task { @MainActor in await operation() }
         }
     }
 

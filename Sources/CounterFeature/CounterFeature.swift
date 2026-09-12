@@ -138,6 +138,24 @@ public actor CounterStore {
         })
     }
 
+    /// Called only after the host has stopped and exclusively reserved this owner.
+    public nonisolated var removalProvider: MiniAppRemovalProvider {
+        MiniAppRemovalProvider(
+            id: miniAppID,
+            dataDescription: "保存したカウンター値",
+            removeData: { try await self.removeOwnedData() })
+    }
+
+    private func removeOwnedData() throws {
+        let defaults = try configuredDefaults()
+        MiniAppStorage.withExclusiveAccess {
+            defaults.removeObject(forKey: valueKey)
+        }
+        #if os(iOS)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
+    }
+
     private func restoreBackup(_ state: BackupState) throws {
         let defaults = try configuredDefaults()
         MiniAppStorage.withExclusiveAccess {

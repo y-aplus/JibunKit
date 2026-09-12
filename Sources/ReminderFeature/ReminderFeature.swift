@@ -106,6 +106,22 @@ public actor ReminderStore {
         })
     }
 
+    /// Notification/category cleanup belongs to the host management operation.
+    /// This callback removes only the Feature-owned saved message.
+    public nonisolated var removalProvider: MiniAppRemovalProvider {
+        MiniAppRemovalProvider(
+            id: miniAppID,
+            dataDescription: "保存したリマインダーメッセージ",
+            removeData: { try await self.removeOwnedData() })
+    }
+
+    private func removeOwnedData() throws {
+        let defaults = try configuredDefaults()
+        MiniAppStorage.withExclusiveAccess {
+            defaults.removeObject(forKey: messageKey)
+        }
+    }
+
     private func restoreBackup(_ state: BackupState) throws {
         let defaults = try configuredDefaults()
         MiniAppStorage.withExclusiveAccess {

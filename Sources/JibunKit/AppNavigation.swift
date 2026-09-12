@@ -10,6 +10,8 @@ import OSLog
 final class AppNavigation {
     private(set) var activeID: MiniAppID?
     private(set) var stackID = UUID()
+    private var selectionTask: Task<Void, Never>?
+    private var pendingOwner: MiniAppID?
     private var paths: [MiniAppID: NavigationPath] = [:]
 
     // Values belong to a Feature within this scene. Switching changes the owner
@@ -32,8 +34,27 @@ final class AppNavigation {
     }
 
     private func select(_ owner: MiniAppID?) {
+        pendingOwner = owner
+        guard selectionTask == nil else { return }
         guard activeID != owner else { return }
-        activeID = owner
+        if let previous = MiniAppRegistry.all.first(where: { $0.id == activeID })?.presentations,
+           previous.hasPendingPresentations {
+            // The old root must stay mounted while its native dismissal is
+            // acknowledged. Repeated navigation requests keep the latest owner.
+            selectionTask = Task { @MainActor in
+                await previous.dismissForNavigation()
+                let next = pendingOwner
+                commitSelection(next)
+                selectionTask = nil
+            }
+        } else {
+            commitSelection(owner)
+        }
+    }
+
+    private func commitSelection(_ owner: MiniAppID?) {
+        if let old = activeID, !MiniAppRegistry.management.isEnabled(old) { paths.removeValue(forKey: old) }
+        activeID = owner.flatMap { MiniAppRegistry.management.isEnabled($0) ? $0 : nil }
         stackID = UUID()
     }
 
@@ -66,7 +87,7 @@ final class AppNavigation {
             }
             return
         }
-        let registrations = MiniAppRegistry.all.compactMap { definition in
+        let registrations = MiniAppRegistry.enabled.compactMap { definition in
             definition.resolveIncomingURL.map {
                 MiniAppURLRouter.Registration(id: definition.id, resolve: $0)
             }
@@ -82,6 +103,7 @@ final class AppNavigation {
     }
 
     func open(_ route: MiniAppRoute) {
+        guard MiniAppRegistry.management.isEnabled(route.id) else { return }
         if let destination = route.destination {
             guard let next = MiniAppRegistry.definition(for: route.id)?.navigationPath(for: destination) else { return }
             paths[route.id] = next
@@ -114,6 +136,11 @@ final class AppNavigation {
             return
         }
         open(miniAppID)
+    }
+
+    func discardUnavailableOwners() {
+        paths = paths.filter { $0.key == activeID || MiniAppRegistry.management.isEnabled($0.key) }
+        if let activeID, !MiniAppRegistry.management.isEnabled(activeID) { showList() }
     }
 }
 

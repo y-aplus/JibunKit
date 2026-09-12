@@ -12,7 +12,8 @@ public enum CounterMiniApp {
         title: "カウンター",
         systemImage: "number",
         backup: CounterStore.shared.backupProvider,
-        lifetime: lifetime
+        lifetime: lifetime,
+        removal: CounterStore.shared.removalProvider
     ) { context in
         CounterRootView(context: context)
     }

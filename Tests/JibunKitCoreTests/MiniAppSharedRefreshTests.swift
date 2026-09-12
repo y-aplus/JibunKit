@@ -202,7 +202,7 @@ final class MiniAppSharedRefreshTests: XCTestCase {
         XCTAssertEqual(restored.refreshes(for: context("a")).pendingRequests.map(\.generation), [receipt.generation])
     }
 
-    func testExpirationBeforeHandlerSetupAndFailedWorkRetryKeepSameGeneration() throws {
+    func testExpirationBeforeCleanupHandlerSetupAndFailedWorkRetryKeepSameGeneration() throws {
         let journal = RefreshJournalSpy()
         let scheduler = RefreshSchedulerSpy()
         let center = try MiniAppSharedRefreshCenter(identifier: "shared", journal: journal, scheduler: scheduler)
@@ -322,9 +322,12 @@ private final class RefreshSchedulerSpy: MiniAppBackgroundTaskScheduling {
     }
     func cancel(identifier: String) { cancellations.append(identifier); pending.removeValue(forKey: identifier) }
     func launch(_ identifier: String) -> RefreshNativeSpy {
-        pending.removeValue(forKey: identifier)
         let native = RefreshNativeSpy()
-        handlers[identifier]?(native)
+        guard pending.removeValue(forKey: identifier) != nil, let handler = handlers[identifier] else {
+            XCTFail("Native launch must consume a submitted request for a registered identifier: \(identifier)")
+            return native
+        }
+        handler(native)
         return native
     }
 }

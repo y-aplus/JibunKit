@@ -4,6 +4,8 @@
 One CI step tests a corrected connection and each independently broken source;
 no Xcode build or runtime registration success is claimed by this experiment.
 """
+import argparse
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -27,6 +29,11 @@ let project = Project(name: "ConnectionCheck",
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, help="New directory for native diagnostic evidence")
+    args = parser.parse_args()
+    if args.output:
+        args.output.mkdir(parents=True, exist_ok=False)
     checker = Path(__file__).with_name("check-feature-connection.py")
     with tempfile.TemporaryDirectory(prefix="jibunkit-connection-") as directory:
         root = Path(directory)
@@ -44,6 +51,17 @@ def main():
                                      "--package", "Modules/Notes", "--product", "NotesFeature"],
                                     capture_output=True, text=True, encoding="utf-8")
             output = result.stdout + result.stderr
+            if args.output:
+                evidence = args.output / label.replace(" ", "-")
+                evidence.mkdir()
+                (evidence / "Project.swift").write_text(project, encoding="utf-8")
+                (evidence / "Package.swift").write_text(package, encoding="utf-8")
+                (evidence / "stdout.txt").write_text(result.stdout, encoding="utf-8")
+                (evidence / "stderr.txt").write_text(result.stderr, encoding="utf-8")
+                (evidence / "result.json").write_text(json.dumps({
+                    "returncode": result.returncode, "expected_diagnostic": expected,
+                    "project_path": str(root), "package_path": str(root / "Modules/Notes"),
+                }, indent=2) + "\n", encoding="utf-8")
             if expected is None:
                 valid = result.returncode == 0 and "Declared connection passed" in output
             else:

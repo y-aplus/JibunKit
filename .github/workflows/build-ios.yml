@@ -317,7 +317,7 @@ jobs:
           args=()
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
           python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
-          python3 Tools/verify-feature-connection.py
+          python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             python3 Tools/verify-privacy-manifest-ownership.py
@@ -471,6 +471,9 @@ jobs:
               shutil.copyfile('Tests/TemplateIntegration/P0COnboardingProbe.swift', 'Sources/JibunKit/P0COnboardingProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0COnboardingUITests.swift', 'UITests/P0COnboardingUITests.swift')
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0COnboardingProbe.definition,'))
+              registry_check = '        precondition(\n            Set(miniApps.map(\\.id)).count == miniApps.count,'
+              assert p.read_text().count(registry_check) == 1, 'Expected exactly one Registry validation'
+              p.write_text(p.read_text().replace(registry_check, '        let miniApps = P0COnboardingProbe.registrations(miniApps)\n' + registry_check))
           if 'P0ASQLiteUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ASQLiteProbe.definition,'))
           if 'P0ARecordsUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
@@ -939,6 +942,7 @@ jobs:
           name: Feature-build-requirement-diagnostics
           path: |
             ${{ runner.temp }}/feature-build-requirements.log
+            ${{ runner.temp }}/feature-connection/
             ${{ runner.temp }}/package-compatible-update/result.json
             ${{ runner.temp }}/package-compatible-update/logs/
             ${{ runner.temp }}/package-compatible-update/store/

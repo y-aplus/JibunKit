@@ -6,6 +6,16 @@ model in its root view; the host does not need one process-wide modal router.
 The existing per-Feature `NavigationPath` remains the source of truth for pushed
 destinations.
 
+The host retains each Feature's navigation path separately within a scene. An
+ordinary switch resumes that path; an explicit root URL or the host's reset
+command clears only the addressed path. Switching can recreate the root View,
+so a View-local `@State` is not a promise that an unsaved draft survives. Keep
+drafts, selection, and other state that must survive in a Feature-owned model
+retained outside that View, then bind it from the recreated root. The presentation
+fixture demonstrates this with independent A/B drafts. Runtime stop does not
+automatically erase such models; the Feature decides which state to reset on
+shutdown/reconfiguration, and its removal provider deletes owned saved data.
+
 Use one `MiniAppPresentationOwner` per Feature and connect it while configuring
 each new `MiniAppRuntime` generation:
 

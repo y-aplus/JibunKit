@@ -106,7 +106,10 @@ public final class MiniAppPresentationOwner {
         }
         isDismissingAll = true
         acceptsPresentations = false
-        let owned = entries.reversed().map(\.handle)
+        var owned = entries.reversed().map(\.handle)
+        // Native UI can acknowledge didEnd before its registered callback has
+        // finished additional teardown. Join those in-flight callbacks too.
+        owned += dismissalTasks.keys.filter { !owned.contains($0) }
         for handle in owned {
             await end(handle)
         }

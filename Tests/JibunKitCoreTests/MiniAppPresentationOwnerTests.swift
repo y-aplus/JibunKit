@@ -99,6 +99,9 @@ final class MiniAppPresentationOwnerTests: XCTestCase, @unchecked Sendable {
 
         let individual = Task { await owner.end(handle) }
         await fulfillment(of: [entered], timeout: 5)
+        owner.didEnd(handle)
+        XCTAssertEqual(owner.activePresentationCount, 0)
+        // UI has ended, but the registered callback is still releasing resources.
         let all = Task {
             allInvoked.fulfill()
             await owner.dismissAll()

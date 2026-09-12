@@ -18,6 +18,37 @@ final class MiniAppManagementUITests: XCTestCase {
                        app.debugDescription, file: file, line: line)
     }
 
+    func testConsentRefusalPreservesOrdinaryReminderEditing() {
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        tap(app.buttons["management.open"])
+        tap(app.buttons["management.consent.reminder.notifications"])
+        tap(app.buttons["未確認"])
+        tap(app.buttons["閉じる"])
+        tap(app.buttons["miniapp.reminder"])
+        tap(app.buttons["10秒後に通知"])
+        let consent = app.alerts["リマインダーが通知を利用します"]
+        XCTAssertTrue(consent.waitForExistence(timeout: 5))
+        XCTAssertTrue(consent.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "保存と閲覧")).firstMatch.exists)
+        tap(consent.buttons["拒否"])
+        tap(app.buttons["10秒後に通知"])
+        XCTAssertTrue(app.staticTexts["リマインダーでの通知利用を拒否しています。ミニアプリの管理で変更できます。"].waitForExistence(timeout: 5))
+        let field = app.textFields["例: 水を飲む"]
+        tap(field)
+        let old = field.value as? String ?? ""
+        if !old.isEmpty && old != field.placeholderValue {
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count))
+        }
+        field.typeText("Allowed without notifications")
+        tap(app.buttons["保存"])
+        XCTAssertTrue(app.staticTexts["保存しました"].waitForExistence(timeout: 5))
+        tap(app.buttons["miniapp.back-to-list"])
+        tap(app.buttons["management.open"])
+        tap(app.buttons["management.consent.reminder.notifications"])
+        tap(app.buttons["許可"])
+        tap(app.buttons["閉じる"])
+    }
+
     func testDisableRestartCancelDeleteAndReregisterPreserveReminder() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

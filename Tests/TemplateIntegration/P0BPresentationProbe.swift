@@ -29,6 +29,7 @@ private final class PresentationProbeState {
     var showsCover = false
     var showsUIKit = false
     var lastEvent = "ready"
+    var draft = ""
     private var handles: [MiniAppPresentationOwner.Kind: MiniAppPresentationOwner.Handle] = [:]
     private var completions: [MiniAppPresentationOwner.Kind: CheckedContinuation<Void, Never>] = [:]
 
@@ -50,6 +51,7 @@ private final class PresentationProbeState {
     }
 
     func didEnd(_ kind: MiniAppPresentationOwner.Kind) {
+        setPresented(false, kind: kind)
         if let handle = handles.removeValue(forKey: kind) { presentations?.didEnd(handle) }
         completions.removeValue(forKey: kind)?.resume()
         lastEvent = "ended \(name(kind))"
@@ -119,6 +121,9 @@ private struct PresentationProbeRoot: View {
         VStack(spacing: 14) {
             Text(owner.id.rawValue).accessibilityIdentifier("presentation.owner")
             Text(state.lastEvent).accessibilityIdentifier("presentation.status")
+            TextField("Draft", text: $state.draft)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("presentation.draft")
             Button("Show sheet") { state.show(.sheet) }.accessibilityIdentifier("presentation.show.sheet")
             Button("Show full screen") { state.show(.fullScreenCover) }
                 .accessibilityIdentifier("presentation.show.cover")

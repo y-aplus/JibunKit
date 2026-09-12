@@ -367,6 +367,9 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
+          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              shutil.copyfile('Tests/TemplateIntegration/P0BPresentationProbe.swift', 'Sources/JibunKit/P0BPresentationProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/P0BPresentationUITests.swift', 'UITests/P0BPresentationUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsUITests.swift', 'UITests/P0ARecordsUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ASQLiteProbe.swift', 'Sources/JibunKit/P0ASQLiteProbe.swift')
@@ -465,6 +468,8 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ARecordsProbe.definition,'))
           if 'P0ALifetimeUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ALifetimeProbe.definitions[0],\n        P0ALifetimeProbe.definitions[1],'))
+          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           if include_keychain_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           if include_spotlight_probe:

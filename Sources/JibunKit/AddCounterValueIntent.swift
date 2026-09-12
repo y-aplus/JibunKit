@@ -1,5 +1,6 @@
 #if os(iOS)
 import AppIntents
+import Foundation
 import CounterFeature
 import JibunKitCore
 

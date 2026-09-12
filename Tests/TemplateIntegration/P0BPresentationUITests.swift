@@ -7,6 +7,10 @@ final class P0BPresentationUITests: XCTestCase {
     func testFeatureOwnedPresentationsCancelAndExternalRouteKeepsCorrectOwner() throws {
         let app = launch()
         open("presentation-a", in: app)
+        let draft = app.textFields["presentation.draft"]
+        XCTAssertTrue(draft.waitForExistence(timeout: 5))
+        draft.tap()
+        draft.typeText("A draft")
 
         tap("presentation.show.sheet", in: app)
         tap("presentation.cancel.sheet", in: app)
@@ -26,11 +30,16 @@ final class P0BPresentationUITests: XCTestCase {
         expectOwner("presentation-b", in: app)
         switchTo("presentation-a", in: app)
         expectStatus("ended sheet", in: app)
+        XCTAssertEqual(draft.value as? String, "A draft")
     }
 
     func testStoppingAAndStartingNewGenerationKeepsBUsable() {
         let app = launch()
         open("presentation-b", in: app)
+        let draft = app.textFields["presentation.draft"]
+        XCTAssertTrue(draft.waitForExistence(timeout: 5))
+        draft.tap()
+        draft.typeText("B draft")
         tap("presentation.show.sheet", in: app)
         tap("presentation.cancel.sheet", in: app)
         expectStatus("ended sheet", in: app)
@@ -46,6 +55,7 @@ final class P0BPresentationUITests: XCTestCase {
 
         switchTo("presentation-b", in: app)
         expectStatus("ended sheet", in: app)
+        XCTAssertEqual(draft.value as? String, "B draft")
         tap("presentation.show.uikit", in: app)
         tap("presentation.cancel.uikit", in: app)
         expectStatus("ended uikit", in: app)

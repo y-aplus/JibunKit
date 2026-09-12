@@ -44,6 +44,8 @@ struct MiniAppManagementScreen: View {
                                     Text("許可").tag(MiniAppConsent.allowed)
                                     Text("拒否").tag(MiniAppConsent.denied)
                                 }
+                                .pickerStyle(.menu)
+                                .accessibilityIdentifier("management.consent.\(definition.id.rawValue).\(permission.id)")
                                 .disabled(!management.isEnabled(definition.id))
                             }
                         }

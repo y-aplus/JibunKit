@@ -83,25 +83,42 @@ final class P0BManagementFailureUITests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement) {
-        func visible() -> Bool {
-            guard element.exists, element.isHittable else { return false }
-            let frame = element.frame
-            let top = app.navigationBars.firstMatch.frame.maxY
-            let search = app.searchFields.firstMatch
-            let bottom = search.exists && search.isHittable ? search.frame.minY : app.frame.maxY - 30
-            return frame.minY > top && frame.maxY < bottom
-        }
-        if visible() { return }
         let managementList = app.collectionViews["management.list"]
-        let list = managementList.exists ? managementList : app.collectionViews.firstMatch
+        let inManagement = managementList.exists
+        let list = inManagement ? managementList : app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
+
+        func positionMaterializedElement() -> Bool {
+            guard element.exists else { return false }
+            for _ in 0..<6 {
+                guard element.exists else { return false }
+                let frame = element.frame
+                // The launcher's search field and navigation bar remain in
+                // the hierarchy behind the sheet; neither bounds this List.
+                let bar = inManagement ? app.navigationBars["ミニアプリの管理"] : app.navigationBars.firstMatch
+                let top = bar.frame.maxY + 4
+                let search = app.searchFields.firstMatch
+                let bottom = !inManagement && search.exists && search.isHittable
+                    ? search.frame.minY - 4 : list.frame.maxY - 30
+                if frame.height > 0 && frame.minY >= top && frame.maxY <= bottom { return true }
+                // Small directed movement avoids jumping past a short status
+                // row and then sweeping away from it all the way to the end.
+                let startY = frame.minY < top ? 0.40 : 0.75
+                let endY = frame.minY < top ? 0.70 : 0.40
+                list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: startY))
+                    .press(forDuration: 0.05, thenDragTo:
+                        list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: endY)))
+            }
+            return false
+        }
+        if positionMaterializedElement() { return }
         for _ in 0..<10 {
             list.swipeDown()
-            if visible() { return }
+            if positionMaterializedElement() { return }
         }
         for _ in 0..<24 {
             list.swipeUp()
-            if visible() { return }
+            if positionMaterializedElement() { return }
         }
         XCTFail("Could not reveal \(element.debugDescription)\n\(app.debugDescription)")
     }

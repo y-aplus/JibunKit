@@ -3,6 +3,10 @@ name: Build JibunKit IPA
 on:
   workflow_dispatch:
     inputs:
+      package_sdk_aliases_only:
+        description: Run only pure Swift SDK module-alias comparison without iOS or IPA builds
+        type: boolean
+        default: false
       simulator_tests:
         description: Run integration UI checks on an iOS simulator
         type: boolean
@@ -60,7 +64,40 @@ permissions:
   contents: read
 
 jobs:
+  package-sdk-aliases:
+    if: inputs.package_sdk_aliases_only
+    name: Native Swift SDK module aliases
+    runs-on: macos-26
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Select Xcode 26.6 Swift toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          swift --version
+      - name: Compare standalone and combined SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/verify-package-sdk-aliases.py --evidence-dir "$RUNNER_TEMP/PackageSDKAliases"
+      - name: Upload SDK alias diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Package-SDK-alias-diagnostics
+          path: |
+            ${{ runner.temp }}/PackageSDKAliases/*.log
+            ${{ runner.temp }}/PackageSDKAliases/summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
   build:
+    if: ${{ !inputs.package_sdk_aliases_only }}
     name: Xcode 26.6
     runs-on: macos-26
     timeout-minutes: 45

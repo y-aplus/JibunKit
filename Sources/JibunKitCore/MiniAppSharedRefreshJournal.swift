@@ -48,6 +48,13 @@ final class FileSharedRefreshJournal: MiniAppSharedRefreshJournaling {
         do {
             data = try Data(contentsOf: url)
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            // Some Foundation file errors also carry the original POSIX cause.
+            // A malformed path (e.g. ENOTDIR) is not an absent journal.
+            if let underlying = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError,
+               underlying.domain == NSPOSIXErrorDomain,
+               underlying.code != Int(POSIXErrorCode.ENOENT.rawValue) {
+                throw error
+            }
             return []
         }
         let envelope = try JSONDecoder().decode(Envelope.self, from: data)

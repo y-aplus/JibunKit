@@ -143,6 +143,29 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         let recovered = try await coordinator.withStoreAccess(for: a) { 3 }
         XCTAssertEqual(recovered, 3)
     }
+
+    @MainActor
+    func testSeparateDefaultsReaderSeesOnlyChangedOwnerStatus() async throws {
+        let suite = "MiniAppManagementTests.\(UUID().uuidString)"
+        let writer = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let reader = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { writer.removePersistentDomain(forName: suite) }
+        let a = MiniAppID("a"), b = MiniAppID("b")
+        var observations: [MiniAppManagement.Status] = []
+        let manager = MiniAppManagement(registrations: [.init(id: a), .init(id: b)],
+            defaults: writer, consents: .init(defaults: writer), coordinator: .init(),
+            onStatusChange: { id, status in
+                XCTAssertEqual(id, a)
+                XCTAssertEqual(MiniAppManagement.savedStatus(for: id, defaults: reader), status)
+                observations.append(status)
+            })
+        try await manager.disable(a)
+        XCTAssertEqual(MiniAppManagement.savedStatus(for: a, defaults: reader), .disabled)
+        XCTAssertEqual(MiniAppManagement.savedStatus(for: b, defaults: reader), .enabled)
+        try await manager.enable(a)
+        XCTAssertEqual(observations, [.disabling, .disabled, .enabled])
+        XCTAssertEqual(MiniAppManagement.savedStatus(for: a, defaults: reader), .enabled)
+    }
 }
 
 private actor ManagementData {

@@ -4,6 +4,7 @@ import JibunKitCore
 import ReminderIntegration
 import Foundation
 import CoreSpotlight
+import WidgetKit
 
 @MainActor
 enum MiniAppRegistry {
@@ -13,6 +14,9 @@ enum MiniAppRegistry {
     ])
 
     static let consents = MiniAppConsentStore(defaults: .standard)
+    // With no usable shared-group configuration, local management still works.
+    // The Widget independently reports unavailable storage in that configuration.
+    private static let managementDefaults = (try? MiniAppStorage.sharedDefaults()) ?? .standard
     static let management = MiniAppManagement(
         registrations: all.map { definition in
             MiniAppManagement.Registration(
@@ -28,7 +32,8 @@ enum MiniAppRegistry {
                     try MiniAppContext(id: definition.id).replaceNotificationCategories(with: definition.notificationCategories)
                 }
             )
-        }, defaults: .standard, consents: consents
+        }, defaults: managementDefaults, consents: consents,
+        onStatusChange: { _, _ in WidgetCenter.shared.reloadAllTimelines() }
     )
 
     static var enabled: [MiniAppDefinition] { all.filter { management.isEnabled($0.id) } }

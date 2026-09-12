@@ -10,6 +10,7 @@ import Observation
 #endif
 @MainActor
 public final class MiniAppManagement {
+    public nonisolated static let defaultStorageKey = "jibunkit.feature-management.v1"
     public enum Status: String, Sendable {
         case enabled, disabling, disabled, removing, removed
     }
@@ -58,6 +59,7 @@ public final class MiniAppManagement {
     private let coordinator: MiniAppRestoreCoordinator
     private let consents: MiniAppConsentStore
     private let registrations: [MiniAppID: Registration]
+    private let onStatusChange: @MainActor (MiniAppID, Status) -> Void
     private var statuses: [MiniAppID: Status] = [:]
     public private(set) var failures: [MiniAppID: Failure] = [:]
     public private(set) var stages: [MiniAppID: Stage] = [:]
@@ -66,7 +68,8 @@ public final class MiniAppManagement {
         registrations: [Registration], defaults: UserDefaults,
         consents: MiniAppConsentStore,
         coordinator: MiniAppRestoreCoordinator = .shared,
-        storageKey: String = "jibunkit.feature-management.v1"
+        storageKey: String = MiniAppManagement.defaultStorageKey,
+        onStatusChange: @escaping @MainActor (MiniAppID, Status) -> Void = { _, _ in }
     ) {
         precondition(Set(registrations.map(\.id)).count == registrations.count)
         self.registrations = Dictionary(uniqueKeysWithValues: registrations.map { ($0.id, $0) })
@@ -74,15 +77,9 @@ public final class MiniAppManagement {
         self.consents = consents
         self.coordinator = coordinator
         self.storageKey = storageKey
+        self.onStatusChange = onStatusChange
         for registration in registrations {
-            let key = storageKey + "." + registration.id.rawValue
-            let status: Status
-            if let saved = defaults.object(forKey: key) {
-                // Unknown/corrupt state cannot silently reactivate an owner.
-                status = (saved as? String).flatMap(Status.init(rawValue:)) ?? .disabling
-            } else {
-                status = .enabled
-            }
+            let status = Self.savedStatus(for: registration.id, defaults: defaults, storageKey: storageKey)
             statuses[registration.id] = status
             registration.lifetime?.setStartAllowed(status == .enabled)
             coordinator.setAccessAllowed(status == .enabled, for: registration.id)
@@ -92,6 +89,18 @@ public final class MiniAppManagement {
     public func status(for id: MiniAppID) -> Status? { statuses[id] }
     public func isEnabled(_ id: MiniAppID) -> Bool { statuses[id] == .enabled }
     public func canRemove(_ id: MiniAppID) -> Bool { registrations[id]?.removal != nil }
+
+    /// Read a point-in-time state from the same domain as the host, including
+    /// from a Widget process. This is not a cross-process operation reservation.
+    public nonisolated static func savedStatus(
+        for id: MiniAppID, defaults: UserDefaults,
+        storageKey: String = MiniAppManagement.defaultStorageKey
+    ) -> Status {
+        guard id.isValid else { return .disabling }
+        guard let saved = defaults.object(forKey: storageKey + "." + id.rawValue) else { return .enabled }
+        // Unknown/corrupt state cannot silently reactivate an owner.
+        return (saved as? String).flatMap(Status.init(rawValue:)) ?? .disabling
+    }
 
     public func disable(_ id: MiniAppID) async throws {
         guard statuses[id] != .removing && statuses[id] != .removed else {
@@ -173,5 +182,6 @@ public final class MiniAppManagement {
     private func persist(_ status: Status, for id: MiniAppID) {
         defaults.set(status.rawValue, forKey: storageKey + "." + id.rawValue)
         statuses[id] = status
+        onStatusChange(id, status)
     }
 }

@@ -1,6 +1,6 @@
 # Feature間のbackground refresh共有枠
 
-状態: 実装予定の契約。0.5.0には含まれず、D15の完了証拠ではない。
+状態: 実装とmacOS/iOSの結合試験を[34683036628で検証](verification/2026-09-12-shared-refresh.md)。0.5.0には含まれず、D15全体の完了証拠ではない。
 
 ## 失われる境界
 
@@ -14,7 +14,7 @@ pending上限はrefresh 1件/processing 10件。同じ未実行要求の再提�
 実行可能時刻の下限であり、期限や正確な起動時刻ではない。2026-09-11に仕様を再確認した。
 OS枠や実行時間を増やすことは保証せず、枠を共有したために要求が消える差分を補う。
 
-## 次の実装単位
+## 実装単位の契約
 
 既存のnative identifierを直接扱うAPIを暗黙に置換せず、明示的なhost共有refresh経路を追加する。
 最初の対象はapp refreshのみ。通信/給電条件が異なるprocessingを同じ一枠へ潰さない。
@@ -47,6 +47,31 @@ OS枠や実行時間を増やすことは保証せず、枠を共有したため
 共有経路を使うFeatureを明示的に接続する責任はhostにあり、全てのBGTaskScheduler利用を
 実行時にinterceptする機構は追加しない。
 
+## 接続と失敗時の扱い
+
+hostは許可済みのnative IDと専用journal URLで`MiniAppSharedRefreshCenter`を一つ作り、
+アプリ起動中は保持する。`BGTaskSchedulerPermittedIdentifiers`とbackground fetchの宣言・
+署名条件は通常のBackgroundTasksと同じ。Featureごとに`refreshes(for: context)`を渡し、
+`register(identifier:handler:)`で安定local IDのhandlerを登録する。全Featureの登録後に
+hostが`reconcile()`を呼ぶ。Featureの表示や初回submitをnative登録の契機にしない。
+
+`submit(identifier:earliestBeginDate:)`は保存失敗時にthrowし、受付を返さない。保存成功時は
+generationとOS提出結果を返す。結果の`rejected`は「保存済みだがOS受付に失敗」であり、
+`reconcile()`で再提出する。未登録ownerの保存要求数も結果に含め、未解決の要求は保持する。
+解除後にhandlerを差し替える場合も、登録を終えてからhostが再調停する。
+
+handlerには`MiniAppSharedRefreshExecution`が届く。`onExpiration`でcleanupを開始し、
+処理終了後に`complete(success:)`を呼ぶ。期限通知前にhandlerを設定できなかった場合も、
+`isExpired`を保持し、後から設定した期限handlerへ一度通知する。失敗した処理は同じ世代で
+retry可能な状態へ戻す。retryを止める場合はpendingを取り消す。処理を成功扱いにしても
+永続acknowledgementが失敗した場合は`acknowledgementFailed`を返し、native batchは失敗とする。
+この場合も再配送され得るため、Feature側の更新はgenerationを使って重複実行を扱う。
+
+journalは同一host processの一つのcenterが所有する。複数centerや別processのwriterを
+同じfileへ接続しない。JSONのschema/重複世代/同じpendingキーを検査し、未存在以外の
+読込み失敗を空として扱わない。書込みは検査・encode後のatomic置換で、複数processを
+またぐtransactionやOS受付との一括commitを保証するものではない。
+
 ## 一続きで必要な検証
 
 1. 容量1を強制するschedulerでA/Bを受理し、OS pendingは一つ、論理pendingは両方を保持。
@@ -63,3 +88,15 @@ OS枠や実行時間を増やすことは保証せず、枠を共有したため
 
 永続化・batch寿命・native接続を別々の完成品とは数えない。これらが接続されるまで共有枠の
 補完は未完。OSが許可しない起動を独自timerやprivate APIで代替しない。
+
+## 今回の検証経路
+
+Foundationの結合試験は、容量1のscheduler、保存失敗、二Featureのbatch cleanup、期限通知、
+解除、再入launch、実行中の新世代、unknown owner、実ファイルの再読込みを検証する。
+同じSwift XCTestを既存BackgroundTasks fixtureの独立unit-test targetでも実行する。
+`backgroundtasks_compile_only`はnative scheduler比較をbuildだけに制限するが、この注入schedulerの
+iOS unit testsは実行する。出力とxcresultを分け、全test methodの実行・合格を確認する。
+
+WindowsではSwift/Xcodeを実行していない。CIでは共有203試験（既存skip 2件）とiOSの新規16試験、
+通常IPA・Search回帰が成功した。注入schedulerの合格を実OSのpending受付・launch・期限配送の
+証拠にはしない。実機pending一枠の比較は残る。

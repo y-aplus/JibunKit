@@ -25,6 +25,16 @@ let project = Project(
             dependencies: [.package(product: "JibunKitCore")]
         ),
         .target(
+            name: "SharedRefreshTests",
+            destinations: .iOS,
+            product: .unitTests,
+            bundleId: "com.jibunkit.shared-refresh-tests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["SharedRefreshTests/*.swift"],
+            dependencies: [.package(product: "JibunKitCore")]
+        ),
+        .target(
             name: "BackgroundTasksNativeUITests",
             destinations: .iOS,
             product: .uiTests,
@@ -36,6 +46,12 @@ let project = Project(
         ),
     ],
     schemes: [
+        .scheme(
+            name: "SharedRefreshTests",
+            shared: true,
+            buildAction: .buildAction(targets: ["SharedRefreshTests"]),
+            testAction: .targets(["SharedRefreshTests"], configuration: .debug)
+        ),
         .scheme(
             name: "BackgroundTasksNative",
             shared: true,

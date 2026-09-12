@@ -468,8 +468,6 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ARecordsProbe.definition,'))
           if 'P0ALifetimeUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ALifetimeProbe.definitions[0],\n        P0ALifetimeProbe.definitions[1],'))
-          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
-              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           if include_keychain_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
           if include_spotlight_probe:
@@ -492,6 +490,10 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
+          # Keep the focused presentation pair visible in both the launcher and
+          # switch menu while retaining every other coexistence registration.
+          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \

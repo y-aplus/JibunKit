@@ -1,6 +1,6 @@
 # 基盤を更新する
 
-更新日: 2026-09-09
+更新日: 2026-09-12。公開版0.6.0と、その後のmainの区別は[現在状態](status.md)を参照。
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
@@ -15,7 +15,7 @@
 | Integration targetまたはホストの薄い接続ファイル | MiniAppDefinition、保存先・バックアップ・通知操作の接続を定義する |
 | `Sources/JibunKit/MiniAppRegistry.swift` | Featureの定義を`all`へ1件列挙する |
 
-通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。WidgetやApp Intentを追加する場合だけ、extension、entitlements、App Shortcuts、Actionsの検査対象を追加する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。
+通知を使う場合も、ホストの`NotificationAppDelegate`は増やさず、共通payloadから同じdestination mappingへ渡す。必要なOS連携に応じて、Widget/extension、App Shortcuts、[Featureのplist/entitlements宣言](guides/feature-build-requirements.md)と検証対象を追加する。background等の登録はMiniAppDefinitionの`onHostLaunch`へ接続する。詳しくは[ミニアプリの追加](mini-apps.md)を参照する。
 
 基盤側として扱うのは、`JibunKitCore`、root navigation、通知の受け取り口、共有ビルド設定、workflow、共通文書である。個人用の機能処理をこれらへ直接埋め込まない。
 

@@ -1,23 +1,25 @@
 # SideStoreで導入・更新する
 
-更新日: 2026-09-04
+更新日: 2026-09-12（公開版と検証sourceの整理。SideStore画面を再検証した日ではない）
 
-この手順は、JibunKit 0.1.0のbuild 1からbuild 2への上書きと署名更新を、iPhone 16e／iOS 26.6／SideStore 0.6.3と無料Appleアカウントで確認した。別の端末、OS、SideStore版、Appleアカウントまで同じ結果を保証するものではない。
+最新公開版は0.6.0 build 7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
+
+実機証拠はsourceごとに区別する。0.1.0 build 1→2の上書き・署名更新はiPhone 16e／iOS 26.6／SideStore 0.6.3で確認した[旧版の記録](verification/0.1.md)。2026-09-09にはRecords接続版`afbf4dc`で上書き・署名更新・Widget/Shortcuts/通知・選択復元を確認した[記録](verification/2026-09-09-v1-candidate.md)がある。後者の端末/OS/SideStore版は再報告されておらず、旧環境を転記して断定しない。
 
 SideStore自体の導入とpairing fileの準備は[SideStore公式の導入手順](https://docs.sidestore.io/docs/installation/install)に従う。JibunKitのインストール、更新、署名更新を行うときはLocalDevVPNを接続する。
 
 ## IPAを用意する
 
-実機用IPAは[ビルド手順](build.md)に従い、GitHub Actionsの`Build JibunKit IPA` workflowから取得する。成功したrunのartifact `JibunKit-ad-hoc`を展開すると`JibunKit.ipa`がある。
+公開版は[0.6.0のIPA直リンク](https://github.com/y-aplus/JibunKit/releases/download/0.6.0/JibunKit.ipa)から取得でき、外側のActions ZIPの展開は不要。個人Featureを組み込む場合は[ビルド手順](build.md)に従い、成功runのartifact `JibunKit-ad-hoc`内の`JibunKit.ipa`を取得する。
 
-WSLの`xtool dev build --ipa`で作るIPAには公式App Intentsメタデータがないため、Shortcutsを含む実機確認には使わない。Apple Account、パスワード、2FA、証明書、provisioning profileをActionsへ渡す必要はない。
+現在はTuist/Xcodeのnative App Intents metadataを含むIPAを使う。旧xtoolのIPA生成経路は廃止済み。Apple Account、パスワード、2FA、証明書、provisioning profileをActionsへ渡す必要はない。
 
 ## 初回導入
 
 1. iPhoneでLocalDevVPNを接続する。
 2. `JibunKit.ipa`をSideStoreで開き、同じAppleアカウントで署名・インストールする。
 3. JibunKitを開き、ミニアプリ一覧が表示されることを確認する。
-4. カウンター、Shortcuts、Widget、リマインダー通知を[検証記録](verification/0.1.md)のF1〜F5に沿って確認する。
+4. カウンターの保存・Shortcuts加算・Widget表示とリマインダー通知を確認する。バックアップ画面では必要なFeatureの書出し・読込み・復元対象選択を確認し、上書き復元は対象と確認内容を読んでから行う。
 
 SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`Info.plist`に`ALTAppGroups`が追加される。JibunKitは、論理ID`group.com.jibunkit.shared`またはその末尾にSideStoreのsuffixが付いた候補を1件だけ選ぶ。Team IDそのものは端末・アカウント固有情報なので、リポジトリや検証記録へ保存しない。
 
@@ -30,7 +32,7 @@ SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`
 - App Group: `group.com.jibunkit.shared`
 - 既存の保存キー: `counter.value`、`reminder.message`
 
-JibunKitのbuild 1からbuild 2へ上書きし、カウンター値、リマインダー文面、Widget、Shortcuts、通知を維持できることを確認済みである。
+旧0.1.0の実機記録ではbuild 1からbuild 2へ上書きし、カウンター値、リマインダー文面、Widget、Shortcuts、通知を維持できることを確認済みである。
 
 旧称のアプリとJibunKitはbundle IDとApp Groupが異なる別アプリである。旧アプリの保存値はJibunKitへ自動移行せず、JibunKitの更新確認にも旧アプリへの上書きを使わない。
 
@@ -44,7 +46,7 @@ JibunKitのbuild 1からbuild 2へ上書きし、カウンター値、リマイ�
 
 残り日数はアプリの有効期限を表し、その表示をタップすると対象アプリを手動更新できる。[SideStore公式手順](https://docs.sidestore.io/docs/installation/install)も同じ操作を案内している。
 
-JibunKitの署名更新後は、次を確認した。
+旧0.1.0の署名更新後には次を確認した。2026-09-09の追加結果と0.6.0の未実機確認は冒頭のsource別区分に従う。
 
 - カウンター値とリマインダー内容が残る。
 - Widgetが共有値を表示する。
@@ -59,7 +61,7 @@ JibunKitのIPAには本体1つとWidget extension 1つが入る。Widgetは別�
 
 ## 保証しない境界
 
-確認済みなのは、同じ端末・Appleアカウント・JibunKitの論理bundle IDで行う初回導入、上書き更新、署名更新である。次は別の移行として扱う。
+実機確認済みの範囲は冒頭に挙げたsourceで、同じ端末・Appleアカウント・JibunKitの論理bundle IDで行った操作である。すべての版の初回導入・上書き・署名更新を保証しない。次は別の移行として扱う。
 
 - AppleアカウントやTeamの変更。
 - bundle IDやApp Groupの変更。

@@ -71,7 +71,7 @@ JibunKitのapp/Widgetは`CFBundleAllowMixedLocalizations = true`を設定して�
 Widgetについてはビルド済み設定の確認までで、翻訳の描画・更新はこの検証に含まない。
 
 同名の純Swift SDK moduleが衝突する場合は、別Package identityであることを確認し、
-標準module aliasによる分離を検討できる。[接続条件と検証範囲](guides/package-sdk-module-aliases.md)を参照。
+標準module aliasによる分離を検討できる。[接続条件と検証範囲](guides/package-sdk-module-aliases.md)を参照。このSDK比較は0.6.0後のmainへの追加であり、iOSでは公開product名も分けるmanifest編集が必要。
 同一SDKの複数versionやOS singletonの隔離まで自動的に解決するものではない。
 
 ## ローカル通知も追加する
@@ -153,7 +153,7 @@ App Groupのコンテナは[Appleの公式API](https://developer.apple.com/docum
 
 `MiniAppBackup`は、Feature ID・schema version・任意のDataを共通JSONへ包む。`decode`は外側の形式と全entryを検証し、`selecting`は明示したIDのentryだけ返す。対象のFeatureがpayloadを検証・移行してから保存状態へ適用する。Feature固有の形式には`MiniAppBackupEntry.decodePayload`によるCodable JSON読込みも選べる。
 
-Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録できる。exportはそのFeatureの整合したsnapshotを返し、prepareはpayloadを検証・移行してから適用closureを返す。prepareでは保存値を変更しない。ホストは全選択のprepareを終えてから適用する。適用中の失敗は完了済みと失敗対象を区別し、Feature間のrollbackを保証しない。CounterとReminderが実装例で、一覧のバックアップ操作から書出し・読込み・復元対象選択・上書き確認へ進む画面を実装している。CIでFilesの書出し・再読込みから選択復元、キャンセル、再起動後の値維持まで成功した。過去にはSimulatorのURL受渡し障害が発生しており、継続して往復テストを実行する。[作業記録](verification/2026-09-07-selective-backup.md)に継続タスクと境界を記載する。
+Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録できる。exportはそのFeatureの整合したsnapshotを返し、prepareはpayloadを検証・移行してから適用closureを返す。prepareでは保存値を変更しない。ホストは全選択のprepareを終えてから適用する。適用中の失敗は完了済みと失敗対象を区別し、Feature間のrollbackを保証しない。CounterとReminderが実装例で、一覧のバックアップ操作から書出し・読込み・復元対象選択・上書き確認へ進む画面を実装している。CIでFilesの書出し・再読込みから選択復元、キャンセル、再起動後の値維持まで成功した。0.6.0出荷CIでも通常UIとFiles経由JSON選択復元が成功している。[公開記録](verification/2026-09-12-0.6-release.md)を現在の出荷証拠とし、初期のSimulator操作失敗は過去の経緯として扱う。
 
 ## Widget・外部URLから開く
 
@@ -169,7 +169,7 @@ URLは画面を開く用途のみで、保存値の変更・復元・任意処�
 
 通知整理では`context.ownsNotificationRequestIdentifier(request.identifier)`に一致するものだけを選び、そのIDを`removePendingNotificationRequests(withIdentifiers:)`へ渡せる。配信済み通知も同様にそのrequestのidentifierで選別できる。従来の引数なし`notificationRequestIdentifier`も自身のものとして判定し、既存予約のIDは変更しない。全アプリ分を削除するAPIは使わない。
 
-これは命名と所属判定のAPIであり、予約時刻・重複排除・再予約・通知権限の判断はFeatureが担う。予約可能な件数などOSの制約を解消するものではない。個々の通知には既存の`context.notificationUserInfo`を付けるとFeature入口へ遷移できる。レコード詳細への遷移はまだ共通化していない。
+これは命名と所属判定のAPIであり、予約時刻・重複排除・再予約・通知権限の判断はFeatureが担う。予約可能な件数などOSの制約を解消するものではない。個々の通知には既存の`context.notificationUserInfo`を付けるとFeature入口へ遷移できる。レコード詳細には`context.notificationUserInfo(destination:)`とDefinitionの`appendDestination`を接続する。下のRecords例を参照。
 
 ### バックアップ接続の実装箇所
 
@@ -187,7 +187,7 @@ Counterの接続は`Sources/CounterIntegration/CounterMiniApp.swift`の`backup:`
 
 ### 詳細通知と添付を持つ参照実装
 
-[Records](../Modules/Records/README.md)はCore非依存のFeatureへ保存先と通知操作を注入する例である。詳細通知は`context.notificationUserInfo(destination: recordID)`でURLと同じdestinationを渡せる。従来の`notificationUserInfo`は引き続き入口を開く。詳細URLのホスト遷移と通知requestの内容はCIで検証済みだが、通知センターからの詳細タップは検証中である。[証拠と未確認事項](verification/2026-09-09-detail-routing.md)を参照。
+[Records](../Modules/Records/README.md)はCore非依存のFeatureへ保存先と通知操作を注入する例である。詳細通知は`context.notificationUserInfo(destination: recordID)`でURLと同じdestinationを渡せる。従来の`notificationUserInfo`は引き続き入口を開く。詳細URLのホスト遷移と通知requestの内容はCIで検証済み。通知から対応するRecords詳細への遷移と片側取消は、2026-09-09の`afbf4dc`実機確認で成功した（[source別の証拠](verification/2026-09-09-v1-candidate.md)）。通常0.6.0にはRecordsを登録しておらず、この実機結果を0.6.0そのものの実機成功とは扱わない。
 
 添付を含むFeatureは`MiniAppFileBackupProvider`を`fileBackup:`へ登録できる。exportは整合したsnapshot directoryとschema versionを渡し、prepareはデータを変更せず検証し、applyが復元する。ファイルproviderを含む選択はZIP、従来のData providerだけの選択はJSONとして書き出す。DBのsnapshot、schema移行、OS通知など保存先外の状態との整合はFeatureのIntegrationが所有する。Recordsは復元成功後に自身の既存通知を取り消し、復元失敗時は通知も維持する。
 
@@ -207,7 +207,7 @@ Taskのoperationがscopeを所有するruntime自身を強参照し続けると�
 
 IntegrationはonNotificationActionへasyncハンドラを任意登録できる。open/dismiss/custom(action ID)、request ID、destination、文字入力を受け取る。通常openだけが既存の画面遷移を行い、dismiss/customではホストが勝手に画面を切り替えない。未登録ownerやハンドラなしの操作を他Featureへ転送しない。ハンドラ完了後にOSへ完了を返すため、長時間処理や終了しない処理を置かない。category/action宣言の合成とOS経由の独自action実証は未完。userInfo全体を渡すAPIではない。
 
-通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に全Featureの和集合を一度登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。動的category更新の調停は未対応。
+通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に全Featureの和集合を一度登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。実行中の更新には`context.replaceNotificationCategories(with:)`を使い、他Featureの登録を維持する。下の動的更新手順を参照。
 
 `await context.removeAllOwnedNotifications()`は、そのFeatureのnamespaceに属する予約中・配信済み通知のみを取り消す。従来の単一request IDも対象。他Featureや名前空間外の通知は保持する。取得したID一覧に対する操作なので、新規予約との原子的な停止は保証しない。復元・削除時に新規予約を止める必要がある場合はFeature runtimeで受付を調停する。Records復元後の取消が使用例。
 
@@ -235,9 +235,9 @@ Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き�
 
 `MiniAppKeychain(context: context, service: "login")` はgeneric passwordのservice名をFeatureごとに分けます。`set(data, for: account)` / `data(for: account)` / `remove(account:)` / `removeAll()`を使用します。`removeAll()`の対象はそのFeatureのそのservice内だけです。同名accountでも別Featureや別serviceの値は残ります。取得時の未登録はnil、削除時の未登録は成功、それ以外のOSエラーは`Failure.status`として返します。更新は既存項目を削除せずに行います。
 
-今回のAPIはiCloud同期しないKeychain項目のgeneric passwordを扱います。新規項目は標準のwhen-unlocked属性、既存項目の更新では属性を維持します。同期的なSecurity APIなので、UIを待たせる処理は適切な実行場所から呼んでください。生体認証・SecAccessControlはこのAPIでは未対応です。これらをプロダクト全体の非対応対象にはしません。
+このAPIはiCloud同期しないKeychain項目のgeneric passwordを扱います。新規項目は標準のwhen-unlocked属性、既存項目の更新では属性を維持します。同期的なSecurity APIなので、UIを待たせる処理は適切な実行場所から呼んでください。SecAccessControlと操作ごとのLAContextも指定できます。[アクセス制御ガイド](guides/keychain-access-control.md)に呼出し・認証取消・OSエラーの扱いを記載しています。
 
-`accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。再署名後の継続とiOS実行の証拠はまだありません。
+`accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。iOS再起動・A logout後のB保持、アクセス属性、userPresence項目の非対話拒否と認証後の値保持は検証済みです（[証拠](verification/2026-09-10-keychain-access-control.md)）。再署名後の継続や端末ロック・パスコード変更等は未検証です。
 
 
 `set(data, for: account, accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)`のように、標準のaccessibility定数を指定できます。新規保存と既存項目の変更に適用し、省略した更新では既存属性を維持します。バックグラウンド利用のためのafter-first-unlockは、[最初の端末ロック解除後に利用可能となるAppleの保護条件](https://developer.apple.com/documentation/security/ksecattraccessibleafterfirstunlockthisdeviceonly)に従います。利用可能性を事前判定して成功を保証せず、OSエラーを処理してください。端末ロック・再起動・パスコード変更の実機検証は未完です。
@@ -249,7 +249,7 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 
 識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
 
-全データ削除はそのストアの`removeData`を使います。使用中WebViewとの調停やFeature削除時のストア自体の破棄は未実装です。今回の検証対象は標準cookie storeでの分離・再起動保持・片方の削除であり、実ページの認証やlocalStorage等まで確認済みとはしません。
+全データ削除はそのストアの`removeData`を使います。使用中WebViewとの調停やFeature削除時のストア自体の破棄は未実装です。同じbase URLの実ページを使うCookie/localStorage/IndexedDBの分離・通常背景化後の再起動保持・A削除後のB保持は検証済みです（[接続と範囲](guides/web-storage-ownership.md)）。任意の認証provider、即時永続化、その他のWebデータ一般まで確認済みとはしません。
 
 
 ### 自動ロック抑止の共存
@@ -299,3 +299,14 @@ JSON/file providerの`exportEntry`も同じcoordinatorを利用します。同�
 `try context.urlCache(memoryCapacity: 4 * 1024 * 1024, diskCapacity: 32 * 1024 * 1024, containerURL: container)`でnative URLCacheを作り、URLSessionを生成する前に`configuration.urlCache`へ設定します。容量は例であり任意に指定できます。同じFeature/profileのcacheは保持して使い回してください。`profile:`で同一Feature内のアカウント等を分けられます。
 
 このAPIはcache保存先だけを分けます。Cookie・認証情報の共有を解消するAPIではなく、cacheはOSによって削除される可能性があります。default設定のままならCookie共有は残るため、通信全体の隔離が完了したとは扱わないでください。
+
+### 画面生成前の登録とbackground連携
+
+`MiniAppDefinition.onHostLaunch`はhost起動時に呼ばれる同期・throwingな任意hookです。
+Featureの画面を開く前に必要なnative登録をここで行い、providerや処理所有者を適切な寿命で保持します。
+二Featureの画面未生成時登録と再訪時の一回性は[host launch検証](verification/2026-09-11-host-launch-hook.md)で確認済みです。
+
+background連携は[短時間の処理継続](guides/background-execution-ownership.md)、
+[background URLSession再接続](guides/background-urlsession-reconnect.md)、
+[共有refresh枠](background-refresh-coordination.md)に分けて接続します。
+登録API・注入試験の成功を、実OSの起動や期限配送の保証に置き換えません。

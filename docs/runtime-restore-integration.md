@@ -44,6 +44,6 @@ DB接続の状態確認、必要な再接続、新しいRuntime作成、UI以外
 - unit: 受付閉鎖、Task完了待ち、同期/非同期解放順序、同時shutdown合流、重複予約拒否、取消、snapshotとの競合、他owner継続。
 - CIの実画面: 選択復元の成功と4つの失敗経路、AのRuntime再開とBのTask/データ維持。
 - ユーザー実機: カウンターJSONの書出し・読込み・選択・上書き復元。
-- 残件: 特定DB接続の実装と比較検証、通常書込みや購読の一般接続、Widget等の別プロセスとの排他、移行/リセットの接続。D02/D07全体の完成は未達。
+- 残件: SQLite以外のDBと実Featureへのadapter接続、通常書込みや購読の一般接続、Widget等の別プロセスとの排他、移行/リセットの接続。native SQLiteのWAL・片側削除/復元・BUSY closeは[比較検証済み](verification/2026-09-11-sqlite-isolation.md)。D02/D07全体の完成は未達。
 
-個々のCIと未解決のSimulator Files操作は[検証記録](verification/2026-09-10-runtime-lifetime.md)、現在の全体判定は[統合差分台帳](coexistence-ledger.md)を参照。
+0.6.0出荷CIでFiles経由のJSON選択復元と添付ZIP往復は成功済み（[公開記録](verification/2026-09-12-0.6-release.md)）。以前のFiles操作失敗は[経緯](verification/2026-09-10-runtime-lifetime.md)として保持し、現在の待機対象にはしない。領域全体の判定は[統合差分台帳](coexistence-ledger.md)を参照。

@@ -74,7 +74,7 @@ host・port・protocol・realm・認証方式・proxy区分を保持し、同じ
 
 読み戻しは全件の形式、重複、既定ユーザーの存在、native protection spaceの再構築を検証してからlive storeを置換する。読出し失敗はlive storeと保存dataを保持し、保存失敗は以前のKeychain snapshotを維持する。Keychainのサイズ・ロック状態・署名による失敗は呼出し側へthrowする。同profileには一つの生存する所有者を置く。
 
-これはパスワード型資格情報用のadapterであり、クライアント証明書identity、server trust、SSO、biometric access control、同期Keychain、background再接続の補完は未実装。trust判定やサーバー側ログアウトは変更しない。[34437448875](https://github.com/y-aplus/JibunKit/actions/runs/34437448875)でnativeのhost/port/realm/protocol/proxy/認証方式の区別と複数user、Feature/profileの隔離・Cookie維持・破損時保持、実HTTP Basic challenge（0.057秒）、iOS process再起動（100.041秒）が成功。Digestやproxy認証の実通信は別途残る。
+このパスワード型資格情報adapterは、クライアント証明書identity、server trust、SSO、生体認証付き資格情報、同期Keychainを扱わない。基盤全体では[Keychainアクセス制御](guides/keychain-access-control.md)、[Web認証](guides/web-authentication-ownership.md)、[background再接続](guides/background-urlsession-reconnect.md)を別の契約で提供しており、このadapterとの結合検証とは区別する。trust判定やサーバー側ログアウトは変更しない。[34437448875](https://github.com/y-aplus/JibunKit/actions/runs/34437448875)でnativeのhost/port/realm/protocol/proxy/認証方式の区別と複数user、Feature/profileの隔離・Cookie維持・破損時保持、実HTTP Basic challenge（0.057秒）、iOS process再起動（100.041秒）が成功。Digestやproxy認証の実通信は別途残る。
 
 ## 要求・delegate完了後の保存とログアウト
 

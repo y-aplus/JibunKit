@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+- 同名の純Swift SDK moduleを標準moduleAliasesで分離する比較と接続手順を追加。iOSではPackageの公開product名を分けた構成で両版/設定と片側更新後の他方保持を検証。元の同名product構成はXcodeの依存グラフで失敗し、manifest編集が必要な条件を明記。
+- shared background refreshの実機用診断fixtureを追加。iOS注入試験とapp/UI targetのコンパイルまで確認し、実OSの受付・起動・期限は未検証として保持。
+- 現在状態の文書を0.6.0公開後のmainへ同期し、初期棚卸し・旧計画を履歴資料へ分離。実装停止と明示再開待ちを記録。
+
 ## [0.6.0] - 2026-09-12
 
 - 複数Featureのbackground refresh要求を一つのOS枠へ調停する明示APIを追加。owner/local ID別の永続保存、世代別の復旧、期限通知と全処理完了待ちを接続。実OSによる受付・起動の保証とは分ける。

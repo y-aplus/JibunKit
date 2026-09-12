@@ -1,12 +1,12 @@
 # Feature間のbackground refresh共有枠
 
-状態: 実装とmacOS/iOSの結合試験を[34683036628で検証](verification/2026-09-12-shared-refresh.md)。0.5.0には含まれず、D15全体の完了証拠ではない。
+状態: 実装とmacOS/iOSの結合試験を[34683036628で検証](verification/2026-09-12-shared-refresh.md)。0.6.0に含まれる。実OSの受付・起動・期限は未検証で、D15全体の完了証拠ではない。公開後mainの診断fixtureもコンパイル確認まで（[現在状態](status.md)）。
 
 ## 失われる境界
 
 独立appならA/Bがそれぞれ持つrefresh要求枠は、一つのhostへ統合すると共有になる。
 現在の`MiniAppBackgroundTaskCenter`はnative identifierの登録・取消・実行寿命を所有者別に
-制限するが、要求はそのままnative schedulerへ送る。二Featureのrefreshを保持する調停はない。
+制限するが、要求はそのままnative schedulerへ送る。この直接登録API自体は複数Featureのrefreshを調停しない。共有枠を使う場合は、以下の`MiniAppSharedRefreshCenter`へ接続する。
 
 Appleの[submit仕様](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submit(_:))では、
 pending上限はrefresh 1件/processing 10件。同じ未実行要求の再提出は置換になる。

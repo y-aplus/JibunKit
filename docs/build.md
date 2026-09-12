@@ -31,15 +31,17 @@ gh workflow run build-ios.yml --ref YOUR_BRANCH -f simulator_tests=true -f featu
 
 workflowは固定SHA-256でTuistを導入し、Swiftテスト、通常app／Widgetビルド、App Intents metadata、識別子・版・App Group・ad-hoc署名・IPAの整合性を検査する。`JibunKit-ad-hoc` artifactからIPAを取得する。SideStoreで最終署名して導入する。templateの検証用Notesは隔離checkoutだけに存在する。
 
-上記は全検証の指定。入力省略時は両フラグがfalseで、共有・Moduleテストと通常IPAの検査を実行する。`feature_validation=true`でRecords単独、Tuist templateの生成・単独ビルド・ホスト組込みを追加する。
+上記は通常回帰と生成Feature検証の指定であり、個別のnative比較をすべて有効にする指定ではない。入力省略時は両フラグがfalseで、共有・Moduleテストと通常IPAの検査を実行する。`feature_validation=true`でRecords単独、Tuist templateの生成・単独ビルド・ホスト組込みを追加する。
 
 `simulator_tests=true`ではバックアップの選択復元・Files往復、本体の保存・通知と、単独Counterの加算・再起動・保存先分離をUIで検証する。両フラグがtrueなら生成Featureの単独起動・ホスト共存とRecordsの編集・添付も検証する。UI targetはTuistが生成する。Rubyによる後加工やmetadata手動コピーは行わない。結果・画面・診断ログは`JibunKit-simulator-evidence` artifactへ保存する。
 
-長時間のCIは`gh run watch RUN_ID --exit-status`で完了を待つ。エージェントの継続には同じ会話への`codex queue`を使い、時刻ごとの手動pollは行わない。
+エージェントによる長時間CIの待機は、モデルを動かさないOS側のバックグラウンド監視と、完了時に一度だけ送る同じ会話への`codex queue`で行う。`gh run watch --interval`やモデルによる定期確認は使わない。具体的なローカル監視設定はリポジトリへ同梱せず、[並列運用](parallel-implementation.md)のCI前レビューと完了通知の契約に従う。
+
+PackageのIntents/Widget/resources、background/Web認証等のnative比較はworkflowの対応inputを明示する。`package_sdk_aliases_only=true`は通常IPA jobを省略し、`simulator_tests=false`ならmacOSの4比較、`true`ならSDK iOS hostの1比較を実行する。検証範囲はrunのinputs・実際に成功したstep・記録を正とする。
 
 ## 検証の境界
 
-ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。Tuist移行の結果と残る実機確認は[検証記録](verification/2026-09-07-tuist-evaluation.md)を参照する。
+ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。0.6.0の出荷検証は[公開記録](verification/2026-09-12-0.6-release.md)、公開後mainの追加は[現在状態](status.md)を参照する。Tuist移行時の記録は当時のsourceの履歴である。
 
 ## UI失敗の限定再現
 

@@ -230,7 +230,7 @@ struct BackupScreen: View {
             defer { busy = false }
             do {
                 let lifecycles = Dictionary(uniqueKeysWithValues: definitions.compactMap { definition in
-                    definition.restoreLifecycle.map { (definition.id, $0) }
+                    definition.effectiveRestoreLifecycle.map { (definition.id, $0) }
                 })
                 try await plan.apply(lifecycles: lifecycles)
                 status = plan.ids.map(title).joined(separator: "、") + "を復元しました。"

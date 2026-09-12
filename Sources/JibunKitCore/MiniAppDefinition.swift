@@ -12,6 +12,7 @@ public struct MiniAppDefinition: Identifiable {
     public let systemImage: String
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
+    public let lifetime: MiniAppFeatureLifetime?
     public let restoreLifecycle: MiniAppRestoreLifecycle?
     /// Synchronous, screen-independent native registration performed by the
     /// host during `application(_:didFinishLaunchingWithOptions:)`.
@@ -32,6 +33,7 @@ public struct MiniAppDefinition: Identifiable {
         backup: MiniAppBackupProvider? = nil,
         fileBackup: MiniAppFileBackupProvider? = nil,
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
+        lifetime: MiniAppFeatureLifetime? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         resolveIncomingURL: MiniAppURLRouter.Resolver? = nil,
         onHostLaunch: (@MainActor () throws -> Void)? = nil,
@@ -50,6 +52,9 @@ public struct MiniAppDefinition: Identifiable {
         self.backup = backup
         precondition(fileBackup == nil || fileBackup?.id == id, "File backup provider must belong to this Feature.")
         self.fileBackup = fileBackup
+        // A custom restore lifecycle may include store-specific stop recovery.
+        // Otherwise reuse the same lifetime as ordinary host entry.
+        self.lifetime = lifetime
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.resolveIncomingURL = resolveIncomingURL
@@ -66,7 +71,18 @@ public struct MiniAppDefinition: Identifiable {
 
     @MainActor
     public func makeDestination() -> AnyView {
-        rootView(MiniAppContext(id: id))
+        if let lifetime {
+            precondition(lifetime.id == id, "Lifetime must belong to this Feature.")
+            return AnyView(MiniAppLifetimeDestination(lifetime: lifetime) {
+                rootView(MiniAppContext(id: id))
+            })
+        }
+        return rootView(MiniAppContext(id: id))
+    }
+
+    @MainActor
+    public var effectiveRestoreLifecycle: MiniAppRestoreLifecycle? {
+        restoreLifecycle ?? lifetime?.restoreLifecycle
     }
 
     /// Integration appends its Feature's native navigation values to an empty
@@ -78,6 +94,38 @@ public struct MiniAppDefinition: Identifiable {
         var path = NavigationPath()
         guard appendDestination(destination, &path) else { return nil }
         return path
+    }
+}
+
+/// The view waits for startup but does not own the Feature's lifetime. A normal
+/// navigation switch can discard this view while owned work keeps running.
+private struct MiniAppLifetimeDestination<Content: View>: View {
+    let lifetime: MiniAppFeatureLifetime
+    @ViewBuilder let content: () -> Content
+    @State private var attempt = 0
+
+    var body: some View {
+        Group {
+            switch lifetime.state {
+            case .running: content()
+            case .failed(let reason):
+                ContentUnavailableView {
+                    Label("アプリを開始できません", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(reason)
+                } actions: {
+                    Button("再試行") { attempt += 1 }
+                        .accessibilityIdentifier("miniapp.start.retry")
+                }
+            case .stopped, .starting, .stopping:
+                ProgressView(lifetime.state == .stopping ? "終了を待っています" : "アプリを準備しています")
+                    .accessibilityIdentifier("miniapp.start.pending")
+            }
+        }
+        .task(id: attempt) {
+            do { try await lifetime.start() }
+            catch { /* The lifetime owns failure state; view cancellation is not a failure. */ }
+        }
     }
 }
 #endif

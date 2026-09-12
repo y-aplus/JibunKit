@@ -4,11 +4,15 @@ import ReminderFeature
 #if os(iOS)
 public enum ReminderMiniApp {
     @MainActor
+    public static let lifetime = MiniAppFeatureLifetime(id: .reminder)
+
+    @MainActor
     public static let definition = MiniAppDefinition(
         id: .reminder,
         title: "リマインダー",
         systemImage: "bell",
-        backup: ReminderStore.shared.backupProvider
+        backup: ReminderStore.shared.backupProvider,
+        lifetime: lifetime
     ) { context in
         ReminderRootView(context: context)
     }

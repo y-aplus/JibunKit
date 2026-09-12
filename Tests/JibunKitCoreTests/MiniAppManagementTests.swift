@@ -166,6 +166,55 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(observations, [.disabling, .disabled, .enabled])
         XCTAssertEqual(MiniAppManagement.savedStatus(for: a, defaults: reader), .enabled)
     }
+
+    @MainActor
+    func testRemovalWaitsForOwnedWorkBeforeUnregisteringOrDeleting() async throws {
+        let suite = "MiniAppManagementTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let a = MiniAppID("a"), b = MiniAppID("b")
+        let entered = expectation(description: "Owned work started")
+        let cancelled = expectation(description: "Owned work received cancellation")
+        let gate = ManagementStopGate()
+        let data = ManagementData()
+        let lifetime = MiniAppFeatureLifetime(id: a) { runtime in
+            try runtime.start {
+                await withTaskCancellationHandler {
+                    await gate.wait(entered: entered)
+                } onCancel: { cancelled.fulfill() }
+            }
+        }
+        let other = MiniAppFeatureLifetime(id: b)
+        let coordinator = MiniAppRestoreCoordinator()
+        let manager = MiniAppManagement(registrations: [
+            .init(id: a, lifetime: lifetime,
+                  removal: .init(id: a, dataDescription: "A") { await data.removeA() },
+                  unregister: { await data.unregisterA() }),
+            .init(id: b, lifetime: other)
+        ], defaults: defaults, consents: .init(defaults: defaults), coordinator: coordinator)
+        try await lifetime.start()
+        try await other.start()
+        await fulfillment(of: [entered], timeout: 5)
+        let removal = Task { try await manager.remove(a) }
+        await fulfillment(of: [cancelled], timeout: 5)
+        XCTAssertEqual(manager.stages[a], .stopping)
+        XCTAssertEqual(manager.status(for: a), .removing)
+        let pendingValues = await data.values
+        let pendingUnregisters = await data.unregisters
+        XCTAssertEqual(pendingValues, ["a": 7, "b": 9])
+        XCTAssertEqual(pendingUnregisters, 0)
+        let otherValue = try await coordinator.withStoreAccess(for: b) { await data.values["b"] }
+        XCTAssertEqual(otherValue, 9)
+        XCTAssertFalse(try XCTUnwrap(other.runtime).isClosed)
+        await gate.release()
+        try await removal.value
+        XCTAssertEqual(manager.status(for: a), .removed)
+        let finalValues = await data.values
+        let finalUnregisters = await data.unregisters
+        XCTAssertEqual(finalValues, ["b": 9])
+        XCTAssertEqual(finalUnregisters, 1)
+        await other.stop()
+    }
 }
 
 private actor ManagementData {
@@ -178,5 +227,19 @@ private actor ManagementData {
     func removeAfterFirstFailure() throws {
         if !failed { failed = true; throw Expected.firstRemoval }
         removeA()
+    }
+}
+
+private actor ManagementStopGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait(entered: XCTestExpectation) async {
+        await withCheckedContinuation {
+            continuation = $0
+            entered.fulfill()
+        }
+    }
+    func release() {
+        continuation?.resume()
+        continuation = nil
     }
 }

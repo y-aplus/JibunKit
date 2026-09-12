@@ -21,7 +21,7 @@ enum P0COnboardingProbe {
 
 private struct P0COnboardingView: View {
     var body: some View {
-        let expected: Set<MiniAppID> = [.counter, .reminder, MiniAppID("notes"), MiniAppID("records")]
+        let expected: Set<MiniAppID> = [MiniAppID("counter"), MiniAppID("reminder"), MiniAppID("notes"), MiniAppID("records")]
         let issues = MiniAppValidator.validate(ids: MiniAppRegistry.all.map(\.id), expectedIDs: expected)
         Text(issues.isEmpty ? "passed: counter,notes,records,reminder" : "Sources/JibunKit/MiniAppRegistry.swiftの登録を確認してください: \(issues)")
             .accessibilityIdentifier("p0c.connection.result")

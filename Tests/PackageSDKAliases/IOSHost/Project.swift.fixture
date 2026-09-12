@@ -1,0 +1,37 @@
+import ProjectDescription
+
+let project = Project(
+    name: "SDKAliasIOS",
+    packages: [.package(path: "../LibraryBridge")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
+    targets: [
+        .target(
+            name: "SDKAliasHost",
+            destinations: .iOS,
+            product: .app,
+            bundleId: "com.jibunkit.sdk-alias-host",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+            sources: ["App.swift"],
+            dependencies: [.package(product: "SDKAliasBridge")]
+        ),
+        .target(
+            name: "SDKAliasHostUITests",
+            destinations: .iOS,
+            product: .uiTests,
+            bundleId: "com.jibunkit.sdk-alias-host-tests",
+            deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["UITests.swift"],
+            dependencies: [.target(name: "SDKAliasHost")]
+        ),
+    ],
+    schemes: [
+        .scheme(
+            name: "SDKAliasHost",
+            shared: true,
+            buildAction: .buildAction(targets: ["SDKAliasHost"]),
+            testAction: .targets(["SDKAliasHostUITests"], configuration: .debug)
+        )
+    ]
+)

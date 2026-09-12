@@ -28,7 +28,8 @@ The fixture contains four root packages:
   an explicit B value, then updates A and requires that written B value to remain
   unchanged before and after the A update.
 
-All manifests use Swift tools version 6.0 and declare macOS 12 as their minimum platform.
+All manifests use Swift tools version 6.0. The original comparison roots retain macOS 12;
+the reusable Vendor and Feature packages additionally declare iOS 26.
 `Tools/verify-package-sdk-aliases.py` runs `swift package resolve` and `swift test` for
 the successful roots with separate scratch directories. Exit status zero is not enough:
 each successful root must print the `Test Case ... passed` marker for its exact expected
@@ -112,3 +113,44 @@ case. The final summary contained no verification failures.
 
 The `Package-SDK-alias-diagnostics` artifact is ID `10295028814`, 3,882 bytes, with
 SHA-256 `f49b2472559edfabd6e57828aca1603738328b84022622f4ce040b6ff5b64ef4`.
+
+## iOS bridge comparison design
+
+The follow-up iOS fixture leaves both Vendor SDK and Feature source modules unchanged.
+`LibraryBridge` is a standard Swift package with one library product,
+`SDKAliasBridge`. Its Feature A and Feature B product dependencies apply the same
+`VendorSDK` to `VendorASDK` / `VendorBSDK` aliases used by the successful macOS
+comparison. The bridge exposes a value snapshot plus `@MainActor` A/B configuration
+writes; it does not expose either colliding SDK module to the app target.
+
+`IOSHost` is a thin Tuist-generated iOS 26 SwiftUI app. Its only package dependency is
+the bridge's ordinary library product. The UI displays both SDK versions and both live
+configuration values. The focused UI test performs this sequence:
+
+1. Require exact displayed versions `vendor-a-1.0` and `vendor-b-2.0`, plus both default
+   configuration values.
+2. Write `ios-b-written` through the visible B button and require A's default and B's
+   written value on screen.
+3. Write `ios-a-updated` through the visible A button and require that exact A value,
+   the retained `ios-b-written` value, and both original versions on screen.
+
+Each displayed value is selected by a stable accessibility identifier, then its visible
+label is compared for exact equality. The test retains a final screenshot. The driver
+copies the fixture to a temporary directory, runs standard `tuist generate` and one
+focused `xcodebuild test`, and saves the generation log, complete build/test log,
+`ios-summary.json`, and `.xcresult`. A zero exit alone is insufficient: the exact
+`testAliasedSDKConfigurationsRemainIndependentInIOSHost` XCTest pass marker and
+`** TEST SUCCEEDED **` must both be present.
+
+This is designed as one additional Simulator configuration inside the existing limited
+SDK-alias lane. The short four-root macOS comparison may run in the same job, while the
+normal IPA build and unrelated iOS regressions remain skipped. Workflow wiring is not
+part of this fixture change and requires review before CI.
+
+The iOS bridge has been checked only statically on Windows. Swift, Tuist, Xcode package
+resolution, linking, Simulator launch, UI interaction, and screenshot production have
+not run here. A future native result must be reported as a failure if SwiftPM aliases do
+not propagate through Xcode's package build; it must not be reclassified as an expected
+success. Even when passing, this evidence is limited to this Tuist host and still does
+not place either SDK in the normal JibunKit registry or establish the broader isolation
+cases excluded above.

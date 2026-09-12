@@ -13,6 +13,7 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         let lifetimeA = MiniAppFeatureLifetime(id: a)
         let lifetimeB = MiniAppFeatureLifetime(id: b)
         let consents = MiniAppConsentStore(defaults: defaults)
+        let coordinator = MiniAppRestoreCoordinator()
         consents.setConsent(.allowed, for: a, permissionID: "camera")
         consents.setConsent(.denied, for: b, permissionID: "camera")
         let registrations = [
@@ -21,7 +22,7 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
                 unregister: { await store.unregisterA() }),
             MiniAppManagement.Registration(id: b, lifetime: lifetimeB)
         ]
-        let management = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents)
+        let management = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents, coordinator: coordinator)
         let oldA = try await lifetimeA.start()
         let oldB = try await lifetimeB.start()
         try await management.disable(a)
@@ -40,7 +41,7 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(removed, ["b": 9])
         XCTAssertEqual(consents.consent(for: a, permissionID: "camera"), .notDetermined)
         XCTAssertEqual(consents.consent(for: b, permissionID: "camera"), .denied)
-        let restarted = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents)
+        let restarted = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents, coordinator: coordinator)
         XCTAssertEqual(restarted.status(for: a), .removed)
         XCTAssertFalse(lifetimeA.isStartAllowed)
         try await restarted.enable(a)
@@ -59,16 +60,17 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         let lifetime = MiniAppFeatureLifetime(id: id)
         let store = ManagementData()
         let consents = MiniAppConsentStore(defaults: defaults)
+        let coordinator = MiniAppRestoreCoordinator()
         consents.setConsent(.allowed, for: id, permissionID: "camera")
         let registrations = [MiniAppManagement.Registration(id: id, lifetime: lifetime,
             removal: MiniAppRemovalProvider(id: id, dataDescription: "A") { try await store.removeAfterFirstFailure() })]
-        let first = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents)
+        let first = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents, coordinator: coordinator)
         _ = try await lifetime.start()
         do { try await first.remove(id); XCTFail("Expected deletion error") } catch {}
         XCTAssertEqual(first.status(for: id), .removing)
         XCTAssertEqual(first.failures[id]?.stage, .deletingData)
         XCTAssertEqual(consents.consent(for: id, permissionID: "camera"), .allowed)
-        let restarted = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents)
+        let restarted = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents, coordinator: coordinator)
         do { try await restarted.enable(id); XCTFail("Incomplete deletion became enabled") } catch {}
         try await restarted.remove(id)
         XCTAssertEqual(restarted.status(for: id), .removed)
@@ -102,6 +104,41 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         try await manager.remove(id)
         XCTAssertTrue(runtime.isClosed)
         XCTAssertEqual(manager.status(for: id), .removed)
+        do {
+            try await coordinator.withStoreAccess(for: id) { await store.removeA() }
+            XCTFail("Removed owner accepted normal store access")
+        } catch is MiniAppRestoreCoordinator.Unavailable {} catch { XCTFail("Unexpected error: \(error)") }
+        do {
+            try await coordinator.withStoreMaintenance(for: id) { await store.removeA() }
+            XCTFail("Removed owner accepted maintenance from an old screen")
+        } catch is MiniAppRestoreCoordinator.Unavailable {} catch { XCTFail("Unexpected error: \(error)") }
+        try await manager.enable(id)
+        let reopened = try await coordinator.withStoreAccess(for: id) { await store.values }
+        XCTAssertEqual(reopened, ["b": 9])
+    }
+
+    @MainActor
+    func testPersistedInterruptedStateClosesStoreAdmissionBeforeFirstAwait() async throws {
+        let suite = "MiniAppManagementTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let a = MiniAppID("a"), b = MiniAppID("b")
+        defaults.set("unrecognized-state", forKey: "test-management.a")
+        let coordinator = MiniAppRestoreCoordinator()
+        let manager = MiniAppManagement(registrations: [.init(id: a), .init(id: b)],
+            defaults: defaults, consents: .init(defaults: defaults), coordinator: coordinator,
+            storageKey: "test-management")
+        XCTAssertEqual(manager.status(for: a), .disabling)
+        do {
+            _ = try await coordinator.withStoreAccess(for: a) { 1 }
+            XCTFail("Corrupt saved state silently enabled owner")
+        } catch is MiniAppRestoreCoordinator.Unavailable {} catch { XCTFail("Unexpected error: \(error)") }
+        let other = try await coordinator.withStoreAccess(for: b) { 2 }
+        XCTAssertEqual(other, 2)
+        try await manager.disable(a)
+        try await manager.enable(a)
+        let recovered = try await coordinator.withStoreAccess(for: a) { 3 }
+        XCTAssertEqual(recovered, 3)
     }
 }
 

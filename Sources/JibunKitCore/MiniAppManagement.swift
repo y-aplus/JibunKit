@@ -85,6 +85,7 @@ public final class MiniAppManagement {
             }
             statuses[registration.id] = status
             registration.lifetime?.setStartAllowed(status == .enabled)
+            coordinator.setAccessAllowed(status == .enabled, for: registration.id)
         }
     }
 
@@ -120,6 +121,7 @@ public final class MiniAppManagement {
             try await registration.enable()
             // Re-enabling permits normal entry, but never starts business work.
             persist(.enabled, for: id)
+            coordinator.setAccessAllowed(true, for: id)
             registration.lifetime?.setStartAllowed(true)
         } catch {
             let failure = Failure(stage: .enabling, message: String(describing: error))
@@ -136,11 +138,12 @@ public final class MiniAppManagement {
         // process exit cannot turn partially removed data into an active app.
         persist(deleting ? .removing : .disabling, for: id)
         registration.lifetime?.setStartAllowed(false)
+        coordinator.setAccessAllowed(false, for: id)
         stages[id] = .reservation
         failures[id] = nil
         defer { stages[id] = nil }
         do {
-            try await coordinator.withStoreMaintenance(for: id) { [self] in
+            try await coordinator.withOwnerDeactivation(for: id) { [self] in
                 try await self.performDeactivation(registration, deleting: deleting)
             }
             persist(deleting ? .removed : .disabled, for: id)

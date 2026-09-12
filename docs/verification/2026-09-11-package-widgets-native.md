@@ -77,3 +77,42 @@ raising on a nonzero exit. The normal search regression passed in 60.418 seconds
 No gallery UI was directly observed in this headless CI run. Binary strings establish
 that the stable kind constants were linked into each extension; they do not establish
 WidgetKit registration, gallery discovery, rendering, or installation.
+
+## Widget gallery and rendered-value follow-up
+
+Run [34578792277](https://github.com/y-aplus/JibunKit/actions/runs/34578792277), source
+`fb34f65790b1f48a3b0c043f6183776329fabcf9`, passed on Xcode 26.6 and iPhone 17
+Simulator. Unlike the earlier build-only evidence, this run opened SpringBoard's public
+Widget gallery and tested all three fixture hosts.
+
+The standalone A and B cases each found the expected app and Feature configuration in
+the gallery. Vision text recognition, restricted to the observed Widget preview frame,
+read `A:11` and `B:22` respectively. The test selected the observed `Add Widget` Button,
+returned to the home screen, and recognized the same value from a separate screenshot.
+Both gallery UI tests passed with zero failures.
+
+The combined case found both Feature A and Feature B under `Widget Fixture Combined`.
+Its two preview screenshots recognized `A:11` and `B:22`. After adding both Widgets, one
+home-screen screenshot contained `A:11` and `B:22`. The host then updated only A, and a
+later single home-screen screenshot contained `A:33` and `B:22`; the strict observation
+set did not contain `A:11`. This directly verifies that the displayed B value remained
+unchanged while the displayed A value refreshed.
+
+The exported screenshots were visually inspected in addition to the exact OCR checks:
+the standalone home screens visibly show their one expected Widget, and the combined
+home screens visibly show both Widgets before and after the A update. OCR mismatch is a
+test failure rather than a skip, and each retained screenshot has a paired attachment
+containing the raw recognized strings.
+
+The same run also reconfirmed the surrounding evidence:
+
+- Native Release builds preserved the standalone A/B kinds and their union in one
+  combined extension.
+- `TimelineTests/testPackageTimelinesRemainOwnerScoped` passed in 0.020 seconds.
+- `StandaloneAGalleryUITests`, `StandaloneBGalleryUITests`, and
+  `CombinedGalleryUITests` each executed one test with zero failures.
+- The normal-search regression
+  `MigrationUITests/testMiniAppSearchFiltersAndOpensResults` passed in 40.380 seconds.
+
+The `Package-Widget-diagnostics` artifact is ID `10191568434`, 35,107,165 bytes, with
+SHA-256 `6137fc298eb7f702b4ff10e1d499e34e7d78325227af333f9ac8604083b47126`.

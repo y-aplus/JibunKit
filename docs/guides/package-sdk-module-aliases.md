@@ -1,0 +1,38 @@
+# 同名の純Swift SDK moduleを接続する
+
+別々のPackageが同じmodule名をexportしている場合、SwiftPM標準の`moduleAliases`で
+消費側の名前を分けられる。JibunKit独自の型名書換えやruntimeを追加する必要はない。
+
+検証fixtureでは、FeatureA→VendorAとFeatureB→VendorBの二経路があり、VendorA/Bの
+Package identityは異なるが、どちらも`VendorSDK`というmoduleを持つ。
+両Featureを消費するPackageのtargetで、product edgeごとに次のように指定する。
+
+```swift
+dependencies: [
+    .product(
+        name: "FeatureA",
+        package: "FeatureA",
+        moduleAliases: ["VendorSDK": "VendorASDK"]
+    ),
+    .product(
+        name: "FeatureB",
+        package: "FeatureB",
+        moduleAliases: ["VendorSDK": "VendorBSDK"]
+    ),
+]
+```
+
+SDKとFeatureのsourceは元の型名と`import VendorSDK`を維持する。SwiftPMが依存経路へ
+aliasを伝播し、二つのmoduleを別名でコンパイルする。
+
+[34684588973の比較](../verification/2026-09-12-package-sdk-aliases.md)では、aliasなしの
+統合だけが`VendorSDK`と両Packageを明示する重複target診断で失敗した。aliasありでは
+両SDKの版・初期設定・Bの書込値・A更新後のB保持が成功している。
+
+これはmacOS上のSwiftPMで、別Package identityに置いたsource-builtな純Swift moduleを
+検証した結果である。同一Package identityの複数version解決を可能にする証拠ではない。
+C/Objective-C symbol、binary SDK、SDKが操作するOS singletonや外部データの所有権も
+別途扱う必要がある。iOSのTuist生成ホストへの接続は、現段階の証拠に含まない。
+
+設計上の基準はSwiftの[SE-0339](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0339-module-aliasing-for-disambiguation.md)に従う。
+aliasだけで解決していない衝突を、解決済みとして扱わない。

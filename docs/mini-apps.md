@@ -70,6 +70,10 @@ JibunKitのapp/Widgetは`CFBundleAllowMixedLocalizations = true`を設定して�
 [検証記録](verification/2026-09-11-package-resource-localization.md)を参照。
 Widgetについてはビルド済み設定の確認までで、翻訳の描画・更新はこの検証に含まない。
 
+同名の純Swift SDK moduleが衝突する場合は、別Package identityであることを確認し、
+標準module aliasによる分離を検討できる。[接続条件と検証範囲](guides/package-sdk-module-aliases.md)を参照。
+同一SDKの複数versionやOS singletonの隔離まで自動的に解決するものではない。
+
 ## ローカル通知も追加する
 
 通知の受け取り口はホストに1つだけ置く。既存の`NotificationAppDelegate`が起動時にnotification centerのdelegateを設定し、通知payloadのミニアプリIDを`AppNavigation`へ渡す。新しいミニアプリのためにapp delegateを増やさない。

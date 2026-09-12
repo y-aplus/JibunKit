@@ -1,7 +1,7 @@
 # Shared background refresh
 
-Status: implementation and pre-CI review complete; first CI pending. This is not
-D15 completion or evidence of an OS-delivered launch.
+Status: implementation and scoped CI verified. This is not D15 completion or
+evidence of an OS-delivered launch.
 
 ## Contract and implementation
 
@@ -52,7 +52,23 @@ scheduler runtime comparison, not these unit tests. Each method must report pass
 runner success with zero tests is rejected. Logs and a dedicated `SharedRefresh.xcresult`
 are uploaded with BackgroundTasks diagnostics.
 
-The first CI has not yet established any of these results. Real native pending-slot
-acceptance, cancellation retaining another owner, OS launch, and expiration delivery
-remain separate verification work. This checkpoint does not add a product UI probe
-or ask the user for a device check.
+## Verified result
+
+Run [34683036628](https://github.com/y-aplus/JibunKit/actions/runs/34683036628) succeeded
+at source `186aff03cb0a4f3a64ada36223a31df9cd7966c3`.
+
+- Shared Swift tests: 203 tests, two existing skips, zero failures (3.468 seconds).
+- iOS shared refresh tests: all six journal and ten center/batch methods passed,
+  zero failures (0.166 seconds). This includes actual-file restart snapshots,
+  malformed-path read rejection, corruption/invalid-save preservation, one-slot
+  scheduling, pending cancellation, native rejection, expiry/cleanup retention,
+  reentrant launch, generation replacement, and failed acknowledgement recovery.
+- Native BackgroundTasks fixture: `TEST BUILD SUCCEEDED`; runtime comparison was
+  explicitly not executed. The step name alone is not proof of native acceptance.
+- Production app/Widget/IPA and native build-requirement checks passed.
+- Search UI regression passed in 45.659 seconds. Full UI/Files regression was not
+  selected for this additive API, which existing Features do not call yet.
+
+Real native pending-slot acceptance, cancellation retaining another owner, OS launch,
+and expiration delivery remain separate verification work. This checkpoint does not
+add a product UI probe or ask the user for a device check.

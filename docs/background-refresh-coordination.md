@@ -1,6 +1,6 @@
 # Feature間のbackground refresh共有枠
 
-状態: 実装と結合試験を追加し、CI前レビュー中。0.5.0には含まれず、D15の完了証拠ではない。
+状態: 実装とmacOS/iOSの結合試験を[34683036628で検証](verification/2026-09-12-shared-refresh.md)。0.5.0には含まれず、D15全体の完了証拠ではない。
 
 ## 失われる境界
 
@@ -97,5 +97,6 @@ Foundationの結合試験は、容量1のscheduler、保存失敗、二Feature�
 `backgroundtasks_compile_only`はnative scheduler比較をbuildだけに制限するが、この注入schedulerの
 iOS unit testsは実行する。出力とxcresultを分け、全test methodの実行・合格を確認する。
 
-WindowsではSwift/Xcodeを実行していない。CIの成功前に動作確認済みとせず、注入schedulerの
-合格も実OSのpending受付・launch・期限配送の証拠にはしない。実機pending一枠の比較は残る。
+WindowsではSwift/Xcodeを実行していない。CIでは共有203試験（既存skip 2件）とiOSの新規16試験、
+通常IPA・Search回帰が成功した。注入schedulerの合格を実OSのpending受付・launch・期限配送の
+証拠にはしない。実機pending一枠の比較は残る。

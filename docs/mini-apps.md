@@ -30,6 +30,16 @@ Featureをroot Package内に置く方式も使える。その場合はPackageの
 
 ### Package接続に失敗したとき
 
+P0-C候補では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。ネイティブ実行はまだ未検証で、公開版0.6.0には含まれない。
+
+```bash
+python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
+```
+
+このコマンドは`swift package dump-package`と`tuist dump`で現在のmanifestを評価し、path・library product・所属target・指定hostの直接product依存を診断する。Swift manifestを実行するため、信頼するcheckoutで使う。Integrationの推移的依存、コンパイル、実行中のRegistryは別に確認する。`--host`でWidget等の検査対象を指定できる。
+
+登録漏れは、Integration試験で実際の`MiniAppRegistry.all.map(\.id)`を`MiniAppValidator.validate(ids:expectedIDs:)`へ渡して期待IDの欠落を確認し、通常URL/画面も操作する。生成hostのP0COnboardingUITestsがその接続例である。期待ID集合はテストの条件であり、製品へもう一つの登録manifestを追加するものではない。
+
 path、product、target依存、Registryは別々の接続であり、Swiftファイルの文字列検索だけでは成立を保証できない。次の順で、最初に失敗する境界を直す。
 
 | 欠けている接続 | 主な症状 | 確認先 | 修正と再確認 |

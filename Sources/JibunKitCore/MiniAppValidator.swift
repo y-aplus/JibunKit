@@ -9,10 +9,16 @@ public enum MiniAppValidationIssue: Equatable, Sendable {
     case duplicateID(rawValue: String)
     case duplicateStorageNamespace(namespace: String)
     case duplicateNotificationRequestIdentifier(identifier: String)
+    case missingExpectedID(rawValue: String)
 }
 
 public enum MiniAppValidator {
-    public static func validate(ids: [MiniAppID]) -> [MiniAppValidationIssue] {
+    /// Pass the actual Registry IDs and the Features the integration test expects.
+    /// Additional registered Features are allowed; a compiled product alone does
+    /// not prove that its definition was registered in this host.
+    public static func validate(
+        ids: [MiniAppID], expectedIDs: Set<MiniAppID> = []
+    ) -> [MiniAppValidationIssue] {
         var issues: [MiniAppValidationIssue] = []
         for id in ids where !id.isValid {
             issues.append(.invalidID(rawValue: id.rawValue))
@@ -27,6 +33,10 @@ public enum MiniAppValidator {
             issues.append(
                 .duplicateNotificationRequestIdentifier(identifier: identifier)
             )
+        }
+        let registered = Set(ids)
+        for id in expectedIDs.subtracting(registered).sorted(by: { $0.rawValue < $1.rawValue }) {
+            issues.append(.missingExpectedID(rawValue: id.rawValue))
         }
         return issues
     }

@@ -317,6 +317,7 @@ jobs:
           args=()
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
           python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+          python3 Tools/verify-feature-connection.py
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             python3 Tools/verify-privacy-manifest-ownership.py
           fi
@@ -459,6 +460,10 @@ jobs:
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
+          if 'P0COnboardingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              shutil.copyfile('Tests/TemplateIntegration/P0COnboardingProbe.swift', 'Sources/JibunKit/P0COnboardingProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/P0COnboardingUITests.swift', 'UITests/P0COnboardingUITests.swift')
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0COnboardingProbe.definition,'))
           if 'P0ASQLiteUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ASQLiteProbe.definition,'))
           if 'P0ARecordsUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
@@ -488,6 +493,7 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
           PY
+          python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
             -configuration Release -destination 'generic/platform=iOS' \

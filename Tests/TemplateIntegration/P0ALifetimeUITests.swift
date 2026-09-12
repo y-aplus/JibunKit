@@ -2,15 +2,15 @@ import XCTest
 
 @MainActor
 final class P0ALifetimeUITests: XCTestCase {
-    func testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner() {
+    func testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        open("p0-a", in: app)
+        try open("p0-a", in: app)
         expect("a", "g=1,n=0,value=0,ended=0,cleaned=0,state=running", in: app)
         backToList(app)
-        open("p0-b", in: app)
+        try open("p0-b", in: app)
         app.buttons["p0.broadcast"].tap()
         app.buttons["p0.send.a"].tap()
         app.buttons["p0.send.b"].tap()
@@ -29,7 +29,7 @@ final class P0ALifetimeUITests: XCTestCase {
         app.buttons["p0.broadcast"].tap()
         expect("b", "g=1,n=3,value=22,ended=0,cleaned=0,state=running", in: app)
         backToList(app)
-        open("p0-a", in: app)
+        try open("p0-a", in: app)
         // Entering a failed owner makes one startup attempt through the normal host.
         expect("a", "g=3,n=1,value=11,ended=2,cleaned=2,state=running", in: app)
         app.buttons["p0.broadcast"].tap()
@@ -41,16 +41,16 @@ final class P0ALifetimeUITests: XCTestCase {
         add(attachment)
     }
 
-    func testStartupFailureShowsRetryAndKeepsOtherFeatureRunning() {
+    func testStartupFailureShowsRetryAndKeepsOtherFeatureRunning() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        open("p0-b", in: app)
+        try open("p0-b", in: app)
         app.buttons["p0.send.b"].tap()
         app.buttons["p0.fail.a"].tap()
         backToList(app)
-        open("p0-a", in: app)
+        try open("p0-a", in: app)
         let retry = app.buttons["miniapp.start.retry"]
         XCTAssertTrue(retry.waitForExistence(timeout: 10), app.debugDescription)
         retry.tap()
@@ -58,10 +58,12 @@ final class P0ALifetimeUITests: XCTestCase {
         expect("b", "g=1,n=0,value=22,ended=0,cleaned=0,state=running", in: app)
     }
 
-    private func open(_ id: String, in app: XCUIApplication) {
-        let row = app.buttons["miniapp.\(id)"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
-        row.tap()
+    private func open(_ id: String, in app: XCUIApplication) throws {
+        // Exercise the host's registered route/Definition entry independently
+        // of how many other diagnostic rows the lazy launcher materializes.
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/\(id)")))
+        let title = id == "p0-a" ? "P0 A" : "P0 B"
+        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), app.debugDescription)
     }
     private func backToList(_ app: XCUIApplication) {
         app.buttons["miniapp.back-to-list"].tap()

@@ -18,6 +18,21 @@ repo = Path(__file__).resolve().parents[1]
 fixtures = repo / "Tests" / "PackageSDKAliases"
 evidence = args.evidence_dir.resolve()
 evidence.mkdir(parents=True, exist_ok=True)
+method = "testAliasedSDKConfigurationsRemainIndependentInIOSHost"
+summary = {
+    "method": method,
+    "tuistGenerate": {"exitCode": None, "status": "not run"},
+    "xcodebuildTest": {"exitCode": None, "status": "not run"},
+    "testCasePassed": False,
+    "testSucceeded": False,
+}
+
+
+def write_summary():
+    (evidence / "ios-summary.json").write_text(
+        json.dumps(summary, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def run(name, command, cwd):
@@ -48,11 +63,15 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-sdk-alias-ios-") as temp:
         [args.tuist, "generate", "--no-open"],
         host,
     )
+    summary["tuistGenerate"] = {
+        "exitCode": generated.returncode,
+        "status": "passed" if generated.returncode == 0 else "failed",
+    }
     if generated.returncode != 0:
+        write_summary()
         raise RuntimeError("Tuist generation failed; see tuist-generate.log")
 
     result_bundle = evidence / "SDKAliasIOS.xcresult"
-    method = "testAliasedSDKConfigurationsRemainIndependentInIOSHost"
     test_identifier = f"SDKAliasHostUITests/SDKAliasHostUITests/{method}"
     command = [
         "xcodebuild",
@@ -72,7 +91,9 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-sdk-alias-ios-") as temp:
         "-parallel-testing-enabled",
         "NO",
         f"-only-testing:{test_identifier}",
-        "CODE_SIGNING_ALLOWED=NO",
+        "CODE_SIGNING_ALLOWED=YES",
+        "CODE_SIGN_IDENTITY=-",
+        "CODE_SIGN_STYLE=Manual",
     ]
     tested = run("xcodebuild-test", command, host)
     marker = re.search(
@@ -81,16 +102,13 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-sdk-alias-ios-") as temp:
         tested.stdout,
     )
     succeeded = "** TEST SUCCEEDED **" in tested.stdout
-    summary = {
-        "method": method,
-        "testCasePassed": marker is not None,
-        "testSucceeded": succeeded,
-        "xcodebuildExitCode": tested.returncode,
+    summary["xcodebuildTest"] = {
+        "exitCode": tested.returncode,
+        "status": "passed" if tested.returncode == 0 else "failed",
     }
-    (evidence / "ios-summary.json").write_text(
-        json.dumps(summary, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
+    summary["testCasePassed"] = marker is not None
+    summary["testSucceeded"] = succeeded
+    write_summary()
     if tested.returncode != 0 or marker is None or not succeeded:
         raise RuntimeError(
             "iOS SDK alias UI test did not report its exact method and TEST SUCCEEDED"

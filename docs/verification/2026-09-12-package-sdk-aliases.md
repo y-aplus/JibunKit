@@ -142,6 +142,10 @@ focused `xcodebuild test`, and saves the generation log, complete build/test log
 `testAliasedSDKConfigurationsRemainIndependentInIOSHost` XCTest pass marker and
 `** TEST SUCCEEDED **` must both be present.
 
+The Simulator test uses the same manual ad-hoc signing settings as the existing native
+package fixtures. `ios-summary.json` is initialized before generation; if Tuist fails,
+it records that stage and exit code and explicitly leaves the Xcode test as not run.
+
 This is designed as one additional Simulator configuration inside the existing limited
 SDK-alias lane. The short four-root macOS comparison may run in the same job, while the
 normal IPA build and unrelated iOS regressions remain skipped. Workflow wiring is not

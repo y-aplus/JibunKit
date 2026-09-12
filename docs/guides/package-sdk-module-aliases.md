@@ -32,7 +32,13 @@ aliasを伝播し、二つのmoduleを別名でコンパイルする。
 これはmacOS上のSwiftPMで、別Package identityに置いたsource-builtな純Swift moduleを
 検証した結果である。同一Package identityの複数version解決を可能にする証拠ではない。
 C/Objective-C symbol、binary SDK、SDKが操作するOS singletonや外部データの所有権も
-別途扱う必要がある。iOSのTuist生成ホストへの接続は、現段階の証拠に含まない。
+別途扱う必要がある。
+
+iOSのTuist生成ホストでは[34685650822](https://github.com/y-aplus/JibunKit/actions/runs/34685650822)
+で生成・解決が成功した後、Xcode 26.6が同名product `VendorSDK`のPIF参照重複で失敗した。
+UI実行前の失敗であり、この構成をiOSで利用可能とは扱わない。module名のaliasと
+Packageの公開product名は別の境界である。iOS向けに公開product名だけを分ける
+manifest編集の回避策を検証中で、SDK/FeatureのSwift sourceは変更しない。
 
 設計上の基準はSwiftの[SE-0339](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0339-module-aliasing-for-disambiguation.md)に従う。
 aliasだけで解決していない衝突を、解決済みとして扱わない。

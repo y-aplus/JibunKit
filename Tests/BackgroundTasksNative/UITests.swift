@@ -38,6 +38,8 @@ final class BackgroundTasksNativeUITests: XCTestCase {
         app.buttons["backgroundtasks.shared.prepare"].tap()
         waitForResult(result, successPrefix: "passed: shared prepared")
         XCTAssertTrue(result.label.hasPrefix("passed: shared prepared"), result.label)
+        XCTAssertTrue(result.label.contains("native-b=submitted@a"), result.label)
+        XCTAssertTrue(result.label.contains("cancel-a=submitted@b"), result.label)
         let prepared = result.label
         let expression = try NSRegularExpression(pattern: #"saved-b=([0-9A-Fa-f-]{36})"#)
         let range = NSRange(prepared.startIndex..., in: prepared)
@@ -55,6 +57,6 @@ final class BackgroundTasksNativeUITests: XCTestCase {
 
         app.buttons["backgroundtasks.shared.cleanup"].tap()
         waitForResult(result, successPrefix: "passed: shared cleanup")
-        XCTAssertEqual(result.label, "passed: shared cleanup a=0 b=0")
+        XCTAssertEqual(result.label, "passed: shared cleanup verified logical=0 native=0")
     }
 }

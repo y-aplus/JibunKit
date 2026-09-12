@@ -14,6 +14,7 @@ private enum FixtureIDs {
 
 @MainActor
 private enum FixtureHost {
+    static let launchIdentifier = UUID()
     static let center = MiniAppBackgroundTaskCenter()
     static let a = center.tasks(for: MiniAppContext(id: MiniAppID("backgroundtasks-a")))
     static let b = center.tasks(for: MiniAppContext(id: MiniAppID("backgroundtasks-b")))
@@ -107,40 +108,59 @@ private struct BackgroundTasksNativeApp: App {
 private struct ProbeView: View {
     @State private var result = "ready"
     @State private var sharedResult = "shared ready"
+    @State private var isBusy = false
 
     var body: some View {
-        VStack {
-            Text(result).accessibilityIdentifier("backgroundtasks.result")
-            Button("Run native BackgroundTasks comparison") {
-                result = "running"
-                Task {
-                    do { result = try await BackgroundTasksProbe.run() }
-                    catch { result = "failed: \(error)" }
+        ScrollView {
+            VStack {
+                Text(result).accessibilityIdentifier("backgroundtasks.result")
+                Button("Run native BackgroundTasks comparison") {
+                    guard !isBusy else { return }
+                    isBusy = true
+                    result = "running"
+                    Task {
+                        defer { isBusy = false }
+                        do { result = try await BackgroundTasksProbe.run() }
+                        catch { result = "failed: \(error)" }
+                    }
                 }
-            }
-            .accessibilityIdentifier("backgroundtasks.run")
-            Text(sharedResult).accessibilityIdentifier("backgroundtasks.shared.result")
-            Button("Prepare shared refresh persistence") {
-                sharedResult = "running"
-                Task {
-                    do { sharedResult = try await SharedRefreshNativeProbe.prepare() }
-                    catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
+                .accessibilityIdentifier("backgroundtasks.run")
+                Text(sharedResult).accessibilityIdentifier("backgroundtasks.shared.result")
+                Button("Prepare shared refresh persistence") {
+                    guard !isBusy else { return }
+                    isBusy = true
+                    sharedResult = "running"
+                    Task {
+                        defer { isBusy = false }
+                        do { sharedResult = try await SharedRefreshNativeProbe.prepare() }
+                        catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
+                    }
                 }
-            }
-            .accessibilityIdentifier("backgroundtasks.shared.prepare")
-            Button("Verify saved shared refresh") {
-                sharedResult = "running"
-                Task {
-                    do { sharedResult = try await SharedRefreshNativeProbe.verifyAfterRelaunch() }
-                    catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
+                .accessibilityIdentifier("backgroundtasks.shared.prepare")
+                Button("Verify saved shared refresh") {
+                    guard !isBusy else { return }
+                    isBusy = true
+                    sharedResult = "running"
+                    Task {
+                        defer { isBusy = false }
+                        do { sharedResult = try await SharedRefreshNativeProbe.verifyAfterRelaunch() }
+                        catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
+                    }
                 }
+                .accessibilityIdentifier("backgroundtasks.shared.verify")
+                Button("Clean up shared refresh fixture") {
+                    guard !isBusy else { return }
+                    isBusy = true
+                    sharedResult = "running"
+                    Task {
+                        defer { isBusy = false }
+                        do { sharedResult = try await SharedRefreshNativeProbe.cleanup() }
+                        catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
+                    }
+                }
+                .accessibilityIdentifier("backgroundtasks.shared.cleanup")
             }
-            .accessibilityIdentifier("backgroundtasks.shared.verify")
-            Button("Clean up shared refresh fixture") {
-                do { sharedResult = try SharedRefreshNativeProbe.cleanup() }
-                catch { sharedResult = SharedRefreshNativeProbe.failureDescription(error) }
-            }
-            .accessibilityIdentifier("backgroundtasks.shared.cleanup")
+            .disabled(isBusy)
         }
     }
 }
@@ -196,19 +216,24 @@ private struct PendingSnapshot: Sendable {
 }
 
 private struct SharedRefreshExpectation: Codable, Equatable {
+    let launchIdentifier: UUID
     let generation: UUID
     let earliestBeginDate: Date
 }
 
 private struct SharedRefreshLaunchEvidence: Codable {
+    let eventIdentifier: UUID
     let owner: String
     let generation: UUID
     let isRecovery: Bool
-    let completion: String
+    let receivedAt: Date
+    let completionIntent: String
+    var completionResult: String?
 }
 
 @MainActor
 private enum SharedRefreshFixtureStorage {
+    private static var evidenceWriteFailure: String?
     private static var supportURL: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("SharedRefreshNative", isDirectory: true)
@@ -224,51 +249,89 @@ private enum SharedRefreshFixtureStorage {
     }
 
     static func loadExpectation() throws -> SharedRefreshExpectation {
-        guard FileManager.default.fileExists(atPath: expectationURL.path) else {
+        let data: Data
+        do { data = try Data(contentsOf: expectationURL) }
+        catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            if let underlying = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError,
+               underlying.domain == NSPOSIXErrorDomain,
+               underlying.code != Int(POSIXErrorCode.ENOENT.rawValue) {
+                throw error
+            }
             throw ProbeFailure.sharedExpectationMissing
         }
-        return try JSONDecoder().decode(
-            SharedRefreshExpectation.self,
-            from: Data(contentsOf: expectationURL)
-        )
+        return try JSONDecoder().decode(SharedRefreshExpectation.self, from: data)
     }
 
     static func recordLaunch(owner: String, execution: MiniAppSharedRefreshExecution) {
+        var history: [SharedRefreshLaunchEvidence]
         do {
             try FileManager.default.createDirectory(at: supportURL, withIntermediateDirectories: true)
-            let existing = (try? JSONDecoder().decode(
-                [SharedRefreshLaunchEvidence].self,
-                from: Data(contentsOf: launchEvidenceURL)
-            )) ?? []
-            let evidence = SharedRefreshLaunchEvidence(
+            history = try loadLaunchEvidence()
+            history.append(SharedRefreshLaunchEvidence(
+                eventIdentifier: UUID(),
                 owner: owner,
                 generation: execution.request.generation,
                 isRecovery: execution.request.isRecovery,
-                completion: describe(execution.complete(success: true))
-            )
-            try JSONEncoder().encode(existing + [evidence])
-                .write(to: launchEvidenceURL, options: .atomic)
+                receivedAt: Date(),
+                completionIntent: "success",
+                completionResult: nil
+            ))
+            try saveLaunchEvidence(history)
         } catch {
+            evidenceWriteFailure = errorDescription(error)
             _ = execution.complete(success: false)
-            let native = error as NSError
-            let fallback = "evidence-failed:\(native.domain):\(native.code)"
-            try? Data(fallback.utf8).write(to: launchEvidenceURL, options: .atomic)
+            return
         }
+
+        history[history.index(before: history.endIndex)].completionResult = describe(
+            execution.complete(success: true)
+        )
+        do { try saveLaunchEvidence(history) }
+        catch { evidenceWriteFailure = errorDescription(error) }
+    }
+
+    private static func loadLaunchEvidence() throws -> [SharedRefreshLaunchEvidence] {
+        let data: Data
+        do { data = try Data(contentsOf: launchEvidenceURL) }
+        catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            if let underlying = (error as NSError).userInfo[NSUnderlyingErrorKey] as? NSError,
+               underlying.domain == NSPOSIXErrorDomain,
+               underlying.code != Int(POSIXErrorCode.ENOENT.rawValue) {
+                throw error
+            }
+            return []
+        }
+        return try JSONDecoder().decode([SharedRefreshLaunchEvidence].self, from: data)
+    }
+
+    private static func saveLaunchEvidence(_ evidence: [SharedRefreshLaunchEvidence]) throws {
+        let data = try JSONEncoder().encode(evidence)
+        try data.write(to: launchEvidenceURL, options: .atomic)
+    }
+
+    private static func errorDescription(_ error: Error) -> String {
+        let native = error as NSError
+        return "\(native.domain):\(native.code)"
     }
 
     static func launchEvidenceDescription() -> String {
-        guard let data = try? Data(contentsOf: launchEvidenceURL),
-              let evidence = try? JSONDecoder().decode([SharedRefreshLaunchEvidence].self, from: data)
-        else { return "none" }
-        return evidence.map {
-            "\($0.owner):\($0.generation.uuidString):recovery=\($0.isRecovery):\($0.completion)"
-        }.joined(separator: ",")
+        do {
+            let evidence = try loadLaunchEvidence()
+            let values = evidence.map {
+                "\($0.owner):\($0.generation.uuidString):received=\($0.receivedAt.timeIntervalSince1970):recovery=\($0.isRecovery):intent=\($0.completionIntent):result=\($0.completionResult ?? "pending")"
+            }
+            return (values.isEmpty ? "none" : values.joined(separator: ","))
+                + (evidenceWriteFailure.map { ":write-failed=\($0)" } ?? "")
+        } catch {
+            return "read-failed:\(errorDescription(error))"
+        }
     }
 
     static func removeFixtureState() throws {
         for url in [expectationURL, launchEvidenceURL] where FileManager.default.fileExists(atPath: url.path) {
             try FileManager.default.removeItem(at: url)
         }
+        evidenceWriteFailure = nil
     }
 
     private static func describe(_ completion: MiniAppSharedRefreshCompletion) -> String {
@@ -291,17 +354,17 @@ private enum SharedRefreshNativeProbe {
         try SharedRefreshFixtureStorage.removeFixtureState()
 
         let base = Date()
-        let aDate = base.addingTimeInterval(3_600)
-        let bDate = base.addingTimeInterval(1_800)
+        let aDate = base.addingTimeInterval(1_800)
+        let bDate = base.addingTimeInterval(3_600)
         let aReceipt = try a.submit(identifier: "sync", earliestBeginDate: aDate)
         try requireSubmitted(aReceipt.scheduling, stage: "submit-a", earliest: aDate,
                              durable: durableDescription(a: a, b: b))
         let bReceipt = try b.submit(identifier: "sync", earliestBeginDate: bDate)
-        try requireSubmitted(bReceipt.scheduling, stage: "submit-b", earliest: bDate,
+        try requireSubmitted(bReceipt.scheduling, stage: "submit-b", earliest: aDate,
                              durable: durableDescription(a: a, b: b))
         try requireLogical(a.pendingRequests, generation: aReceipt.generation, date: aDate, owner: "a")
         try requireLogical(b.pendingRequests, generation: bReceipt.generation, date: bDate, owner: "b")
-        try await requireOneNativeSharedRequest(earliest: bDate)
+        try await requireOneNativeSharedRequest(earliest: aDate)
 
         let cancellation = try a.cancel(identifier: "sync")
         try requireSubmitted(cancellation, stage: "cancel-a", earliest: bDate,
@@ -312,15 +375,19 @@ private enum SharedRefreshNativeProbe {
         try requireLogical(b.pendingRequests, generation: bReceipt.generation, date: bDate, owner: "b")
         try await requireOneNativeSharedRequest(earliest: bDate)
         try SharedRefreshFixtureStorage.saveExpectation(.init(
+            launchIdentifier: FixtureHost.launchIdentifier,
             generation: bReceipt.generation,
             earliestBeginDate: bDate
         ))
-        return "passed: shared prepared saved-a=\(aReceipt.generation.uuidString) native-a=submitted saved-b=\(bReceipt.generation.uuidString) native-b=submitted a-cancelled b-pending native-count=1 earliest=min"
+        return "passed: shared prepared launch=\(FixtureHost.launchIdentifier.uuidString) saved-a=\(aReceipt.generation.uuidString) native-a=submitted@a saved-b=\(bReceipt.generation.uuidString) native-b=submitted@a cancel-a=submitted@b b-pending native-count=1 earliest=b"
     }
 
     static func verifyAfterRelaunch() async throws -> String {
         let (_, a, b) = try handles()
         let expectation = try SharedRefreshFixtureStorage.loadExpectation()
+        guard expectation.launchIdentifier != FixtureHost.launchIdentifier else {
+            throw ProbeFailure.sharedLogicalState("same-launch=\(FixtureHost.launchIdentifier.uuidString)")
+        }
         guard a.pendingRequests.isEmpty else {
             throw ProbeFailure.sharedLogicalState("a-restored \(durableDescription(a: a, b: b))")
         }
@@ -338,15 +405,27 @@ private enum SharedRefreshNativeProbe {
             throw ProbeFailure.sharedNotReady
         }
         try await requireOneNativeSharedRequest(earliest: expectation.earliestBeginDate)
-        return "passed: shared restored b=\(expectation.generation.uuidString) native-count=1 earliest=preserved launch=\(SharedRefreshFixtureStorage.launchEvidenceDescription())"
+        return "passed: shared restored prepared-launch=\(expectation.launchIdentifier.uuidString) current-launch=\(FixtureHost.launchIdentifier.uuidString) b=\(expectation.generation.uuidString) native-count=1 earliest=preserved os-launch=\(SharedRefreshFixtureStorage.launchEvidenceDescription())"
     }
 
-    static func cleanup() throws -> String {
+    static func cleanup() async throws -> String {
         let (_, a, b) = try handles()
         _ = try a.cancelAllPendingRequests()
         _ = try b.cancelAllPendingRequests()
+        guard a.pendingRequests.isEmpty, b.pendingRequests.isEmpty else {
+            throw ProbeFailure.sharedLogicalState("cleanup \(durableDescription(a: a, b: b))")
+        }
+        let all: [PendingSnapshot] = await withCheckedContinuation { continuation in
+            BGTaskScheduler.shared.getPendingTaskRequests { requests in
+                continuation.resume(returning: requests.map(PendingSnapshot.init))
+            }
+        }
+        let sharedCount = all.filter { $0.identifier == FixtureIDs.shared }.count
+        guard sharedCount == 0 else {
+            throw ProbeFailure.sharedNativeState("cleanup-count=\(sharedCount)")
+        }
         try SharedRefreshFixtureStorage.removeFixtureState()
-        return "passed: shared cleanup a=0 b=0"
+        return "passed: shared cleanup verified logical=0 native=0"
     }
 
     static func failureDescription(_ error: Error) -> String {

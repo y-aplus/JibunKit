@@ -319,6 +319,7 @@ jobs:
           python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
           python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
+          python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             python3 Tools/verify-privacy-manifest-ownership.py
           fi
@@ -438,16 +439,20 @@ jobs:
               shutil.copyfile(url_probe, 'Sources/JibunKit/URLRoutingProbe.swift')
               shutil.copyfile(url_tests, 'UITests/URLRoutingUITests.swift')
               shutil.copyfile(url_build, 'Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift')
-          include_package_resources = os.environ['PACKAGE_RESOURCES_VALIDATION'] == 'true'
+          include_compatible_update = 'P0CCompatibleUpdateV1UITests' in os.environ.get('FEATURE_UI_TEST_FILTER', '')
+          assert 'P0CCompatibleUpdateV2UITests' not in os.environ.get('FEATURE_UI_TEST_FILTER', ''), 'Select V1; the update step runs V2 after replacing only A'
+          include_package_resources = os.environ['PACKAGE_RESOURCES_VALIDATION'] == 'true' or include_compatible_update
+          resource_packages = 'Tests/PackageResources' if include_compatible_update else 'PackageResourceFixtures'
           if include_package_resources:
-              shutil.copytree('Tests/PackageResources/FeatureA', 'PackageResourceFixtures/FeatureA')
-              shutil.copytree('Tests/PackageResources/FeatureB', 'PackageResourceFixtures/FeatureB')
+              if not include_compatible_update:
+                  shutil.copytree('Tests/PackageResources/FeatureA', 'PackageResourceFixtures/FeatureA')
+                  shutil.copytree('Tests/PackageResources/FeatureB', 'PackageResourceFixtures/FeatureB')
               shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostProbe.swift', 'Sources/JibunKit/PackageResourceHostProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostUITests.swift', 'UITests/PackageResourceHostUITests.swift')
           p = Path('Project.swift')
           s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
           if include_package_resources:
-              s = s.replace('.package(path: "Modules/Records")]', '.package(path: "Modules/Records"), .package(path: "PackageResourceFixtures/FeatureA"), .package(path: "PackageResourceFixtures/FeatureB")]')
+              s = s.replace('.package(path: "Modules/Records")]', f'.package(path: "Modules/Records"), .package(path: "{resource_packages}/FeatureA"), .package(path: "{resource_packages}/FeatureB")]')
           app_marker = 'name: "JibunKit-App", destinations:'
           assert s.count(app_marker) == 1, 'Expected exactly one host app target'
           before_app, marker, app_and_rest = s.partition(app_marker)
@@ -466,6 +471,8 @@ jobs:
           p = Path('Sources/JibunKit/MiniAppRegistry.swift')
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
+          if include_compatible_update:
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0CCompatibleUpdateProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
           if 'P0COnboardingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               shutil.copyfile('Tests/TemplateIntegration/P0COnboardingProbe.swift', 'Sources/JibunKit/P0COnboardingProbe.swift')
@@ -509,6 +516,12 @@ jobs:
           if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
+            python3 "$GITHUB_WORKSPACE/Tools/prepare-package-compatible-update-host.py" --host "$smoke" --stage v1
+            for owner in A B; do
+              python3 Tools/check-feature-connection.py --package "Tests/PackageResources/Feature$owner" --product "ResourceFeature$owner"
+            done
+          fi
           python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
           tuist generate --no-open
           xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
@@ -816,6 +829,45 @@ jobs:
               --source-root "$RUNNER_TEMP/template-check/UITests" --log "$RUNNER_TEMP/template-host.log"
           done
 
+      - name: Verify A-only package update in the same installed host
+        if: inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0CCompatibleUpdateV1UITests')
+        shell: bash
+        run: |
+          set -euo pipefail
+          host="$RUNNER_TEMP/template-check"
+          evidence="$RUNNER_TEMP/package-compatible-update-ios"
+          mkdir -p "$evidence/v1" "$evidence/v2"
+          container="$(xcrun simctl get_app_container "$SIMULATOR_ID" com.jibunkit.app data)"
+          cp "$container/Documents/p0-c-compatible-update/feature-a.json" "$evidence/v1/"
+          cp "$container/Documents/p0-c-compatible-update/feature-b.json" "$evidence/v1/"
+          cp "$host/.p0c-compatible-update-v1.json" "$evidence/source-invariants.json"
+          python3 Tools/prepare-package-compatible-update-host.py --host "$host" --stage v2 \
+            2>&1 | tee "$evidence/prepare-v2.log"
+          tuist generate --path "$host" --no-open
+          selector=MigrationUITests/P0CCompatibleUpdateV2UITests/testReadUpdateRelaunchRejectCorruptionAndRepairWithoutReseeding
+          # The second test build installs over the same bundle; never erase or uninstall.
+          xcodebuild test -workspace "$host/JibunKit.xcworkspace" -scheme MigrationUITests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/TemplateHostUpdate.xcresult" \
+            "-only-testing:$selector" -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+            2>&1 | tee "$evidence/update-host.log"
+          python3 Tools/validate-focused-ui-test.py "$selector" \
+            --source-root "$host/UITests" --log "$evidence/update-host.log"
+          container="$(xcrun simctl get_app_container "$SIMULATOR_ID" com.jibunkit.app data)"
+          cp "$container/Documents/p0-c-compatible-update/feature-a.json" "$evidence/v2/"
+          cp "$container/Documents/p0-c-compatible-update/feature-b.json" "$evidence/v2/"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'package-compatible-update-ios'
+          assert json.loads((root / 'v1/feature-a.json').read_text()) == {'name': 'alpha'}
+          assert json.loads((root / 'v2/feature-a.json').read_text()) == {'name': 'alpha', 'note': 'added by v2', 'priority': 2}
+          assert (root / 'v1/feature-b.json').read_bytes() == (root / 'v2/feature-b.json').read_bytes() == b'{"count":7}'
+          (root / 'result.json').write_text(json.dumps({'result': 'passed', 'a': 'v1-to-v2-repaired', 'b': 'exact-bytes-preserved'}) + '\n')
+          PY
+
       - name: Build and install backup UI harness
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))
         shell: bash
@@ -1051,6 +1103,8 @@ jobs:
             ${{ runner.temp }}/records-ui.log
             ${{ runner.temp }}/TemplateLaunch.xcresult
             ${{ runner.temp }}/TemplateHost.xcresult
+            ${{ runner.temp }}/TemplateHostUpdate.xcresult
+            ${{ runner.temp }}/package-compatible-update-ios/
             ${{ runner.temp }}/template-host-screenshots
             ${{ runner.temp }}/template-host.log
             ${{ runner.temp }}/template-launch.log

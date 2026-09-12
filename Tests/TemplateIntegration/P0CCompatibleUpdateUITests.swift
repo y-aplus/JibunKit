@@ -3,6 +3,7 @@ import XCTest
 @MainActor
 final class P0CCompatibleUpdateV1UITests: XCTestCase {
     func testSeedV1ThroughNormalFeatureURL() throws {
+        continueAfterFailure = false
         let app = try launch(stage: "v1-seed")
         expect(
             "passed:v1-seed|seeded-v1|eyJjb3VudCI6N30=|A|Hello from A|Bonjour de A|Aからこんにちは|B|Hello from B|Bonjour de B|Bからこんにちは",
@@ -14,6 +15,7 @@ final class P0CCompatibleUpdateV1UITests: XCTestCase {
 @MainActor
 final class P0CCompatibleUpdateV2UITests: XCTestCase {
     func testReadUpdateRelaunchRejectCorruptionAndRepairWithoutReseeding() throws {
+        continueAfterFailure = false
         var app = try launch(stage: "v2-update")
         expect(prefix: "passed:v2-update|old-defaults-updated|eyJjb3VudCI6N30=", in: app)
         app.terminate()

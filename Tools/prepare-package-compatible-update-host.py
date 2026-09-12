@@ -73,6 +73,8 @@ def prepare_v1(host: Path, repository: Path) -> None:
     target_packages = host / "Tests/PackageResources"
     for feature in ("FeatureA", "FeatureB"):
         destination = target_packages / feature
+        if not destination.resolve().is_relative_to(host.resolve()):
+            raise RuntimeError(f"package destination escapes the explicit generated host: {destination}")
         if destination.exists():
             shutil.rmtree(destination)
         destination.parent.mkdir(parents=True, exist_ok=True)

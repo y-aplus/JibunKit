@@ -57,7 +57,7 @@ public enum FeatureACompatibleUpdate {
             let corrupt = Data("{\"name\":".utf8)
             try corrupt.write(to: url, options: .atomic)
             do {
-                _ = try decoder.decode(FeatureAStoredValue.self, from: corrupt)
+                _ = try decoder.decode(FeatureAStoredValue.self, from: Data(contentsOf: url))
                 throw Failure.corruptValueAccepted
             } catch Failure.corruptValueAccepted {
                 throw Failure.corruptValueAccepted
@@ -66,6 +66,8 @@ public enum FeatureACompatibleUpdate {
                 return "corrupt-rejected-preserved"
             }
         case "v2-repair":
+            guard try Data(contentsOf: url) == Data("{\"name\":".utf8)
+            else { throw Failure.corruptBytesChanged }
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.sortedKeys]
             try encoder.encode(expected).write(to: url, options: .atomic)

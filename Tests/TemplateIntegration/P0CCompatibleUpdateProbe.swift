@@ -1,4 +1,5 @@
 // Copied only into the generated compatibility host.
+import Foundation
 import JibunKitCore
 import ResourceFeatureA
 import ResourceFeatureB

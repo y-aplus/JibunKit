@@ -11,7 +11,7 @@ enum P0ARecordsProbe {
 
     @MainActor
     @Observable
-    private final class State {
+    fileprivate final class RecordsProbeState {
         var result = "idle"
         var running = false
         var startsA = 0
@@ -77,7 +77,7 @@ enum P0ARecordsProbe {
     }
 
     private struct ProbeView: View {
-        @State private var state = State()
+        @State private var state = RecordsProbeState()
         var body: some View {
             VStack(spacing: 20) {
                 Text(state.result).accessibilityIdentifier("p0.records.result")

@@ -78,6 +78,104 @@ final class MiniAppPresentationOwnerTests: XCTestCase, @unchecked Sendable {
         await second.shutdown()
         XCTAssertEqual(owner.activePresentationCount, 0)
     }
+
+    @MainActor
+    func testEndAndConcurrentShutdownCallsCoalesceOneDismissal() async throws {
+        let runtime = MiniAppRuntime()
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+        try owner.connect(to: runtime)
+        let gate = PresentationGate()
+        let entered = expectation(description: "Dismissal entered once")
+        entered.expectedFulfillmentCount = 1
+        let allInvoked = expectation(description: "Dismiss all invoked")
+        let shutdownInvoked = expectation(description: "Runtime shutdown invoked")
+        let events = PresentationEvents()
+        let allReturned = PresentationFlag()
+        let shutdownReturned = PresentationFlag()
+        let handle = try owner.begin(.uiViewController) {
+            events.values.append("dismiss")
+            await gate.wait(entered: entered)
+        }
+
+        let individual = Task { await owner.end(handle) }
+        await fulfillment(of: [entered], timeout: 5)
+        let all = Task {
+            allInvoked.fulfill()
+            await owner.dismissAll()
+            allReturned.value = true
+        }
+        let runtimeShutdown = Task {
+            shutdownInvoked.fulfill()
+            await runtime.shutdown()
+            shutdownReturned.value = true
+        }
+        await fulfillment(of: [allInvoked, shutdownInvoked], timeout: 5)
+        XCTAssertFalse(allReturned.value)
+        XCTAssertFalse(shutdownReturned.value)
+        await gate.release()
+        await individual.value
+        await all.value
+        await runtimeShutdown.value
+
+        XCTAssertEqual(events.values, ["dismiss"])
+        XCTAssertEqual(owner.activePresentationCount, 0)
+    }
+
+    @MainActor
+    func testClosedRuntimeRejectsPresentationWhileOwnedTasksAreStillEnding() async throws {
+        let runtime = MiniAppRuntime()
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+        try owner.connect(to: runtime)
+        let taskGate = PresentationGate()
+        let taskEntered = expectation(description: "Owned task entered")
+        let shutdownInvoked = expectation(description: "Shutdown invoked")
+        try runtime.start { await taskGate.wait(entered: taskEntered) }
+        await fulfillment(of: [taskEntered], timeout: 5)
+
+        let shutdown = Task {
+            shutdownInvoked.fulfill()
+            await runtime.shutdown()
+        }
+        await fulfillment(of: [shutdownInvoked], timeout: 5)
+
+        XCTAssertTrue(runtime.isClosed)
+        XCTAssertThrowsError(try owner.begin(.sheet) {}) { error in
+            XCTAssertEqual(error as? MiniAppPresentationOwner.Failure, .notConnected)
+        }
+        await taskGate.release()
+        await shutdown.value
+    }
+
+    @MainActor
+    func testOldRuntimeCleanupCannotCloseReconnectedGeneration() async throws {
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+        let oldRuntime = MiniAppRuntime()
+        let newRuntime = MiniAppRuntime()
+        let events = PresentationEvents()
+        try owner.connect(to: oldRuntime)
+        _ = try owner.begin(.sheet) { events.values.append("old") }
+        await owner.dismissAll()
+        try owner.connect(to: newRuntime)
+        _ = try owner.begin(.fullScreenCover) { events.values.append("new") }
+
+        await oldRuntime.shutdown()
+
+        XCTAssertEqual(events.values, ["old"])
+        XCTAssertEqual(owner.activeKinds, [.fullScreenCover])
+        await newRuntime.shutdown()
+        XCTAssertEqual(events.values, ["old", "new"])
+    }
+
+    @MainActor
+    func testClosedRuntimeCannotBeConnected() async {
+        let runtime = MiniAppRuntime()
+        await runtime.shutdown()
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+
+        XCTAssertThrowsError(try owner.connect(to: runtime)) { error in
+            XCTAssertEqual(error as? MiniAppPresentationOwner.Failure, .runtimeClosed)
+        }
+    }
 }
 
 @MainActor

@@ -21,7 +21,7 @@ final class P0BPresentationUITests: XCTestCase {
         expectStatus("ended uikit", in: app)
 
         tap("presentation.show.sheet", in: app)
-        try XCUIDevice.shared.system.open(XCTUnwrap(URL(string: "p0presentation://presentation-b/")))
+        try XCUIDevice.shared.system.open(XCTUnwrap(URL(string: "jibunkit://mini-app/presentation-b")))
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))
         expectOwner("presentation-b", in: app)
         switchTo("presentation-a", in: app)
@@ -36,11 +36,13 @@ final class P0BPresentationUITests: XCTestCase {
         expectStatus("ended sheet", in: app)
 
         switchTo("presentation-a", in: app)
-        tap("presentation.stop", in: app)
+        tap("presentation.show.uikit", in: app)
+        tap("presentation.stop.uikit", in: app)
         let resume = app.buttons["miniapp.start.resume"]
         XCTAssertTrue(resume.waitForExistence(timeout: 15), app.debugDescription)
         resume.tap()
         XCTAssertTrue(app.buttons["presentation.show.uikit"].waitForExistence(timeout: 15), app.debugDescription)
+        expectStatus("owner stopped", in: app)
 
         switchTo("presentation-b", in: app)
         expectStatus("ended sheet", in: app)

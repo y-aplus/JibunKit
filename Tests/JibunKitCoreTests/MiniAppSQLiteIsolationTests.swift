@@ -170,6 +170,46 @@ final class MiniAppSQLiteIsolationTests: XCTestCase {
         XCTAssertEqual(try reader.scalar("SELECT value FROM entry"), 9)
         XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
     }
+
+    @MainActor
+    func testNativeNormalWriteMigrationResetAndStopResumePreserveOtherOwner() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = try files("database-a", root: root)
+        let b = try files("database-b", root: root)
+        let first = try SQLiteRestoreOwner(a.fileURL(named: "store.sqlite"))
+        let second = try SQLiteRestoreOwner(b.fileURL(named: "store.sqlite"))
+        defer { first.dispose(); second.dispose() }
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("database-a")
+        try await coordinator.withStoreAccess(for: owner) { try await first.write(6) }
+        try await coordinator.withStoreAccess(for: MiniAppID("database-b")) { try await second.write(8) }
+
+        let lifecycle = MiniAppRestoreLifecycle(
+            stop: { try await first.stop() },
+            resume: { try await first.resume() })
+        let migrated = try await coordinator.withStoreMaintenance(for: owner, lifecycle: lifecycle) {
+            try await MainActor.run {
+                let database = try NativeSQLiteFixture(first.url)
+                defer { try? database.close() }
+                try database.exec("ALTER TABLE entry ADD COLUMN label TEXT; UPDATE entry SET value=7, label='migrated'")
+                return try database.scalar("SELECT value FROM entry WHERE label='migrated'")
+            }
+        }
+        XCTAssertEqual(migrated, 7)
+        XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 7)
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+
+        try await coordinator.withStoreMaintenance(for: owner, lifecycle: lifecycle) {
+            try await MainActor.run {
+                let database = try NativeSQLiteFixture(first.url)
+                defer { try? database.close() }
+                try database.exec("DROP TABLE entry; CREATE TABLE entry(value INTEGER); INSERT INTO entry VALUES(0)")
+            }
+        }
+        XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 0)
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+    }
 }
 
 private actor SQLiteAccessGate {
@@ -193,11 +233,13 @@ private actor SQLiteAccessGate {
 
 @MainActor
 private final class SQLiteRestoreOwner {
-    let database: NativeSQLiteFixture
+    let url: URL
+    private(set) var database: NativeSQLiteFixture
     var runtime = MiniAppRuntime()
     var closeStatus: Int?
 
     init(_ url: URL) throws {
+        self.url = url
         database = try NativeSQLiteFixture(url)
         try database.exec("CREATE TABLE entry(value INTEGER); INSERT INTO entry VALUES(5)")
     }
@@ -211,6 +253,10 @@ private final class SQLiteRestoreOwner {
     func recover() throws {
         // Native BUSY leaves the connection alive; verify it before reopening admission.
         _ = try database.scalar("SELECT value FROM entry")
+        runtime = MiniAppRuntime()
+    }
+    func resume() throws {
+        database = try NativeSQLiteFixture(url)
         runtime = MiniAppRuntime()
     }
     func write(_ value: Int) throws { try database.exec("UPDATE entry SET value=\(value)") }

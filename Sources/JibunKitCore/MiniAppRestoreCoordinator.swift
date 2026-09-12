@@ -35,6 +35,22 @@ public actor MiniAppRestoreCoordinator {
         return try await operation()
     }
 
+    /// Runs an exclusive store migration, reset, or other maintenance operation.
+    /// The reservation spans lifecycle stop, the operation, and lifecycle resume.
+    /// Snapshot and restore providers already hold this reservation and must call
+    /// their lower-level store operations directly instead of nesting this API.
+    public func withStoreMaintenance<Value: Sendable>(
+        for owner: MiniAppID,
+        lifecycle: MiniAppRestoreLifecycle? = nil,
+        operation: @Sendable () async throws -> Value
+    ) async throws -> Value {
+        guard owner.isValid else { throw MiniAppBackupError.invalidEntry }
+        return try await perform(ids: [owner]) {
+            if let lifecycle { return try await lifecycle.perform(operation) }
+            return try await operation()
+        }
+    }
+
     func perform<Value: Sendable>(ids: [MiniAppID], operation: @Sendable () async throws -> Value) async throws -> Value {
         try Task.checkCancellation()
         let requested = Set(ids)

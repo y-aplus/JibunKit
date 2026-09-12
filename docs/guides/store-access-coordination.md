@@ -31,3 +31,20 @@ try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: context.id) {
 プロセス内の協調契約である。未登録の書込み、別processのWidget writer、旧callback、DBの保持接続や開いたtransactionを自動検出しない。復元前の全接続終了には[restoreLifecycle](../runtime-restore-integration.md)も必要であり、通常操作が0件というだけでファイルを安全に置換できるとは限らない。
 
 [検証記録](../verification/2026-09-11-store-access.md)はnative SQLiteと二Featureの共有画面を対象とする。全DBやD07全体の完成判定にはしない。
+
+## 移行・リセット等の排他的な保守
+
+通常操作と同時に走らせられない移行・リセットは、同じcoordinatorとownerで`withStoreMaintenance`へ渡す。値を返す操作にも使える。接続を閉じる必要がある保存層はrestoreと同じlifecycleを渡し、予約はstopからapply、resumeが終わるまで保持される。
+
+```swift
+let changed = try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(
+    for: context.id,
+    lifecycle: featureLifetime.restoreLifecycle
+) {
+    try await database.migrateIfNeeded()
+}
+```
+
+受付前に取消済みならstopもoperationも実行しない。operation開始後の取消、transaction完了、rollbackは保存層の責任であり、resume失敗はrestoreと同じ`MiniAppRestoreLifecycle.Failure`で報告される。既存の通常操作または同ownerの復元・snapshot・保守があれば即座にConflictを返し、自動待機や暗黙の昇格はしない。
+
+RecordsFeatureはCoreをimportせず、`RecordStoreOperationBoundary`を初期化時に受け取る。standaloneでは既定の直接実行、hostでは`RecordsStoreOperationBoundary`を注入する。`records`、保存、削除、添付の追加・読出し・import・copy・削除は通常操作、`migrateIfNeeded`と`reset`は保守操作として登録される。一方、backup providerのexport/applyは外側ですでにowner予約を持つため、snapshot用の低層操作を直接呼び、同ownerの予約を二重取得しない。

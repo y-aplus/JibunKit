@@ -34,7 +34,7 @@ public struct MiniAppRestoreLifecycle: Sendable {
         }
     }
 
-    func perform(_ apply: @Sendable () async throws -> Void) async throws {
+    func perform<Value: Sendable>(_ apply: @Sendable () async throws -> Value) async throws -> Value {
         do { try await stop() } catch {
             let stopReason = error.localizedDescription
             do { try await recoverAfterFailedStop?() } catch {
@@ -42,11 +42,14 @@ public struct MiniAppRestoreLifecycle: Sendable {
             }
             throw StopFailure(reason: stopReason, recoveryReason: nil)
         }
-        var restoreError: (any Error)?
-        do { try await apply() } catch { restoreError = error }
+        let result: Result<Value, any Error>
+        do { result = .success(try await apply()) } catch { result = .failure(error) }
         do { try await resume() } catch {
-            throw Failure(restoreReason: restoreError?.localizedDescription, resumeReason: error.localizedDescription)
+            let restoreReason: String?
+            if case .failure(let error) = result { restoreReason = error.localizedDescription }
+            else { restoreReason = nil }
+            throw Failure(restoreReason: restoreReason, resumeReason: error.localizedDescription)
         }
-        if let restoreError { throw restoreError }
+        return try result.get()
     }
 }

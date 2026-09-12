@@ -2,6 +2,60 @@ import XCTest
 @testable import JibunKitCore
 
 final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
+    func testMaintenanceReturnsValueRunsLifecycleInOrderAndExcludesOnlyItsOwner() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("a")
+        let events = RestoreCoordinatorEvents()
+        let gate = RestoreCoordinatorGate()
+        let lifecycle = MiniAppRestoreLifecycle(
+            stop: { await events.append("stop") },
+            resume: { await events.append("resume") })
+        let maintenance = Task {
+            try await coordinator.withStoreMaintenance(for: owner, lifecycle: lifecycle) {
+                await events.append("apply")
+                await gate.block()
+                return 42
+            }
+        }
+        await gate.waitUntilBlocked()
+        do {
+            try await coordinator.withStoreAccess(for: owner) { XCTFail("Access entered maintenance") }
+            XCTFail("Expected conflict")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        let other = try await coordinator.withStoreAccess(for: MiniAppID("b")) { "available" }
+        XCTAssertEqual(other, "available")
+        await gate.release()
+        XCTAssertEqual(try await maintenance.value, 42)
+        XCTAssertEqual(await events.values, ["stop", "apply", "resume"])
+    }
+
+    func testMaintenanceChecksCancellationBeforeLifecycleAndReleasesAfterFailure() async throws {
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("a")
+        let events = RestoreCoordinatorEvents()
+        let gate = RestoreCoordinatorGate()
+        let cancelled = Task {
+            await gate.block()
+            return try await coordinator.withStoreMaintenance(for: owner, lifecycle: MiniAppRestoreLifecycle(
+                stop: { await events.append("stop") },
+                resume: { await events.append("resume") })) {
+                    await events.append("apply")
+                }
+        }
+        await gate.waitUntilBlocked()
+        cancelled.cancel()
+        await gate.release()
+        do { try await cancelled.value; XCTFail("Expected cancellation") } catch is CancellationError {}
+        XCTAssertEqual(await events.values, [])
+
+        do {
+            try await coordinator.withStoreMaintenance(for: owner) { throw MiniAppBackupError.invalidEntry }
+            XCTFail("Expected operation failure")
+        } catch let error as MiniAppBackupError { XCTAssertEqual(error, .invalidEntry) }
+        let value = try await coordinator.withStoreMaintenance(for: owner) { 7 }
+        XCTAssertEqual(value, 7)
+    }
+
     func testOrdinaryAccessesOverlapAndKeepRestoreExcludedUntilLastExit() async throws {
         let coordinator = MiniAppRestoreCoordinator()
         let a = MiniAppID("a")
@@ -321,6 +375,11 @@ final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
         let retry = try MiniAppRestorePlan(prepared: [owner: MiniAppPreparedRestore {}])
         try await retry.apply(coordinator: coordinator)
     }
+}
+
+private actor RestoreCoordinatorEvents {
+    private(set) var values: [String] = []
+    func append(_ value: String) { values.append(value) }
 }
 
 private actor RestoreCoordinatorGate {

@@ -81,3 +81,8 @@ The fixture and verifier were reviewed statically on Windows. Python syntax and 
 working-tree diff are checked locally, but this machine has no Swift toolchain, so no
 SwiftPM resolve, build, or XCTest result is claimed here. Native execution evidence must
 be added only after the verifier runs on a Swift-equipped host.
+
+The existing workflow has an opt-in `package_sdk_aliases_only` mode for this
+comparison. It selects Xcode 26.6's Swift toolchain and runs only the four pure-Swift
+configurations; the normal iOS/IPA job is skipped. Logs and summary are uploaded
+without compiled scratch directories. This mode does not establish iOS integration.

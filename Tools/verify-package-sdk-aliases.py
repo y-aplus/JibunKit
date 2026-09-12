@@ -144,6 +144,13 @@ summary["cases"]["CombinedUnaliased"] = unaliased_summary
 if collision_valid:
     report("CombinedUnaliased", collision_stage, "expected VendorSDK collision")
 else:
+    if collision_stage == "resolve":
+        unaliased_summary["resolve"] = "failed with an unexpected diagnostic"
+    else:
+        unaliased_summary["test"] = (
+            "unexpected success" if collision_result.returncode == 0
+            else "failed with an unexpected diagnostic"
+        )
     unaliased_summary["collision"] = "missing or invalid diagnostic"
     summary["failures"].append(
         "CombinedUnaliased did not emit the expected VendorSDK/vendora/vendorb collision"

@@ -192,7 +192,7 @@ final class MiniAppSQLiteIsolationTests: XCTestCase {
             try await MainActor.run {
                 let database = try NativeSQLiteFixture(first.url)
                 defer { try? database.close() }
-                try database.exec("ALTER TABLE entry ADD COLUMN label TEXT; UPDATE entry SET value=7, label='migrated'")
+                try database.exec("BEGIN IMMEDIATE; ALTER TABLE entry ADD COLUMN label TEXT; UPDATE entry SET value=7, label='migrated'; COMMIT")
                 return try database.scalar("SELECT value FROM entry WHERE label='migrated'")
             }
         }
@@ -200,11 +200,32 @@ final class MiniAppSQLiteIsolationTests: XCTestCase {
         XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 7)
         XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
 
+        do {
+            try await coordinator.withStoreMaintenance(for: owner, lifecycle: lifecycle) {
+                try await MainActor.run {
+                    let database = try NativeSQLiteFixture(first.url)
+                    defer { try? database.close() }
+                    try database.exec("BEGIN IMMEDIATE")
+                    do {
+                        try database.exec("UPDATE entry SET value=99; INSERT INTO missing_table VALUES(1)")
+                        try database.exec("COMMIT")
+                    } catch {
+                        try? database.exec("ROLLBACK")
+                        throw error
+                    }
+                }
+            }
+            XCTFail("Expected migration transaction failure")
+        } catch {}
+        XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 7)
+        XCTAssertEqual(try first.database.scalar("SELECT count(*) FROM pragma_table_info('entry') WHERE name='label'"), 1)
+        XCTAssertEqual(try second.database.scalar("SELECT value FROM entry"), 8)
+
         try await coordinator.withStoreMaintenance(for: owner, lifecycle: lifecycle) {
             try await MainActor.run {
                 let database = try NativeSQLiteFixture(first.url)
                 defer { try? database.close() }
-                try database.exec("DROP TABLE entry; CREATE TABLE entry(value INTEGER); INSERT INTO entry VALUES(0)")
+                try database.exec("BEGIN IMMEDIATE; DROP TABLE entry; CREATE TABLE entry(value INTEGER); INSERT INTO entry VALUES(0); COMMIT")
             }
         }
         XCTAssertEqual(try first.database.scalar("SELECT value FROM entry"), 0)

@@ -112,8 +112,10 @@ final class RecordStoreTests: XCTestCase, @unchecked Sendable {
         try legacy.write(to: root.appendingPathComponent("records.json"))
         let boundary = RecordStoreBoundaryProbe()
         let store = try RecordStore(directory: root, operations: boundary)
-        XCTAssertTrue(try await store.migrateIfNeeded())
-        XCTAssertFalse(try await store.migrateIfNeeded())
+        let migrated = try await store.migrateIfNeeded()
+        XCTAssertTrue(migrated)
+        let alreadyCurrent = try await store.migrateIfNeeded()
+        XCTAssertFalse(alreadyCurrent)
         var record = try await store.records()[0]
         record.title = "Updated"
         try await store.save(record)
@@ -129,11 +131,26 @@ final class RecordStoreTests: XCTestCase, @unchecked Sendable {
         try await store.save(resetRecord)
         let resetAttachment = try await store.addAttachment(to: resetRecord.id, name: "reset.txt", data: Data([3]))
         try await store.reset()
-        XCTAssertTrue(try await store.records().isEmpty)
+        let recordsAfterReset = try await store.records()
+        XCTAssertTrue(recordsAfterReset.isEmpty)
         let counts = await boundary.counts
         XCTAssertEqual(counts.access, 11)
         XCTAssertEqual(counts.maintenance, 3)
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("attachments").appendingPathComponent(resetAttachment.id.uuidString).path))
+    }
+
+    func testUnknownAndCorruptMigrationPreserveOriginalBytes() async throws {
+        for bytes in [
+            Data("{\"version\":99,\"records\":[]}".utf8),
+            Data("{\"version\":2,\"records\":[{\"broken\":true}]}".utf8)
+        ] {
+            let root = try directory()
+            let index = root.appendingPathComponent("records.json")
+            try bytes.write(to: index)
+            let store = try RecordStore(directory: root)
+            do { _ = try await store.migrateIfNeeded(); XCTFail("Invalid index accepted") } catch {}
+            XCTAssertEqual(try Data(contentsOf: index), bytes)
+        }
     }
 }
 

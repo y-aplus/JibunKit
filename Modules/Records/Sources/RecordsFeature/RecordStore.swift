@@ -212,11 +212,9 @@ public actor RecordStore {
         catch let error as CocoaError where error.code == .fileReadNoSuchFile { return false }
         struct Header: Decodable { let version: Int }
         let version = try JSONDecoder().decode(Header.self, from: data).version
-        guard version == 1 else {
-            guard version == 2 else { throw RecordStoreError.unsupportedSchema(version) }
-            return false
-        }
-        try persist(Self.decodeIndex(data))
+        let index = try Self.decodeIndex(data)
+        guard version == 1 else { return false }
+        try persist(index)
         return true
     }
 

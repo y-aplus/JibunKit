@@ -101,7 +101,9 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         let store = try RecordStore(
             directory: root.appendingPathComponent("live"),
             operations: RecordsStoreOperationBoundary(owner: owner, coordinator: coordinator))
-        try await store.save(Record(title: "Kept"))
+        let record = Record(title: "Kept")
+        try await store.save(record)
+        let attachment = try await store.addAttachment(to: record.id, name: "kept.txt", data: Data([4]))
         let gate = RecordsCoordinatorGate()
         let maintenance = Task {
             try await coordinator.withStoreMaintenance(for: owner) { await gate.block() }
@@ -113,6 +115,25 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
         await gate.release()
         try await maintenance.value
+
+        let afterRejection = try await store.records()
+        XCTAssertEqual(afterRejection.map(\.title), ["Kept"])
+        let rejectedAttachment = try await store.attachmentData(recordID: record.id, attachmentID: attachment.id)
+        XCTAssertEqual(rejectedAttachment, Data([4]))
+
+        let cancellationGate = RecordsCoordinatorGate()
+        let cancelledReset = Task {
+            await cancellationGate.block()
+            try await store.reset()
+        }
+        await cancellationGate.waitUntilBlocked()
+        cancelledReset.cancel()
+        await cancellationGate.release()
+        do { try await cancelledReset.value; XCTFail("Expected cancelled reset") } catch is CancellationError {}
+        let afterCancellation = try await store.records()
+        XCTAssertEqual(afterCancellation.map(\.title), ["Kept"])
+        let cancelledAttachment = try await store.attachmentData(recordID: record.id, attachmentID: attachment.id)
+        XCTAssertEqual(cancelledAttachment, Data([4]))
 
         let entry = try await RecordsBackup.provider(store: store, id: owner).exportEntry(
             to: root.appendingPathComponent("snapshot"), coordinator: coordinator)

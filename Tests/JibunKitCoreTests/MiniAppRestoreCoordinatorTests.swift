@@ -25,8 +25,10 @@ final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
         let other = try await coordinator.withStoreAccess(for: MiniAppID("b")) { "available" }
         XCTAssertEqual(other, "available")
         await gate.release()
-        XCTAssertEqual(try await maintenance.value, 42)
-        XCTAssertEqual(await events.values, ["stop", "apply", "resume"])
+        let value = try await maintenance.value
+        XCTAssertEqual(value, 42)
+        let completedEvents = await events.values
+        XCTAssertEqual(completedEvents, ["stop", "apply", "resume"])
     }
 
     func testMaintenanceChecksCancellationBeforeLifecycleAndReleasesAfterFailure() async throws {
@@ -46,7 +48,8 @@ final class MiniAppRestoreCoordinatorTests: XCTestCase, @unchecked Sendable {
         cancelled.cancel()
         await gate.release()
         do { try await cancelled.value; XCTFail("Expected cancellation") } catch is CancellationError {}
-        XCTAssertEqual(await events.values, [])
+        let cancelledEvents = await events.values
+        XCTAssertEqual(cancelledEvents, [])
 
         do {
             try await coordinator.withStoreMaintenance(for: owner) { throw MiniAppBackupError.invalidEntry }

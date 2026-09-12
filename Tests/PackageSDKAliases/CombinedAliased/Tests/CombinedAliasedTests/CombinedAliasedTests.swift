@@ -10,9 +10,13 @@ final class CombinedAliasedTests: XCTestCase {
         XCTAssertEqual(FeatureAClient.configuration, "vendor-a-default")
         XCTAssertEqual(FeatureBClient.configuration, "vendor-b-default")
 
+        FeatureBClient.configuration = "combined-b-written"
+        XCTAssertEqual(FeatureAClient.configuration, "vendor-a-default")
+        XCTAssertEqual(FeatureBClient.configuration, "combined-b-written")
+
         FeatureAClient.configuration = "combined-a-updated"
 
         XCTAssertEqual(FeatureAClient.configuration, "combined-a-updated")
-        XCTAssertEqual(FeatureBClient.configuration, "vendor-b-default")
+        XCTAssertEqual(FeatureBClient.configuration, "combined-b-written")
     }
 }

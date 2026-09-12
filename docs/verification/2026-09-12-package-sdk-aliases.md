@@ -24,14 +24,22 @@ The fixture contains four root packages:
 - `CombinedAliased` uses only PackageDescription's standard
   `.product(..., moduleAliases:)` API, mapping the transitive source module to
   `VendorASDK` on the Feature A edge and `VendorBSDK` on the Feature B edge. Its XCTest
-  requires both version strings and initial configuration values simultaneously, then
-  updates A and requires B to remain unchanged.
+  requires both version strings and initial configuration values simultaneously, writes
+  an explicit B value, then updates A and requires that written B value to remain
+  unchanged before and after the A update.
 
+All manifests use Swift tools version 6.0 and declare macOS 12 as their minimum platform.
 `Tools/verify-package-sdk-aliases.py` runs `swift package resolve` and `swift test` for
-the successful roots with separate scratch directories. For the unaliased root, it
-records whichever native SwiftPM stage first diagnoses the collision and validates the
-diagnostic before treating that failure as expected. All stdout/stderr, the Swift
-version, and a JSON summary are retained in the requested evidence directory.
+the successful roots with separate scratch directories. Exit status zero is not enough:
+each successful root must print the `Test Case ... passed` marker for its exact expected
+XCTest method. For the unaliased root, the verifier records whichever native SwiftPM
+stage first diagnoses the collision and validates the diagnostic before treating that
+failure as expected.
+
+Except when the Swift executable itself is unavailable, one case failure does not stop
+the other independent comparisons. Each case and stage is printed as it completes, all
+stdout/stderr logs are retained, and `summary.json` is written before the verifier exits
+nonzero for any accumulated failures.
 
 Expected invocation:
 

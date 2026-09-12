@@ -138,6 +138,9 @@ final class MiniAppSharedRefreshJournalTests: XCTestCase {
             url: blockingParent.appendingPathComponent("journal.json")
         )
 
+        // On macOS, traversing through a file is a read failure, not the
+        // explicit no-such-file Cocoa error accepted as an empty journal.
+        XCTAssertThrowsError(try journal.load())
         XCTAssertThrowsError(try journal.save([
             record(owner: "a", id: "one", generation: 1),
         ]))

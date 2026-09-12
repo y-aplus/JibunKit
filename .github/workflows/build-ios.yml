@@ -346,6 +346,7 @@ jobs:
         shell: bash
         env:
           PACKAGE_RESOURCES_VALIDATION: ${{ inputs.package_resources_validation }}
+          FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
         run: |
           set -euo pipefail
           smoke="$RUNNER_TEMP/template-check"
@@ -368,6 +369,8 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsUITests.swift', 'UITests/P0ARecordsUITests.swift')
+          shutil.copyfile('Tests/TemplateIntegration/P0ASQLiteProbe.swift', 'Sources/JibunKit/P0ASQLiteProbe.swift')
+          shutil.copyfile('Tests/TemplateIntegration/P0ASQLiteUITests.swift', 'UITests/P0ASQLiteUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookProbe.swift', 'Sources/JibunKit/HostLaunchHookProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookUITests.swift', 'UITests/HostLaunchHookUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipProbe.swift', 'Sources/JibunKit/NowPlayingOwnershipProbe.swift')
@@ -456,6 +459,8 @@ jobs:
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
+          if 'P0ASQLiteUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ASQLiteProbe.definition,'))
           if 'P0ARecordsUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ARecordsProbe.definition,'))
           if 'P0ALifetimeUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):

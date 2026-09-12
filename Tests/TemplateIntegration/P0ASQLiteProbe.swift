@@ -54,11 +54,11 @@ private final class P0ASQLiteProbeState {
         Task {
             do {
                 let value = try await executeComparison()
-                await shutdownAll()
+                try await shutdownAll()
                 result = value
                 print("P0A_SQLITE \(value)")
             } catch {
-                await shutdownAll()
+                try? await shutdownAll()
                 result = "failed: \(error)"
             }
             isRunning = false
@@ -115,6 +115,7 @@ private final class P0ASQLiteProbeState {
 
     private func startRuntimeA() async throws {
         guard let storeA else { throw P0ASQLiteProbeError.missingStore }
+        try await storeA.requireClosed()
         try await storeA.open()
         let runtime = MiniAppRuntime()
         try runtime.onShutdownAsync { try? await storeA.close() }
@@ -123,6 +124,7 @@ private final class P0ASQLiteProbeState {
 
     private func startRuntimeB() async throws {
         guard let storeB else { throw P0ASQLiteProbeError.missingStore }
+        try await storeB.requireClosed()
         try await storeB.open()
         let runtime = MiniAppRuntime()
         try runtime.onShutdownAsync { try? await storeB.close() }
@@ -132,14 +134,23 @@ private final class P0ASQLiteProbeState {
     private func stopRuntimeA() async throws {
         guard let runtimeA else { throw P0ASQLiteProbeError.missingRuntime }
         await runtimeA.shutdown()
+        // Runtime cleanup is nonthrowing. Do not treat a rejected native close
+        // as a completed connection boundary before opening a maintenance handle.
+        try await storeA?.requireClosed()
         self.runtimeA = nil
     }
 
-    private func shutdownAll() async {
+    private func shutdownAll() async throws {
         if let runtimeA { await runtimeA.shutdown() }
         if let runtimeB { await runtimeB.shutdown() }
         runtimeA = nil
         runtimeB = nil
+        // Also dispose partially initialized stores if setup failed before a
+        // runtime was registered. Both owners get a cleanup attempt.
+        try? await storeA?.close()
+        try? await storeB?.close()
+        try await storeA?.requireClosed()
+        try await storeB?.requireClosed()
     }
 }
 
@@ -148,6 +159,7 @@ private enum P0ASQLiteProbeError: Error {
     case missingRuntime
     case intentionalFailure
     case expectedFailureMissing
+    case connectionStillOpen
 }
 
 /// Owns one native connection and all synchronous SQL on its actor executor.
@@ -188,6 +200,10 @@ private actor P0ANativeSQLiteStore {
         self.handle = nil
     }
 
+    func requireClosed() throws {
+        guard handle == nil else { throw P0ASQLiteProbeError.connectionStillOpen }
+    }
+
     func write(_ value: Int) throws { try exec("UPDATE entry SET value=\(value)") }
     func value() throws -> Int { try scalar("SELECT value FROM entry") }
     func hasLabelColumn() throws -> Int {
@@ -195,6 +211,7 @@ private actor P0ANativeSQLiteStore {
     }
 
     func migrate(value: Int) throws -> Int {
+        try requireClosed()
         try open()
         defer { try? close() }
         try transaction {
@@ -205,6 +222,7 @@ private actor P0ANativeSQLiteStore {
     }
 
     func failAndRollBack(value: Int) throws {
+        try requireClosed()
         try open()
         defer { try? close() }
         do {
@@ -218,6 +236,7 @@ private actor P0ANativeSQLiteStore {
     }
 
     func reset() throws {
+        try requireClosed()
         try open()
         defer { try? close() }
         try transaction {

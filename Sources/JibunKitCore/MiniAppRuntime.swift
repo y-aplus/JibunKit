@@ -25,7 +25,6 @@ public final class MiniAppRuntime {
     private var cleanups: [@MainActor @Sendable () async -> Void] = []
     private var shutdownTask: Task<Void, Never>?
     private var shutdownPhase: ShutdownProgress.Phase = .active
-    private var shutdownPendingTaskCount = 0
     private var shutdownRemainingCleanupCount = 0
     private var shutdownStartedAt: Date?
 
@@ -34,17 +33,17 @@ public final class MiniAppRuntime {
     /// A point-in-time view of shutdown. Cancellation alone never advances the
     /// task count; a task stops being pending only after its operation returns.
     public var shutdownProgress: ShutdownProgress {
-        if shutdownPhase == .active {
+        if shutdownPhase == .active || shutdownPhase == .waitingForTasks {
             return ShutdownProgress(
-                phase: .active,
+                phase: shutdownPhase,
                 pendingTaskCount: tasks.activeTaskCount,
-                remainingCleanupCount: cleanups.count,
-                startedAt: nil
+                remainingCleanupCount: shutdownPhase == .active ? cleanups.count : shutdownRemainingCleanupCount,
+                startedAt: shutdownStartedAt
             )
         }
         return ShutdownProgress(
             phase: shutdownPhase,
-            pendingTaskCount: shutdownPendingTaskCount,
+            pendingTaskCount: 0,
             remainingCleanupCount: shutdownRemainingCleanupCount,
             startedAt: shutdownStartedAt
         )
@@ -82,13 +81,10 @@ public final class MiniAppRuntime {
         cleanups.removeAll()
         let ownedTasks = tasks
         shutdownPhase = .waitingForTasks
-        shutdownPendingTaskCount = ownedTasks.activeTaskCount
         shutdownRemainingCleanupCount = ownedCleanups.count
         shutdownStartedAt = Date()
         let task = Task { @MainActor [weak self] in
-            await ownedTasks.cancelAllAndWait { [weak self] remaining in
-                self?.shutdownPendingTaskCount = remaining
-            }
+            await ownedTasks.cancelAllAndWait()
             self?.shutdownPhase = .runningCleanups
             for cleanup in ownedCleanups.reversed() {
                 await cleanup()

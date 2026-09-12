@@ -16,15 +16,10 @@ final class MiniAppRuntimeShutdownProgressTests: XCTestCase, @unchecked Sendable
 
         runtime.cancelTasks()
 
-        XCTAssertEqual(
-            runtime.shutdownProgress,
-            .init(
-                phase: .active,
-                pendingTaskCount: 1,
-                remainingCleanupCount: 1,
-                startedAt: nil
-            )
-        )
+        XCTAssertEqual(runtime.shutdownProgress.phase, .active)
+        XCTAssertEqual(runtime.shutdownProgress.pendingTaskCount, 1)
+        XCTAssertEqual(runtime.shutdownProgress.remainingCleanupCount, 1)
+        XCTAssertNil(runtime.shutdownProgress.startedAt)
 
         await gate.release()
         await task.value
@@ -83,7 +78,6 @@ final class MiniAppRuntimeShutdownProgressTests: XCTestCase, @unchecked Sendable
 
         await taskGate1.release()
         await task1.value
-        await Task.yield()
         XCTAssertEqual(runtime.shutdownProgress.phase, .waitingForTasks)
         XCTAssertEqual(runtime.shutdownProgress.pendingTaskCount, 1)
         XCTAssertEqual(runtime.shutdownProgress.startedAt, startedAt)
@@ -112,15 +106,10 @@ final class MiniAppRuntimeShutdownProgressTests: XCTestCase, @unchecked Sendable
         await joined.value
 
         XCTAssertEqual(events.values, [3, 2, 1])
-        XCTAssertEqual(
-            runtime.shutdownProgress,
-            .init(
-                phase: .completed,
-                pendingTaskCount: 0,
-                remainingCleanupCount: 0,
-                startedAt: startedAt
-            )
-        )
+        XCTAssertEqual(runtime.shutdownProgress.phase, .completed)
+        XCTAssertEqual(runtime.shutdownProgress.pendingTaskCount, 0)
+        XCTAssertEqual(runtime.shutdownProgress.remainingCleanupCount, 0)
+        XCTAssertEqual(runtime.shutdownProgress.startedAt, startedAt)
     }
 }
 

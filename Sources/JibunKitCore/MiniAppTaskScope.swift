@@ -33,22 +33,9 @@ public final class MiniAppTaskScope {
     /// coordinator, never from one of this scope's operations (which would wait
     /// for itself). Non-cooperative operations can prevent completion.
     public func cancelAllAndWait() async {
-        await cancelAllAndWait(onTaskCompletion: { _ in })
-    }
-
-    func cancelAllAndWait(onTaskCompletion: @MainActor (Int) -> Void) async {
         let owned = Array(tasks.values)
         for task in owned { task.cancel() }
-        var remaining = owned.count
-        await withTaskGroup(of: Void.self) { group in
-            for task in owned {
-                group.addTask { await task.value }
-            }
-            for await _ in group {
-                remaining -= 1
-                onTaskCompletion(remaining)
-            }
-        }
+        for task in owned { await task.value }
     }
 
     deinit {

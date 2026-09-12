@@ -1,4 +1,4 @@
-> 最新公開版: [0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。1.0は未達です。mainには未リリースの追加検証があり、実装はユーザー指示で停止中です。
+> 最新公開版: [0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。1.0は未達です。mainには未リリースの追加検証があり、Issue #5の方針でP0-Aの実装を再開しています。
 
 # JibunKit
 
@@ -8,7 +8,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。公開版とmainの差分・停止状態は[現在状態](docs/status.md)にまとめています。[0.6.0の変更と検証範囲](release-notes-0.6.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.6.0の変更と検証範囲](release-notes-0.6.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。次はP0完了を0.7.0、P1完了を0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
 
@@ -28,7 +28,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.6.0の出荷範囲、未リリース差分、停止状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.6.0の出荷範囲、未リリース差分、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |
@@ -56,7 +56,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成ですが、実装はユーザー指示で停止中です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。単発のCI成功や0.6.0公開を1.0完成とは扱いません。
+目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-Aの実装を再開しています。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。単発のCI成功や0.6.0公開を1.0完成とは扱いません。
 
 ## 現在の開発基盤
 

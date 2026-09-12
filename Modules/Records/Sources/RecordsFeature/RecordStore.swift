@@ -29,6 +29,23 @@ public enum RecordStoreError: Error, Equatable {
     case missingAttachment
 }
 
+/// Host-injected admission for ordinary and exclusive store operations. The
+/// default keeps the standalone package usable without depending on JibunKitCore.
+public protocol RecordStoreOperationBoundary: Sendable {
+    func withAccess<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value
+    func withMaintenance<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value
+}
+
+public struct DirectRecordStoreOperationBoundary: RecordStoreOperationBoundary {
+    public init() {}
+    public func withAccess<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value {
+        try await operation()
+    }
+    public func withMaintenance<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value {
+        try await operation()
+    }
+}
+
 /// Use one store actor per directory. The caller supplies the storage location.
 /// Cross-process writes require additional coordination by the application.
 public actor RecordStore {
@@ -38,17 +55,30 @@ public actor RecordStore {
     }
 
     private let directory: URL
+    private let operations: any RecordStoreOperationBoundary
     private var indexURL: URL { directory.appendingPathComponent("records.json") }
     private var assets: URL { directory.appendingPathComponent("attachments", isDirectory: true) }
 
-    public init(directory: URL) throws {
+    public init(
+        directory: URL,
+        operations: any RecordStoreOperationBoundary = DirectRecordStoreOperationBoundary()
+    ) throws {
         guard directory.isFileURL else { throw RecordStoreError.invalidData }
         self.directory = directory
+        self.operations = operations
     }
 
-    public func records() throws -> [Record] { try load().records }
+    public func records() async throws -> [Record] {
+        try await operations.withAccess { try await self.readRecords() }
+    }
 
-    public func save(_ record: Record) throws {
+    private func readRecords() throws -> [Record] { try load().records }
+
+    public func save(_ record: Record) async throws {
+        try await operations.withAccess { try await self.write(record) }
+    }
+
+    private func write(_ record: Record) throws {
         var index = try load()
         if let position = index.records.firstIndex(where: { $0.id == record.id }) {
             // Attachment membership is changed only by the attachment operations.
@@ -61,7 +91,11 @@ public actor RecordStore {
         try persist(index)
     }
 
-    public func delete(id: UUID) throws {
+    public func delete(id: UUID) async throws {
+        try await operations.withAccess { try await self.removeRecord(id: id) }
+    }
+
+    private func removeRecord(id: UUID) throws {
         var index = try load()
         guard let position = index.records.firstIndex(where: { $0.id == id }) else { throw RecordStoreError.missingRecord }
         let removed = index.records.remove(at: position)
@@ -72,7 +106,11 @@ public actor RecordStore {
     }
 
     @discardableResult
-    public func addAttachment(to id: UUID, name: String, data: Data) throws -> RecordAttachment {
+    public func addAttachment(to id: UUID, name: String, data: Data) async throws -> RecordAttachment {
+        try await operations.withAccess { try await self.writeAttachment(to: id, name: name, data: data) }
+    }
+
+    private func writeAttachment(to id: UUID, name: String, data: Data) throws -> RecordAttachment {
         guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw RecordStoreError.invalidData }
         var index = try load()
         guard let position = index.records.firstIndex(where: { $0.id == id }) else { throw RecordStoreError.missingRecord }
@@ -89,7 +127,11 @@ public actor RecordStore {
         return attachment
     }
 
-    public func attachmentData(recordID: UUID, attachmentID: UUID) throws -> Data {
+    public func attachmentData(recordID: UUID, attachmentID: UUID) async throws -> Data {
+        try await operations.withAccess { try await self.readAttachment(recordID: recordID, attachmentID: attachmentID) }
+    }
+
+    private func readAttachment(recordID: UUID, attachmentID: UUID) throws -> Data {
         guard let record = try load().records.first(where: { $0.id == recordID }) else { throw RecordStoreError.missingRecord }
         guard record.attachments.contains(where: { $0.id == attachmentID }) else { throw RecordStoreError.missingAttachment }
         return try Data(contentsOf: assetURL(attachmentID))
@@ -97,7 +139,11 @@ public actor RecordStore {
 
     /// The caller holds security-scoped access for the duration of this call.
     @discardableResult
-    public func importAttachment(to id: UUID, from source: URL) throws -> RecordAttachment {
+    public func importAttachment(to id: UUID, from source: URL) async throws -> RecordAttachment {
+        try await operations.withAccess { try await self.importFile(to: id, from: source) }
+    }
+
+    private func importFile(to id: UUID, from source: URL) throws -> RecordAttachment {
         guard source.isFileURL,
               try source.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true
         else { throw RecordStoreError.invalidData }
@@ -119,7 +165,13 @@ public actor RecordStore {
 
     /// Makes an independent temporary copy. Callers own its cleanup and must not
     /// use the live attachment as a writable document for external applications.
-    public func copyAttachment(recordID: UUID, attachmentID: UUID, to directory: URL) throws -> URL {
+    public func copyAttachment(recordID: UUID, attachmentID: UUID, to directory: URL) async throws -> URL {
+        try await operations.withAccess {
+            try await self.copyStoredAttachment(recordID: recordID, attachmentID: attachmentID, to: directory)
+        }
+    }
+
+    private func copyStoredAttachment(recordID: UUID, attachmentID: UUID, to directory: URL) throws -> URL {
         guard directory.isFileURL else { throw RecordStoreError.invalidData }
         guard let record = try load().records.first(where: { $0.id == recordID }) else { throw RecordStoreError.missingRecord }
         guard let attachment = record.attachments.first(where: { $0.id == attachmentID }) else { throw RecordStoreError.missingAttachment }
@@ -131,7 +183,13 @@ public actor RecordStore {
         return destination
     }
 
-    public func removeAttachment(recordID: UUID, attachmentID: UUID) throws {
+    public func removeAttachment(recordID: UUID, attachmentID: UUID) async throws {
+        try await operations.withAccess {
+            try await self.removeStoredAttachment(recordID: recordID, attachmentID: attachmentID)
+        }
+    }
+
+    private func removeStoredAttachment(recordID: UUID, attachmentID: UUID) throws {
         var index = try load()
         guard let position = index.records.firstIndex(where: { $0.id == recordID }) else { throw RecordStoreError.missingRecord }
         guard index.records[position].attachments.contains(where: { $0.id == attachmentID }) else { throw RecordStoreError.missingAttachment }
@@ -141,6 +199,44 @@ public actor RecordStore {
     }
 
     private func assetURL(_ id: UUID) -> URL { assets.appendingPathComponent(id.uuidString) }
+
+    /// Rewrites a version-1 index as version 2 without inventing missing dates.
+    /// Returns false when the store is absent or already current.
+    public func migrateIfNeeded() async throws -> Bool {
+        try await operations.withMaintenance { try await self.migrateIndexIfNeeded() }
+    }
+
+    private func migrateIndexIfNeeded() throws -> Bool {
+        let data: Data
+        do { data = try Data(contentsOf: indexURL) }
+        catch let error as CocoaError where error.code == .fileReadNoSuchFile { return false }
+        struct Header: Decodable { let version: Int }
+        let version = try JSONDecoder().decode(Header.self, from: data).version
+        guard version == 1 else {
+            guard version == 2 else { throw RecordStoreError.unsupportedSchema(version) }
+            return false
+        }
+        try persist(Self.decodeIndex(data))
+        return true
+    }
+
+    /// Atomically replaces this owner's live store with an empty version-2 store.
+    public func reset() async throws {
+        try await operations.withMaintenance { try await self.replaceWithEmptyStore() }
+    }
+
+    private func replaceWithEmptyStore() throws {
+        let parent = directory.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: parent, withIntermediateDirectories: true)
+        let staging = parent.appendingPathComponent(".records-reset-" + UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: staging) }
+        try Self.copySnapshot(Index(), from: assets, to: staging)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            _ = try FileManager.default.replaceItemAt(directory, withItemAt: staging)
+        } else {
+            try FileManager.default.moveItem(at: staging, to: directory)
+        }
+    }
 
     /// Creates a new, independently owned directory containing only referenced
     /// attachments. Destination must not exist. One actor keeps the index and

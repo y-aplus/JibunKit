@@ -102,4 +102,53 @@ final class RecordStoreTests: XCTestCase, @unchecked Sendable {
         let records = try await store.records()
         XCTAssertEqual(records[0].attachments, [attachment])
     }
+
+    func testInjectedBoundaryCoversOrdinaryOperationsAndExclusiveMigrationReset() async throws {
+        let root = try directory()
+        let legacyID = UUID()
+        let legacy = Data("""
+        {"version":1,"records":[{"id":"\(legacyID.uuidString)","title":"Legacy","body":"","attachments":[]}]}
+        """.utf8)
+        try legacy.write(to: root.appendingPathComponent("records.json"))
+        let boundary = RecordStoreBoundaryProbe()
+        let store = try RecordStore(directory: root, operations: boundary)
+        XCTAssertTrue(try await store.migrateIfNeeded())
+        XCTAssertFalse(try await store.migrateIfNeeded())
+        var record = try await store.records()[0]
+        record.title = "Updated"
+        try await store.save(record)
+        let attachment = try await store.addAttachment(to: record.id, name: "a.txt", data: Data([1]))
+        _ = try await store.attachmentData(recordID: record.id, attachmentID: attachment.id)
+        _ = try await store.copyAttachment(recordID: record.id, attachmentID: attachment.id, to: directory())
+        try await store.removeAttachment(recordID: record.id, attachmentID: attachment.id)
+        let external = try directory().appendingPathComponent("import.txt")
+        try Data([2]).write(to: external)
+        _ = try await store.importAttachment(to: record.id, from: external)
+        try await store.delete(id: record.id)
+        let resetRecord = Record(title: "Reset")
+        try await store.save(resetRecord)
+        let resetAttachment = try await store.addAttachment(to: resetRecord.id, name: "reset.txt", data: Data([3]))
+        try await store.reset()
+        XCTAssertTrue(try await store.records().isEmpty)
+        let counts = await boundary.counts
+        XCTAssertEqual(counts.access, 11)
+        XCTAssertEqual(counts.maintenance, 3)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent("attachments").appendingPathComponent(resetAttachment.id.uuidString).path))
+    }
+}
+
+private actor RecordStoreBoundaryProbe: RecordStoreOperationBoundary {
+    private var accessCount = 0
+    private var maintenanceCount = 0
+    var counts: (access: Int, maintenance: Int) { (accessCount, maintenanceCount) }
+
+    func withAccess<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value {
+        accessCount += 1
+        return try await operation()
+    }
+
+    func withMaintenance<Value: Sendable>(operation: @Sendable () async throws -> Value) async throws -> Value {
+        maintenanceCount += 1
+        return try await operation()
+    }
 }

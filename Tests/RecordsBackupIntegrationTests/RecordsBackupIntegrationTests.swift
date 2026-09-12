@@ -93,6 +93,50 @@ final class RecordsBackupIntegrationTests: XCTestCase, @unchecked Sendable {
         let records = try await store.records()
         XCTAssertEqual(records.map(\.id), [record.id])
     }
+
+    func testHostBoundaryRejectsOrdinaryAccessDuringReservationWithoutDoubleAcquiringSnapshot() async throws {
+        let root = try root()
+        let coordinator = MiniAppRestoreCoordinator()
+        let owner = MiniAppID("records")
+        let store = try RecordStore(
+            directory: root.appendingPathComponent("live"),
+            operations: RecordsStoreOperationBoundary(owner: owner, coordinator: coordinator))
+        try await store.save(Record(title: "Kept"))
+        let gate = RecordsCoordinatorGate()
+        let maintenance = Task {
+            try await coordinator.withStoreMaintenance(for: owner) { await gate.block() }
+        }
+        await gate.waitUntilBlocked()
+        do {
+            _ = try await store.records()
+            XCTFail("Records access entered a host maintenance reservation")
+        } catch let error as MiniAppRestoreCoordinator.Conflict { XCTAssertEqual(error.owners, [owner]) }
+        await gate.release()
+        try await maintenance.value
+
+        let entry = try await RecordsBackup.provider(store: store, id: owner).exportEntry(
+            to: root.appendingPathComponent("snapshot"), coordinator: coordinator)
+        XCTAssertEqual(entry.id, owner)
+    }
+}
+
+private actor RecordsCoordinatorGate {
+    private var blocked = false
+    private var started: CheckedContinuation<Void, Never>?
+    private var finish: CheckedContinuation<Void, Never>?
+    func block() async {
+        await withCheckedContinuation { continuation in
+            finish = continuation
+            blocked = true
+            started?.resume()
+            started = nil
+        }
+    }
+    func waitUntilBlocked() async {
+        if blocked { return }
+        await withCheckedContinuation { started = $0 }
+    }
+    func release() { finish?.resume(); finish = nil }
 }
 
 private actor ReminderCleanupProbe {

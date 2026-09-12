@@ -370,10 +370,10 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
-          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationProbe.swift', 'Sources/JibunKit/P0BPresentationProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationUITests.swift', 'UITests/P0BPresentationUITests.swift')
-          if 'P0BManagementFailureUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')):
               shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureProbe.swift', 'Sources/JibunKit/P0BManagementFailureProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureUITests.swift', 'UITests/P0BManagementFailureUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
@@ -481,11 +481,11 @@ jobs:
               registry_check = '        precondition(\n            Set(miniApps.map(\\.id)).count == miniApps.count,'
               assert p.read_text().count(registry_check) == 1, 'Expected exactly one Registry validation'
               p.write_text(p.read_text().replace(registry_check, '        let miniApps = P0COnboardingProbe.registrations(miniApps)\n' + registry_check))
-          if 'P0ASQLiteUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0ASQLiteUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ASQLiteProbe.definition,'))
-          if 'P0ARecordsUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0ARecordsUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ARecordsProbe.definition,'))
-          if 'P0ALifetimeUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0ALifetimeUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ALifetimeProbe.definitions[0],\n        P0ALifetimeProbe.definitions[1],'))
           if include_keychain_probe:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        KeychainAccessControlProbe.definition,'))
@@ -509,11 +509,11 @@ jobs:
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
-          if 'P0BManagementFailureUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BManagementFailureProbe.definition,'))
           # Keep the focused presentation pair visible in both the launcher and
           # switch menu while retaining every other coexistence registration.
-          if 'P0BPresentationUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
           if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
@@ -531,6 +531,39 @@ jobs:
           host_widget="$host_app/PlugIns/JibunKitWidget_Extension.appex"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_app/Info.plist")" = true
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
+
+      - name: Package 0.7 candidate diagnostic IPA
+        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        shell: bash
+        run: |
+          set -euo pipefail
+          derived="$RUNNER_TEMP/TemplateHostDerivedData"
+          app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
+          widget="$app/PlugIns/JibunKitWidget_Extension.appex"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.0
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 8
+          app_entitlements="$(find "$derived" -type f -name 'JibunKit-App.entitlements')"
+          widget_entitlements="$(find "$derived" -type f -name 'JibunKitWidget-Extension.entitlements')"
+          test -f "$app_entitlements"
+          test -f "$widget_entitlements"
+          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$widget_entitlements" "$widget"
+          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$app_entitlements" "$app"
+          codesign --verify --deep --strict "$app"
+          package="$RUNNER_TEMP/P0CandidateIPA"
+          mkdir -p "$package/Payload" artifacts
+          ditto "$app" "$package/Payload/JibunKit.app"
+          (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/JibunKit-P0-check.ipa")
+          unzip -t artifacts/JibunKit-P0-check.ipa
+          shasum --algorithm 256 artifacts/JibunKit-P0-check.ipa
+
+      - name: Upload 0.7 candidate diagnostic IPA
+        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JibunKit-P0-device-check
+          path: artifacts/JibunKit-P0-check.ipa
+          retention-days: 14
 
       - name: Generate Xcode workspace
         run: |
@@ -622,10 +655,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.6.0"
+            "0.7.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "7"
+            "8"
           require_equal "widget short version" \
             "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"

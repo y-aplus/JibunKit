@@ -56,10 +56,10 @@ private final class PresentationProbeState {
     }
 
     private func requestEnd(_ kind: MiniAppPresentationOwner.Kind) async {
-        guard isPresented(kind) else { return }
+        guard handles[kind] != nil else { return }
         await withCheckedContinuation { continuation in
             completions[kind] = continuation
-            setPresented(false, kind: kind)
+            if isPresented(kind) { setPresented(false, kind: kind) }
         }
     }
 
@@ -99,12 +99,7 @@ enum P0BPresentationProbe {
             id: owner.id,
             title: owner.id == a.id ? "Presentation A" : "Presentation B",
             systemImage: "rectangle.on.rectangle",
-            lifetime: owner.lifetime,
-            resolveIncomingURL: { url in
-                guard url.scheme == "p0presentation", url.host == owner.id.rawValue,
-                      url.path == "/", url.query == nil, url.fragment == nil else { return nil }
-                return .root
-            }
+            lifetime: owner.lifetime
         ) { _ in
             PresentationProbeRoot(owner: owner)
         }
@@ -135,20 +130,22 @@ private struct PresentationProbeRoot: View {
         .sheet(isPresented: $state.showsSheet, onDismiss: { state.didEnd(.sheet) }) {
             Button("Cancel sheet") { state.cancel(.sheet) }
                 .accessibilityIdentifier("presentation.cancel.sheet")
-                .onDisappear { state.didEnd(.sheet) }
         }
         .fullScreenCover(isPresented: $state.showsCover, onDismiss: { state.didEnd(.fullScreenCover) }) {
             Button("Cancel full screen") { state.cancel(.fullScreenCover) }
                 .accessibilityIdentifier("presentation.cancel.cover")
-                .onDisappear { state.didEnd(.fullScreenCover) }
         }
         .sheet(isPresented: $state.showsUIKit, onDismiss: { state.didEnd(.uiViewController) }) {
             MiniAppViewControllerAdapter(
                 makeViewController: { requestDismiss in
-                    PresentationProbeViewController(requestDismiss: requestDismiss)
+                    PresentationProbeViewController(requestDismiss: requestDismiss) {
+                        Task {
+                            await owner.lifetime.stop()
+                            state.lastEvent = "owner stopped"
+                        }
+                    }
                 },
-                requestDismiss: { state.cancel(.uiViewController) },
-                didDismantle: { state.didEnd(.uiViewController) }
+                requestDismiss: { state.cancel(.uiViewController) }
             )
         }
     }
@@ -157,9 +154,14 @@ private struct PresentationProbeRoot: View {
 @MainActor
 private final class PresentationProbeViewController: UIViewController {
     private let requestDismiss: @MainActor () -> Void
+    private let requestStop: @MainActor () -> Void
 
-    init(requestDismiss: @escaping @MainActor () -> Void) {
+    init(
+        requestDismiss: @escaping @MainActor () -> Void,
+        requestStop: @escaping @MainActor () -> Void
+    ) {
         self.requestDismiss = requestDismiss
+        self.requestStop = requestStop
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -173,11 +175,18 @@ private final class PresentationProbeViewController: UIViewController {
             self?.requestDismiss()
         })
         button.accessibilityIdentifier = "presentation.cancel.uikit"
-        button.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(button)
+        let stop = UIButton(type: .system, primaryAction: UIAction(title: "Stop owner") { [weak self] _ in
+            self?.requestStop()
+        })
+        stop.accessibilityIdentifier = "presentation.stop.uikit"
+        let stack = UIStackView(arrangedSubviews: [button, stop])
+        stack.axis = .vertical
+        stack.spacing = 20
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
         NSLayoutConstraint.activate([
-            button.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            stack.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: view.centerYAnchor),
         ])
     }
 }

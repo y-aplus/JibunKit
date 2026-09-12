@@ -39,13 +39,18 @@ sheetState.finishDismissal()
 Runtime shutdown closes that owner's presentation admission, then awaits its
 active surfaces in reverse presentation order. It never dismisses another
 Feature's surfaces. A newly created runtime generation can reconnect the same
-owner only after the previous shutdown has completed.
+owner only after the previous shutdown has completed. Once the connected
+runtime has closed admission, new presentations are rejected even while its
+tasks are still ending. Concurrent stop and explicit dismissal requests join
+the same per-surface dismissal instead of invoking its callback twice.
 
 `MiniAppViewControllerAdapter` embeds a Feature-created `UIViewController` in a
 SwiftUI presentation. Its factory receives a cancellation closure so UIKit UI
 can update the Feature's own SwiftUI state. `didDismantle` is available for local
 controller cleanup; lifecycle completion should still use the enclosing
-presentation's actual dismissal acknowledgement.
+presentation's actual dismissal acknowledgement. SwiftUI updates refresh the
+adapter coordinator's callbacks, so a retained controller never calls a stale
+Feature closure after its representable value changes.
 
 External URLs and notifications continue to select a scene and Feature through
 the existing routing contract. If that switch removes a presenting root view,

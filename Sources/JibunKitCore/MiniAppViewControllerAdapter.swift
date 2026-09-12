@@ -30,10 +30,12 @@ public struct MiniAppViewControllerAdapter<Controller: UIViewController>: UIView
     }
 
     public func makeUIViewController(context: Context) -> Controller {
-        makeController(context.coordinator.requestDismiss)
+        let coordinator = context.coordinator
+        return makeController { [weak coordinator] in coordinator?.requestDismiss() }
     }
 
     public func updateUIViewController(_ uiViewController: Controller, context: Context) {
+        context.coordinator.update(requestDismiss: requestDismiss, didDismantle: didDismantle)
         updateController(uiViewController)
     }
 
@@ -43,10 +45,18 @@ public struct MiniAppViewControllerAdapter<Controller: UIViewController>: UIView
 
     @MainActor
     public final class Coordinator {
-        fileprivate let requestDismiss: @MainActor () -> Void
-        fileprivate let didDismantle: @MainActor () -> Void
+        fileprivate var requestDismiss: @MainActor () -> Void
+        fileprivate var didDismantle: @MainActor () -> Void
 
         fileprivate init(
+            requestDismiss: @escaping @MainActor () -> Void,
+            didDismantle: @escaping @MainActor () -> Void
+        ) {
+            self.requestDismiss = requestDismiss
+            self.didDismantle = didDismantle
+        }
+
+        fileprivate func update(
             requestDismiss: @escaping @MainActor () -> Void,
             didDismantle: @escaping @MainActor () -> Void
         ) {

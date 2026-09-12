@@ -3,7 +3,7 @@
   "candidateCommit": "e84402f9154688664fae15080d5bb5b393fd4798",
   "auditedAt": "2026-09-13",
   "scopeCommand": "python Tools/check-delivery.py --list-docs 0.7.0",
-  "candidateState": "Pre-release: two CI failures in test/diagnostic expectations; shared244 (skip2) passed at81a4bb7, remaining native/generated/iOS checks pending corrected run. Device/distribution/release unverified.",
+  "candidateState": "Pre-release: native declaration cases, macOS compatible update, shared244/Records11 and generated Release builds passed at3ac8d60. Diagnostic IPA entitlement lookup corrected; simulator update, candidate IPA, device and publication unverified.",
   "documents": [
     {
       "path": "CHANGELOG.md",
@@ -68,8 +68,8 @@
     {
       "path": "docs/coexistence-ledger.md",
       "outcome": "updated",
-      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "802420ffa1fde3ceaa3d71f359c4e7c999a87b49e957e8ccaa0a3663f7e5fd70"
+      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
+      "sha256": "c7f1d16d5f7349523158404f8640f52a180967db2d630c702a188583b3d74309"
     },
     {
       "path": "docs/compatibility.md",
@@ -248,8 +248,8 @@
     {
       "path": "docs/implementation-priorities.md",
       "outcome": "updated",
-      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "1fdd1930d4411aa683c48403e2340d5ab3315fd22e7ba19b9bd500da12054f02"
+      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
+      "sha256": "78f75b51014f4c7d98b0cf6207bac50e886893d80db75d29171ef2d35ae73b39"
     },
     {
       "path": "docs/mini-apps.md",
@@ -296,8 +296,8 @@
     {
       "path": "docs/status.md",
       "outcome": "updated",
-      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "0f8d91b4ac1ae30080adfbb0c5210cb0cbfb016b8f11178b07298763721d9863"
+      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
+      "sha256": "40700dfdeea4af2c07e47b0365d7a3e7614311481c8930d2ec87185f5b3ae52a"
     },
     {
       "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
@@ -314,8 +314,8 @@
     {
       "path": "release-notes-0.7.0.md",
       "outcome": "updated",
-      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "e33410e6fe00c036d05963b641e7ff929d0e0cd63f5a43f7916e21bed4ad542c"
+      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
+      "sha256": "ac137c81435244e946626af762c3ca06a726fd202e47e638b54359d9df9370bd"
     }
   ],
   "parentReview": "Integrated worker173534d; reviewed14 document changes, corrected mixed P0/P1 table heading and ZIPFoundation redistribution wording against Package.swift, updated six current docs with actual CI failures. Original candidateCommit identifies audit baseline, not final candidate."

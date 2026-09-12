@@ -543,39 +543,6 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_app/Info.plist")" = true
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
 
-      - name: Package 0.7 candidate diagnostic IPA
-        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
-        shell: bash
-        run: |
-          set -euo pipefail
-          derived="$RUNNER_TEMP/TemplateHostDerivedData"
-          app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
-          widget="$app/PlugIns/JibunKitWidget_Extension.appex"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.0
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 8
-          app_entitlements="$(find "$derived" -type f -name 'JibunKit-App.entitlements')"
-          widget_entitlements="$(find "$derived" -type f -name 'JibunKitWidget-Extension.entitlements')"
-          test -f "$app_entitlements"
-          test -f "$widget_entitlements"
-          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$widget_entitlements" "$widget"
-          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$app_entitlements" "$app"
-          codesign --verify --deep --strict "$app"
-          package="$RUNNER_TEMP/P0CandidateIPA"
-          mkdir -p "$package/Payload" artifacts
-          ditto "$app" "$package/Payload/JibunKit.app"
-          (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/JibunKit-P0-check.ipa")
-          unzip -t artifacts/JibunKit-P0-check.ipa
-          shasum --algorithm 256 artifacts/JibunKit-P0-check.ipa
-
-      - name: Upload 0.7 candidate diagnostic IPA
-        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: JibunKit-P0-device-check
-          path: artifacts/JibunKit-P0-check.ipa
-          retention-days: 14
-
       - name: Generate Xcode workspace
         run: |
           set -euo pipefail
@@ -976,6 +943,44 @@ jobs:
             -resultBundlePath "$RUNNER_TEMP/Records.xcresult" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
+
+      - name: Package 0.7 candidate diagnostic IPA
+        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        shell: bash
+        run: |
+          set -euxo pipefail
+          derived="$RUNNER_TEMP/TemplateHostDerivedData"
+          app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
+          widget="$app/PlugIns/JibunKitWidget_Extension.appex"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.0
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 8
+          entitlements_root="$RUNNER_TEMP/template-check/Derived"
+          app_entitlements="$(find "$entitlements_root" -type f -name 'JibunKit-App.entitlements')"
+          widget_entitlements="$(find "$entitlements_root" -type f -name 'JibunKitWidget-Extension.entitlements')"
+          for entitlement in "$app_entitlements" "$widget_entitlements"; do
+            if [[ ! -f "$entitlement" ]]; then
+              echo "Expected exactly one Tuist entitlement file under $entitlements_root; got: $entitlement" >&2
+              exit 1
+            fi
+          done
+          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$widget_entitlements" "$widget"
+          codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$app_entitlements" "$app"
+          codesign --verify --deep --strict "$app"
+          package="$RUNNER_TEMP/P0CandidateIPA"
+          mkdir -p "$package/Payload" artifacts
+          ditto "$app" "$package/Payload/JibunKit.app"
+          (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/JibunKit-P0-check.ipa")
+          unzip -t artifacts/JibunKit-P0-check.ipa
+          shasum --algorithm 256 artifacts/JibunKit-P0-check.ipa
+
+      - name: Upload 0.7 candidate diagnostic IPA
+        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JibunKit-P0-device-check
+          path: artifacts/JibunKit-P0-check.ipa
+          retention-days: 14
 
       - name: Export simulator screenshots
         if: always() && inputs.simulator_tests

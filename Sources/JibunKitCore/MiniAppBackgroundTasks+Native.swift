@@ -63,4 +63,13 @@ public extension MiniAppBackgroundTaskCenter {
         self.init(scheduler: SystemBackgroundTaskScheduler(scheduler))
     }
 }
+
+public extension MiniAppSharedRefreshCenter {
+    /// The journal URL is host-owned and must not be shared with another center
+    /// or process writing the same file. Register handlers before reconciling.
+    convenience init(identifier: String, journalURL: URL, scheduler: BGTaskScheduler = .shared) throws {
+        try self.init(identifier: identifier, journal: FileSharedRefreshJournal(url: journalURL),
+                      scheduler: SystemBackgroundTaskScheduler(scheduler))
+    }
+}
 #endif

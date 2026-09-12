@@ -44,8 +44,12 @@ final class FileSharedRefreshJournal: MiniAppSharedRefreshJournaling {
     }
 
     func load() throws -> [MiniAppSharedRefreshRecord] {
-        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
-        let data = try Data(contentsOf: url)
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return []
+        }
         let envelope = try JSONDecoder().decode(Envelope.self, from: data)
         guard envelope.version == Self.currentVersion else {
             throw MiniAppSharedRefreshJournalError.unsupportedVersion(envelope.version)

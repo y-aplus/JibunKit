@@ -23,14 +23,14 @@ patch版は機能追加・検証の進捗にも使う。commitごとの公開は
 P0-3は既存資産を使いJSON/添付とnative SQLiteを最初の対象方式とする。製品にそのDBだけを強制する意味ではない。
 P0-5はユーザー回答により**アプリ内UIが0.7.0の必須条件**。無効化・再有効化・登録/所有データ削除を扱い、IPA内のコード除去は再ビルドで行う。
 
-| 単位 / 親D | 現在使える成果 | 残実装・接続 | 後段へ残す範囲 |
+| 単位 / 親D | 現在使える成果 | 0.7.0で残る確認 | 後段へ残す範囲 |
 | --- | --- | --- | --- |
-| P0-1 寿命と所有処理の終了（D01・D02） | Task/Runtime・購読・HTTP・SQLite終了の既存成果 | Feature所有者の開始/終了を通常入口へ接続。非選択と終了を分離 | 高度な複数window/実行instance |
-| P0-2 通常の画面・提示（D04） | Feature別経路、URL/通知遷移の既存成果 | 保持/再生成/resetの契約、sheet等の所有者とUIKit接続 | 任意View可視状態/高度な複数window |
-| P0-3 保存・復元・移行・リセット（D06・D07） | JSON/添付ZIP、SQLite比較、stop/apply/resume、通常操作予約 | 実Featureの操作入口へ接続。まずJSON/添付とSQLiteを対象方式として固定 | 全DB/別process writer |
-| P0-4 追加・ビルド・更新（D20・D29） | Tuist雛形、宣言/URL合成、resources/翻訳、SDK比較 | 通常追加手順へ統合。target/product/Registry漏れを診断し更新例を確認 | 万能生成器/任意SDK複数version |
-| P0-5 同意・無効化・削除（D19・D31） | 通知/検索/Task等の所有者別解除API | アプリ内UI必須。目的/要求元/拒否、停止・解除・削除を区別 | 同一processの強制隔離/コード動的除去 |
-| P0-6 基本障害緩和と局所処理（D03・D32） | 協調取消/解放の既存契約 | 終了が進まない処理の診断、主スレッドを塞がない契約、局所処理の判定 | helper/非協調処理の強制隔離 |
+| P0-1 寿命と所有処理の終了（D01・D02） | 通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認 | 0.7.0候補の実機操作とP0-Cでの回帰保持 | 高度な複数window/実行instance |
+| P0-2 通常の画面・提示（D04） | Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認 | 0.7.0候補の実機提示・UIKit終了 | 任意View可視状態/高度な複数window |
+| P0-3 保存・復元・移行・リセット（D06・D07） | RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認 | 候補IPAでの選択復元/resetとB保持 | 全DB/別process writer |
+| P0-4 追加・ビルド・更新（D20・D29） | Tuist雛形、resources/翻訳、診断fixture、二Packageの片側互換更新を候補へ収録 | CI 34704117433の結果、生成host、文書監査、候補実機を確認 | 万能生成器/任意SDK複数version |
+| P0-5 同意・無効化・削除（D19・D31） | 通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認 | 候補IPAでの同意拒否・無効化・削除・B保持 | 同一processの強制隔離/コード動的除去 |
+| P0-6 基本障害緩和と局所処理（D03・D32） | 終了進捗診断と局所処理の判断基準をP0-A CIで確認 | P0-C release gateで証拠と残存制約を再確認 | helper/非協調処理の強制隔離 |
 | P1-1 Shortcuts実利用（D27） | metadata/Shortcut式/entity/query識別子と直接実行 | OS上の発見・候補・引数・戻り値・取消を二Featureで確認 | Control等の高度な接続 |
 | P1-2 静的Widget通常接続（D26） | Package Widget/gallery/home描画とApp Group比較 | 通常接続・出荷構成へ反映、片側更新/削除後の他方維持 | 設定可能/操作可能Widget・Control/任意extension |
 | P1-3 URL・外部ファイル・Share入口（D12・D26） | URL resolver/曖昧一致拒否/scene接続 | security-scoped URLの寿命、汎用Share Extensionの受信先選択と保存/終了契約 | 任意extension自動統合/実Universal Link一般化 |
@@ -90,4 +90,4 @@ JibunKit採用に結びつく用途・導入断念要因・代替・署名/周�
 優先度、実装状態、出荷対象は別軸。P0/P1の単位が完了しても親Dを一括完了にしない。
 plan.jsonのpartialは残実装がある状態。completeへ変更するには合格条件ごとの証拠とレビューが必要。
 標準API・unit・Simulator・実機の証拠を分離し、対象source、操作、観測、残件を記録する。
-2026-09-13時点、P0-A/P0-Bの非実機条件は通常/生成CIで確認してmainへ反映。P0-Cは別branchで追加診断・片側Package更新を実装し一括CI準備中。実機専用条件は0.7.0候補へまとめる。需要調査は別途実施中で、0.7.0完了時までに未反映ならユーザーへ結果の提供を依頼する。
+2026-09-13時点、P0-A/P0-Bの非実機条件は通常/生成CIで確認してmainへ反映。P0-Cの追加診断・片側Package更新を含む0.7.0 build 8候補`e84402f9154688664fae15080d5bb5b393fd4798`を固定し、CI 34704117433を開始したが結果は未確認。実機専用条件、artifact、配布整合性も未確認のため全P0は完了にしない。需要調査は別途実施中で、0.7.0完了時までに未反映ならユーザーへ結果の提供を依頼する。

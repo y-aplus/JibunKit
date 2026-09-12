@@ -20,7 +20,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
 Package翻訳のmixed localizationを提供します。静的Package Widgetのgallery・描画・他owner保持も検証済みです。
 
-公開後のmainにはSDKのmodule alias比較とshared refresh実機用診断fixtureを追加しました。
+公開後のmainにはSDKのmodule alias比較、shared refresh実機用診断fixture、P0-Aの寿命・保存・終了診断、P0-Bの管理・同意・提示を追加しました。P0-A/P0-Bは通常・生成CIの非実機条件を確認済みです。
 SDKはiOSで公開product名を分けるmanifest編集が必要です。refreshの実OS受付・起動・期限は未検証です。
 これらを0.6.0配布物へ含めたとは扱いません。[版別の状態と証拠](docs/status.md)を参照してください。
 
@@ -56,7 +56,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cの追加・更新を実装中です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。単発のCI成功や0.6.0公開を1.0完成とは扱いません。
+目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cを含む0.7.0 build 8候補を固定しました。候補CI 34704117433、実機確認、配布整合性は未確認です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。候補化や単発のCI成功、0.6.0公開を1.0完成とは扱いません。
 
 ## 現在の開発基盤
 

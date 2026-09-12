@@ -56,7 +56,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cを含む0.7.0 build 8候補を固定しました。候補CI 34704117433、実機確認、配布整合性は未確認です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。候補化や単発のCI成功、0.6.0公開を1.0完成とは扱いません。
+目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cを含む0.7.0 build 8候補を固定しました。初回CIの試験コンパイルと次のnative診断判定の不備を修正し、一括検証を再実行します。実機確認と配布整合性は未確認です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。候補化や単発のCI成功、0.6.0公開を1.0完成とは扱いません。
 
 ## 現在の開発基盤
 

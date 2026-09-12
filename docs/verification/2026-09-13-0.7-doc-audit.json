@@ -3,7 +3,7 @@
   "candidateCommit": "e84402f9154688664fae15080d5bb5b393fd4798",
   "auditedAt": "2026-09-13",
   "scopeCommand": "python Tools/check-delivery.py --list-docs 0.7.0",
-  "candidateState": "Candidate only; CI run 34704117433, device verification, distribution verification, and release remain unconfirmed.",
+  "candidateState": "Pre-release: two CI failures in test/diagnostic expectations; shared244 (skip2) passed at81a4bb7, remaining native/generated/iOS checks pending corrected run. Device/distribution/release unverified.",
   "documents": [
     {
       "path": "CHANGELOG.md",
@@ -26,8 +26,8 @@
     {
       "path": "README.md",
       "outcome": "updated",
-      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates.",
-      "sha256": "d347862b7743100adb0c626bb9b89b5cde381312b3d3e4bfb0249e8d77d83a2e"
+      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "2e715f600fb03a6e8b6b0dcc4df218df628a5a6ef334be2403ca33a07847fea4"
     },
     {
       "path": "SECURITY.md",
@@ -38,8 +38,8 @@
     {
       "path": "THIRD_PARTY_NOTICES.md",
       "outcome": "updated",
-      "reason": "Declared the exact ZIPFoundation 0.9.20 dependency and bundled MIT license notice.",
-      "sha256": "895d3eeb377dd25ef771d22d5f23398f0548c8a03058b991b4d332672ad3c655"
+      "reason": "Declared the exact ZIPFoundation 0.9.20 dependency and bundled MIT license notice. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "dacef58e857bef284e7001780275686e37f8b12a6caab9b3c6aab26d825f0153"
     },
     {
       "path": "docs/background-refresh-coordination.md",
@@ -68,8 +68,8 @@
     {
       "path": "docs/coexistence-ledger.md",
       "outcome": "updated",
-      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates.",
-      "sha256": "327f4353662780cd40a6223c73ddc424f27531a30560bff9cbda8913fb363120"
+      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "802420ffa1fde3ceaa3d71f359c4e7c999a87b49e957e8ccaa0a3663f7e5fd70"
     },
     {
       "path": "docs/compatibility.md",
@@ -248,8 +248,8 @@
     {
       "path": "docs/implementation-priorities.md",
       "outcome": "updated",
-      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial.",
-      "sha256": "074ac983e9b4635d2d07b6dfed25b5e39cfe3d5134ec60f4c5fd40bdbe1aa166"
+      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "1fdd1930d4411aa683c48403e2340d5ab3315fd22e7ba19b9bd500da12054f02"
     },
     {
       "path": "docs/mini-apps.md",
@@ -296,8 +296,8 @@
     {
       "path": "docs/status.md",
       "outcome": "updated",
-      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed.",
-      "sha256": "84bf8506ae33cd7f60da91f3417e461e8c20965a344c12b436751713e6256e33"
+      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "0f8d91b4ac1ae30080adfbb0c5210cb0cbfb016b8f11178b07298763721d9863"
     },
     {
       "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
@@ -314,8 +314,9 @@
     {
       "path": "release-notes-0.7.0.md",
       "outcome": "updated",
-      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed.",
-      "sha256": "0df5c996da0a3baa7ae295fbb1c818f7de1cf6581c64f7560ca5714016ac4905"
+      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "e33410e6fe00c036d05963b641e7ff929d0e0cd63f5a43f7916e21bed4ad542c"
     }
-  ]
+  ],
+  "parentReview": "Integrated worker173534d; reviewed14 document changes, corrected mixed P0/P1 table heading and ZIPFoundation redistribution wording against Package.swift, updated six current docs with actual CI failures. Original candidateCommit identifies audit baseline, not final candidate."
 }

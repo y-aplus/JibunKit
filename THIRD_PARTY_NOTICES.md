@@ -2,7 +2,7 @@
 
 JibunKitBackupはZIP archive処理のためZIPFoundation 0.9.20へ依存し、アプリへリンクします。ライセンス本文は`Sources/JibunKitBackup/Resources/ZIPFoundation-LICENSE.txt`としてbundleにも含めます。プロジェクト本体のsourceには[MIT License](LICENSE)が適用されます。
 
-次のソフトウェアとサービスは、ビルド、検査、導入のために外部で使用します。リポジトリやIPAには再配布しません。それぞれの利用・配布条件は提供元の条件が優先します。
+次の表に依存ソフトウェアと外部サービスの用途・同梱範囲を示します。ZIPFoundationを除くツールやサービス本体はIPAへ同梱しません。それぞれの利用・配布条件は提供元の条件が優先します。
 
 | 対象 | 現在の用途 | 条件 |
 | --- | --- | --- |

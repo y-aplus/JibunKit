@@ -314,15 +314,26 @@ jobs:
         if: ${{ !inputs.focused_ui_validation }}
         shell: bash
         run: |
+          set -euo pipefail
+          failures=0
+          check_native() {
+            if "$@"; then
+              echo "passed native command: $*"
+            else
+              echo "failed native command: $*" >&2
+              failures=$((failures + 1))
+            fi
+          }
           args=()
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
-          python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
-          python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
-          python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
-          python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
+          check_native python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+          check_native python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
+          check_native python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
+          check_native python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
-            python3 Tools/verify-privacy-manifest-ownership.py
+            check_native python3 Tools/verify-privacy-manifest-ownership.py
           fi
+          test "$failures" -eq 0
 
       - name: Measure backup memory in separate test processes
         if: ${{ !inputs.focused_ui_validation }}

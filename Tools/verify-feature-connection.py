@@ -43,6 +43,7 @@ def main():
         (sources / "Notes.swift").write_text('public let greeting = "Notes"\n', encoding="utf-8")
         (root / "App").mkdir()
         (root / "App/App.swift").write_text("import NotesFeature\n", encoding="utf-8")
+        failures = []
 
         def check(label, project=PROJECT, package=PACKAGE, expected=None):
             (root / "Project.swift").write_text(project, encoding="utf-8")
@@ -67,8 +68,10 @@ def main():
             else:
                 valid = result.returncode != 0 and expected in output
             if not valid:
-                raise RuntimeError(f"Unexpected result for {label}:\n{output}")
-            print(f"passed: {label}")
+                failures.append(label)
+                print(f"failed: {label}\n{output}", file=sys.stderr)
+            else:
+                print(f"passed: {label}")
 
         check("complete native declarations")
         check("missing project package path", project=PROJECT.replace('packages: [.package(path: "Modules/Notes")]',
@@ -76,10 +79,13 @@ def main():
         check("product name mismatch", package=PACKAGE.replace('.library(name: "NotesFeature"',
                                                               '.library(name: "NotesRenamed"'), expected="Library product")
         check("library target missing", package=PACKAGE.replace('.target(name: "NotesFeature")',
-                                                               '.target(name: "UnconnectedTarget")'), expected="missing target NotesFeature")
+                                                               '.target(name: "UnconnectedTarget")'),
+              expected="target 'NotesFeature' referenced in product 'NotesFeature' could not be found")
         check("missing app product dependency", project=PROJECT.replace('dependencies: [.package(product: "NotesFeature")]',
                                                                        'dependencies: []'), expected="Host dependency missing")
         check("corrected native declarations")
+        if failures:
+            raise RuntimeError("Native connection diagnostics failed: " + ", ".join(failures))
     print("Native connection diagnostics passed; Xcode and Registry checks remain separate.")
 
 

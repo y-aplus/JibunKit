@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-## [0.6.0] - 公開準備中
+## [0.6.0] - 2026-09-12
 
 - 複数Featureのbackground refresh要求を一つのOS枠へ調停する明示APIを追加。owner/local ID別の永続保存、世代別の復旧、期限通知と全処理完了待ちを接続。実OSによる受付・起動の保証とは分ける。
 - app/Widgetで標準のmixed localizationを有効にし、Package固有の翻訳をホストの対応言語へ制限しない。生成ホストで英語・日本語・ホストにないフランス語と二Packageの独立した値を検証。
@@ -135,7 +135,11 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.6.0...HEAD
 [0.3.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.2.0
 [0.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.1.0
+
+[0.6.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.6.0
+[0.5.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.5.0
+[0.4.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.4.0

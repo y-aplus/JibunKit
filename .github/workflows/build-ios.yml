@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package_sdk_aliases_only:
-        description: Run only pure Swift SDK module-alias comparison without iOS or IPA builds
+        description: Run SDK alias comparisons only; simulator_tests adds iOS host (no normal IPA)
         type: boolean
         default: false
       simulator_tests:
@@ -68,7 +68,10 @@ jobs:
     if: inputs.package_sdk_aliases_only
     name: Native Swift SDK module aliases
     runs-on: macos-26
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      TUIST_VERSION: "4.207.0"
+      TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -85,6 +88,56 @@ jobs:
         run: |
           set -euo pipefail
           python3 Tools/verify-package-sdk-aliases.py --evidence-dir "$RUNNER_TEMP/PackageSDKAliases"
+      - name: Install pinned Tuist
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/tuist.zip" \
+            "https://github.com/tuist/tuist/releases/download/$TUIST_VERSION/tuist.zip"
+          echo "$TUIST_SHA256  $RUNNER_TEMP/tuist.zip" | shasum --algorithm 256 --check
+          mkdir -p "$RUNNER_TEMP/tuist"
+          ditto -x -k "$RUNNER_TEMP/tuist.zip" "$RUNNER_TEMP/tuist"
+          echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/tuist/tuist" version
+
+      - name: Prepare simulator tests
+        if: inputs.simulator_tests
+        env:
+          REQUESTED_RUNTIME: ${{ inputs.simulator_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/simulators.json"
+          sim_id="$(python3 - "$RUNNER_TEMP/simulators.json" <<'PY'
+          import json, os, sys
+          devices = json.load(open(sys.argv[1]))['devices']
+          runtimes = [runtime for runtime in devices if 'iOS-26' in runtime]
+          requested = os.environ.get('REQUESTED_RUNTIME', '')
+          if requested:
+              runtimes = [runtime for runtime in runtimes if runtime.endswith('iOS-' + requested.replace('.', '-'))]
+          if not runtimes:
+              raise SystemExit('Requested iOS simulator runtime is not installed')
+          runtime = max(runtimes, key=lambda value: tuple(map(int, value.split('iOS-')[1].split('-'))))
+          candidates = [d for d in devices[runtime]
+                        if d['name'].startswith('iPhone') and d['isAvailable']]
+          if not candidates:
+              raise SystemExit('No available iOS 26 iPhone simulator')
+          candidates.sort(key=lambda d: (d['name'] != 'iPhone 16e', d['name']))
+          print(candidates[0]['udid'])
+          PY
+          )"
+          echo "SIMULATOR_ID=$sim_id" >> "$GITHUB_ENV"
+          xcrun simctl boot "$sim_id"
+          xcrun simctl bootstatus "$sim_id" -b
+
+      - name: Verify SDK aliases in Tuist iOS host
+        if: inputs.simulator_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/verify-package-sdk-aliases-ios.py --simulator-id "$SIMULATOR_ID" \
+            --evidence-dir "$RUNNER_TEMP/PackageSDKAliasesIOS"
       - name: Upload SDK alias diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -93,6 +146,9 @@ jobs:
           path: |
             ${{ runner.temp }}/PackageSDKAliases/*.log
             ${{ runner.temp }}/PackageSDKAliases/summary.json
+            ${{ runner.temp }}/PackageSDKAliasesIOS/*.log
+            ${{ runner.temp }}/PackageSDKAliasesIOS/ios-summary.json
+            ${{ runner.temp }}/PackageSDKAliasesIOS/SDKAliasIOS.xcresult
           if-no-files-found: warn
           retention-days: 7
 

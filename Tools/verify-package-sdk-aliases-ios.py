@@ -51,6 +51,11 @@ def run(name, command, cwd):
 with tempfile.TemporaryDirectory(prefix="jibunkit-sdk-alias-ios-") as temp:
     root = Path(temp)
     shutil.copytree(fixtures, root, dirs_exist_ok=True)
+    for package in ("VendorA", "VendorB", "FeatureA", "FeatureB"):
+        shutil.copyfile(
+            root / package / "Package.ios.swift.fixture",
+            root / package / "Package.swift",
+        )
     host = root / "IOSHost"
     (host / "Project.swift").write_text(
         (host / "Project.swift.fixture").read_text(encoding="utf-8"),

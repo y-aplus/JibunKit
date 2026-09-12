@@ -35,10 +35,14 @@ private struct P0BManagementFailureProbeView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Text(value.map { String($0) } ?? "-")
-                .font(.largeTitle)
-                .monospacedDigit()
-                .accessibilityIdentifier("p0b.failure.value")
+            if let value {
+                Text(value, format: .number)
+                    .font(.largeTitle)
+                    .monospacedDigit()
+                    .accessibilityIdentifier("p0b.failure.value")
+            } else {
+                ProgressView("保存値を読み込んでいます")
+            }
             Text(result)
                 .accessibilityIdentifier("p0b.failure.result")
             Button("診断値を1増やす") {

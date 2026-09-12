@@ -46,12 +46,10 @@ final class P0BManagementFailureUITests: XCTestCase {
         ).firstMatch.exists)
         tap(confirmation.buttons["削除"])
 
-        let failureAlert = app.alerts["処理を完了できません"]
-        XCTAssertTrue(failureAlert.waitForExistence(timeout: 10), app.debugDescription)
-        XCTAssertTrue(failureAlert.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "saved=\(saved)")
-        ).firstMatch.exists, failureAlert.debugDescription)
-        tap(failureAlert.buttons["閉じる"])
+        let failureMessage = app.staticTexts["management.error"]
+        reveal(failureMessage)
+        XCTAssertTrue(failureMessage.waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(failureMessage.label.contains("saved=\(saved)"), failureMessage.debugDescription)
         expectStatus("削除が未完了。再試行で残りの処理を完了してください。")
         XCTAssertTrue(app.staticTexts.matching(
             NSPredicate(format: "label CONTAINS %@", "登録解除で失敗しました。diagnostic unregister failed once; saved=\(saved)")
@@ -85,16 +83,24 @@ final class P0BManagementFailureUITests: XCTestCase {
     }
 
     private func reveal(_ element: XCUIElement) {
-        if element.exists && element.isHittable { return }
+        func visible() -> Bool {
+            guard element.exists, element.isHittable else { return false }
+            let frame = element.frame
+            let top = app.navigationBars.firstMatch.frame.maxY
+            let search = app.searchFields.firstMatch
+            let bottom = search.exists && search.isHittable ? search.frame.minY : app.frame.maxY - 30
+            return frame.minY > top && frame.maxY < bottom
+        }
+        if visible() { return }
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
         for _ in 0..<10 {
             list.swipeDown()
-            if element.exists && element.isHittable { return }
+            if visible() { return }
         }
         for _ in 0..<24 {
             list.swipeUp()
-            if element.exists && element.isHittable { return }
+            if visible() { return }
         }
         XCTFail("Could not reveal \(element.debugDescription)\n\(app.debugDescription)")
     }

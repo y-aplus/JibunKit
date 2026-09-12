@@ -168,6 +168,28 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
+    func testUnregisterFailureKeepsStoredDataUntilSuccessfulRetry() async throws {
+        let suite = "MiniAppManagementTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let id = MiniAppID("a")
+        let data = ManagementData()
+        let manager = MiniAppManagement(registrations: [
+            .init(id: id, removal: .init(id: id, dataDescription: "A") { await data.removeA() },
+                  unregister: { try await data.unregisterAfterFirstFailure() })
+        ], defaults: defaults, consents: .init(defaults: defaults), coordinator: .init())
+        do { try await manager.remove(id); XCTFail("Expected unregister failure") } catch {}
+        XCTAssertEqual(manager.status(for: id), .removing)
+        XCTAssertEqual(manager.failures[id]?.stage, .unregistering)
+        let afterFailure = await data.values
+        XCTAssertEqual(afterFailure, ["a": 7, "b": 9])
+        try await manager.remove(id)
+        let afterRetry = await data.values
+        XCTAssertEqual(afterRetry, ["b": 9])
+        XCTAssertEqual(manager.status(for: id), .removed)
+    }
+
+    @MainActor
     func testRemovalWaitsForOwnedWorkBeforeUnregisteringOrDeleting() async throws {
         let suite = "MiniAppManagementTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -224,6 +246,10 @@ private actor ManagementData {
     var unregisters = 0
     func removeA() { values["a"] = nil }
     func unregisterA() { unregisters += 1 }
+    func unregisterAfterFirstFailure() throws {
+        unregisters += 1
+        if !failed { failed = true; throw Expected.firstRemoval }
+    }
     func removeAfterFirstFailure() throws {
         if !failed { failed = true; throw Expected.firstRemoval }
         removeA()

@@ -11,6 +11,12 @@ struct MiniAppManagementScreen: View {
     var body: some View {
         NavigationStack {
             List {
+                if let errorMessage {
+                    Section("処理を完了できません") {
+                        Text(errorMessage).foregroundStyle(.red)
+                            .accessibilityIdentifier("management.error")
+                    }
+                }
                 ForEach(MiniAppRegistry.all) { definition in
                     Section {
                         Text(statusText(management.status(for: definition.id)))
@@ -72,9 +78,6 @@ struct MiniAppManagementScreen: View {
             } message: { definition in
                 Text("\(definition.title): \(definition.removal?.dataDescription ?? "")\n通知・検索の登録と利用同意も削除します。他のミニアプリのデータは変更しません。")
             }
-            .alert("処理を完了できません", isPresented: Binding(
-                get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } }
-            )) { Button("閉じる", role: .cancel) {} } message: { Text(errorMessage ?? "") }
         }
     }
 
@@ -106,9 +109,11 @@ struct MiniAppManagementScreen: View {
     }
 
     private func perform(_ operation: @escaping @MainActor () async throws -> Void) {
+        errorMessage = nil
         // The operation outlives the button/view; management persists its intent.
         Task { @MainActor in
             do { try await operation() }
+            catch let failure as MiniAppManagement.Failure { errorMessage = failure.message }
             catch { errorMessage = String(describing: error) }
         }
     }

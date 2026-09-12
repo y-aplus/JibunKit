@@ -23,8 +23,10 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
             MiniAppManagement.Registration(id: b, lifetime: lifetimeB)
         ]
         let management = MiniAppManagement(registrations: registrations, defaults: defaults, consents: consents, coordinator: coordinator)
-        let oldA = try await lifetimeA.start()
-        let oldB = try await lifetimeB.start()
+        try await lifetimeA.start()
+        try await lifetimeB.start()
+        let oldA = try XCTUnwrap(lifetimeA.runtime)
+        let oldB = try XCTUnwrap(lifetimeB.runtime)
         try await management.disable(a)
         XCTAssertTrue(oldA.isClosed)
         XCTAssertFalse(oldB.isClosed)
@@ -92,7 +94,8 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
             .init(id: id, lifetime: lifetime,
                   removal: .init(id: id, dataDescription: "A") { await store.removeA() })
         ], defaults: defaults, consents: .init(defaults: defaults), coordinator: coordinator)
-        let runtime = try await lifetime.start()
+        try await lifetime.start()
+        let runtime = try XCTUnwrap(lifetime.runtime)
         try await coordinator.withStoreAccess(for: id) {
             do { try await manager.remove(id); XCTFail("Busy store was removed") } catch {}
         }

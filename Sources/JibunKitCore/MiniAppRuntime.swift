@@ -5,12 +5,50 @@ import Foundation
 @MainActor
 public final class MiniAppRuntime {
     public enum Failure: Error { case closed }
+
+    public struct ShutdownProgress: Sendable, Equatable {
+        public enum Phase: Sendable, Equatable {
+            case active
+            case waitingForTasks
+            case runningCleanups
+            case completed
+        }
+
+        public let phase: Phase
+        public let pendingTaskCount: Int
+        public let remainingCleanupCount: Int
+        public let startedAt: Date?
+    }
+
     public private(set) var isClosed = false
     private let tasks = MiniAppTaskScope()
     private var cleanups: [@MainActor @Sendable () async -> Void] = []
     private var shutdownTask: Task<Void, Never>?
+    private var shutdownPhase: ShutdownProgress.Phase = .active
+    private var shutdownPendingTaskCount = 0
+    private var shutdownRemainingCleanupCount = 0
+    private var shutdownStartedAt: Date?
 
     public init() {}
+
+    /// A point-in-time view of shutdown. Cancellation alone never advances the
+    /// task count; a task stops being pending only after its operation returns.
+    public var shutdownProgress: ShutdownProgress {
+        if shutdownPhase == .active {
+            return ShutdownProgress(
+                phase: .active,
+                pendingTaskCount: tasks.activeTaskCount,
+                remainingCleanupCount: cleanups.count,
+                startedAt: nil
+            )
+        }
+        return ShutdownProgress(
+            phase: shutdownPhase,
+            pendingTaskCount: shutdownPendingTaskCount,
+            remainingCleanupCount: shutdownRemainingCleanupCount,
+            startedAt: shutdownStartedAt
+        )
+    }
 
     @discardableResult
     public func start(_ operation: @escaping @Sendable () async -> Void) throws -> Task<Void, Never> {
@@ -43,9 +81,20 @@ public final class MiniAppRuntime {
         let ownedCleanups = cleanups
         cleanups.removeAll()
         let ownedTasks = tasks
-        let task = Task { @MainActor in
-            await ownedTasks.cancelAllAndWait()
-            for cleanup in ownedCleanups.reversed() { await cleanup() }
+        shutdownPhase = .waitingForTasks
+        shutdownPendingTaskCount = ownedTasks.activeTaskCount
+        shutdownRemainingCleanupCount = ownedCleanups.count
+        shutdownStartedAt = Date()
+        let task = Task { @MainActor [weak self] in
+            await ownedTasks.cancelAllAndWait { [weak self] remaining in
+                self?.shutdownPendingTaskCount = remaining
+            }
+            self?.shutdownPhase = .runningCleanups
+            for cleanup in ownedCleanups.reversed() {
+                await cleanup()
+                if let self { self.shutdownRemainingCleanupCount -= 1 }
+            }
+            self?.shutdownPhase = .completed
         }
         shutdownTask = task
         await task.value

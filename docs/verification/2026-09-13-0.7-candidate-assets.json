@@ -1,0 +1,25 @@
+{
+  "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+  "ci": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+  "version": "0.7.0",
+  "build": "8",
+  "releaseType": "device-check prerelease; not final0.7.0",
+  "assets": [
+    {
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p0-device-check-20260913/JibunKit-P0-check.ipa",
+      "bytes": 1913801,
+      "sha256": "6fd28d4a13f561bfb9a364c6c8458916b1af7cb0f523ea083f5ec11b3505bdb0",
+      "unauthenticatedDownload": "passed",
+      "byteEquality": "passed",
+      "crc": "passed"
+    },
+    {
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p0-device-check-20260913/JibunKit.ipa",
+      "bytes": 1412679,
+      "sha256": "516bc3e85648ca75f4051de4367f20b98afa3c6b1f69ea1e6be8619adb813489",
+      "unauthenticatedDownload": "passed",
+      "byteEquality": "passed",
+      "crc": "passed"
+    }
+  ]
+}

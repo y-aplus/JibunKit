@@ -19,4 +19,10 @@
 永続復旧では同じ要求世代が再配送され得るため、Feature側で重複実行に対応する必要があります。
 Widgetの証拠は検証した静的Widgetの範囲であり、Controlや任意のSDKの隔離を保証しません。
 
-出荷CI・IPAの検証結果は、公開前に[検証記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-12-0.6-release.md)へ追記します。
+通常UI 11件とFiles経由のJSON選択復元、共有203試験（既存skip 2件）が成功しました。
+本体/Widgetは0.6.0 build 7です。IPAの全37 entryの展開・CRCを確認しています。
+
+- 出荷source: `5e8683f76edbbaeb17a29ed02c1ae6068bc8f759`
+- [出荷CI](https://github.com/y-aplus/JibunKit/actions/runs/34684114252) / [検証記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-12-0.6-release.md)
+- IPA SHA-256: `35d04a693e3759b6f4c999b318daedd929e716046b47ea9fde28ad3b61894b1a`
+- [IPAを直接ダウンロード](https://github.com/y-aplus/JibunKit/releases/download/0.6.0/JibunKit.ipa)

@@ -15,13 +15,14 @@ public final class MiniAppFeatureLifetime {
         case stopped, starting, running, stopping
         case failed(String)
     }
-    public enum Failure: Error { case suspendedForRestore }
+    public enum Failure: Error { case suspendedForRestore, startsDisabled }
 
     public nonisolated let id: MiniAppID
     public private(set) var state: State = .stopped
     /// May be starting or closing; use start() before admitting work and use
     /// this lifetime's stop(), rather than directly shutting down its runtime.
     public private(set) var runtime: MiniAppRuntime?
+    public private(set) var isStartAllowed = true
     private let configure: @MainActor @Sendable (MiniAppRuntime) async throws -> Void
     private var starting: Task<Void, Error>?
     private var stopping: Task<Void, Never>?
@@ -39,12 +40,15 @@ public final class MiniAppFeatureLifetime {
     /// task does not cancel Feature-owned startup/work; explicit stop does.
     public func start() async throws {
         try Task.checkCancellation()
+        guard isStartAllowed else { throw Failure.startsDisabled }
         while let stopping { await stopping.value }
         try Task.checkCancellation()
+        guard isStartAllowed else { throw Failure.startsDisabled }
         guard !suspendedForRestore else { throw Failure.suspendedForRestore }
         if let starting {
             try await starting.value
             try Task.checkCancellation()
+            guard isStartAllowed else { throw Failure.startsDisabled }
             return
         }
         if let runtime {
@@ -77,6 +81,15 @@ public final class MiniAppFeatureLifetime {
         starting = task
         try await task.value
         try Task.checkCancellation()
+        guard isStartAllowed else { throw Failure.startsDisabled }
+    }
+
+    /// Management closes admission before awaiting store reservations/cleanup.
+    /// Existing work still needs stop(); this is not forced task cancellation.
+    /// Apply persisted management state before dispatching native entry points.
+    public func setStartAllowed(_ allowed: Bool) {
+        isStartAllowed = allowed
+        if !allowed { resumeAfterRestore = false }
     }
 
     /// Closes this owner only. No view disappearance automatically calls this.

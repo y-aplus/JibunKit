@@ -14,11 +14,15 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
         do {
+            // Apply persisted admission before passive cold-launch registrations.
+            // Native launch handlers still register OS callbacks at the required
+            // launch time; their work must enter through the Feature lifetime.
+            _ = MiniAppRegistry.management
             for definition in MiniAppRegistry.all {
                 try definition.onHostLaunch?()
             }
             let registrations = Dictionary(uniqueKeysWithValues:
-                MiniAppRegistry.all.map { ($0.id, $0.notificationCategories) })
+                MiniAppRegistry.all.map { ($0.id, MiniAppRegistry.management.isEnabled($0.id) ? $0.notificationCategories : []) })
             try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
         } catch {
             preconditionFailure("Invalid Feature launch registration: \(error)")
@@ -47,6 +51,10 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
             categoryIdentifier: notification.request.content.categoryIdentifier, destination: route?.destination,
             requestSnapshot: Self.snapshot(notification.request))
         Task { @MainActor in
+            if let route, !MiniAppRegistry.management.isEnabled(route.id) {
+                completionHandler([])
+                return
+            }
             completionHandler(MiniAppNotificationPresentation.options(for: event, route: route,
                 policyForOwner: { MiniAppRegistry.definition(for: $0)?.notificationPresentation }))
         }
@@ -80,6 +88,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         // executor, causing UIKit's main-thread assertion on notification taps.
         Task { @MainActor in
             defer { completionHandler() }
+            if let candidate, !MiniAppRegistry.management.isEnabled(candidate.id) { return }
             // Opening preserves the legacy route behavior. Dismiss/custom actions
             // must not navigate or disturb another Feature's visible screen.
             await MiniAppNotificationActionDelivery.deliver(action, route: candidate,

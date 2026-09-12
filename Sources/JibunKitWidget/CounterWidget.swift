@@ -19,7 +19,10 @@ struct CounterWidget: Widget {
             VStack(spacing: 4) {
                 Text("カウンター")
                     .font(.caption)
-                if let value = entry.value {
+                if let status = entry.status, status != .enabled {
+                    Text(status == .removed ? "削除済み" : status == .disabled ? "無効" : "停止中")
+                        .font(.caption)
+                } else if let value = entry.value {
                     Text(value, format: .number)
                         .font(.title)
                         .monospacedDigit()
@@ -39,6 +42,7 @@ struct CounterWidget: Widget {
 private struct CounterEntry: TimelineEntry {
     let date: Date
     let value: Int?
+    var status: MiniAppManagement.Status? = nil
 }
 
 private struct CounterProvider: TimelineProvider {
@@ -69,8 +73,13 @@ private struct CounterProvider: TimelineProvider {
     }
 
     private func entry() async -> CounterEntry {
+        guard let defaults = try? MiniAppStorage.sharedDefaults() else {
+            return CounterEntry(date: .now, value: nil)
+        }
+        let status = MiniAppManagement.savedStatus(for: .counter, defaults: defaults)
+        guard status == .enabled else { return CounterEntry(date: .now, value: nil, status: status) }
         let value = try? await CounterStore.shared.currentValue()
-        return CounterEntry(date: .now, value: value)
+        return CounterEntry(date: .now, value: value, status: status)
     }
 }
 #endif

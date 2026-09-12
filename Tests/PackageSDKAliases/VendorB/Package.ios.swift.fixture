@@ -2,8 +2,8 @@
 import PackageDescription
 
 let package = Package(
-    name: "VendorA",
+    name: "VendorB",
     platforms: [.iOS("26.0"), .macOS(.v12)],
-    products: [.library(name: "VendorSDK", targets: ["VendorSDK"])],
+    products: [.library(name: "VendorBProduct", targets: ["VendorSDK"])],
     targets: [.target(name: "VendorSDK")]
 )

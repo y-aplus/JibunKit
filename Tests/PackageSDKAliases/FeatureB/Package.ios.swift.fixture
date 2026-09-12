@@ -9,7 +9,7 @@ let package = Package(
     targets: [
         .target(
             name: "FeatureB",
-            dependencies: [.product(name: "VendorSDK", package: "VendorB")]
+            dependencies: [.product(name: "VendorBProduct", package: "VendorB")]
         )
     ]
 )

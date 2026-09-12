@@ -146,15 +146,49 @@ The Simulator test uses the same manual ad-hoc signing settings as the existing 
 package fixtures. `ios-summary.json` is initialized before generation; if Tuist fails,
 it records that stage and exit code and explicitly leaves the Xcode test as not run.
 
-This is designed as one additional Simulator configuration inside the existing limited
-SDK-alias lane. The short four-root macOS comparison may run in the same job, while the
-normal IPA build and unrelated iOS regressions remain skipped. Workflow wiring is not
-part of this fixture change and requires review before CI.
+The limited SDK-alias workflow selects the iOS host when `simulator_tests=true`, and
+otherwise selects the four original macOS roots. The first iOS run also reran the macOS
+roots successfully. Subsequent iOS-only manifest changes reuse that evidence and skip
+those unchanged builds. Normal IPA and unrelated iOS regressions remain skipped.
 
-The iOS bridge has been checked only statically on Windows. Swift, Tuist, Xcode package
-resolution, linking, Simulator launch, UI interaction, and screenshot production have
-not run here. A future native result must be reported as a failure if SwiftPM aliases do
-not propagate through Xcode's package build; it must not be reclassified as an expected
-success. Even when passing, this evidence is limited to this Tuist host and still does
+Local checks ran on Windows. The first native CI result is recorded below; a failed
+Xcode graph must not be reclassified as an expected success. Even when passing, this evidence is limited to this Tuist host and still does
 not place either SDK in the normal JibunKit registry or establish the broader isolation
 cases excluded above.
+
+## First iOS result: product reference collision
+
+[CI 34685650822](https://github.com/y-aplus/JibunKit/actions/runs/34685650822),
+source `e8edd79586e0db969a244fe3684495d7d66450a9`, failed on Xcode 26.6 / iOS 26.5
+Simulator before compiling or running the UI test. All four original macOS comparisons
+passed their contracts again (A 0.002s, B 0.002s, combined 0.001s, exact unaliased target
+collision). Tuist generation and package resolution succeeded (114.308s).
+
+`xcodebuild test` exited 65 at `ComputePackagePrebuildTargetDependencyGraph` with:
+
+```text
+PIFLoader: GUID 'PRODUCTREF-PACKAGE-PRODUCT:VendorSDK--5F8B1E115CC902A7-dynamic' has already been registered
+```
+
+`ios-summary.json` records `tuistGenerate=passed`, `xcodebuildTest=failed`,
+`testCasePassed=false`, `testSucceeded=false`. Complete generation/test logs and the
+failed result bundle were retained. No UI launch, runtime configuration isolation or
+iOS module compilation is proved by this run. The normal IPA job was skipped.
+
+The historical [Swift Forums report](https://forums.swift.org/t/modulealiases-not-working-for-package-dependencies/67305)
+contains the same class of product-reference collision after moving aliases to the
+proper product-dependency edge. It is supporting context, not proof of the exact cause
+inside the Xcode 26.6 implementation. Our actual run is the evidence for this toolchain.
+
+The next comparison changes only the iOS dependency manifests: Vendor A/B publish
+unique `VendorAProduct` / `VendorBProduct` library product names, and each Feature's
+product dependency follows that name. The SDK target/module remains `VendorSDK`;
+Feature source imports, SDK types and bridge aliases remain unchanged. Four explicit
+`Package.ios.swift.fixture` files replace only temporary iOS copies of `Package.swift`.
+The original macOS manifests retain their same-product collision comparison.
+
+This is a proposed manifest-edit workaround, not an assertion that module aliases alone
+fix the original Xcode graph. It requires control of the dependency manifests (or a
+maintained fork); runtime/source names and arbitrary third-party packages are not
+silently rewritten. The next CI must still pass the exact iOS test and preserve B's
+written value after updating A. Until then, this workaround is unverified.

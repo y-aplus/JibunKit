@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       package_sdk_aliases_only:
-        description: Run SDK alias comparisons only; simulator_tests adds iOS host (no normal IPA)
+        description: SDK aliases only; simulator_tests selects iOS host, otherwise macOS (no IPA)
         type: boolean
         default: false
       simulator_tests:
@@ -84,6 +84,7 @@ jobs:
           sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
           swift --version
       - name: Compare standalone and combined SDK packages
+        if: ${{ !inputs.simulator_tests }}
         shell: bash
         run: |
           set -euo pipefail

@@ -191,4 +191,32 @@ This is a proposed manifest-edit workaround, not an assertion that module aliase
 fix the original Xcode graph. It requires control of the dependency manifests (or a
 maintained fork); runtime/source names and arbitrary third-party packages are not
 silently rewritten. The next CI must still pass the exact iOS test and preserve B's
-written value after updating A. Until then, this workaround is unverified.
+written value after updating A. Its successful result is recorded below; the original same-product graph remains a failure.
+
+## iOS product-name workaround verified
+
+[CI 34686272759](https://github.com/y-aplus/JibunKit/actions/runs/34686272759),
+source `2321c3720dbe5104054a204e273191f905bd4fba`, completed successfully on Xcode 26.6
+with iOS 26.5 Simulator. Tuist generation and `xcodebuild test` both exited zero.
+The exact focused XCTest method passed in 26.878s (one test, zero failures), and
+`** TEST SUCCEEDED **` was present. The downloaded summary agrees with the full log.
+
+The build log shows `VendorASDK` and `VendorBSDK` emitted as separate modules and each
+Feature compiled with its corresponding `-module-alias VendorSDK=...` flag. The UI log
+shows exact version/default-value checks, the B button write, the A button update, and
+the retained `ios-b-written` value with `ios-a-updated` and both original versions.
+The test recorded the `sdk-alias-ios-final` attachment in the retained xcresult. The
+verification here uses the test assertions and log; no separate visual review of that
+attachment was performed on Windows.
+
+Each iOS manifest override differs from its original only in the published/dependent
+product name; platform declarations, module targets and source imports are unchanged.
+The original macOS four-root comparison was not repeated: it passed at `e8edd795` in
+34685650822, and those manifests, sources and its driver are unchanged from that source.
+The normal app/Widget/IPA job was skipped. No new device or normal-host regression claim
+is made. The verified fixture and driver were merged into main without source changes.
+
+This proves the standard SwiftPM/Tuist connection for the two source-built pure Swift
+SDKs with distinct package identities and unique product names. It does not solve the
+same-product Xcode graph, same-identity multi-version resolution, binary/C/Objective-C
+symbol conflicts, OS globals, or SDK external-state ownership. D29 remains incomplete.

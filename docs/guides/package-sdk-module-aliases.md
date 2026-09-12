@@ -38,7 +38,15 @@ iOSのTuist生成ホストでは[34685650822](https://github.com/y-aplus/JibunKi
 で生成・解決が成功した後、Xcode 26.6が同名product `VendorSDK`のPIF参照重複で失敗した。
 UI実行前の失敗であり、この構成をiOSで利用可能とは扱わない。module名のaliasと
 Packageの公開product名は別の境界である。iOS向けに公開product名だけを分ける
-manifest編集の回避策を検証中で、SDK/FeatureのSwift sourceは変更しない。
+manifest編集は[34686272759](https://github.com/y-aplus/JibunKit/actions/runs/34686272759)
+で成功した。VendorA/Bの公開productを`VendorAProduct`/`VendorBProduct`へ分け、
+各Featureのproduct依存名を合わせる。target/moduleは`VendorSDK`のままで、上記の
+moduleAliasesを消費側bridgeに指定する。SDK/FeatureのSwift sourceは変更しない。
+
+この構成では両SDKの版・設定がiOS画面へ表示され、Bを書き換えた後にAを更新しても
+Bの値が保たれた。公開productの改名には依存Packageのmanifestを編集できること
+（またはforkの保守）が必要で、任意の外部SDKに自動適用できる機構ではない。
+元の同名product構成の失敗と、この改名した構成の成功を区別する。
 
 設計上の基準はSwiftの[SE-0339](https://github.com/swiftlang/swift-evolution/blob/main/proposals/0339-module-aliasing-for-disambiguation.md)に従う。
 aliasだけで解決していない衝突を、解決済みとして扱わない。

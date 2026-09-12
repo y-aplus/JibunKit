@@ -1,6 +1,6 @@
 # 2026-09-12 開発停止に向けた引継ぎ
 
-状態: ユーザー指示により新規着手を停止。進行中のSDK iOS比較のCI結果を確定してから停止する。
+状態: ユーザー指示により全開発スレッドを停止。最後のSDK iOS比較は検証・main統合済み。
 この指示は、過去の「v1.0まで自律継続」や古いCI queue本文より優先する。
 
 ## 保持する成果
@@ -13,28 +13,28 @@
 - shared refreshの実OS受付/launch/期限は未検証。診断fixtureの実機試験や公開は未実施。
   この停止整理のためだけに新たな実機操作をユーザーへ要求しない。
 
-## 閉じる作業
+## 最後に確定した作業
 
 `codex/sdk-aliases-ios` の `2321c3720dbe5104054a204e273191f905bd4fba` を
-[CI 34686272759](https://github.com/y-aplus/JibunKit/actions/runs/34686272759)で検証中。
+[CI 34686272759](https://github.com/y-aplus/JibunKit/actions/runs/34686272759)で成功確認済み。
 通常IPAを生成しない独立したiOS比較で、公開0.6.0へ影響しない。
 
 先行[34685650822](https://github.com/y-aplus/JibunKit/actions/runs/34685650822)は
 macOS四比較成功、Tuist生成成功、Xcodeの同名product参照重複でUI前に失敗。
 今回の比較はiOS向けPackage manifestの公開product名だけを分け、SDK module/source、
-Feature source/import、bridge aliasとUI assertionを保つ。成功前に回避策成立とは記載しない。
-詳細は担当branchの `docs/verification/2026-09-12-package-sdk-aliases.md` に保存している。
+Feature source/import、bridge aliasとUI assertionを保つ。26.878秒のUI試験で両版/初期値と
+B書込後のA更新・B保持が成功。検証済みfixture/driverをsource変更なしでmainへ統合した。
+詳細は[SDK比較の検証記録](2026-09-12-package-sdk-aliases.md)に保存している。
 
-結果到着後に証拠を確認し、必要な最終修正・検証または明示した未解決状態へ区切る。
-検証済み成果だけをmainへ統合する。新しいSDK方式や別D領域へ作業を広げない。
-CIのために待機モデルを実行せず、OS監視から完了時のqueue一回で親を再開する。
-この結果整理を終えたら新たなCIやworkerを起動せず停止する。
+結果・適用条件・未解決範囲の記録まで完了。元の同名product構成は失敗したままで、
+manifest編集が必要な回避策の成功と区別する。D29全体とv1.0は未完了。
+新たなCIやworkerを起動せず、ユーザーの明示再開を待つ。
 
 ## スレッドとローカル保持
 
-- 親: JibunKitをクローンして目標確認。結果整理と最終停止を担当。
-- JibunKit D02 購読の所有権: SDK iOS比較を提出済み。追加着手を停止するよう通知済み。
-- JibunKit通知UI連続実行の検証: shared refresh診断fixtureを提出・統合済み。停止通知済み。
+- 親: JibunKitをクローンして目標確認。結果整理・mainへのcommit/pushを完了して停止。
+- JibunKit D02 購読の所有権: SDK iOS比較を提出済み。未commit/未提出変更なし、自動再開待ちなしと本人確認済みで停止。
+- JibunKit通知UI連続実行の検証: shared refresh診断fixtureを提出・統合済み。追跡差分なし、自動再開待ちなしと本人確認済みで停止。
 - ignoredのZaikoソース/試験、worker worktreeのuntracked `work/` を保持。
 - この時点でSDK worktreeとmainの追跡ファイルに未commit差分なし。
 

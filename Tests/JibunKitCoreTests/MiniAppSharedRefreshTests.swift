@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import JibunKitCore
 
@@ -103,7 +104,8 @@ final class MiniAppSharedRefreshTests: XCTestCase {
         XCTAssertNotNil(retained, "Center must retain unfinished cleanup")
         retained?.complete(success: true)
         XCTAssertEqual(native.completions, [false], "Expired native batch cannot report success")
-        guard case .alreadyCompleted = executions["a"]?.complete(success: true) else {
+        let completedA = try XCTUnwrap(executions["a"])
+        guard case .alreadyCompleted = completedA.complete(success: true) else {
             return XCTFail("Duplicate completion must do nothing")
         }
         XCTAssertEqual(a.pendingRequests.map(\.identifier), ["future"])
@@ -186,7 +188,8 @@ final class MiniAppSharedRefreshTests: XCTestCase {
         _ = center.reconcile()
         let native = scheduler.launch("shared")
         journal.failSave = true
-        guard case .acknowledgementFailed = delivered?.complete(success: true) else {
+        let execution = try XCTUnwrap(delivered)
+        guard case .acknowledgementFailed = execution.complete(success: true) else {
             return XCTFail("Failed durable acknowledgement must be returned")
         }
         XCTAssertEqual(native.completions, [false])
@@ -222,6 +225,69 @@ final class MiniAppSharedRefreshTests: XCTestCase {
         work?.complete(success: true)
         XCTAssertEqual(retried.completions, [true])
         XCTAssertTrue(journal.records.isEmpty)
+    }
+
+    func testFileJournalAndCenterRestoreOnlyUnacknowledgedGenerationsAcrossRestart() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("first/journal.json")
+        let journal = try FileSharedRefreshJournal(url: url)
+        let scheduler = RefreshSchedulerSpy()
+        let center = try MiniAppSharedRefreshCenter(identifier: "shared", journal: journal, scheduler: scheduler)
+        let a = center.refreshes(for: context("a"))
+        let b = center.refreshes(for: context("b"))
+        var active: [String: MiniAppSharedRefreshExecution] = [:]
+        try a.register(identifier: "sync") { active["a"] = $0 }
+        try b.register(identifier: "sync") { active["b"] = $0 }
+        let acknowledged = try a.submit(identifier: "sync")
+        let unfinished = try b.submit(identifier: "sync")
+        _ = scheduler.launch("shared")
+        active["a"]?.complete(success: true)
+        let newer = try a.submit(identifier: "sync")
+        // Snapshot the durable bytes that a restarted process would receive.
+        // Separate paths let this test release old in-memory work afterward
+        // without pretending that two live centers may write the same journal.
+        let restartURL = root.appendingPathComponent("restarted.json")
+        try Data(contentsOf: url).write(to: restartURL)
+        active["b"]?.complete(success: true)
+        let restartJournal = try FileSharedRefreshJournal(url: restartURL)
+        let restartScheduler = RefreshSchedulerSpy()
+        let restart = try MiniAppSharedRefreshCenter(identifier: "shared", journal: restartJournal, scheduler: restartScheduler)
+        var recovered: [MiniAppSharedRefreshExecution] = []
+        try restart.refreshes(for: context("a")).register(identifier: "sync") { recovered.append($0) }
+        try restart.refreshes(for: context("b")).register(identifier: "sync") { recovered.append($0) }
+        _ = restart.reconcile()
+        let native = restartScheduler.launch("shared")
+        XCTAssertEqual(recovered.map { $0.request.generation }, [unfinished.generation, newer.generation])
+        XCTAssertFalse(recovered.contains { $0.request.generation == acknowledged.generation })
+        XCTAssertEqual(recovered.map { $0.request.isRecovery }, [true, false])
+        recovered[0].complete(success: true)
+        XCTAssertTrue(native.completions.isEmpty)
+        recovered[1].complete(success: true)
+        XCTAssertEqual(native.completions, [true])
+        XCTAssertTrue(try FileSharedRefreshJournal(url: restartURL).load().isEmpty)
+    }
+
+    func testCancellingPendingDoesNotFinishRunningWorkOrCancelAnotherOwner() throws {
+        let journal = RefreshJournalSpy()
+        let scheduler = RefreshSchedulerSpy()
+        let center = try MiniAppSharedRefreshCenter(identifier: "shared", journal: journal, scheduler: scheduler)
+        let a = center.refreshes(for: context("a"))
+        let b = center.refreshes(for: context("b"))
+        var running: MiniAppSharedRefreshExecution?
+        try a.register(identifier: "sync") { running = $0 }
+        try b.register(identifier: "sync") { _ in XCTFail("No second launch is requested") }
+        let first = try a.submit(identifier: "sync")
+        let native = scheduler.launch("shared")
+        try a.submit(identifier: "sync")
+        let other = try b.submit(identifier: "sync")
+        try a.cancelAllPendingRequests()
+        XCTAssertTrue(native.completions.isEmpty)
+        XCTAssertEqual(journal.records.map(\.generation), [first.generation, other.generation])
+        running?.complete(success: true)
+        XCTAssertEqual(native.completions, [true])
+        XCTAssertEqual(journal.records.map(\.generation), [other.generation])
+        XCTAssertNotNil(scheduler.pending["shared"])
     }
 }
 

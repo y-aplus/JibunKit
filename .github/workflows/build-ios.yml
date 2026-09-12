@@ -40,7 +40,7 @@ on:
         type: boolean
         default: false
       backgroundtasks_compile_only:
-        description: Compile BackgroundTasks fixture without runtime validation
+        description: Compile native BackgroundTasks fixture; shared refresh iOS unit tests still run
         type: boolean
         default: false
       feature_ui_test_filter:
@@ -836,6 +836,8 @@ jobs:
           path: |
             ${{ runner.temp }}/backgroundtasks-native.log
             ${{ runner.temp }}/BackgroundTasksNative.xcresult
+            ${{ runner.temp }}/SharedRefresh.xcresult
+            ${{ runner.temp }}/shared-refresh-xcodebuild.log
           if-no-files-found: ignore
           retention-days: 7
 

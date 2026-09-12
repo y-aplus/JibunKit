@@ -142,6 +142,7 @@ def main() -> int:
     if not a_v1.is_file() or not b_value.is_file():
         raise RuntimeError("v1 runner did not create both Feature stores")
     shutil.copyfile(b_value, b_baseline)
+    shutil.copyfile(a_v1, store / "feature-a.v1.json")
     a_v1_hash = digest(a_v1)
     b_v1_hash = digest(b_value)
 

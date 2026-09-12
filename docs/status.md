@@ -1,7 +1,6 @@
 # 公開版とmainの現在状態
 
-更新日: 2026-09-12。実装基準点はmain `efa47e6`（SDK iOS比較の統合・検証記録まで）。
-その後、Issue #5の計画・運用をmain `31e0681`で整備。ユーザーの明示指示によりP0-A実装を再開した。
+更新日: 2026-09-12。main `73fe9de`までのP0-A検証済み変更を反映。P0-B候補`5cffdf2`は別branchで通常CI34695571482を開始しており、main/公開版の確認済み機能とは区別する。
 
 ## 公開版0.6.0
 
@@ -21,6 +20,7 @@
 | 変更 | 確認できたこと | 残る条件 |
 | --- | --- | --- |
 | 純Swift SDKのmodule alias比較 | macOSの単独A/B・統合、iOS Tuist hostで両版/設定の表示とB書込後のA更新・B保持。iOS試験34686272759成功 | iOSは公開product名を分ける依存manifest編集が必要。同名product構成は失敗。同一identityの複数version、binary/C/ObjC、OS globalsは未解決 |
+| P0-Aの寿命・保存・終了診断 | 通常34691452980、生成34694032847成功。Feature開始/終了/再試行、JSON/添付とSQLiteの保守、他owner保持、終了進捗。共通216試験（skip2）、Records11、生成host比較5件 | P0-3.deviceは0.7.0候補へ予約。高度なinstance/別process writerは残る。詳細は[P0-A記録](verification/2026-09-12-p0-a.md) |
 | shared refresh実機用診断fixture | 34684495878でiOS注入試験16件と診断app/UI targetのコンパイルが成功 | 実OSのpending受付・launch・期限は未検証。実機用IPAの公開や操作依頼は未実施 |
 
 このmainの追加を0.6.0配布物の機能・検証に含めない。
@@ -31,7 +31,7 @@
 [Issue #5の優先順位](implementation-priorities.md)を導入した。P0の6単位完了を0.7.0、P0を維持したP1の6単位完了を0.8.0とする。
 途中の公開は0.6.x/0.7.xで行う。P0-5はアプリ内でのFeature無効化・削除を必須とする。
 P0/P1はいずれも部分成果があるが未完了。5つの[CI境界](ci-boundaries.md)を設定し、minorごとの文書確認を必須にした。
-P0-A（寿命・保存・終了診断）を実装中。CIは境界の実装と一括レビューが揃ってから起動する。
+P0-Aの非実機条件を確認済み。P0-B（画面提示・同意・アプリ内管理）は一括レビュー後の通常CI中。P0-C（追加・更新・0.7.0出荷）は[契約](delivery/P0-C-contract.md)で範囲を準備した。
 1.0の最終対応範囲はP2/P3需要調査後にユーザーが決定する。
 
 ## 残っている統合差分

@@ -2,14 +2,13 @@ import XCTest
 
 @MainActor
 final class P0ARecordsUITests: XCTestCase {
-    func testRecordsHostMaintenanceRestoresAttachmentsAndPreservesOtherOwner() {
+    func testRecordsHostMaintenanceRestoresAttachmentsAndPreservesOtherOwner() throws {
         continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        let row = app.buttons["miniapp.p0-records"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), app.debugDescription)
-        row.tap()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/p0-records")))
+        XCTAssertTrue(app.buttons["p0.records.run"].waitForExistence(timeout: 10), app.debugDescription)
         app.buttons["p0.records.run"].tap()
         let result = app.staticTexts["p0.records.result"]
         let expected = "schema=2;failed-kept=Changed;restored=Legacy;attachment=3;reset=0;b=Other;generations=5/1"

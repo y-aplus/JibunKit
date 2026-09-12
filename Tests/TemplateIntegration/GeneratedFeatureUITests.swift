@@ -847,12 +847,13 @@ final class GeneratedFeatureUITests: XCTestCase {
     }
 
     func testRecordsUsesIndependentHostStorage() throws {
+        continueAfterFailure = false
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         func tap(_ element: XCUIElement, launcherRow: Bool = false) {
-            XCTAssertTrue(element.waitForExistence(timeout: 10))
             if launcherRow { revealLauncherRow(element, in: app) }
+            XCTAssertTrue(element.waitForExistence(timeout: 10))
             element.tap()
         }
         tap(app.buttons["miniapp.counter"], launcherRow: true)

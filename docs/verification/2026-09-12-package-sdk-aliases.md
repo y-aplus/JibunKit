@@ -78,11 +78,37 @@ and declare unique aliases at the consuming product edges.
 ## Verification status
 
 The fixture and verifier were reviewed statically on Windows. Python syntax and the
-working-tree diff are checked locally, but this machine has no Swift toolchain, so no
-SwiftPM resolve, build, or XCTest result is claimed here. Native execution evidence must
-be added only after the verifier runs on a Swift-equipped host.
+working-tree diff were checked locally; this machine has no Swift toolchain, so native
+execution was delegated to CI.
 
 The existing workflow has an opt-in `package_sdk_aliases_only` mode for this
 comparison. It selects Xcode 26.6's Swift toolchain and runs only the four pure-Swift
 configurations; the normal iOS/IPA job is skipped. Logs and summary are uploaded
 without compiled scratch directories. This mode does not establish iOS integration.
+
+Run [34684588973](https://github.com/y-aplus/JibunKit/actions/runs/34684588973), source
+`0f2417cad13e0ee942b42b6f5026c1259133fcf0`, passed in the dedicated
+`Native Swift SDK module aliases` job. The normal Xcode/iOS job was skipped. The host
+reported Apple Swift 6.3.3 targeting `arm64-apple-macosx26.0`.
+
+All four roots resolved successfully. The three positive roots then reported their exact
+expected XCTest methods as passed:
+
+- `StandaloneATests.StandaloneATests testUsesVendorA` passed in 0.002 seconds.
+- `StandaloneBTests.StandaloneBTests testUsesVendorB` passed in 0.003 seconds.
+- `CombinedAliasedTests.CombinedAliasedTests
+  testBothSDKConfigurationsRemainIndependent` passed in 0.001 seconds.
+
+The combined build log shows the unchanged `VendorSDK.swift` source compiled once as
+module `VendorASDK` and once as module `VendorBSDK`. The combined XCTest therefore
+executed both version/configuration paths, wrote B, updated A, and verified that B's
+written value remained unchanged.
+
+`CombinedUnaliased` resolution succeeded, but `swift test` stopped with SwiftPM's native
+diagnostic: multiple similar targets named `VendorSDK` appeared in packages `vendorb`
+and `vendora`, with `moduleAliases` recommended for distinct packages. This specific
+diagnostic, rather than an arbitrary nonzero result, satisfied the expected-collision
+case. The final summary contained no verification failures.
+
+The `Package-SDK-alias-diagnostics` artifact is ID `10295028814`, 3,882 bytes, with
+SHA-256 `f49b2472559edfabd6e57828aca1603738328b84022622f4ce040b6ff5b64ef4`.

@@ -318,6 +318,7 @@ jobs:
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
           python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
           python3 Tools/verify-feature-connection.py
+          python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             python3 Tools/verify-privacy-manifest-ownership.py
           fi
@@ -926,6 +927,13 @@ jobs:
           name: Feature-build-requirement-diagnostics
           path: |
             ${{ runner.temp }}/feature-build-requirements.log
+            ${{ runner.temp }}/package-compatible-update/result.json
+            ${{ runner.temp }}/package-compatible-update/logs/
+            ${{ runner.temp }}/package-compatible-update/store/
+            ${{ runner.temp }}/package-compatible-update/SourceSnapshots/
+            ${{ runner.temp }}/package-compatible-update/Packages/
+            ${{ runner.temp }}/package-compatible-update/Runner/Package.swift
+            ${{ runner.temp }}/package-compatible-update/Runner/Sources/
             ${{ runner.temp }}/host-app-intents.json
           if-no-files-found: ignore
           retention-days: 14

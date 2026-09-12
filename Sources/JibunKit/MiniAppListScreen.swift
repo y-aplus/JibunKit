@@ -21,8 +21,11 @@ struct MiniAppListScreen: View {
     var body: some View {
         let owner = navigation.activeID
         NavigationStack(path: navigation.pathBinding) {
-            if let owner, let miniApp = MiniAppRegistry.definition(for: owner) {
+            // A disabled owner's presenting root stays mounted until the
+            // departure acknowledgement; it is no longer an admitted entry.
+            if let owner, let miniApp = MiniAppRegistry.all.first(where: { $0.id == owner }) {
                 miniApp.makeDestination()
+                    .disabled(!MiniAppRegistry.management.isEnabled(owner))
                     .navigationTitle(miniApp.title)
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {

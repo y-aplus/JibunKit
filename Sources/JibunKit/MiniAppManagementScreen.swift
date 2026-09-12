@@ -64,6 +64,7 @@ struct MiniAppManagementScreen: View {
                     Text("削除は登録と所有データを取り除きます。組み込まれたコードを取り除くには再ビルドが必要です。")
                 }
             }
+            .accessibilityIdentifier("management.list")
             .navigationTitle("ミニアプリの管理")
             .toolbar { Button("閉じる") { dismiss() }.disabled(!management.stages.isEmpty) }
             .interactiveDismissDisabled(!management.stages.isEmpty)

@@ -170,6 +170,62 @@ final class MiniAppPresentationOwnerTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
+    func testNavigationDismissalKeepsRuntimeConnectedForReturningFeature() async throws {
+        let runtime = MiniAppRuntime()
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+        let other = MiniAppPresentationOwner(id: MiniAppID("feature-b"))
+        let otherRuntime = MiniAppRuntime()
+        try owner.connect(to: runtime)
+        try other.connect(to: otherRuntime)
+        let events = PresentationEvents()
+        _ = try owner.begin(.sheet) { events.values.append("A ended") }
+        _ = try other.begin(.sheet) { events.values.append("B ended") }
+        await owner.dismissForNavigation()
+        XCTAssertEqual(events.values, ["A ended"])
+        XCTAssertFalse(runtime.isClosed)
+        XCTAssertFalse(owner.hasPendingPresentations)
+        XCTAssertEqual(other.activePresentationCount, 1)
+        _ = try owner.begin(.fullScreenCover) { events.values.append("A returned") }
+        await runtime.shutdown()
+        XCTAssertEqual(events.values, ["A ended", "A returned"])
+        await otherRuntime.shutdown()
+    }
+
+    @MainActor
+    func testShutdownDuringNavigationDismissalClosesGenerationOnlyAfterAcknowledgement() async throws {
+        let runtime = MiniAppRuntime()
+        let owner = MiniAppPresentationOwner(id: MiniAppID("feature-a"))
+        try owner.connect(to: runtime)
+        let gate = PresentationGate()
+        let entered = expectation(description: "Native dismissal entered")
+        let events = PresentationEvents()
+        _ = try owner.begin(.uiViewController) {
+            events.values.append("dismiss")
+            await gate.wait(entered: entered)
+        }
+        let navigation = Task { await owner.dismissForNavigation() }
+        await fulfillment(of: [entered], timeout: 5)
+        XCTAssertTrue(owner.hasPendingPresentations)
+        XCTAssertThrowsError(try owner.begin(.sheet) {})
+        let shutdownEntered = expectation(description: "Runtime shutdown entered")
+        try runtime.onShutdown { shutdownEntered.fulfill() }
+        let shutdown = Task { await runtime.shutdown() }
+        await fulfillment(of: [shutdownEntered], timeout: 5)
+        XCTAssertTrue(runtime.isClosed)
+        XCTAssertTrue(owner.hasPendingPresentations)
+        await gate.release()
+        await navigation.value
+        await shutdown.value
+        XCTAssertEqual(events.values, ["dismiss"])
+        XCTAssertFalse(owner.hasPendingPresentations)
+        XCTAssertThrowsError(try owner.begin(.sheet) {})
+        let restarted = MiniAppRuntime()
+        try owner.connect(to: restarted)
+        _ = try owner.begin(.sheet) {}
+        await restarted.shutdown()
+    }
+
+    @MainActor
     func testClosedRuntimeCannotBeConnected() async {
         let runtime = MiniAppRuntime()
         await runtime.shutdown()

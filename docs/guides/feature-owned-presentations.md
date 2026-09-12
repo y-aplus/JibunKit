@@ -62,10 +62,22 @@ presentation's actual dismissal acknowledgement. SwiftUI updates refresh the
 adapter coordinator's callbacks, so a retained controller never calls a stale
 Feature closure after its representable value changes.
 
-External URLs and notifications continue to select a scene and Feature through
-the existing routing contract. If that switch removes a presenting root view,
-its normal dismissal callback must finish the old owner's handle. Returning to
-the Feature uses its retained `NavigationPath`; an explicit path reset affects
-only that Feature. Disabling or deleting a Feature must first close host entry,
-then stop its runtime and await these dismissals before unregistering it. A
-timeout is diagnostic information, not permission to continue deletion.
+Connect the same owner through `MiniAppDefinition(presentations: owner, ...)`.
+External URLs, notifications, and menu selection then ask that owner to dismiss
+its active surfaces **before** removing the old root. Navigation waits for the
+native acknowledgement; repeated selection requests keep the latest target.
+This preserves the runtime connection, so returning to the Feature can present
+again. Features without owned presentations keep the synchronous routing path.
+
+The lifetime destination also keeps its running content mounted during stopping,
+with interaction disabled, until runtime cleanup has finished. Removing that
+content when stopping begins would lose SwiftUI onDismiss and could stall
+shutdown forever. Disabling the owner closes new entry first but keeps the old
+presenter/path alive until departure acknowledgement. Saved path removal occurs
+afterwards. These are host responsibilities, not a requirement for the Feature
+to fake dismissal from onDisappear or dismantle.
+
+An explicit path reset still affects only that Feature. Runtime shutdown and
+navigation dismissal share the in-flight callback; shutdown closes the generation
+while navigation alone leaves it connected. A timeout diagnoses an unfinished
+operation and never authorizes deleting data or dropping the acknowledgement.

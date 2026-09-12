@@ -13,6 +13,7 @@ public struct MiniAppDefinition: Identifiable {
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
     public let lifetime: MiniAppFeatureLifetime?
+    public let presentations: MiniAppPresentationOwner?
     public let removal: MiniAppRemovalProvider?
     public let permissions: [MiniAppPermissionDeclaration]
     /// Idempotent cleanup for owned registrations beyond host notifications/search.
@@ -38,6 +39,7 @@ public struct MiniAppDefinition: Identifiable {
         fileBackup: MiniAppFileBackupProvider? = nil,
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         lifetime: MiniAppFeatureLifetime? = nil,
+        presentations: MiniAppPresentationOwner? = nil,
         removal: MiniAppRemovalProvider? = nil,
         permissions: [MiniAppPermissionDeclaration] = [],
         onUnregister: (@MainActor @Sendable () async throws -> Void)? = nil,
@@ -62,6 +64,8 @@ public struct MiniAppDefinition: Identifiable {
         // A custom restore lifecycle may include store-specific stop recovery.
         // Otherwise reuse the same lifetime as ordinary host entry.
         precondition(lifetime == nil || lifetime?.id == id, "Lifetime must belong to this Feature.")
+        precondition(presentations == nil || presentations?.id == id)
+        self.presentations = presentations
         self.lifetime = lifetime
         precondition(removal == nil || removal?.id == id, "Removal provider must belong to this Feature.")
         precondition(Set(permissions.map(\.id)).count == permissions.count && permissions.allSatisfy { !$0.id.isEmpty },
@@ -131,7 +135,18 @@ private struct MiniAppLifetimeDestination<Content: View>: View {
     var body: some View {
         Group {
             switch lifetime.state {
-            case .running: content()
+            case .running, .stopping:
+                // Keep the presenting view mounted until native onDismiss and
+                // runtime cleanup finish. Removing it at .stopping loses the
+                // acknowledgement that shutdown is waiting for.
+                content()
+                    .disabled(lifetime.state == .stopping)
+                    .overlay {
+                        if lifetime.state == .stopping {
+                            ProgressView("終了を待っています")
+                                .accessibilityIdentifier("miniapp.start.pending")
+                        }
+                    }
             case .failed(let reason):
                 ContentUnavailableView {
                     Label("アプリを開始できません", systemImage: "exclamationmark.triangle")
@@ -144,8 +159,8 @@ private struct MiniAppLifetimeDestination<Content: View>: View {
             case .stopped:
                 Button("アプリを開始") { attempt += 1 }
                     .accessibilityIdentifier("miniapp.start.resume")
-            case .starting, .stopping:
-                ProgressView(lifetime.state == .stopping ? "終了を待っています" : "アプリを準備しています")
+            case .starting:
+                ProgressView("アプリを準備しています")
                     .accessibilityIdentifier("miniapp.start.pending")
             }
         }

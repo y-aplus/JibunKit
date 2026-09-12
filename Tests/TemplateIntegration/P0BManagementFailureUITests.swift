@@ -52,7 +52,7 @@ final class P0BManagementFailureUITests: XCTestCase {
         XCTAssertTrue(failureMessage.label.contains("saved=\(saved)"), failureMessage.debugDescription)
         expectStatus("削除が未完了。再試行で残りの処理を完了してください。")
         XCTAssertTrue(app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS %@", "登録解除で失敗しました。diagnostic unregister failed once; saved=\(saved)")
+            NSPredicate(format: "label CONTAINS %@", "通知・検索などの登録解除で失敗しました。diagnostic unregister failed once; saved=\(saved)")
         ).firstMatch.exists, app.debugDescription)
 
         // The same action is now explicitly a retry; data deletion happens only here.
@@ -92,7 +92,8 @@ final class P0BManagementFailureUITests: XCTestCase {
             return frame.minY > top && frame.maxY < bottom
         }
         if visible() { return }
-        let list = app.collectionViews.firstMatch
+        let managementList = app.collectionViews["management.list"]
+        let list = managementList.exists ? managementList : app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
         for _ in 0..<10 {
             list.swipeDown()

@@ -101,7 +101,8 @@ enum P0BPresentationProbe {
             id: owner.id,
             title: owner.id == a.id ? "Presentation A" : "Presentation B",
             systemImage: "rectangle.on.rectangle",
-            lifetime: owner.lifetime
+            lifetime: owner.lifetime,
+            presentations: owner.presentations
         ) { _ in
             PresentationProbeRoot(owner: owner)
         }

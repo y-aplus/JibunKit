@@ -34,6 +34,7 @@ public final class MiniAppPresentationOwner {
     private var acceptsPresentations = false
     private var dismissalTasks: [Handle: Task<Void, Never>] = [:]
     private var isDismissingAll = false
+    private var endsGeneration = false
     private var dismissalWaiters: [CheckedContinuation<Void, Never>] = []
 
     public init(id: MiniAppID) {
@@ -43,6 +44,7 @@ public final class MiniAppPresentationOwner {
 
     public var activeKinds: [Kind] { entries.map(\.kind) }
     public var activePresentationCount: Int { entries.count }
+    public var hasPendingPresentations: Bool { !entries.isEmpty || !dismissalTasks.isEmpty || isDismissingAll }
 
     /// Connects presentation teardown to this runtime generation. The supplied
     /// dismiss callbacks must return only after their UI has actually ended.
@@ -98,8 +100,16 @@ public final class MiniAppPresentationOwner {
         await dismissAll(generation: generation)
     }
 
-    private func dismissAll(generation requestedGeneration: UUID) async {
+    /// The host awaits this before removing the presenting root. The runtime
+    /// remains connected so the Feature can present again after returning.
+    public func dismissForNavigation() async {
+        guard let generation else { return }
+        await dismissAll(generation: generation, endingGeneration: false)
+    }
+
+    private func dismissAll(generation requestedGeneration: UUID, endingGeneration: Bool = true) async {
         guard generation == requestedGeneration else { return }
+        if endingGeneration { endsGeneration = true }
         if isDismissingAll {
             await withCheckedContinuation { dismissalWaiters.append($0) }
             return
@@ -113,8 +123,12 @@ public final class MiniAppPresentationOwner {
         for handle in owned {
             await end(handle)
         }
-        runtime = nil
-        generation = nil
+        if endsGeneration {
+            runtime = nil
+            generation = nil
+        }
+        acceptsPresentations = generation != nil && runtime?.isClosed == false
+        endsGeneration = false
         isDismissingAll = false
         let waiters = dismissalWaiters
         dismissalWaiters.removeAll()

@@ -366,6 +366,8 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
+          shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
+          shutil.copyfile('Tests/TemplateIntegration/P0ARecordsUITests.swift', 'UITests/P0ARecordsUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookProbe.swift', 'Sources/JibunKit/HostLaunchHookProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/HostLaunchHookUITests.swift', 'UITests/HostLaunchHookUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/NowPlayingOwnershipProbe.swift', 'Sources/JibunKit/NowPlayingOwnershipProbe.swift')
@@ -454,6 +456,8 @@ jobs:
           p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        LifecycleProbeIntegration.definitions[0],\n        LifecycleProbeIntegration.definitions[1],'))
+          if 'P0ARecordsUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ARecordsProbe.definition,'))
           if 'P0ALifetimeUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0ALifetimeProbe.definitions[0],\n        P0ALifetimeProbe.definitions[1],'))
           if include_keychain_probe:

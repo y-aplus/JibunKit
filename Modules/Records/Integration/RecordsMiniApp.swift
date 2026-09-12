@@ -6,10 +6,12 @@ import RecordsFeature
 @MainActor
 enum RecordsMiniApp {
     static let id = MiniAppID("records")
+    static let lifetime = MiniAppFeatureLifetime(id: id)
     // A single actor owns this directory for all destinations in the host.
     private static let store: Result<RecordStore, Error> = Result {
         let files = try MiniAppFiles.shared(context: MiniAppContext(id: id))
-        return try RecordStore(directory: files.directoryURL)
+        return try RecordStore(directory: files.directoryURL,
+            operations: RecordsStoreOperationBoundary(owner: id, lifecycle: lifetime.restoreLifecycle))
     }
 
     private static let backup: MiniAppFileBackupProvider? = {
@@ -20,6 +22,7 @@ enum RecordsMiniApp {
     }()
 
     static let definition = MiniAppDefinition(id: id, title: "記録", systemImage: "doc.text", fileBackup: backup,
+        lifetime: lifetime,
         appendDestination: { destination, path in
             guard let recordID = UUID(uuidString: destination) else { return false }
             path.append(recordID)

@@ -54,6 +54,7 @@ public struct MiniAppDefinition: Identifiable {
         self.fileBackup = fileBackup
         // A custom restore lifecycle may include store-specific stop recovery.
         // Otherwise reuse the same lifetime as ordinary host entry.
+        precondition(lifetime == nil || lifetime?.id == id, "Lifetime must belong to this Feature.")
         self.lifetime = lifetime
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
@@ -72,7 +73,6 @@ public struct MiniAppDefinition: Identifiable {
     @MainActor
     public func makeDestination() -> AnyView {
         if let lifetime {
-            precondition(lifetime.id == id, "Lifetime must belong to this Feature.")
             return AnyView(MiniAppLifetimeDestination(lifetime: lifetime) {
                 rootView(MiniAppContext(id: id))
             })
@@ -117,7 +117,10 @@ private struct MiniAppLifetimeDestination<Content: View>: View {
                     Button("再試行") { attempt += 1 }
                         .accessibilityIdentifier("miniapp.start.retry")
                 }
-            case .stopped, .starting, .stopping:
+            case .stopped:
+                Button("アプリを開始") { attempt += 1 }
+                    .accessibilityIdentifier("miniapp.start.resume")
+            case .starting, .stopping:
                 ProgressView(lifetime.state == .stopping ? "終了を待っています" : "アプリを準備しています")
                     .accessibilityIdentifier("miniapp.start.pending")
             }

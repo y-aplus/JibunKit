@@ -17,7 +17,7 @@ public final class MiniAppFeatureLifetime {
     }
     public enum Failure: Error { case suspendedForRestore }
 
-    public let id: MiniAppID
+    public nonisolated let id: MiniAppID
     public private(set) var state: State = .stopped
     /// May be starting or closing; use start() before admitting work and use
     /// this lifetime's stop(), rather than directly shutting down its runtime.

@@ -1,4 +1,4 @@
-> 最新公開版: [0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。1.0は未達です。mainにはP0-Aの寿命・保存・終了診断を検証して反映済みです。P0-Bのアプリ内管理・提示は別branchでCI検証中です。
+> 最新公開版: [0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。1.0は未達です。mainにはP0-Aの寿命・保存・終了診断とP0-Bのアプリ内管理・提示をCI検証して反映済みです。実機確認は0.7.0候補へまとめます。
 
 # JibunKit
 
@@ -56,7 +56,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-Aの非実機条件を確認し、P0-BをCI検証中です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。単発のCI成功や0.6.0公開を1.0完成とは扱いません。
+目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cの追加・更新を実装中です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。単発のCI成功や0.6.0公開を1.0完成とは扱いません。
 
 ## 現在の開発基盤
 

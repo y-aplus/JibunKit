@@ -1,10 +1,12 @@
 # JibunKitへの貢献
 
+開発順は[優先実装と版の到達条件](docs/implementation-priorities.md)に従います。CIは[事前に定めた大きな境界](docs/ci-boundaries.md)でまとめ、minor更新ごとに現在状態の文書を全件確認・更新します。
+
 JibunKitは、SideStoreで使う個人向けミニアプリ基盤を、小さく保ちながら育てる実験的なプロジェクトです。変更は現在の設計と完成条件に直接つながる範囲へ絞ってください。
 
 ## 変更を始める前に
 
-- 現在状態は[状態一覧](docs/status.md)と[統合差分台帳](docs/coexistence-ledger.md)、完成判定は[共存の完成基準](docs/coexistence-boundaries.md)を優先します。初期設計・過去の計画・元の検討メモは履歴資料です。
+- 現在状態は[状態一覧](docs/status.md)と[統合差分台帳](docs/coexistence-ledger.md)、補完責任は[共存原則](docs/coexistence-boundaries.md)、版の出荷条件は[優先実装計画](docs/implementation-priorities.md)を優先します。初期設計・過去の計画・元の検討メモは履歴資料です。
 - 通常の不具合や提案は[GitHub Issues](https://github.com/y-aplus/JibunKit/issues)へ送ってください。脆弱性は公開Issueへ書かず、[SECURITY.md](SECURITY.md)に従ってください。
 - 大きな仕様変更は、実装前にIssueで完成条件、利用者への影響、代案を確認してください。
 - 認証情報、Apple Account情報、署名鍵、証明書、provisioning profile、SideStore pairing file、Team ID、端末識別子、実データ、Apple SDKを投稿しないでください。

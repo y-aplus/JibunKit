@@ -27,9 +27,17 @@
 このmainの追加を0.6.0配布物の機能・検証に含めない。
 [SDK記録](verification/2026-09-12-package-sdk-aliases.md) / [refresh診断記録](verification/2026-09-12-shared-refresh-native.md)。
 
-## 1.0に向けた未達
+## 次の版の境界と未達
 
-完成基準は[共存の補完責任](coexistence-boundaries.md)。現在の判定と残作業は
+[Issue #5の優先順位](implementation-priorities.md)を導入した。P0の6単位完了を0.7.0、P0を維持したP1の6単位完了を0.8.0とする。
+途中の公開は0.6.x/0.7.xで行う。P0-5はアプリ内でのFeature無効化・削除を必須とする。
+P0/P1はいずれも部分成果があるが未完了。5つの[CI境界](ci-boundaries.md)を設定し、minorごとの文書確認を必須にした。
+現在進めたのは計画・運用toolの整備であり、製品開発の停止は解除していない。
+1.0の最終対応範囲はP2/P3需要調査後にユーザーが決定する。
+
+## 残っている統合差分
+
+補完責任は[共存原則](coexistence-boundaries.md)、版の対象範囲は上記の優先実装計画に従う。現在の判定と残作業は
 [統合差分台帳](coexistence-ledger.md)で管理する。SDKの部分成功や0.6.0公開で1.0達成とはしない。
 複数OS window、一般の提示・同意・音声/capture資源調停、OS起動を伴うbackground、
 Control/継続表示、任意SDKや外部identity等に未実装・未検証が残る。

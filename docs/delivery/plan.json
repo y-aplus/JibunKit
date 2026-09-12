@@ -1,0 +1,529 @@
+{
+  "schema": 1,
+  "issue": "https://github.com/y-aplus/JibunKit/issues/5",
+  "units": [
+    {
+      "id": "P0-1",
+      "parents": [
+        "D01",
+        "D02"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "寿命と所有処理の終了",
+      "existing": "Task/Runtime・購読・HTTP・SQLite終了の既存成果",
+      "remaining": "Feature所有者の開始/終了を通常入口へ接続。非選択と終了を分離",
+      "deferred": "高度な複数window/実行instance",
+      "criteria": [
+        {
+          "id": "P0-1.lifetime",
+          "description": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P0-1.integration",
+          "description": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P0-2",
+      "parents": [
+        "D04"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "通常の画面・提示",
+      "existing": "Feature別経路、URL/通知遷移の既存成果",
+      "remaining": "保持/再生成/resetの契約、sheet等の所有者とUIKit接続",
+      "deferred": "任意View可視状態/高度な複数window",
+      "criteria": [
+        {
+          "id": "P0-2.presentation",
+          "description": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P0-2.uikit",
+          "description": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P0-3",
+      "parents": [
+        "D06",
+        "D07"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "保存・復元・移行・リセット",
+      "existing": "JSON/添付ZIP、SQLite比較、stop/apply/resume、通常操作予約",
+      "remaining": "実Featureの操作入口へ接続。まずJSON/添付とSQLiteを対象方式として固定",
+      "deferred": "全DB/別process writer",
+      "criteria": [
+        {
+          "id": "P0-3.failure",
+          "description": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P0-3.integration",
+          "description": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P0-3.device",
+          "description": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+          "kinds": [
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P0-4",
+      "parents": [
+        "D20",
+        "D29"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "追加・ビルド・更新",
+      "existing": "Tuist雛形、宣言/URL合成、resources/翻訳、SDK比較",
+      "remaining": "通常追加手順へ統合。target/product/Registry漏れを診断し更新例を確認",
+      "deferred": "万能生成器/任意SDK複数version",
+      "criteria": [
+        {
+          "id": "P0-4.diagnostics",
+          "description": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+          "kinds": [
+            "unit",
+            "inspection"
+          ]
+        },
+        {
+          "id": "P0-4.onboarding",
+          "description": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P0-4.docs",
+          "description": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P0-5",
+      "parents": [
+        "D19",
+        "D31"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "同意・無効化・削除",
+      "existing": "通知/検索/Task等の所有者別解除API",
+      "remaining": "アプリ内UI必須。目的/要求元/拒否、停止・解除・削除を区別",
+      "deferred": "同一processの強制隔離/コード動的除去",
+      "criteria": [
+        {
+          "id": "P0-5.ownership",
+          "description": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P0-5.ui",
+          "description": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P0-5.device",
+          "description": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+          "kinds": [
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P0-6",
+      "parents": [
+        "D03",
+        "D32"
+      ],
+      "priority": "P0",
+      "milestone": "0.7.0",
+      "state": "partial",
+      "title": "基本障害緩和と局所処理",
+      "existing": "協調取消/解放の既存契約",
+      "remaining": "終了が進まない処理の診断、主スレッドを塞がない契約、局所処理の判定",
+      "deferred": "helper/非協調処理の強制隔離",
+      "criteria": [
+        {
+          "id": "P0-6.diagnostics",
+          "description": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P0-6.local",
+          "description": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す",
+          "kinds": [
+            "inspection",
+            "unit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-1",
+      "parents": [
+        "D27"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "Shortcuts実利用",
+      "existing": "metadata/Shortcut式/entity/query識別子と直接実行",
+      "remaining": "OS上の発見・候補・引数・戻り値・取消を二Featureで確認",
+      "deferred": "Control等の高度な接続",
+      "criteria": [
+        {
+          "id": "P1-1.os",
+          "description": "OS Shortcutsの発見/候補/引数/実行/戻り値と他owner保持。直接performのみ不可",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P1-1.metadata",
+          "description": "独立A/Bと統合の識別子・参照・削除後保持",
+          "kinds": [
+            "unit",
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-2",
+      "parents": [
+        "D26"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "静的Widget通常接続",
+      "existing": "Package Widget/gallery/home描画とApp Group比較",
+      "remaining": "通常接続・出荷構成へ反映、片側更新/削除後の他方維持",
+      "deferred": "設定可能/操作可能Widget・Control/任意extension",
+      "criteria": [
+        {
+          "id": "P1-2.widget",
+          "description": "二静的Widgetの追加・描画・A更新/削除後B保持、出荷構成の接続",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P1-2.device",
+          "description": "候補IPAでWidgetの通常追加/更新/他方保持",
+          "kinds": [
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-3",
+      "parents": [
+        "D12",
+        "D26"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "URL・外部ファイル・Share入口",
+      "existing": "URL resolver/曖昧一致拒否/scene接続",
+      "remaining": "security-scoped URLの寿命、汎用Share Extensionの受信先選択と保存/終了契約",
+      "deferred": "任意extension自動統合/実Universal Link一般化",
+      "criteria": [
+        {
+          "id": "P1-3.routing",
+          "description": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P1-3.os",
+          "description": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持",
+          "kinds": [
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-4",
+      "parents": [
+        "D13"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "実用ローカル通知",
+      "existing": "category/action/request/foreground/限定取消",
+      "remaining": "foreground共存・添付寿命・削除/失敗を通常経路へ接続",
+      "deferred": "APNs/全通知配送条件",
+      "criteria": [
+        {
+          "id": "P1-4.ownership",
+          "description": "foreground方針/添付削除寿命/予約と取消の交差でB保持",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P1-4.os",
+          "description": "通知action/文字入力/foreground表示/添付・他方通知と画面の保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-5",
+      "parents": [
+        "D08",
+        "D09"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "資格情報とHTTP",
+      "existing": "Keychain・Cookie/credential/cache・logout/Runtime",
+      "remaining": "実Featureに接続し通常ログインの保持/失敗/取消を確認",
+      "deferred": "非パスワード資格情報/専門的認証",
+      "criteria": [
+        {
+          "id": "P1-5.http",
+          "description": "実HTTPの認証/Cookie/cache、終了後logout、取消/失敗とB保持",
+          "kinds": [
+            "unit",
+            "simulator"
+          ]
+        },
+        {
+          "id": "P1-5.device",
+          "description": "候補IPAの再起動・上書き更新/署名更新で資格情報/状態保持とlogout",
+          "kinds": [
+            "device"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P1-6",
+      "parents": [
+        "D10",
+        "D11"
+      ],
+      "priority": "P1",
+      "milestone": "0.8.0",
+      "state": "partial",
+      "title": "WebViewとWeb認証",
+      "existing": "永続profileとnative認証取消/返却先",
+      "remaining": "通常の保存/再起動/片側削除/認証取消を実Featureへ接続",
+      "deferred": "全Webデータ/全SSO/複数OS scene",
+      "criteria": [
+        {
+          "id": "P1-6.storage",
+          "description": "通常Webデータの再起動保持と片側削除、書込中・取消・失敗時B保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P1-6.auth",
+          "description": "OS Web認証の開始/取消/返却先と他ownerの要求・状態保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        }
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "id": "P0-A",
+      "title": "寿命・保存・終了診断を通常経路で閉じる",
+      "units": [
+        "P0-1",
+        "P0-3",
+        "P0-6"
+      ],
+      "requires": [],
+      "checks": [
+        "P0-1",
+        "P0-3",
+        "P0-6"
+      ],
+      "ci_budget": 2
+    },
+    {
+      "id": "P0-B",
+      "title": "画面提示・同意・無効化削除のアプリ内操作",
+      "units": [
+        "P0-2",
+        "P0-5"
+      ],
+      "requires": [
+        "P0-A"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-5"
+      ],
+      "ci_budget": 2
+    },
+    {
+      "id": "P0-C",
+      "title": "追加更新経路とP0全体の0.7.0出荷",
+      "units": [
+        "P0-4"
+      ],
+      "requires": [
+        "P0-A",
+        "P0-B"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6"
+      ],
+      "ci_budget": 2
+    },
+    {
+      "id": "P1-A",
+      "title": "共有入力・Shortcuts・静的WidgetのOS入口",
+      "units": [
+        "P1-3",
+        "P1-1",
+        "P1-2"
+      ],
+      "requires": [
+        "P0-C"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3"
+      ],
+      "ci_budget": 3
+    },
+    {
+      "id": "P1-B",
+      "title": "通知・HTTP・Webの実利用と0.8.0出荷",
+      "units": [
+        "P1-4",
+        "P1-5",
+        "P1-6"
+      ],
+      "requires": [
+        "P1-A"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6"
+      ],
+      "ci_budget": 3
+    }
+  ],
+  "milestones": {
+    "0.7.0": [
+      "P0-1",
+      "P0-2",
+      "P0-3",
+      "P0-4",
+      "P0-5",
+      "P0-6"
+    ],
+    "0.8.0": [
+      "P0-1",
+      "P0-2",
+      "P0-3",
+      "P0-4",
+      "P0-5",
+      "P0-6",
+      "P1-1",
+      "P1-2",
+      "P1-3",
+      "P1-4",
+      "P1-5",
+      "P1-6"
+    ]
+  },
+  "v1_decision": "pending-demand-research"
+}

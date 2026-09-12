@@ -1,5 +1,7 @@
 # ビルドと検証
 
+開発中のCIは[事前に固定した大きな境界](ci-boundaries.md)で実行する。小commitや担当者の提出ごとに起動しない。以下の入力例は実行方法であり、全変更への一律実行指示ではない。
+
 標準のiOSビルドはTuist 4.207.0とXcode 26.6を使う。WindowsからはGitHub Actionsを実行でき、Mac購入は前提にしない。SwiftのあるmacOS／Linux／WSLでは`swift test`でFoundationロジックを確認できる。xtoolによるIPA生成経路は廃止した。
 
 ## 構成の所有場所

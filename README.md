@@ -10,7 +10,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 公開版は[0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。公開版とmainの差分・停止状態は[現在状態](docs/status.md)にまとめています。[0.6.0の変更と検証範囲](release-notes-0.6.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。1.0の残作業は[統合差分台帳](docs/coexistence-ledger.md)と[完成計画](docs/superpowers/plans/2026-09-08-jibunkit-1.0.md)を参照してください。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。次はP0完了を0.7.0、P1完了を0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
@@ -29,7 +29,9 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 | 文書 | 内容 |
 | --- | --- |
 | [公開版とmainの現在状態](docs/status.md) | 0.6.0の出荷範囲、未リリース差分、停止状態 |
-| [共存の完成基準](docs/coexistence-boundaries.md) | 1.0の上位判定規則 |
+| [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
+| [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
+| [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |
 | [統合差分台帳](docs/coexistence-ledger.md) | 各領域の現在の実装・検証・残作業 |
 | [1.0完成計画](docs/superpowers/plans/2026-09-08-jibunkit-1.0.md) | 到達点と再開後の作業の枠組み |
 | [履歴: 0.1の設計・完成条件](docs/superpowers/specs/2026-08-28-jibunkit-foundation-design.md) | 製品像、必須機能、対象外、Git・OSS運用 |

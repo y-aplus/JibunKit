@@ -1,6 +1,6 @@
 # 公開版とmainの現在状態
 
-更新日: 2026-09-13。P0-AとP0-B `d1adb8e`の非実機条件を検証し、main `36bda79`へ反映。P0-Cを含む0.7.0 build 8候補はnative診断・macOS互換更新と生成Release buildが成功し、確認用IPAの包装を修正してiOS検証を進める。公開版0.6.0、main、未検証候補を区別する。
+更新日: 2026-09-13。公開版0.6.0、mainのP0-A/P0-B、codex/p0-c-onboardingの確認用0.7.0 build 8候補を区別する。CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0の非実機条件は確認済み。実機の一括確認と正式0.7.0出荷は未完了。
 
 ## 公開版0.6.0
 
@@ -32,7 +32,7 @@
 [Issue #5の優先順位](implementation-priorities.md)を導入した。P0の6単位完了を0.7.0、P0を維持したP1の6単位完了を0.8.0とする。
 途中の公開は0.6.x/0.7.xで行う。P0-5はアプリ内でのFeature無効化・削除を必須とする。
 P0/P1はいずれも部分成果があるが未完了。5つの[CI境界](ci-boundaries.md)を設定し、minorごとの文書確認を必須にした。
-P0-A/P0-Bの非実機条件を確認済み。P0-C（追加・更新・0.7.0出荷）は[契約](delivery/P0-C-contract.md)に従い、追加診断と実hostへの片側Package更新を候補へ含めた。CI34705086602で共通244試験（skip2）、Records11、native接続診断6ケース・macOS互換更新とNotes/生成hostのRelease buildが成功。確認用IPAのentitlement探索先を修正し、iOS再インストール・生成UIを検証する。候補IPA、実機、配布整合性の証拠はまだない。
+CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0の非実機条件は確認済み。実機の一括確認と正式0.7.0出荷は未完了。 詳細は[P0-C記録](verification/2026-09-12-p0-c.md)と[実機手順](verification/2026-09-13-0.7-device-check.md)。
 1.0の最終対応範囲はP2/P3需要調査後にユーザーが決定する。
 
 ## 残っている統合差分

@@ -32,7 +32,7 @@ P0完了は0.7.0、P0/P1完了は0.8.0。1.0の最終対象は需要調査後に
 ## 台帳
 
 0.6.0公開後のmain `36bda79`（P0-AとP0-B d1adb8eの非実機条件検証済み変更）を反映する。[公開版との区別](status.md)を参照。
-Issue #5のP0-A/P0-B非実機条件は検証済み。P0-Cを含む0.7.0 build 8候補はCI34705086602で共通244/Records11、native接続診断・macOS互換更新と生成Release buildが成功した。確認用IPAの包装を修正し、生成UI/iOS更新を検証する。下記の状態は検証済みsourceの証拠を維持し、候補への収録や実行中CIだけで完了へ繰り上げない。
+CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0の非実機条件は確認済み。実機の一括確認と正式0.7.0出荷は未完了。 公開安定版は0.6.0。別途調査は0.7.0完了時までに未反映なら提供を依頼する。
 
 | ID | 対象 | 状態 | 現在状態 |
 | --- | --- | --- | --- |
@@ -66,7 +66,7 @@ Issue #5のP0-A/P0-B非実機条件は検証済み。P0-Cを含む0.7.0 build 8�
 | D28 | Live Activities・AlarmKit等のシステム継続表示 | 未対応 | 初期棚卸しに明示されていない領域。未対応・個別条件未調査。 |
 | D29 | 依存ライブラリ・runtime globals・resources | 未調査 | 34570995724で同名JSON/翻訳キーを持つ二PackageのBundle.module読出しを、単独A/B・統合・同一DerivedDataでA除去後のBについて検証。hostの標準言語宣言を含む構成で英語/日本語の通常選択と値の保持を確認。34576630151では実際の生成JibunKitホストでも英語/日本語/ホスト未対応のフランス語を二Packageから独立して選択。app/Widgetに標準mixed-localization設定を接続し、同値合成/異値拒否、実IPA設定、生成画面とSearch回帰を確認。Widgetの翻訳描画は未検証。残留A bundleと実行時のB誤読を区別し、追加resource合成/掃除は導入しない。[記録](verification/2026-09-11-package-resource-localization.md)。34684588973で別identityの同名純Swift SDKを標準moduleAliasesで分離し、両版/設定の同時読出しとB書込後のA更新でB保持を検証。aliasなしは固有の重複target診断を確認（[接続条件](guides/package-sdk-module-aliases.md)）。これはmacOS SwiftPMの証拠。34685650822のiOS接続はTuist生成後、同名productのXcode PIF参照重複でUI前に失敗。34686272759で公開product名だけを分けるmanifest編集後、iOSで両alias moduleのcompile/linkと両版/初期値、B書込後A更新でB保持を26.878秒のUI試験で確認。依存manifest編集が必要で、元の同名product構成の解決ではない。同一identity複数version・C/ObjC/binary・OS globalsやその他resource形式は未調査。 |
 | D30 | 外部サービスidentity・CloudKit・データ出所 | 未調査 | 初期棚卸しでは不足していた外部identity/出所の項目。未調査。 |
-| D31 | 無効化・削除・更新・privacyの集約 | 未対応 | 保存継続/選択復元は一部整備。一般的なFeature removal/登録後始末は未対応。 P0-Bでアプリ内無効化/再登録/確認付き削除と解除失敗後の保持/再試行を実装。34702137986の通常管理と34700435807の失敗fixtureが成功。所有しない任意コードの強制停止、実機Widget/Shortcut反映は未確認。 [P0-B証拠](verification/2026-09-12-p0-b.md)。 |
+| D31 | 無効化・削除・更新・privacyの集約 | 未対応 | 保存継続/選択復元は一部整備。Integrationが登録する処理・解除・所有データを管理対象とする。 P0-Bでアプリ内無効化/再登録/確認付き削除と解除失敗後の保持/再試行を実装。34702137986の通常管理と34700435807の失敗fixtureが成功。所有しない任意コードの強制停止、実機Widget/Shortcut反映は未確認。 [P0-B証拠](verification/2026-09-12-p0-b.md)。 |
 | D32 | 補完不要な局所処理の識別 | 未調査 | 差分ごとに補完不要を証明する分類。領域全体をまとめて補完不要とする判定は未実施。 |
 
 ## 更新規則

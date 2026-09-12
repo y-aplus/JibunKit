@@ -3,7 +3,7 @@
   "candidateCommit": "e84402f9154688664fae15080d5bb5b393fd4798",
   "auditedAt": "2026-09-13",
   "scopeCommand": "python Tools/check-delivery.py --list-docs 0.7.0",
-  "candidateState": "Pre-release: native declaration cases, macOS compatible update, shared244/Records11 and generated Release builds passed at3ac8d60. Diagnostic IPA entitlement lookup corrected; simulator update, candidate IPA, device and publication unverified.",
+  "candidateState": "CI34705653297 at baa041f passed; downloaded native/iOS files and both IPA CRC/version/SHA256 verified. Device batch and formal release remain pending. Audit baseline unchanged; current document hashes refreshed only for reviewed status edits.",
   "documents": [
     {
       "path": "CHANGELOG.md",
@@ -26,8 +26,8 @@
     {
       "path": "README.md",
       "outcome": "updated",
-      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "2e715f600fb03a6e8b6b0dcc4df218df628a5a6ef334be2403ca33a07847fea4"
+      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "75fb7a9f5cd4b8789af1578e64a9fadbfac6ab9c75e8a78c41bb8f9e67c4ac73"
     },
     {
       "path": "SECURITY.md",
@@ -68,8 +68,8 @@
     {
       "path": "docs/coexistence-ledger.md",
       "outcome": "updated",
-      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
-      "sha256": "c7f1d16d5f7349523158404f8640f52a180967db2d630c702a188583b3d74309"
+      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "100f6f2a961356e0dbd854be725e9f3fbac502d5326ceaeecf24eb9dc85957cc"
     },
     {
       "path": "docs/compatibility.md",
@@ -248,8 +248,8 @@
     {
       "path": "docs/implementation-priorities.md",
       "outcome": "updated",
-      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
-      "sha256": "78f75b51014f4c7d98b0cf6207bac50e886893d80db75d29171ef2d35ae73b39"
+      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "3787b85f5f0ed68006fa9d085ab163b34093c483735295e49b5fc7a9806728f0"
     },
     {
       "path": "docs/mini-apps.md",
@@ -296,14 +296,14 @@
     {
       "path": "docs/status.md",
       "outcome": "updated",
-      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
-      "sha256": "40700dfdeea4af2c07e47b0365d7a3e7614311481c8930d2ec87185f5b3ae52a"
+      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "1e5609b544aa3a1ddeaa12abfa09c41084525dfb8e3b61b3e6c3cfea996196ba"
     },
     {
       "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
       "outcome": "updated",
-      "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates.",
-      "sha256": "3c87df6dd59041ca6c670890d7f0a2e6d1733926dbd57aa52ebc705cecc39512"
+      "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "b283af2aac2aa59c6d8e12e2514fbe9ca99e7bbdf7d7913aac613d399dc18156"
     },
     {
       "path": "docs/updating.md",
@@ -314,8 +314,8 @@
     {
       "path": "release-notes-0.7.0.md",
       "outcome": "updated",
-      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks.",
-      "sha256": "ac137c81435244e946626af762c3ca06a726fd202e47e638b54359d9df9370bd"
+      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
+      "sha256": "80d40c28eaeaa3b61b09bcde38c25ce2faf27e6e9207d23a6313c18bace6eb20"
     }
   ],
   "parentReview": "Integrated worker173534d; reviewed14 document changes, corrected mixed P0/P1 table heading and ZIPFoundation redistribution wording against Package.swift, updated six current docs with actual CI failures. Original candidateCommit identifies audit baseline, not final candidate."

@@ -24,6 +24,8 @@ Package翻訳のmixed localizationを提供します。静的Package Widgetのga
 SDKはiOSで公開product名を分けるmanifest編集が必要です。refreshの実OS受付・起動・期限は未検証です。
 これらを0.6.0配布物へ含めたとは扱いません。[版別の状態と証拠](docs/status.md)を参照してください。
 
+確認用0.7.0 build 8候補は[CI34705653297](https://github.com/y-aplus/JibunKit/actions/runs/34705653297)で非実機条件を確認済みです。[実機の一括手順](docs/verification/2026-09-13-0.7-device-check.md)を残し、正式0.7.0は未公開です。
+
 ## 文書
 
 | 文書 | 内容 |

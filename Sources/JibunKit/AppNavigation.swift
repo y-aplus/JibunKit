@@ -66,7 +66,7 @@ final class AppNavigation {
             }
             return
         }
-        let registrations = MiniAppRegistry.all.compactMap { definition in
+        let registrations = MiniAppRegistry.enabled.compactMap { definition in
             definition.resolveIncomingURL.map {
                 MiniAppURLRouter.Registration(id: definition.id, resolve: $0)
             }
@@ -82,6 +82,7 @@ final class AppNavigation {
     }
 
     func open(_ route: MiniAppRoute) {
+        guard MiniAppRegistry.management.isEnabled(route.id) else { return }
         if let destination = route.destination {
             guard let next = MiniAppRegistry.definition(for: route.id)?.navigationPath(for: destination) else { return }
             paths[route.id] = next
@@ -114,6 +115,11 @@ final class AppNavigation {
             return
         }
         open(miniAppID)
+    }
+
+    func discardUnavailableOwners() {
+        paths = paths.filter { MiniAppRegistry.management.isEnabled($0.key) }
+        if let activeID, !MiniAppRegistry.management.isEnabled(activeID) { showList() }
     }
 }
 

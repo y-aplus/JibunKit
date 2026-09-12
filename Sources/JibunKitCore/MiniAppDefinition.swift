@@ -13,6 +13,10 @@ public struct MiniAppDefinition: Identifiable {
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
     public let lifetime: MiniAppFeatureLifetime?
+    public let removal: MiniAppRemovalProvider?
+    public let permissions: [MiniAppPermissionDeclaration]
+    /// Idempotent cleanup for owned registrations beyond host notifications/search.
+    public let onUnregister: (@MainActor @Sendable () async throws -> Void)?
     public let restoreLifecycle: MiniAppRestoreLifecycle?
     /// Synchronous, screen-independent native registration performed by the
     /// host during `application(_:didFinishLaunchingWithOptions:)`.
@@ -34,6 +38,9 @@ public struct MiniAppDefinition: Identifiable {
         fileBackup: MiniAppFileBackupProvider? = nil,
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         lifetime: MiniAppFeatureLifetime? = nil,
+        removal: MiniAppRemovalProvider? = nil,
+        permissions: [MiniAppPermissionDeclaration] = [],
+        onUnregister: (@MainActor @Sendable () async throws -> Void)? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         resolveIncomingURL: MiniAppURLRouter.Resolver? = nil,
         onHostLaunch: (@MainActor () throws -> Void)? = nil,
@@ -56,6 +63,12 @@ public struct MiniAppDefinition: Identifiable {
         // Otherwise reuse the same lifetime as ordinary host entry.
         precondition(lifetime == nil || lifetime?.id == id, "Lifetime must belong to this Feature.")
         self.lifetime = lifetime
+        precondition(removal == nil || removal?.id == id, "Removal provider must belong to this Feature.")
+        precondition(Set(permissions.map(\.id)).count == permissions.count && permissions.allSatisfy { !$0.id.isEmpty },
+                     "Permission IDs must be nonempty and unique within a Feature.")
+        self.removal = removal
+        self.permissions = permissions
+        self.onUnregister = onUnregister
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.resolveIncomingURL = resolveIncomingURL
@@ -75,7 +88,7 @@ public struct MiniAppDefinition: Identifiable {
         if let lifetime {
             return AnyView(MiniAppLifetimeDestination(lifetime: lifetime) {
                 rootView(MiniAppContext(id: id))
-            })
+            }.environment(\.miniAppLifetime, lifetime))
         }
         return rootView(MiniAppContext(id: id))
     }
@@ -94,6 +107,17 @@ public struct MiniAppDefinition: Identifiable {
         var path = NavigationPath()
         guard appendDestination(destination, &path) else { return nil }
         return path
+    }
+}
+
+private struct MiniAppLifetimeKey: EnvironmentKey {
+    static let defaultValue: MiniAppFeatureLifetime? = nil
+}
+
+public extension EnvironmentValues {
+    var miniAppLifetime: MiniAppFeatureLifetime? {
+        get { self[MiniAppLifetimeKey.self] }
+        set { self[MiniAppLifetimeKey.self] = newValue }
     }
 }
 

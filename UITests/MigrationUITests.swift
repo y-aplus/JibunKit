@@ -221,6 +221,8 @@ final class MigrationUITests: XCTestCase {
         }
         message.typeText("Migration reminder")
         tap(app.buttons["10秒後に通知"])
+        let featureConsent = app.alerts["リマインダーが通知を利用します"]
+        if featureConsent.waitForExistence(timeout: 2) { tap(featureConsent.buttons["許可"]) }
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let allow = springboard.buttons.matching(
             NSPredicate(format: "label IN %@", ["許可", "Allow"])

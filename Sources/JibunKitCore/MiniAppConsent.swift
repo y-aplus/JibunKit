@@ -1,4 +1,8 @@
 import Foundation
+#if os(iOS)
+import Observation
+import SwiftUI
+#endif
 
 /// A stable, user-facing declaration of one permission used by a Feature.
 /// This describes Feature consent; it does not grant or request an OS permission.
@@ -16,7 +20,7 @@ public struct MiniAppPermissionDeclaration: Sendable, Equatable, Identifiable {
     }
 }
 
-public enum MiniAppConsent: String, Sendable, Equatable {
+public enum MiniAppConsent: String, Sendable, Hashable {
     case notDetermined
     case allowed
     case denied
@@ -24,12 +28,16 @@ public enum MiniAppConsent: String, Sendable, Equatable {
 
 /// Persists Feature consent by Feature and permission identifier. The caller
 /// explicitly supplies the defaults domain shared by the relevant host UI.
+#if os(iOS)
+@Observable
+#endif
 @MainActor
 public final class MiniAppConsentStore {
     public nonisolated static let defaultStorageKey = "jibunkit.feature-consents.v1"
 
     private let defaults: UserDefaults
     private let storageKey: String
+    private var revision = 0
 
     public init(
         defaults: UserDefaults,
@@ -40,6 +48,7 @@ public final class MiniAppConsentStore {
     }
 
     public func consent(for featureID: MiniAppID, permissionID: String) -> MiniAppConsent {
+        _ = revision
         guard let rawValue = persistedValues()[key(for: featureID, permissionID: permissionID)]
         else { return .notDetermined }
         return MiniAppConsent(rawValue: rawValue) ?? .notDetermined
@@ -85,6 +94,7 @@ public final class MiniAppConsentStore {
         } else {
             defaults.set(values, forKey: storageKey)
         }
+        revision += 1
     }
 
     private func key(for featureID: MiniAppID, permissionID: String) -> String {
@@ -95,3 +105,17 @@ public final class MiniAppConsentStore {
         Data(value.utf8).base64EncodedString()
     }
 }
+
+#if os(iOS)
+private struct MiniAppConsentStoreKey: EnvironmentKey {
+    static let defaultValue: MiniAppConsentStore? = nil
+}
+
+public extension EnvironmentValues {
+    /// Host-owned consent store; nil in a standalone Feature unless injected.
+    var miniAppConsentStore: MiniAppConsentStore? {
+        get { self[MiniAppConsentStoreKey.self] }
+        set { self[MiniAppConsentStoreKey.self] = newValue }
+    }
+}
+#endif

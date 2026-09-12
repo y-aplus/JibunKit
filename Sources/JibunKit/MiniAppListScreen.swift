@@ -6,12 +6,13 @@ import SwiftUI
 struct MiniAppListScreen: View {
     @Bindable var navigation: AppNavigation
     @State private var showingBackup = false
+    @State private var showingManagement = false
     @State private var searchText = ""
 
     private var matchingApps: [MiniAppDefinition] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return MiniAppRegistry.all }
-        return MiniAppRegistry.all.filter {
+        guard !query.isEmpty else { return MiniAppRegistry.enabled }
+        return MiniAppRegistry.enabled.filter {
             $0.title.localizedStandardContains(query)
                 || $0.id.rawValue.localizedStandardContains(query)
         }
@@ -42,6 +43,7 @@ struct MiniAppListScreen: View {
         // Feature-local destination types may be identical in different apps.
         // Rebuild the stack for its owner while retaining that owner's path.
         .id(navigation.stackID)
+        .onChange(of: MiniAppRegistry.registeredIDs) { _, _ in navigation.discardUnavailableOwners() }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if owner != nil {
                 HStack {
@@ -49,7 +51,7 @@ struct MiniAppListScreen: View {
                     Menu {
                         Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
                             .accessibilityIdentifier("miniapp.switch.list")
-                        ForEach(MiniAppRegistry.all) { miniApp in
+                        ForEach(MiniAppRegistry.enabled) { miniApp in
                             Button { navigation.open(miniApp.id) } label: {
                                 Label(miniApp.title, systemImage: miniApp.systemImage)
                             }
@@ -89,12 +91,17 @@ struct MiniAppListScreen: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("管理", systemImage: "slider.horizontal.3") { showingManagement = true }
+                    .accessibilityIdentifier("management.open")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("バックアップ", systemImage: "externaldrive") { showingBackup = true }
                     .accessibilityIdentifier("backup.open")
             }
         }
-        .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.all) }
+        .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.enabled) }
+        .sheet(isPresented: $showingManagement) { MiniAppManagementScreen() }
     }
 }
 #endif

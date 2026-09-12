@@ -6,6 +6,7 @@ public struct CounterRootView: View {
     private let store: CounterStore
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.miniAppLifetime) private var lifetime
     @State private var value = 0
     @State private var errorMessage: String?
 
@@ -26,8 +27,12 @@ public struct CounterRootView: View {
                 .font(.largeTitle)
                 .monospacedDigit()
             Button("1を追加") {
-                Task {
-                    await addOne()
+                if let lifetime {
+                    guard lifetime.isStartAllowed, let runtime = lifetime.runtime else { return }
+                    do { try runtime.start { await addOne() } }
+                    catch { errorMessage = "このアプリは終了しています" }
+                } else {
+                    Task { await addOne() }
                 }
             }
             .buttonStyle(.borderedProminent)

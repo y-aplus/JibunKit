@@ -12,7 +12,9 @@ public enum ReminderMiniApp {
         title: "リマインダー",
         systemImage: "bell",
         backup: ReminderStore.shared.backupProvider,
-        lifetime: lifetime
+        lifetime: lifetime,
+        removal: ReminderStore.shared.removalProvider,
+        permissions: [ReminderNotificationScheduler.permission]
     ) { context in
         ReminderRootView(context: context)
     }

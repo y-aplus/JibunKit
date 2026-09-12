@@ -119,6 +119,7 @@ final class MigrationUITests: XCTestCase {
         app.terminate()
         app.launch()
         tap(app.buttons["miniapp.counter"])
+        XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(app.staticTexts["counter.value"].label, original)
         returnToList()
         tap(app.buttons["miniapp.reminder"])

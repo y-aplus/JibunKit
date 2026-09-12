@@ -6,7 +6,7 @@ public struct CounterRootView: View {
     private let store: CounterStore
 
     @Environment(\.scenePhase) private var scenePhase
-    @State private var value = 0
+    @State private var value: Int?
     @State private var errorMessage: String?
 
     public init(context: MiniAppContext) {
@@ -21,21 +21,28 @@ public struct CounterRootView: View {
         VStack(spacing: 16) {
             Text("カウンター")
                 .font(.headline)
-            Text(value, format: .number)
-                .accessibilityIdentifier("counter.value")
-                .font(.largeTitle)
-                .monospacedDigit()
+            if let value {
+                Text(value, format: .number)
+                    .accessibilityIdentifier("counter.value")
+                    .font(.largeTitle)
+                    .monospacedDigit()
+            } else if errorMessage == nil {
+                ProgressView("保存値を読み込んでいます")
+                    .accessibilityIdentifier("counter.loading")
+            }
             Button("1を追加") {
                 Task {
                     await addOne()
                 }
             }
             .buttonStyle(.borderedProminent)
+            .disabled(value == nil)
 
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
                     .foregroundStyle(.red)
+                Button("再読み込み") { Task { await loadValue() } }
             }
         }
         .padding()

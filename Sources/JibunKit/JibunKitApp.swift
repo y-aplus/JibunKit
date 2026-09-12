@@ -8,15 +8,7 @@ struct JibunKitApp: App {
     @UIApplicationDelegateAdaptor(NotificationAppDelegate.self)
     private var notificationAppDelegate
     @Environment(\.scenePhase) private var scenePhase
-    @State private var lifecycle = MiniAppLifecycleDispatcher(
-        handlers: MiniAppRegistry.all.compactMap { definition in
-            definition.onHostPhaseChange.map { handler in
-                { phase in
-                    if MiniAppRegistry.management.isEnabled(definition.id) { handler(phase) }
-                }
-            }
-        }
-    )
+    @State private var lifecycle = MiniAppRegistry.makeLifecycleDispatcher()
 
     var body: some Scene {
         WindowGroup {
@@ -37,15 +29,7 @@ struct JibunKitApp: App {
 private struct MiniAppSceneRoot: View {
     @State private var navigation = AppNavigation()
     @State private var registration: UUID?
-    @State private var activity = MiniAppSceneActivityDispatcher(
-        handlers: MiniAppRegistry.all.compactMap { definition in
-            definition.onSceneActivityChange.map { handler in
-                MiniAppSceneActivityDispatcher.Registration(id: definition.id) { activity in
-                    if MiniAppRegistry.management.isEnabled(definition.id) { handler(activity) }
-                }
-            }
-        }
-    )
+    @State private var activity = MiniAppRegistry.makeSceneActivityDispatcher()
     @Environment(\.scenePhase) private var scenePhase
 
     private var activityPhase: MiniAppSceneActivity.Phase {

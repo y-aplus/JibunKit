@@ -17,8 +17,12 @@ enum MiniAppRegistry {
     // With no usable shared-group configuration, local management still works.
     // The Widget independently reports unavailable storage in that configuration.
     private static let managementDefaults = (try? MiniAppStorage.sharedDefaults()) ?? .standard
-    static let management = MiniAppManagement(
-        registrations: all.map { definition in
+    static let management = makeManagement()
+
+    // Keep closure isolation and defaults out of a nested static initializer.
+    // These factories also leave one activity dispatcher per App/scene owner.
+    private static func makeManagement() -> MiniAppManagement {
+        let registrations: [MiniAppManagement.Registration] = all.map { definition in
             MiniAppManagement.Registration(
                 id: definition.id, lifetime: definition.lifetime, removal: definition.removal,
                 unregister: {
@@ -32,9 +36,37 @@ enum MiniAppRegistry {
                     try MiniAppContext(id: definition.id).replaceNotificationCategories(with: definition.notificationCategories)
                 }
             )
-        }, defaults: managementDefaults, consents: consents,
-        onStatusChange: { _, _ in WidgetCenter.shared.reloadAllTimelines() }
-    )
+        }
+        return MiniAppManagement(
+            registrations: registrations, defaults: managementDefaults, consents: consents,
+            coordinator: MiniAppRestoreCoordinator.shared,
+            storageKey: MiniAppManagement.defaultStorageKey,
+            onStatusChange: { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+        )
+    }
+
+    static func makeLifecycleDispatcher() -> MiniAppLifecycleDispatcher {
+        var handlers: [@MainActor (MiniAppHostPhase) -> Void] = []
+        for definition in all {
+            guard let handler = definition.onHostPhaseChange else { continue }
+            let gated: @MainActor (MiniAppHostPhase) -> Void = { phase in
+                if management.isEnabled(definition.id) { handler(phase) }
+            }
+            handlers.append(gated)
+        }
+        return MiniAppLifecycleDispatcher(handlers: handlers)
+    }
+
+    static func makeSceneActivityDispatcher() -> MiniAppSceneActivityDispatcher {
+        var handlers: [MiniAppSceneActivityDispatcher.Registration] = []
+        for definition in all {
+            guard let handler = definition.onSceneActivityChange else { continue }
+            handlers.append(.init(id: definition.id) { activity in
+                if management.isEnabled(definition.id) { handler(activity) }
+            })
+        }
+        return MiniAppSceneActivityDispatcher(handlers: handlers)
+    }
 
     static var enabled: [MiniAppDefinition] { all.filter { management.isEnabled($0.id) } }
     static var registeredIDs: Set<MiniAppID> { Set(enabled.map(\.id)) }

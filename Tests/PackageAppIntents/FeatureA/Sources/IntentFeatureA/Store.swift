@@ -2,14 +2,14 @@ import Foundation
 
 public protocol StoreOperationBoundary: Sendable {
     func perform<Value: Sendable>(
-        _ operation: @escaping @MainActor @Sendable () throws -> Value
+        _ operation: @escaping @MainActor @Sendable () async throws -> Value
     ) async throws -> Value
 }
 
 public struct DirectStoreOperationBoundary: StoreOperationBoundary {
     public init() {}
     public func perform<Value: Sendable>(
-        _ operation: @escaping @MainActor @Sendable () throws -> Value
+        _ operation: @escaping @MainActor @Sendable () async throws -> Value
     ) async throws -> Value {
         try Task.checkCancellation()
         return try await operation()
@@ -49,9 +49,9 @@ public final class FeatureAStore {
         failNextSave = false
         nextSaveDelayNanoseconds = 0
         try Task.checkCancellation()
-        if delay > 0 { try await Task.sleep(nanoseconds: delay) }
-        try Task.checkCancellation()
         return try await boundary.perform {
+            try Task.checkCancellation()
+            if delay > 0 { try await Task.sleep(nanoseconds: delay) }
             try Task.checkCancellation()
             let oldValue = defaults.integer(forKey: "value")
             let (newValue, overflow) = oldValue.addingReportingOverflow(amount)

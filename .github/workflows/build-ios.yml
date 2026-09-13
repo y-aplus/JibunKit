@@ -564,6 +564,9 @@ jobs:
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* ]]; then
+            python3 Tools/prepare-p1-intents-host.py --host "$smoke"
+          fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
             python3 "$GITHUB_WORKSPACE/Tools/prepare-package-compatible-update-host.py" --host "$smoke" --stage v1
             for owner in A B; do
@@ -577,6 +580,10 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateHostDerivedData" CODE_SIGNING_ALLOWED=NO
           host_app="$RUNNER_TEMP/TemplateHostDerivedData/Build/Products/Release-iphoneos/JibunKit_App.app"
           host_widget="$host_app/PlugIns/JibunKitWidget_Extension.appex"
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* ]]; then
+            test -f "$host_app/Metadata.appintents/extract.actionsdata"
+            cp -R "$host_app/Metadata.appintents" "$RUNNER_TEMP/P1IntentsHostMetadata"
+          fi
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_app/Info.plist")" = true
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
 
@@ -1150,6 +1157,7 @@ jobs:
             ${{ runner.temp }}/records-ui.log
             ${{ runner.temp }}/TemplateLaunch.xcresult
             ${{ runner.temp }}/TemplateHost.xcresult
+            ${{ runner.temp }}/P1IntentsHostMetadata
             ${{ runner.temp }}/TemplateHostUpdate.xcresult
             ${{ runner.temp }}/package-compatible-update-ios/
             ${{ runner.temp }}/template-host-screenshots

@@ -1,3 +1,4 @@
+import AppIntents
 import IntentFeatureA
 import IntentFeatureB
 import JibunKitCore
@@ -9,7 +10,7 @@ extension MiniAppID {
 }
 
 struct FeatureABoundary: IntentFeatureA.StoreOperationBoundary {
-    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () throws -> Value) async throws -> Value {
+    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () async throws -> Value) async throws -> Value {
         try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .intentFixtureA) {
             try Task.checkCancellation()
             return try await operation()
@@ -18,7 +19,7 @@ struct FeatureABoundary: IntentFeatureA.StoreOperationBoundary {
 }
 
 struct FeatureBBoundary: IntentFeatureB.StoreOperationBoundary {
-    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () throws -> Value) async throws -> Value {
+    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () async throws -> Value) async throws -> Value {
         try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .intentFixtureB) {
             try Task.checkCancellation()
             return try await operation()
@@ -78,8 +79,11 @@ struct IntentFixtureRootView: View {
                 .accessibilityIdentifier("intent-fixture.\(label.lowercased()).management-status")
             NavigationLink("Open Feature \(label)") { destination }
             Button("Disable \(label)") { run { try await IntentFixtureIntegration.management.disable(id) } }
+                .accessibilityIdentifier("intent-fixture.\(label.lowercased()).disable")
             Button("Enable \(label)") { run { try await IntentFixtureIntegration.management.enable(id) } }
+                .accessibilityIdentifier("intent-fixture.\(label.lowercased()).enable")
             Button("Remove \(label)", role: .destructive) { run { try await IntentFixtureIntegration.management.remove(id) } }
+                .accessibilityIdentifier("intent-fixture.\(label.lowercased()).remove")
         }
     }
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
@@ -104,6 +108,7 @@ private struct FeatureARootView: View {
             Button("Fail next save") { FeatureAStore.shared.injectNextSaveFailure(); message = "next save will fail" }
             Button("Delay next save 5 seconds") { FeatureAStore.shared.delayNextSave(nanoseconds: 5_000_000_000); message = "next save delayed" }
             ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
+            Button("Refresh") { Task { await reload() } }
             Text(message)
         }.task { await reload() }.navigationTitle("Feature A")
     }
@@ -125,6 +130,7 @@ private struct FeatureBRootView: View {
             Button("Fail next save") { FeatureBStore.shared.injectNextSaveFailure(); message = "next save will fail" }
             Button("Delay next save 5 seconds") { FeatureBStore.shared.delayNextSave(nanoseconds: 5_000_000_000); message = "next save delayed" }
             ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
+            Button("Refresh") { Task { await reload() } }
             Text(message)
         }.task { await reload() }.navigationTitle("Feature B")
     }

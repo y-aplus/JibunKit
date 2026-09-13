@@ -14,7 +14,7 @@ try FeatureAppShortcuts.writeProvider(includeShortcutA ? [shortcutA, shortcutB] 
 
 let project = Project(name: "PackageIntents", packages: [
     .package(path: "FeatureA"), .package(path: "FeatureB"), .package(path: "__JIBUNKIT_PATH__"),
-], targets: [
+], settings: .settings(base: ["SWIFT_VERSION": "6.0"]), targets: [
     .target(name: "StandaloneA", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.a", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),

@@ -4,9 +4,11 @@ import IntentFeatureB
 import JibunKitCore
 import XCTest
 
-@MainActor
-final class IntentExecutionTests: XCTestCase {
-    override func setUp() async throws {
+final class IntentExecutionTests: XCTestCase, @unchecked Sendable {
+    override func setUp() async throws { try await resetStores() }
+
+    @MainActor
+    private func resetStores() async throws {
         let defaults = IntentFixtureIntegration.defaults
         for id in [MiniAppID.intentFixtureA, .intentFixtureB] {
             defaults.removeObject(forKey: MiniAppManagement.defaultStorageKey + "." + id.rawValue)
@@ -16,6 +18,7 @@ final class IntentExecutionTests: XCTestCase {
         try await IntentFeatureB.FeatureBStore.shared.removeAll()
     }
 
+    @MainActor
     func testSameNamedEntityQueriesResolveOnlyTheirOwner() async throws {
         try await IntentFeatureA.FeatureAStore.shared.replaceEntries(["shared-id": "A first", "a-only": "A extra"])
         try await IntentFeatureB.FeatureBStore.shared.replaceEntries(["shared-id": "B first", "b-only": "B extra"])
@@ -58,6 +61,7 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(survivingEntries.count, 2)
     }
 
+    @MainActor
     func testPackageIntentExecutionChangesOnlyItsOwner() async throws {
         _ = try await IntentFeatureA.FeatureAStore.shared.add(10)
         _ = try await IntentFeatureB.FeatureBStore.shared.add(100)
@@ -75,6 +79,7 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(storedB, 93)
     }
 
+    @MainActor
     func testCancellationBeforeAdmissionAndDuringDelayKeepsOldValues() async throws {
         let task = Task<Void, Error> { @MainActor in
             withUnsafeCurrentTask { $0?.cancel() }
@@ -100,6 +105,30 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(afterDelayedCancellation, 4)
     }
 
+    @MainActor
+    func testDelayedSaveRetainsOwnerReservationUntilCancellationDrains() async throws {
+        let entered = expectation(description: "owned save admitted")
+        let store = IntentFeatureA.FeatureAStore.shared
+        store.configure(boundary: ObservedBoundary(entered: entered))
+        store.delayNextSave(nanoseconds: 60_000_000_000)
+        let task = Task { try await store.add(7) }
+        await fulfillment(of: [entered], timeout: 5)
+        do {
+            try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(for: .intentFixtureA) { }
+            XCTFail("Exclusive maintenance raced a pending ordinary save")
+        } catch let error as MiniAppRestoreCoordinator.Conflict {
+            XCTAssertEqual(error.owners, [.intentFixtureA])
+        }
+        task.cancel()
+        do { _ = try await task.value; XCTFail("Cancelled save committed") }
+        catch is CancellationError { }
+        store.configure(boundary: FeatureABoundary())
+        try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(for: .intentFixtureA) { }
+        let value = try await store.value()
+        XCTAssertEqual(value, 0)
+    }
+
+    @MainActor
     func testSaveFailureKeepsPreviousValueAndOtherOwner() async throws {
         _ = try await FeatureAAddValueIntent(amount: 4).perform()
         _ = try await FeatureBAddValueIntent(amount: 9).perform()
@@ -117,6 +146,7 @@ final class IntentExecutionTests: XCTestCase {
         catch IntentFeatureA.FeatureAStore.Failure.valueOutOfRange { }
     }
 
+    @MainActor
     func testDisableAndRemovalRejectAWhileBRemainsUsable() async throws {
         _ = try await FeatureAAddValueIntent(amount: 5).perform()
         _ = try await FeatureBAddValueIntent(amount: 20).perform()
@@ -156,6 +186,7 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(retainedBValue, 22)
     }
 
+    @MainActor
     func testPersistentValuesSurviveManagementReconstruction() async throws {
         _ = try await FeatureAAddValueIntent(amount: 12).perform()
         _ = try await FeatureBAddValueIntent(amount: 34).perform()
@@ -164,5 +195,15 @@ final class IntentExecutionTests: XCTestCase {
         let storedB = try await IntentFeatureB.FeatureBStore.shared.value()
         XCTAssertEqual(storedA, 12)
         XCTAssertEqual(storedB, 34)
+    }
+}
+
+private struct ObservedBoundary: IntentFeatureA.StoreOperationBoundary {
+    let entered: XCTestExpectation
+    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () async throws -> Value) async throws -> Value {
+        try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .intentFixtureA) {
+            entered.fulfill()
+            return try await operation()
+        }
     }
 }

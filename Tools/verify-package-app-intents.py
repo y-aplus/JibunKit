@@ -62,7 +62,10 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     run(["swiftc", "-swift-version", "6", helper,
          root / "SourceCompositionChecks.swift", "-o", checks], root)
     run([checks], root)
-    (root / "Project.swift.fixture").rename(root / "Project.swift")
+    project_fixture = root / "Project.swift.fixture"
+    project_fixture.write_text(project_fixture.read_text(encoding="utf-8").replace(
+        "__JIBUNKIT_PATH__", repo.as_posix()), encoding="utf-8")
+    project_fixture.rename(root / "Project.swift")
     run(["tuist", "generate", "--no-open"], root)
     shutil.copytree(root / "Generated", evidence / "Generated", dirs_exist_ok=True)
     derived = root / "DerivedBuild"
@@ -182,13 +185,29 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
                "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                "-derivedDataPath", root / "SimulatorBuild", "-resultBundlePath", result_bundle,
                "-only-testing:IntentExecutionTests/IntentExecutionTests",
+               "-only-testing:ManagedHostUITests/ManagedHostUITests",
                "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"]
     result = subprocess.run([str(part) for part in command], cwd=root,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     print(result.stdout, flush=True)
     (evidence / "execution.log").write_text(result.stdout, encoding="utf-8")
     assert result.returncode == 0, f"Native intent execution failed: {result.returncode}"
-    assert "testPackageIntentExecutionChangesOnlyItsOwner]' passed" in result.stdout, "No passing native XCTest evidence"
-    assert "testSameNamedEntityQueriesResolveOnlyTheirOwner]' passed" in result.stdout, "No passing entity/query XCTest evidence"
+    expected_tests = {
+        "IntentExecutionTests": [
+            "testPackageIntentExecutionChangesOnlyItsOwner",
+            "testSameNamedEntityQueriesResolveOnlyTheirOwner",
+            "testCancellationBeforeAdmissionAndDuringDelayKeepsOldValues",
+            "testDelayedSaveRetainsOwnerReservationUntilCancellationDrains",
+            "testSaveFailureKeepsPreviousValueAndOtherOwner",
+            "testDisableAndRemovalRejectAWhileBRemainsUsable",
+            "testPersistentValuesSurviveManagementReconstruction",
+        ],
+        "ManagedHostUITests": ["testDisabledAdmissionPersistsAcrossHostRelaunchAndBRemainsUsable"],
+    }
+    for suite, methods in expected_tests.items():
+        for method in methods:
+            marker = f"Test Case '-[{suite}.{suite} {method}]' passed"
+            assert marker in result.stdout, f"Missing passing XCTest evidence: {suite}/{method}"
+    assert "** TEST SUCCEEDED **" in result.stdout
     print("Native package intent perform() calls preserved owner storage and returned values", flush=True)
     print("Native entity/query execution: same local IDs, search, suggestions, edit and deletion remained owner-scoped", flush=True)

@@ -1,4 +1,5 @@
 #if os(iOS)
+import AppIntents
 import IntentFeatureA
 import IntentFeatureB
 import JibunKitCore
@@ -10,14 +11,14 @@ public extension MiniAppID {
 }
 
 private struct P1ABoundary: IntentFeatureA.StoreOperationBoundary {
-    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () throws -> Value) async throws -> Value {
+    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () async throws -> Value) async throws -> Value {
         try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .p1IntentA) {
             try Task.checkCancellation(); return try await operation()
         }
     }
 }
 private struct P1BBoundary: IntentFeatureB.StoreOperationBoundary {
-    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () throws -> Value) async throws -> Value {
+    func perform<Value: Sendable>(_ operation: @escaping @MainActor @Sendable () async throws -> Value) async throws -> Value {
         try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: .p1IntentB) {
             try Task.checkCancellation(); return try await operation()
         }
@@ -54,19 +55,27 @@ private struct P1IntentFeatureView: View {
     @State private var value = 0
     @State private var title = "candidate"
     @State private var message = "ready"
+    @State private var entries: [String: String] = [:]
     var body: some View {
         Form {
-            Text("\(owner):\(value)")
+            Text("\(owner):\(value)").accessibilityIdentifier("p1.intent.value")
             TextField("候補名", text: $title)
             Button("候補を保存") { run { try await saveCandidate() } }
-            Button("1を追加") { run { value = try await addOne() } }
+            Button("1を追加") { run { value = try await addOne() } }.accessibilityIdentifier("p1.intent.add")
             Button("次の保存を失敗") { injectFailure(); message = "armed failure" }
             Button("次の保存を5秒遅延") { injectDelay(); message = "armed delay" }
-            Text(message)
-        }.task { value = (try? await currentValue()) ?? value }
+            Button("値と候補を再読込") { run { try await reload() } }
+            ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
+            Text(message).accessibilityIdentifier("p1.intent.status")
+        }.task { do { try await reload() } catch { message = "error: \(error)" } }
     }
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
-        Task { do { try await operation(); message = "completed" } catch { message = "error: \(error)" } }
+        Task { do { try await operation(); try await reload(); message = "completed" } catch { message = "error: \(error)" } }
+    }
+    private func reload() async throws {
+        value = try await currentValue()
+        if owner == "A" { entries = try await FeatureAStore.shared.entries() }
+        else { entries = try await FeatureBStore.shared.entries() }
     }
     private func currentValue() async throws -> Int {
         if owner == "A" { return try await FeatureAStore.shared.value() }

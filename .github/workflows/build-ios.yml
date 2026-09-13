@@ -567,6 +567,9 @@ jobs:
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* ]]; then
             python3 Tools/prepare-p1-intents-host.py --host "$smoke"
           fi
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* ]]; then
+            python3 Tools/prepare-p1-widgets-host.py --host "$smoke"
+          fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
             python3 "$GITHUB_WORKSPACE/Tools/prepare-package-compatible-update-host.py" --host "$smoke" --stage v1
             for owner in A B; do

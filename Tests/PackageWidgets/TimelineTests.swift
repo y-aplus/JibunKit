@@ -94,9 +94,32 @@ final class TimelineTests: XCTestCase, @unchecked Sendable {
         try await assembly.management.enable(FeatureAStore.id)
         XCTAssertNil(try aStore.value(), "Re-enable restores admission but must leave deleted A empty")
         XCTAssertNil(FeatureAProvider(store: aStore).timeline().entries[0].value)
+        assembly = makeAssembly(defaults: defaults, aStore: aStore, bStore: bStore)
+        try await seedMissingEnabledOwners(assembly, aStore: aStore, bStore: bStore)
+        XCTAssertNil(try aStore.value(), "Re-enabled empty A stays empty after cold launch")
         try await FeatureAAccess(store: aStore, coordinator: assembly.coordinator).set(44)
         XCTAssertEqual(FeatureAProvider(store: aStore).timeline().entries[0].value, 44)
         XCTAssertEqual(FeatureBProvider(store: bStore).timeline().entries[0].value, 22)
+    }
+
+    func testConcurrentIncrementsAreAtomicAndOverflowPreservesOtherOwner() async throws {
+        let suite = "com.jibunkit.fixture.widget-increments.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let a = FeatureAStore(defaults: defaults)
+        let b = FeatureBStore(defaults: defaults)
+        try b.set(22)
+        let access = FeatureAAccess(store: a, coordinator: MiniAppRestoreCoordinator())
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for _ in 0..<100 { group.addTask { _ = try await access.increment() } }
+            try await group.waitForAll()
+        }
+        XCTAssertEqual(try a.value(), 100)
+        try a.set(.max)
+        do { _ = try await access.increment(); XCTFail("Overflow succeeded") }
+        catch FeatureAStoreError.valueOutOfRange { }
+        XCTAssertEqual(try a.value(), .max)
+        XCTAssertEqual(try b.value(), 22)
     }
 
     @MainActor

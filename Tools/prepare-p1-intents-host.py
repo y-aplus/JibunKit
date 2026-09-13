@@ -20,10 +20,12 @@ def prepare(host):
     app = host / "Sources/JibunKit/JibunKitApp.swift"
     changes = {}
     text = project.read_text(encoding="utf-8")
-    text = replace_once(text, 'packages: [.package(path: ".")]',
+    if 'Tests/PackageAppIntents/FeatureA' in text:
+        raise ValueError("Intent probes already connected")
+    text = replace_once(text, 'packages: [.package(path: ".")',
                         'packages: [.package(path: "."), '
                         '.package(path: "Tests/PackageAppIntents/FeatureA"), '
-                        '.package(path: "Tests/PackageAppIntents/FeatureB")]')
+                        '.package(path: "Tests/PackageAppIntents/FeatureB")')
     text = replace_once(text, '.target(name: "JibunKitShare-Extension")]',
                         '.target(name: "JibunKitShare-Extension"), '
                         '.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]')

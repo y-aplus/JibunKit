@@ -96,7 +96,7 @@ let project = Project(
             bundleId: "com.jibunkit.fixture.timeline-tests",
             deploymentTargets: .iOS("26.0"),
             infoPlist: .default,
-            sources: ["TimelineTests.swift", "SourceCompositionTests.swift"],
+            sources: ["TimelineTests.swift"],
             dependencies: [
                 .package(product: "JibunKitCore"),
                 .package(product: "WidgetFeatureA"),

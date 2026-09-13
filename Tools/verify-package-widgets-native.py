@@ -77,6 +77,11 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
         strings = run(["strings", executable], root, capture=True).stdout
         present = {kind for kinds in expected.values() for kind in kinds if kind in strings}
         assert present == expected_kinds, (scheme, present, expected_kinds)
+        host_strings = run(["strings", app / app_info["CFBundleExecutable"]], root, capture=True).stdout
+        host_owners = {owner for owner in ("A", "B") if f"WidgetFeature{owner}" in host_strings}
+        expected_owners = {"A", "B"} if scheme == "Combined" else {scheme[-1]}
+        assert host_owners == expected_owners, (scheme, host_owners, expected_owners)
+        (evidence / f"{scheme}-host-strings.txt").write_text(host_strings, encoding="utf-8")
         copied = evidence / scheme
         copied.mkdir()
         shutil.copyfile(extension / "Info.plist", copied / "Info.plist")
@@ -106,7 +111,7 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
         "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
         "-derivedDataPath", root / "SimulatorBuild",
         "-resultBundlePath", result_bundle,
-        "-only-testing:TimelineTests/TimelineTests/testPackageTimelinesRemainOwnerScoped",
+        "-only-testing:TimelineTests/TimelineTests",
         "-parallel-testing-enabled", "NO",
         "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual",
     ], root, capture=True, check=False)
@@ -114,7 +119,11 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-widgets-") as temp:
     (evidence / "timeline-tests.log").write_text(result.stdout, encoding="utf-8")
     if result.returncode != 0:
         raise subprocess.CalledProcessError(result.returncode, result.args)
-    assert "testPackageTimelinesRemainOwnerScoped]' passed" in result.stdout
+    for method in ["testPackageTimelinesRemainOwnerScopedAndLocalized",
+                   "testMissingSharedStoreIsUnavailableInsteadOfFallingBackToStandardDefaults",
+                   "testActualDefinitionsPreserveColdLaunchStateAndDeleteOnlyA",
+                   "testConcurrentIncrementsAreAtomicAndOverflowPreservesOtherOwner"]:
+        assert f"Test Case '-[TimelineTests.TimelineTests {method}]' passed" in result.stdout, method
     assert "** TEST SUCCEEDED **" in result.stdout
     print("Package Timeline providers: identical local key names remain owner-prefixed and isolated")
 

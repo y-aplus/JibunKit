@@ -6,7 +6,7 @@ import WidgetKit
 
 @main
 struct WidgetFixtureHostApp: App {
-    private struct Configuration {
+    private struct Configuration: Sendable {
         let aStore: FeatureAStore
         let bStore: FeatureBStore
         let management: MiniAppManagement

@@ -3,7 +3,7 @@ import JibunKitCore
 import SwiftUI
 import WidgetKit
 
-public enum FeatureAStoreError: Error, Equatable, Sendable { case sharedStoreUnavailable }
+public enum FeatureAStoreError: Error, Equatable, Sendable { case sharedStoreUnavailable, valueOutOfRange }
 
 public final class FeatureAStore: @unchecked Sendable {
     public static let id = MiniAppID("owner-a")
@@ -31,8 +31,20 @@ public final class FeatureAStore: @unchecked Sendable {
     public func seedIfMissing(_ value: Int) throws {
         let defaults = try configuredDefaults()
         MiniAppStorage.withExclusiveAccess {
+            // Initial fixture seed only. Management has persisted a decision
+            // after disable/remove/re-enable; never recreate deleted data then.
+            guard defaults.object(forKey: MiniAppManagement.defaultStorageKey + "." + Self.id.rawValue) == nil else { return }
             guard defaults.object(forKey: storageKey) == nil else { return }
             defaults.set(value, forKey: storageKey)
+        }
+    }
+    public func increment() throws -> Int {
+        let defaults = try configuredDefaults()
+        return try MiniAppStorage.withExclusiveAccess {
+            let (next, overflow) = defaults.integer(forKey: storageKey).addingReportingOverflow(1)
+            guard !overflow else { throw FeatureAStoreError.valueOutOfRange }
+            defaults.set(next, forKey: storageKey)
+            return next
         }
     }
     public func remove() throws {
@@ -63,9 +75,7 @@ public struct FeatureAAccess: Sendable {
     }
     public func increment() async throws -> Int {
         try await coordinator.withStoreAccess(for: FeatureAStore.id) {
-            let updated = (try store.value() ?? 0) + 1
-            try store.set(updated)
-            return updated
+            try store.increment()
         }
     }
 }

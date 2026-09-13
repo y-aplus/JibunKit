@@ -59,3 +59,39 @@ class DiagnosticHostTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PREPARE.prepare(self.host)
         self.assertEqual(self.snapshot(), before)
+
+
+class CombinedDiagnosticHostTests(DiagnosticHostTests):
+    def setUp(self):
+        super().setUp()
+        for name in ["Sources/JibunKitWidget/CounterWidget.swift", "Tests/TemplateIntegration/P1WidgetsProbe.swift",
+                     "Tests/TemplateIntegration/P1WidgetsUITests.swift"]:
+            target = self.host / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, target)
+        spec = importlib.util.spec_from_file_location("p1_widgets_host", ROOT / "Tools/prepare-p1-widgets-host.py")
+        self.widgets = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.widgets)
+
+    def testBothSurfacesShareOneHostManagerAndExistingWidgetExtension(self):
+        project_file = self.host / "Project.swift"
+        project_file.write_text(project_file.read_text(encoding="utf-8").replace(
+            'packages: [.package(path: ".")]',
+            'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]'),
+            encoding="utf-8")
+        PREPARE.prepare(self.host)
+        self.widgets.prepare(self.host)
+        project = (self.host / "Project.swift").read_text(encoding="utf-8")
+        self.assertEqual(project.count('name: "JibunKitWidget-Extension"'), 2)
+        self.assertIn('.package(product: "IntentFeatureA")', project)
+        self.assertEqual(project.count('.package(product: "P1WidgetFeatureA")'), 2)
+        package = (self.host / "Package.swift").read_text(encoding="utf-8")
+        self.assertIn('defaultLocalization: "en"', package)
+        self.assertNotIn('.package(path: "Tests/PackageWidgets', package)
+        widget = (self.host / "Sources/JibunKitWidget/CounterWidget.swift").read_text(encoding="utf-8")
+        for declaration in ['CounterWidget()', 'FeatureAWidget()', 'FeatureBWidget()']:
+            self.assertEqual(widget.count(declaration), 1)
+        before = self.snapshot()
+        with self.assertRaises(ValueError):
+            self.widgets.prepare(self.host)
+        self.assertEqual(self.snapshot(), before)

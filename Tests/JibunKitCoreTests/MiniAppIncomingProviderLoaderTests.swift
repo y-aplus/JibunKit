@@ -3,8 +3,8 @@ import XCTest
 import UniformTypeIdentifiers
 @testable import JibunKitCore
 
-@MainActor
-final class MiniAppIncomingProviderLoaderTests: XCTestCase {
+final class MiniAppIncomingProviderLoaderTests: XCTestCase, @unchecked Sendable {
+    @MainActor
     func testNativeTextAndURLProvidersKeepExactValues() async throws {
         let result = try await MiniAppIncomingProviderLoader.load([
             NSItemProvider(object: "共有テキスト" as NSString),
@@ -19,6 +19,7 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com/incoming?q=1")
     }
 
+    @MainActor
     func testNativeFileProviderReturnsOwnedCopyAndCleanupRemovesIt() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
@@ -38,6 +39,7 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: copy.path))
     }
 
+    @MainActor
     func testCancellationBeforeRegistrationAndLateDuplicateCallbacksDoNoWork() async throws {
         let gate = ProviderContinuation()
         gate.cancel()
@@ -53,6 +55,7 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase {
         XCTAssertTrue(progress.isCancelled)
     }
 
+    @MainActor
     func testNativeProviderThatNeverRepliesCanBeCancelled() async {
         let entered = expectation(description: "provider requested")
         let finished = expectation(description: "loader cancelled without callback")
@@ -75,6 +78,7 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase {
         await fulfillment(of: [finished], timeout: 5)
     }
 
+    @MainActor
     func testCancellationDrainsActiveCopyBeforeResumingAndIgnoresDuplicateCallback() async throws {
         let gate = ProviderContinuation()
         let finishedCopy = expectation(description: "copy finished")

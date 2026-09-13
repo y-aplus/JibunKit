@@ -133,5 +133,19 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
         XCTAssertEqual(try store.pending(for: b).receipts, [saved])
     }
+
+    func testReusingDestinationValueStillChangesAdmissionAfterDisableAndRepublish() throws {
+        let (_, store) = try fixture()
+        let retained = try XCTUnwrap(store.destinations().first { $0.id == a.rawValue })
+        let other = try XCTUnwrap(store.destinations().first { $0.id == b.rawValue })
+        try store.setAdmission(retained, enabled: false)
+        try store.setAdmission(retained, enabled: true)
+        let reenabled = try XCTUnwrap(store.destinations().first { $0.id == a.rawValue })
+        XCTAssertNotEqual(reenabled.admissionID, retained.admissionID)
+        XCTAssertEqual(try store.destinations().first { $0.id == b.rawValue }, other)
+        try store.publish([reenabled, other])
+        let republished = try XCTUnwrap(store.destinations().first { $0.id == a.rawValue })
+        XCTAssertNotEqual(republished.admissionID, reenabled.admissionID)
+    }
 }
 #endif

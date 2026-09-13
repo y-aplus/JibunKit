@@ -115,14 +115,14 @@ public struct MiniAppIncomingStore: Sendable {
     /// A malformed catalog fails closed instead of silently treating it as empty.
     public func publish(_ destinations: [MiniAppIncomingDestination]) throws {
         try validate(destinations)
-        try coordinated { try writeCatalog(destinations) }
+        try coordinated { try writeCatalog(destinations.map(renewAdmission)) }
     }
 
     public func setAdmission(_ destination: MiniAppIncomingDestination, enabled: Bool) throws {
         try validate([destination])
         try coordinated {
             var catalog = try readCatalog().filter { $0.id != destination.id }
-            if enabled { catalog.append(destination) }
+            if enabled { catalog.append(renewAdmission(destination)) }
             try writeCatalog(catalog)
         }
     }
@@ -301,6 +301,12 @@ public struct MiniAppIncomingStore: Sendable {
         guard Set(catalog.map(\.id)).count == catalog.count,
               catalog.allSatisfy({ MiniAppID($0.id).isValid && !$0.title.isEmpty && !$0.typeIdentifiers.isEmpty && $0.typeIdentifiers.allSatisfy { !$0.isEmpty } })
         else { throw MiniAppIncomingError.invalidCatalog }
+    }
+
+    private func renewAdmission(_ destination: MiniAppIncomingDestination) -> MiniAppIncomingDestination {
+        // Callers may retain and reuse the same destination value after a
+        // disable. The store, not that value's constructor, owns the new epoch.
+        .init(id: MiniAppID(destination.id), title: destination.title, typeIdentifiers: destination.typeIdentifiers)
     }
 
     private func writeCatalog(_ catalog: [MiniAppIncomingDestination]) throws {

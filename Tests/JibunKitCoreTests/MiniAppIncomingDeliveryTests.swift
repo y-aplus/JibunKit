@@ -2,8 +2,7 @@ import XCTest
 @testable import JibunKitCore
 
 #if os(iOS) || os(macOS)
-@MainActor
-final class MiniAppIncomingDeliveryTests: XCTestCase {
+final class MiniAppIncomingDeliveryTests: XCTestCase, @unchecked Sendable {
     private enum Fault: Error { case receiver }
     private let a = MiniAppID("delivery-a")
     private let b = MiniAppID("delivery-b")
@@ -16,6 +15,7 @@ final class MiniAppIncomingDeliveryTests: XCTestCase {
         return (root, inbox)
     }
 
+    @MainActor
     func testFailedReceiverKeepsReceiptAndRetryUsesSameIDWithoutTouchingB() async throws {
         let (root, inbox) = try fixture()
         let source = root.appendingPathComponent("source.txt")
@@ -43,6 +43,7 @@ final class MiniAppIncomingDeliveryTests: XCTestCase {
         XCTAssertEqual(try inbox.pending(for: b).receipts, [other])
     }
 
+    @MainActor
     func testCancellationPreservesReceiptAndBlocksCrossSceneDiscardAndDuplicateApply() async throws {
         let (_, inbox) = try fixture()
         let receipt = try inbox.enqueue(for: a, inputs: [.text("A")])
@@ -70,6 +71,7 @@ final class MiniAppIncomingDeliveryTests: XCTestCase {
         XCTAssertTrue(try inbox.pending(for: a).receipts.isEmpty)
     }
 
+    @MainActor
     func testDisabledOwnerCannotInvokeReceiverWhileOtherOwnerStillWorks() async throws {
         let (_, inbox) = try fixture()
         let first = try inbox.enqueue(for: a, inputs: [.text("A")])

@@ -1,6 +1,6 @@
 # Feature管理への接続
 
-実装中のP0-B API。通常hostとSwift/iOS検証は[検証記録](../verification/2026-09-12-p0-b.md)を参照。
+P0-Bで通常hostへ接続し、通常・生成CIの非実機条件を確認済み。対象sourceと試験範囲は[検証記録](../verification/2026-09-12-p0-b.md)を参照する。0.7.0候補の実機確認も2026-09-13に完了（[結果](../verification/2026-09-13-0.7-device-check.md)）。
 
 MiniAppDefinitionにFeatureと同じidのlifetimeとremovalを渡す。removalは削除するデータを説明し、owner予約済み・Runtime終了済みの状態で所有データだけを削除する。読み取り専用で所有データがない場合は、その説明と何もしないcallbackを明示する。providerの省略を「データがない」と解釈しない。
 

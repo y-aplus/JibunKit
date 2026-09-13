@@ -6,8 +6,8 @@ let sharedEntitlements: [String: Plist.Value] = [
     "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
 ]
 let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
-    "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.6.0",
-    "CFBundleVersion": "7", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.7.0",
+    "CFBundleVersion": "8", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
     "UILaunchScreen": [:],
     "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
@@ -20,7 +20,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "ja": ["CFBundleDisplayName": "JibunKit"],
 ])
 let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: [
-    "CFBundleShortVersionString": "0.6.0", "CFBundleVersion": "7",
+    "CFBundleShortVersionString": "0.7.0", "CFBundleVersion": "8",
     "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],

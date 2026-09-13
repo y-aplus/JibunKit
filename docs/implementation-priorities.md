@@ -23,14 +23,14 @@ patch版は機能追加・検証の進捗にも使う。commitごとの公開は
 P0-3は既存資産を使いJSON/添付とnative SQLiteを最初の対象方式とする。製品にそのDBだけを強制する意味ではない。
 P0-5はユーザー回答により**アプリ内UIが0.7.0の必須条件**。無効化・再有効化・登録/所有データ削除を扱い、IPA内のコード除去は再ビルドで行う。
 
-| 単位 / 親D | 現在使える成果 | 残実装・接続 | 後段へ残す範囲 |
+| 単位 / 親D | 現在使える成果 | 残る実装・確認 | 後段へ残す範囲 |
 | --- | --- | --- | --- |
-| P0-1 寿命と所有処理の終了（D01・D02） | Task/Runtime・購読・HTTP・SQLite終了の既存成果 | Feature所有者の開始/終了を通常入口へ接続。非選択と終了を分離 | 高度な複数window/実行instance |
-| P0-2 通常の画面・提示（D04） | Feature別経路、URL/通知遷移の既存成果 | 保持/再生成/resetの契約、sheet等の所有者とUIKit接続 | 任意View可視状態/高度な複数window |
-| P0-3 保存・復元・移行・リセット（D06・D07） | JSON/添付ZIP、SQLite比較、stop/apply/resume、通常操作予約 | 実Featureの操作入口へ接続。まずJSON/添付とSQLiteを対象方式として固定 | 全DB/別process writer |
-| P0-4 追加・ビルド・更新（D20・D29） | Tuist雛形、宣言/URL合成、resources/翻訳、SDK比較 | 通常追加手順へ統合。target/product/Registry漏れを診断し更新例を確認 | 万能生成器/任意SDK複数version |
-| P0-5 同意・無効化・削除（D19・D31） | 通知/検索/Task等の所有者別解除API | アプリ内UI必須。目的/要求元/拒否、停止・解除・削除を区別 | 同一processの強制隔離/コード動的除去 |
-| P0-6 基本障害緩和と局所処理（D03・D32） | 協調取消/解放の既存契約 | 終了が進まない処理の診断、主スレッドを塞がない契約、局所処理の判定 | helper/非協調処理の強制隔離 |
+| P0-1 寿命と所有処理の終了（D01・D02） | 通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 高度な複数window/実行instance |
+| P0-2 通常の画面・提示（D04） | Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 任意View可視状態/高度な複数window |
+| P0-3 保存・復元・移行・リセット（D06・D07） | RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 全DB/別process writer |
+| P0-4 追加・ビルド・更新（D20・D29） | native依存診断6ケース、実Registry復旧、単独/host、iOSのAだけの更新/B保存・資源保持を34705653297で確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 万能生成器/任意SDK複数version |
+| P0-5 同意・無効化・削除（D19・D31） | 通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 同一processの強制隔離/コード動的除去 |
+| P0-6 基本障害緩和と局所処理（D03・D32） | 終了進捗診断と局所処理の判断基準をP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | helper/非協調処理の強制隔離 |
 | P1-1 Shortcuts実利用（D27） | metadata/Shortcut式/entity/query識別子と直接実行 | OS上の発見・候補・引数・戻り値・取消を二Featureで確認 | Control等の高度な接続 |
 | P1-2 静的Widget通常接続（D26） | Package Widget/gallery/home描画とApp Group比較 | 通常接続・出荷構成へ反映、片側更新/削除後の他方維持 | 設定可能/操作可能Widget・Control/任意extension |
 | P1-3 URL・外部ファイル・Share入口（D12・D26） | URL resolver/曖昧一致拒否/scene接続 | security-scoped URLの寿命、汎用Share Extensionの受信先選択と保存/終了契約 | 任意extension自動統合/実Universal Link一般化 |
@@ -90,4 +90,12 @@ JibunKit採用に結びつく用途・導入断念要因・代替・署名/周�
 優先度、実装状態、出荷対象は別軸。P0/P1の単位が完了しても親Dを一括完了にしない。
 plan.jsonのpartialは残実装がある状態。completeへ変更するには合格条件ごとの証拠とレビューが必要。
 標準API・unit・Simulator・実機の証拠を分離し、対象source、操作、観測、残件を記録する。
-2026-09-13時点、P0-A/P0-Bの非実機条件は通常/生成CIで確認してmainへ反映。P0-Cは別branchで追加診断・片側Package更新を実装し一括CI準備中。実機専用条件は0.7.0候補へまとめる。需要調査は別途実施中で、0.7.0完了時までに未反映ならユーザーへ結果の提供を依頼する。
+CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0の全6単位はCIと2026-09-13の一括実機で確認済み。正式公開前。 公開安定版は0.6.0。需要調査Issue #6を2026-09-13に受領。1.0推奨境界の正式採用を確認中。
+
+## 需要調査の受領（2026-09-13）
+
+[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)をユーザー指定により全文確認した。小〜中規模アプリの採用例を機能需要の存在証拠として扱い、市場シェアの定量値とはしない。
+
+推奨はP2-AのWidget/Control、Live Activities/AlarmKit、撮影/スキャン、Audio、背景処理、背景位置/geofenceを中核とし、P2-BのCloudKit、BLE、APNs、通常の複数windowも通常範囲を原則1.0へ含めること。P2-Cの通常AR/種類別extensionは既存成果で比較的低負荷に成立する範囲を拾う。通常の中断/復帰/背景再接続/所有者分離を高度な例外としてP3へ移さない。
+
+元のIssue #5でP3に含まれた領域にも通常範囲をP2へ切り出す提案がある。上の旧P2/P3表はIssue #5の暫定区分であり、この提案を否定しない。正式1.0境界の採用確認後にP単位・合格条件・実行計画を確定する。P0/0.7.0とP1/0.8.0は変更しない。

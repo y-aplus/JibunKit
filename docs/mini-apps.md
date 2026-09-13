@@ -19,12 +19,39 @@ tuist generate --path Modules/Notes --no-open
 
 JibunKitに組み込むには次を行う。
 
-1. ルート`Project.swift`のpackagesへ`.package(path: "Modules/Notes")`を追加。
-2. JibunKit-Appのdependenciesへ`.package(product: "NotesFeature")`を追加。
-3. ホスト側の薄い接続ファイルで`import NotesFeature`し、`MiniAppDefinition(id: MiniAppID("notes"), title: "日記", systemImage: "book") { _ in NotesRootView() }`を定義してRegistryへ列挙する。
-4. `tuist generate`とビルドで確認する。FeatureのテストはそのPackageで実行する。
+1. `Modules/Notes/Package.swift`で`NotesFeature` targetと、それを公開する同名のlibrary productを確認する。
+2. ルート`Project.swift`の`packages`へ`.package(path: "Modules/Notes")`を追加する。pathはルート`Project.swift`からの相対位置である。
+3. 同じ`Project.swift`の`JibunKit-App` targetの`dependencies`へ`.package(product: "NotesFeature")`を追加する。Widgetや別extensionからもimportする場合は、そのtargetにも個別に依存を追加する。
+4. ホスト側の薄い接続ファイルで`import NotesFeature`し、publicな`MiniAppDefinition(id: MiniAppID("notes"), title: "日記", systemImage: "book") { _ in NotesRootView() }`を定義する。
+5. `Sources/JibunKit/MiniAppRegistry.swift`の`all`へその定義を1件列挙する。
+6. Feature Package単独のテスト後、ルートで`tuist generate --no-open`と`tuist build JibunKit-App`を実行し、期待するFeature IDが一覧とURL入口に存在することを生成hostで確認する。
 
 Featureをroot Package内に置く方式も使える。その場合はPackageのtarget・library productと、Projectのproduct依存を明示する。既存Counter／ReminderはFeatureとIntegrationのtargetを分け、IntegrationがMiniAppDefinitionとbackup登録を所有する。単独appはFeatureだけを参照する。既存StoreはJibunKitCoreの保存APIを使うが、新しいFeatureへこの依存を強制しない。
+
+### Package接続に失敗したとき
+
+P0-C候補では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。CI34705653297で実Swift/Tuist診断を検証済み。0.7.0の追加で、以前の0.6.0には含まれない。
+
+```bash
+python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
+```
+
+このコマンドは`swift package dump-package`と`tuist dump`で現在のmanifestを評価し、path・library product・所属target・指定hostの直接product依存を診断する。Swift manifestを実行するため、信頼するcheckoutで使う。Integrationの推移的依存、コンパイル、実行中のRegistryは別に確認する。`--host`でWidget等の検査対象を指定できる。
+
+登録漏れは、Integration試験で実際の`MiniAppRegistry.all.map(\.id)`を`MiniAppValidator.validate(ids:expectedIDs:)`へ渡して期待IDの欠落を確認し、通常URL/画面も操作する。生成hostのP0COnboardingUITestsがその接続例である。期待ID集合はテストの条件であり、製品へもう一つの登録manifestを追加するものではない。
+
+path、product、target依存、Registryは別々の接続であり、Swiftファイルの文字列検索だけでは成立を保証できない。次の順で、最初に失敗する境界を直す。
+
+| 欠けている接続 | 主な症状 | 確認先 | 修正と再確認 |
+| --- | --- | --- | --- |
+| Package path | Tuistの生成・依存解決時にPackageを見つけられず、productの解決まで進まない | ルート`Project.swift`の`packages`と、実在する`Modules/Notes/Package.swift` | pathの綴りと基準位置を直し、`tuist generate --no-open`を再実行する |
+| library product | Package単独ではtargetが見えても、host生成時に`NotesFeature` productがない、または名前が一致しないと報告される | `Modules/Notes/Package.swift`の`products`と`targets` | `.library(name: "NotesFeature", targets: ["NotesFeature"])`と実target名を一致させ、`swift package --package-path Modules/Notes describe`、Package test、Tuist生成を順に行う |
+| host target依存 | Package解決は通るが、JibunKit-Appのコンパイルで`No such module 'NotesFeature'`になる | ルート`Project.swift`内の`JibunKit-App.dependencies`。エラーがWidgetならWidget target側 | importするnative targetへ`.package(product: "NotesFeature")`を追加し、生成し直してそのtargetをビルドする |
+| Registry登録 | 生成・コンパイルは通るが、一覧に出ず、`jibunkit://mini-app/notes`も登録済みFeatureとして開かない | Integrationのpublicな定義と`Sources/JibunKit/MiniAppRegistry.swift`の`all` | 定義を`all`へ1件だけ追加し、生成hostでID `notes`の一覧行とURL入口を検査する |
+
+`swift package describe`はPackage manifestのproduct/targetを確認し、Tuist生成・Xcodeの型検査はnative targetへの依存を確認する。生成hostのUI/URL試験はRegistryへの意味上の登録を確認する。どれか一つの成功を残り三つの成功として扱わない。
+
+Info.plistやentitlementsを要求するFeatureは、[Featureビルド要求](guides/feature-build-requirements.md)の既存合成へ接続する。二Featureが同じkeyへ異なる値を要求した場合は、既存のnative検査がowner名、異値、解消対象を示す。その診断を直し、別の設定生成器や正規表現検査を追加しない。
 
 ### 手動で追加する・生成後の内容を実装する
 
@@ -53,6 +80,10 @@ static let all = makeRegistry([
     ReminderMiniApp.definition,
 ])
 ```
+
+画面を離れても終わらないTask・接続を持つ場合は[Feature lifetime](guides/feature-lifetime.md)、通常保存と復元・移行・リセットを調停する場合は[保存アクセスの調停](guides/store-access-coordination.md)と[Runtime／復元接続](runtime-restore-integration.md)をIntegrationから接続する。単純な読取り専用画面へダミーのlifetimeや保存providerを追加する必要はない。
+
+P0-Bの管理・同意・削除・提示はmainへ統合済みである。[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)を接続元とする。ただし公開版0.6.0には含まれず、0.7.0候補では実機確認も2026-09-13に完了した。保存データを持つFeatureだけが所有範囲を宣言し、削除callback内部ではhostが既に保持するowner予約を再取得しない。
 
 通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 

@@ -1,11 +1,12 @@
 # Third-party notices
 
-JibunKitのSwift packageは外部packageへ依存しておらず、現在のアプリbundleへ第三者のsourceやbinaryを組み込んでいません。プロジェクト本体のsourceには[MIT License](LICENSE)が適用されます。
+JibunKitBackupはZIP archive処理のためZIPFoundation 0.9.20へ依存し、アプリへリンクします。ライセンス本文は`Sources/JibunKitBackup/Resources/ZIPFoundation-LICENSE.txt`としてbundleにも含めます。プロジェクト本体のsourceには[MIT License](LICENSE)が適用されます。
 
-次のソフトウェアとサービスは、ビルド、検査、導入のために外部で使用します。リポジトリやIPAには再配布しません。それぞれの利用・配布条件は提供元の条件が優先します。
+次の表に依存ソフトウェアと外部サービスの用途・同梱範囲を示します。ZIPFoundationを除くツールやサービス本体はIPAへ同梱しません。それぞれの利用・配布条件は提供元の条件が優先します。
 
 | 対象 | 現在の用途 | 条件 |
 | --- | --- | --- |
+| [ZIPFoundation 0.9.20](https://github.com/weichsel/ZIPFoundation/tree/0.9.20) | JibunKitBackupのZIP作成・読込み。Swift Package依存としてアプリへリンク | [MIT License](https://github.com/weichsel/ZIPFoundation/blob/0.9.20/LICENSE)。ライセンス本文をアプリbundleへ同梱 |
 | [Tuist 4.207.0](https://github.com/tuist/tuist) | project・target・template生成 | [MIT License](https://github.com/tuist/tuist/blob/4.207.0/LICENSE.md)。CIでarchiveのSHA-256を固定し、IPAへ同梱しない |
 | Apple Xcode 26.6 / iOS SDK | GitHub-hosted runnerとローカルSDK生成元でのbuild | [Xcode and Apple SDKs Agreement](https://www.apple.com/legal/sla/docs/xcode.pdf)。SDK本体は含めない |
 | [actions/checkout v6](https://github.com/actions/checkout) | GitHub Actions runnerへsourceをcheckout | [MIT License](https://github.com/actions/checkout/blob/main/LICENSE)。workflowでは固定commitを参照 |

@@ -1,0 +1,575 @@
+{
+  "schema": 1,
+  "wave": "P0-C",
+  "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+  "contract": {
+    "baseline": "36bda79399fcafb17c52ed28db08c395b6f1a407",
+    "interfaces": "Existing Tuist/Swift Package path/product/target declaration checks, optional Validator.expectedIDs, generated real Registry omission/recovery, same-host A-only DTO update. docs/delivery/P0-C-contract.md and docs/verification/2026-09-12-p0-c.md.",
+    "ownership": "Parent owns consolidated workflow/Registry/final review; separate Sol low workers submitted docs/native/iOS fixtures without individual CI. Host/probe/B/resource inputs remain byte-identical across A v1/v2.",
+    "failure_cases": "Missing path/product/library target/host dependency and actual Registry registration; old schema defaults, relaunch, corrupt file rejection/preservation, explicit repair, unchanged B bytes/resources, reject reseeding or non-A source changes.",
+    "normal_entrypoints": "Tuist scaffold Notes standalone and real host URL; P0C probe registered through normal Definition. Normal Counter/Reminder host URL, IPA/Widget/metadata checks; user management/restore device batch at0.7.0.",
+    "invalidation": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix.",
+    "review": "Worker88041da consolidated review; parent added real file corruption reads, persistent corrupt bytes before repair, v1 existing-file rejection, pipeline selector validation and archived container evidence.27 Tools +2 prepare tests pass; exact workflow source injection/v1-v2 preparation checked locally. Native Swift/iOS pending. 34704117433 failed before tests because new Core-only test referenced Feature-defined ID extensions. Both test and generated Registry probe now construct public MiniAppID values explicitly; no product or assertion semantics changed. Shared244/skip2 passed at81a4bb7. Actual native target/product rejection now matched precisely; six-case and independent-command failure aggregation retains failure. Integrated52-document audit173534d and reviewed corrections; hashes validated. Reviewed34705086602 full log and downloaded native artifact: all6 manifest cases,3 macOS update processes and actual A/B JSON/hash evidence passed. Generated host builds. Packaging aligned with existing normal IPA/native verifier project-Derived lookup; no product changes. Final34705653297 succeeded; actual full log and downloaded native/iOS evidence plus both IPA CRC, metadata and SHA256 reviewed. Source remains baa041f; later changes are evidence/documents only."
+  },
+  "dependencies": {
+    "P0-A": "main contains verified A; P0-A-preflight ci passed, source2574e6c/34694032847 and normal34691452980; guides unchanged through candidate.",
+    "P0-B": "P0-B-preflight ci gate passed at d1adb8e. Generated34700435807 and normal34702137986 actual logs reviewed. main36bda79 includes identical verified product sources."
+  },
+  "planned_ci_runs": 4,
+  "budget_exception": "Initial Core-only test ID extensions failed compilation; second run shared244 passed but fixture expected checker text where Swift itself rejects a missing target. Correct precise native diagnostic and collect all independent validation results in one retry; keep full consolidated new-feature scope. Third run passed native checks and generated Release build but diagnostic packaging searched Xcode DerivedData instead of project Derived for Tuist entitlements. Correct packaging path and put packaging after UI so it cannot hide test results; fourth run preserves full new-feature scope.",
+  "jobs": [
+    {
+      "id": "native-and-candidate",
+      "kind": "unit",
+      "criteria": [
+        "P0-1.lifetime",
+        "P0-3.failure",
+        "P0-5.ownership",
+        "P0-6.diagnostics",
+        "P0-4.diagnostics"
+      ],
+      "command": "One build-ios.yml run simulator_tests=true feature_validation=true; full shared/Modules, native declaration failures and compatible update, normal/standalone/generated builds and0.7.0 build8 IPA/widget/metadata checks",
+      "expected_minutes": 30,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "onboarding-and-update",
+      "kind": "simulator",
+      "criteria": [
+        "P0-4.onboarding"
+      ],
+      "command": "Same run ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppLinksOpenColdAndSwitchWarm; feature_ui_test_filter=MigrationUITests/P0COnboardingUITests,MigrationUITests/P0CCompatibleUpdateV1UITests/testSeedV1ThroughNormalFeatureURL; other bools=false runtime empty. Following step replaces A source only and runs P0CCompatibleUpdateV2UITests/testReadUpdateRelaunchRejectCorruptionAndRepairWithoutReseeding on same Simulator/container.",
+      "expected_minutes": 30,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "docs-audit",
+      "kind": "inspection",
+      "criteria": [
+        "P0-4.docs"
+      ],
+      "command": "Review README links and normal addition/update/recovery/conflict instructions; minor document inventory and hash review before0.7 release. No standalone CI.",
+      "expected_minutes": 25,
+      "timeout_minutes": 45
+    }
+  ],
+  "runs": [
+    {
+      "id": "34704117433/attempt-1",
+      "source": "e84402f9154688664fae15080d5bb5b393fd4798",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34704117433",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34704681281/attempt-1",
+      "source": "81a4bb7c52aa36a3d027c40a2b67cce6f64058d4",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34704681281",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34705086602/attempt-1",
+      "source": "3ac8d602a929830e5071ae003e7b6ee234d7ce50",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34705086602",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34705653297/attempt-1",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "conclusion": "success"
+    }
+  ],
+  "evidence": [
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34702137986",
+      "observation": "Shared241 tests (skip2) passed, including lifetime and owned Task shutdown.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34702137986",
+      "observation": "Shared241 and Records11 tests passed, including failure preservation, rollback and owner admission.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34702137986",
+      "observation": "Management unit cases passed: disable, delete, persisted incomplete state, retry, delayed actual Task completion and B preservation.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-1.integration",
+      "kind": "simulator",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34700435807",
+      "observation": "Both lifetime normal shutdown/retry and startup failure/retry passed with B preserved.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-3.integration",
+      "kind": "simulator",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34700435807",
+      "observation": "Records maintenance/attachments and native SQLite close/reopen/rollback/reset plus independent Records storage passed.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-2.presentation",
+      "kind": "simulator",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34700435807",
+      "observation": "SwiftUI presentation cancellation, external URL switch, owner return/re-presentation passed.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-2.uikit",
+      "kind": "simulator",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34700435807",
+      "observation": "UIKit inner stop waited for native dismissal; restart and B preserved state passed.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-5.ui",
+      "kind": "simulator",
+      "source": "d1adb8e954e9edb6c562a47d2666a653c9841396",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34700435807",
+      "observation": "Generated unregister failure/data preservation/retry/delete/reregister/B case passed; normal management consent and disable/restart/cancel/delete/reregister cases also passed in34702137986.",
+      "review": "Parent inspected actual XCTest passes and complete job evidence for34700435807 and34702137986, including13 normal UI cases andFiles selected Counter JSON restoration. docs/verification/2026-09-12-p0-b.md.",
+      "reuse_reason": "Product diff vs d1adb8e only optional Validator expectedIDs (default empty), Project version0.7.0 build8. Reuse normal13+Files34702137986 and generated8 34700435807; normal host/lifetime/presentation/management/storage unchanged. New core/manifest/build/UI operations run at this source. Reassess reuse on any product fix."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Runtime shutdown/local-operation code remains unchanged. Guide changes from baseline update verification status only; source diff reviewed without ownership/policy changes. Full shared244 passed at81a4bb7."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "2574e6c42326d0cbc6b32b97eaf406abe80b1a73",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34694032847",
+      "observation": "Runtime shutdown progress and TaskScope tests passed in the full shared suite.",
+      "review": "Reviewed complete job log at .git/evidence/34694032847.log; selected test names and actual pass results, not run conclusion alone.",
+      "reuse_reason": "Runtime shutdown/local-operation code remains unchanged. Guide changes from baseline update verification status only; source diff reviewed without ownership/policy changes. Full shared244 passed at81a4bb7."
+    },
+    {
+      "criterion": "P0-4.docs",
+      "kind": "inspection",
+      "source": "3ac8d602a929830e5071ae003e7b6ee234d7ce50",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-doc-audit.json; docs/mini-apps.md; docs/updating.md",
+      "observation": "README connects addition, source/product/Registry diagnostics, lifecycle/storage/consent/removal and compatible update/recovery.52 current docs audited,14 updated with parent correction; all hashes/inventory validated. Native and device outcomes remain explicit.",
+      "review": "Worker173534d read complete inventory; parent reviewed changes and corrected mixed milestones, license scope, latest CI statuses. Re-audit changed documents before release.",
+      "reuse_reason": "Same reviewed onboarding/API/recovery instructions; parent updated current CI/package state only and refreshed all changed document hashes after34705086602."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md."
+    },
+    {
+      "criterion": "P0-4.onboarding",
+      "kind": "simulator",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md."
+    },
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence."
+    }
+  ],
+  "deferred_device": {},
+  "documents": [
+    {
+      "path": "CHANGELOG.md",
+      "outcome": "updated",
+      "reason": "Recorded P0-A/P0-B non-device verification and kept P0-C CI, device, and distribution results unconfirmed. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "f8512c6435ba8e4a99b1dbc45dc96cd243500919db160160721f2126fd602cbc"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
+      "sha256": "2f000be23cea6bd9f81097cafacc7512d58988e371a259ed521558872e604e44"
+    },
+    {
+      "path": "Modules/Records/README.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
+      "sha256": "7963b1e2750822764ca00e3cc4eaa9ca6d1056249ed0f3cfac85ae9a211273d2"
+    },
+    {
+      "path": "README.md",
+      "outcome": "updated",
+      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "9db2a6639612d8529aa22a733ba239c9b5e3e0cc156a89dbcb00d8d154216716"
+    },
+    {
+      "path": "SECURITY.md",
+      "outcome": "updated",
+      "reason": "Replaced obsolete pre-0.1 reporting language with current release, main, and candidate references.",
+      "sha256": "76775e7e53844ec2d27537ba3e367ddc5a37aaf3a1cc615edc1e5077310d216a"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "outcome": "updated",
+      "reason": "Declared the exact ZIPFoundation 0.9.20 dependency and bundled MIT license notice. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
+      "sha256": "dacef58e857bef284e7001780275686e37f8b12a6caab9b3c6aab26d825f0153"
+    },
+    {
+      "path": "docs/background-refresh-coordination.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "addf8b5122e9af3b4c7980badf13eeafadeded43756facc06d6d8ed1e526f93e"
+    },
+    {
+      "path": "docs/build.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
+      "sha256": "2f139effaccb233f706d60c61c4ab0d1619368792abfcb1e12ee5a288fd55c81"
+    },
+    {
+      "path": "docs/ci-boundaries.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
+      "sha256": "484958a3a3645084fa34ec04f4a0b24adcb93a296c7dc506e1134663dee13e5a"
+    },
+    {
+      "path": "docs/coexistence-boundaries.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
+      "sha256": "4200f514c81da45654d1daaa27107cf4919c4d6b2e1fd3574653488bc805f111"
+    },
+    {
+      "path": "docs/coexistence-ledger.md",
+      "outcome": "updated",
+      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "14381650ea199ec741639f0cdb23d75d610ccd02ac4f3930252f786bd9618ca2"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
+      "sha256": "6127cbe7683e5f8017623abbb06cbef1e2fdbc0f34a9d4cadfbabc9716a227d8"
+    },
+    {
+      "path": "docs/delivery/P0-A-contract.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten.",
+      "sha256": "7eb45b57a8aeac24e8e2fd44f301aeb0a249ebbb3d6506c5f6d1461960810a01"
+    },
+    {
+      "path": "docs/delivery/P0-B-contract.md",
+      "outcome": "updated",
+      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "326743837717f40845a5c3f90ef8942728a71caac25e5992d4f755bdc9b54e71"
+    },
+    {
+      "path": "docs/delivery/P0-C-contract.md",
+      "outcome": "updated",
+      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "e5b490b9fd16894264a00a3449f1e046b018e5ab2b6cf0b63394690990e3f214"
+    },
+    {
+      "path": "docs/guides/background-execution-ownership.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "ef712f8bd5032692de899246b88316f0019db756a37704b64de7c29473536520"
+    },
+    {
+      "path": "docs/guides/background-urlsession-reconnect.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "07b7c9b80cc7f883b47152dd658e167bca79dd67a5006ad3d191f88ef3f47512"
+    },
+    {
+      "path": "docs/guides/database-files.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "b984503ef09a528276eeb3c6e04d600c1cd979c1cd2bf16dd1dc539e59cd24c9"
+    },
+    {
+      "path": "docs/guides/feature-app-shortcuts.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "892f37fc69dd1962b4afb338ee542c1a01237c18cc5ea74b4610cd978b4de175"
+    },
+    {
+      "path": "docs/guides/feature-build-requirements.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "4ee46107acb569d83d3b17a1240361449c4991db5d0b3f2c51e8f6de4c10fb87"
+    },
+    {
+      "path": "docs/guides/feature-consent.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "585b50723ba6b4f54c414cf348df1f46d041582ecddce82f391f9c35867dcaa5"
+    },
+    {
+      "path": "docs/guides/feature-data-removal.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "95db4295740739527d2c199192c3c488af953eca53459edb1f6da6279814754c"
+    },
+    {
+      "path": "docs/guides/feature-lifetime.md",
+      "outcome": "updated",
+      "reason": "Updated P0-A from implementation-in-progress to non-device verification complete with device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "7d212ae3f32325eeae8ae0bd4a8ab9456da39ef046df7439c9a6e419d459ccf2"
+    },
+    {
+      "path": "docs/guides/feature-management.md",
+      "outcome": "updated",
+      "reason": "Updated P0-B from implementation-in-progress to non-device verification complete with candidate device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "05ebe95803704e24b465c00fe9c4117b9f4a245119ac27f9322386e0cc25ad2e"
+    },
+    {
+      "path": "docs/guides/feature-owned-presentations.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "2e121ab525d6aed78e36b880aa29555602c168c582e767799968f87690148a76"
+    },
+    {
+      "path": "docs/guides/feature-privacy-manifests.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "94d17391c1ae462967277f9c70a36a6d6d39c6366e85b503597969343828e01b"
+    },
+    {
+      "path": "docs/guides/feature-url-routing.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "201a69091a4d9b68a28c7d7ebbf908ad3bae7f398430d3e05447ef9ded832f7a"
+    },
+    {
+      "path": "docs/guides/keychain-access-control.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "8e39760db54a099b5f664bef40e3bd5250081a64cadec1eb21274169d2bca37a"
+    },
+    {
+      "path": "docs/guides/management-removal-failure-fixture.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "cb5caad049b322f66c5dad6d365c89ae091060528db82acee3da193731f9679f"
+    },
+    {
+      "path": "docs/guides/notification-request-snapshots.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "0e8b35ea7b85467805c4f5caa9ef5324bfa619586143a83f294d3c43eaf943a2"
+    },
+    {
+      "path": "docs/guides/owned-notification-observations.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "5472b20eea268d49eeba2e5fa289caa5315010d76f492258fbb7f8088d95c4a2"
+    },
+    {
+      "path": "docs/guides/package-app-intents.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "eed56e5cdc0fb990376272b440134f2d7a0cda87870c5103655a90fd3c6cf86a"
+    },
+    {
+      "path": "docs/guides/package-sdk-module-aliases.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "991ee7730d9051d034b93476e5440a97500920c9a4d979c7498d2a6c58065619"
+    },
+    {
+      "path": "docs/guides/runtime-shutdown-progress.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "f1ab4f5c49fb36081cee2757721a8672af9d8ba57dab097dc576f18897858354"
+    },
+    {
+      "path": "docs/guides/scene-feature-activity.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "f01fd444858d71ba1c6eba5737c61ce8080f8a6c307c4e4a63b3061fd7ecb0a5"
+    },
+    {
+      "path": "docs/guides/scene-idle-timer.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "4d105bf25578fad5cab37487805c71df5ad011afd05b904d987a5e9d2320c146"
+    },
+    {
+      "path": "docs/guides/spotlight-ownership.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "7690cb89dcc3ac3048ce73d08f21afec7569bea2821e667c0c242e31408cc1ac"
+    },
+    {
+      "path": "docs/guides/store-access-coordination.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "194b598652a835b12be8dbe19edc031f8650ea00f89da2a408271fe33ea16d2f"
+    },
+    {
+      "path": "docs/guides/web-authentication-ownership.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "341df05e1c66612002ef28d114060a789b2004c283dd88f49ff3109f2fba9692"
+    },
+    {
+      "path": "docs/guides/web-storage-ownership.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "d29a35c3676f720191ee4fcf8000f2cac9ae6cc68e6d702d203b015a3a2c5a33"
+    },
+    {
+      "path": "docs/implementation-priorities.md",
+      "outcome": "updated",
+      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "36fb0b957378128e79e00f1ade7b4f63ee18b81e2eebe014ea48bd3213a64e15"
+    },
+    {
+      "path": "docs/mini-apps.md",
+      "outcome": "updated",
+      "reason": "Replaced the future P0-B integration statement with its current main-only, non-device-verified status. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "4dc135641c81ab5cb94bf61c8cfcc760bc44366799614adeb801f4d619f0cf49"
+    },
+    {
+      "path": "docs/network-integration.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "b03b58f95c3e09b9351a412f60173f6993335790409e482f0a75df23a955332f"
+    },
+    {
+      "path": "docs/parallel-implementation.md",
+      "outcome": "updated",
+      "reason": "Synchronized the operating boundary after P0-A/P0-B non-device verification without claiming candidate completion. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "aae53b180796203ef15f42e7444b7cf367ab8a3609773e211168653fdf90d256"
+    },
+    {
+      "path": "docs/releasing.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
+      "sha256": "64b8d26ae0dff587e2b7b4bf4aae07348fc2871914c38c4be6348f02eab3b40d"
+    },
+    {
+      "path": "docs/runtime-restore-integration.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "7bd8ed8e5f88c687c5497dc0d0883185e24d137549eda754b1937849db292d7a"
+    },
+    {
+      "path": "docs/scene-navigation.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full and checked against the implementation boundary; API guidance and stated limitations remain accurate.",
+      "sha256": "5ded0a532acec4b2fbfc9bbea44a24156b83ea105aa84cefd7954e807950efbe"
+    },
+    {
+      "path": "docs/sidestore.md",
+      "outcome": "reviewed-unchanged",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
+      "sha256": "39032e05e68a1191d67b3c9d64f4ac0782cfca48f59e02334d14a3244fc154a3"
+    },
+    {
+      "path": "docs/status.md",
+      "outcome": "updated",
+      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "8f4c43db3580b794db27c49d5a10bd5d00c439ee73d82b52cb137fca91d69faa"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
+      "outcome": "updated",
+      "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "82bbdc8461eb8872a8260d05ca89829b435ae2716aa717749e6ecde94d72647f"
+    },
+    {
+      "path": "docs/updating.md",
+      "outcome": "updated",
+      "reason": "Updated the current P0-B integration status and document review date while retaining public 0.6.0 guidance. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "fedcdeedbfeb600cf6bcd72c2fe7df17b3e8fb8e42d2b3527a326b99ef613b30"
+    },
+    {
+      "path": "release-notes-0.7.0.md",
+      "outcome": "updated",
+      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "1f4b7ac8056a929f4d6773d4ba21caa4a0d772b4d8e4c80600a44a0053e1ddeb"
+    }
+  ],
+  "release": {
+    "candidate_ipa": "34705653297 normalIPA SHA256516bc3e85648ca75f4051de4367f20b98afa3c6b1f69ea1e6be8619adb813489; same bytes tested on device and public prerelease re-download.",
+    "normal_regression": "d1adb8e34702137986 normal13+Files; reviewed product diff only optional Validator/defaultempty andversion; baa041f34705653297 fullshared244/Records11 plus normalURL26.090s.",
+    "generated_host": "d1adb8e34700435807 generated8 reused with reviewed source diff; baa041f34705653297 Notes standalone and Registry/iOS compatible update.",
+    "metadata": "34705653297 app/widget bundle IDs, AppIntents metadata, appgroup/signature/CRC0.7.0build8 verified.",
+    "compatibility": "A-source-only same iOS container update olddefaults/write/relaunch/corruptpreservation/repair, B/resource unchanged; device normalIPA update retainsCounter/Reminder.",
+    "physical_review": "docs/verification/2026-09-13-0.7-device-check.md first and second user reports2026-09-13; all1-8 plus normalupdate confirmed."
+  },
+  "metrics": {
+    "review_rounds": 0,
+    "parent_messages": 0,
+    "ci_job_minutes": 31.68
+  },
+  "acceptance": {
+    "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+    "P0-1.integration": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+    "P0-2.presentation": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+    "P0-2.uikit": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+    "P0-3.failure": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+    "P0-3.integration": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+    "P0-3.device": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+    "P0-4.diagnostics": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+    "P0-4.onboarding": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+    "P0-4.docs": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+    "P0-5.ownership": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+    "P0-5.ui": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+    "P0-5.device": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+    "P0-6.diagnostics": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+    "P0-6.local": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す"
+  }
+}

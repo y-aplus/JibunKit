@@ -4,13 +4,17 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-13（出荷候補）
+
+- P0-AでFeatureの開始・停止・再開、通常保存と排他保守、終了進捗を通常hostへ接続し、P0-BでFeature所有の提示、利用同意、無効化・再有効化、登録と所有データの削除・失敗再試行を追加。非実機条件は通常・生成CIで検証済み。0.7.0候補の一括実機も確認済み。
+- P0-CでSwift Package追加時のpath/product/target依存/Registry診断と、二Packageの片側互換更新・復旧手順を追加。0.7.0 build8候補のCI34705653297・実機・配布整合性は確認済み。
 - Issue #5に基づきP0完了を0.7.0、P0を維持したP1完了を0.8.0に設定。P0-5のアプリ内無効化・削除UIを必須化し、1.0の最終対応範囲は需要調査後の判断へ保留。
 - CI境界を5つの大きなまとまりに固定し、CI前の契約・一括レビュー・run予算・再実行手順を導入。計画/証拠/文書確認のローカル検査ツールを追加。
 - minor更新ごとに現在状態を示す文章を全件確認・更新し、公開候補と公開後の状態を同期する運用を必須化。
 
 - 同名の純Swift SDK moduleを標準moduleAliasesで分離する比較と接続手順を追加。iOSではPackageの公開product名を分けた構成で両版/設定と片側更新後の他方保持を検証。元の同名product構成はXcodeの依存グラフで失敗し、manifest編集が必要な条件を明記。
 - shared background refreshの実機用診断fixtureを追加。iOS注入試験とapp/UI targetのコンパイルまで確認し、実OSの受付・起動・期限は未検証として保持。
-- 現在状態の文書を0.6.0公開後のmainへ同期し、初期棚卸し・旧計画を履歴資料へ分離。実装停止と明示再開待ちを記録。
+- 現在状態の文書を0.6.0公開後のmainへ同期し、初期棚卸し・旧計画を履歴資料へ分離。停止時の記録を保持し、2026-09-12の明示再開後の状態を反映。
 
 ## [0.6.0] - 2026-09-12
 
@@ -151,3 +155,5 @@
 [0.6.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.6.0
 [0.5.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.5.0
 [0.4.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.4.0
+
+[0.7.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.7.0

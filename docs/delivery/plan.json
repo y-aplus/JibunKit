@@ -10,10 +10,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "寿命と所有処理の終了",
-      "existing": "Task/Runtime・購読・HTTP・SQLite終了の既存成果",
-      "remaining": "Feature所有者の開始/終了を通常入口へ接続。非選択と終了を分離",
+      "existing": "通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "高度な複数window/実行instance",
       "criteria": [
         {
@@ -40,10 +40,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "通常の画面・提示",
-      "existing": "Feature別経路、URL/通知遷移の既存成果",
-      "remaining": "保持/再生成/resetの契約、sheet等の所有者とUIKit接続",
+      "existing": "Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "任意View可視状態/高度な複数window",
       "criteria": [
         {
@@ -72,10 +72,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "保存・復元・移行・リセット",
-      "existing": "JSON/添付ZIP、SQLite比較、stop/apply/resume、通常操作予約",
-      "remaining": "実Featureの操作入口へ接続。まずJSON/添付とSQLiteを対象方式として固定",
+      "existing": "RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "全DB/別process writer",
       "criteria": [
         {
@@ -110,10 +110,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "追加・ビルド・更新",
-      "existing": "Tuist雛形、宣言/URL合成、resources/翻訳、SDK比較",
-      "remaining": "通常追加手順へ統合。target/product/Registry漏れを診断し更新例を確認",
+      "existing": "native依存診断6ケース、実Registry欠落/復旧、Notes単独/host、同じiOS hostでAだけ互換更新/B保存・resource保持を34705653297で確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "万能生成器/任意SDK複数version",
       "criteria": [
         {
@@ -149,10 +149,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "同意・無効化・削除",
-      "existing": "通知/検索/Task等の所有者別解除API",
-      "remaining": "アプリ内UI必須。目的/要求元/拒否、停止・解除・削除を区別",
+      "existing": "通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "同一processの強制隔離/コード動的除去",
       "criteria": [
         {
@@ -187,10 +187,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "基本障害緩和と局所処理",
-      "existing": "協調取消/解放の既存契約",
-      "remaining": "終了が進まない処理の診断、主スレッドを塞がない契約、局所処理の判定",
+      "existing": "終了進捗診断と局所処理の判断基準をP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "helper/非協調処理の強制隔離",
       "criteria": [
         {

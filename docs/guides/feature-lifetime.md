@@ -1,6 +1,6 @@
 # Featureの起動・終了と復元
 
-P0-Aの実装中。Swift/iOS実行証拠は一括CI後に記録する。
+P0-Aの通常・生成CIで非実機条件を確認済み。対象sourceと試験範囲は[P0-A検証記録](../verification/2026-09-12-p0-a.md)を参照する。0.7.0候補の実機確認も2026-09-13に完了（[結果](../verification/2026-09-13-0.7-device-check.md)）。
 
 ## 画面と処理の寿命を分ける
 
@@ -48,4 +48,4 @@ applyで取消/失敗が起きても、復帰をcallerの取消で省略しな�
 [通常保存と排他保守の入口](store-access-coordination.md)を同じowner/coordinatorへ接続する。
 lifetimeだけでは未登録の保存操作を止められず、DB transactionやschema移行を肩代わりしない。
 Counter/Reminderの通常Definitionもlifetimeを持つが、OSに予約済みの通知等の登録解除・データ削除とは別の操作。
-それらのアプリ内管理はP0-Bの対象。
+それらはP0-Bでアプリ内管理へ接続し、非実機条件を確認済みである。候補の実機確認も2026-09-13に完了。

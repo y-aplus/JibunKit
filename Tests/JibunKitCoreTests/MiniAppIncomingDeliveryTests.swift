@@ -72,6 +72,31 @@ final class MiniAppIncomingDeliveryTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
+    func testCancellationAfterReceiverCommitAcknowledgesSuccessAndPreservesB() async throws {
+        let (root, inbox) = try fixture()
+        let receipt = try inbox.enqueue(for: a, inputs: [.text("A")])
+        let other = try inbox.enqueue(for: b, inputs: [.text("B")])
+        let committed = expectation(description: "receiver committed before cancellation")
+        let saved = root.appendingPathComponent("committed.txt")
+        let provider = MiniAppIncomingProvider(id: a, typeIdentifiers: ["public.data"]) { _, _ in
+            try Data("committed".utf8).write(to: saved, options: .atomic)
+            committed.fulfill()
+            // This receiver has already committed, so late cancellation cannot
+            // turn its result into a failed transaction or leave a retry pending.
+            do { try await Task.sleep(nanoseconds: 60_000_000_000) }
+            catch is CancellationError { }
+        }
+        let delivery = MiniAppIncomingDelivery()
+        let task = Task { try await delivery.deliver(id: receipt.id, provider: provider, lifetime: nil, inbox: inbox) }
+        await fulfillment(of: [committed], timeout: 5)
+        task.cancel()
+        try await task.value
+        XCTAssertEqual(try Data(contentsOf: saved), Data("committed".utf8))
+        XCTAssertTrue(try inbox.pending(for: a).receipts.isEmpty)
+        XCTAssertEqual(try inbox.pending(for: b).receipts, [other])
+    }
+
+    @MainActor
     func testDisabledOwnerCannotInvokeReceiverWhileOtherOwnerStillWorks() async throws {
         let (_, inbox) = try fixture()
         let first = try inbox.enqueue(for: a, inputs: [.text("A")])

@@ -50,24 +50,33 @@ public final class MiniAppIncomingDelivery {
         let task = try runtime.start { @MainActor in
             do {
                 try await coordinator.withStoreAccess(for: provider.id) {
-                    let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("jibunkit-delivery-" + UUID().uuidString, isDirectory: true)
-                    try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: false)
-                    defer { try? FileManager.default.removeItem(at: temporary) }
-                    let receipt = try inbox.withReceipt(id: id, owner: provider.id) { receipt, folder in
-                        for item in receipt.items where item.kind == .file {
-                            try Task.checkCancellation()
-                            try FileManager.default.copyItem(at: folder.appendingPathComponent(item.value), to: temporary.appendingPathComponent(item.value))
+                    // Keep the reservation until the background copy, receiver,
+                    // and acknowledgment have all drained. The receiver hops to
+                    // its declared MainActor; file coordination never holds it.
+                    let work = Task.detached {
+                        try Task.checkCancellation()
+                        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("jibunkit-delivery-" + UUID().uuidString, isDirectory: true)
+                        try FileManager.default.createDirectory(at: temporary, withIntermediateDirectories: false)
+                        defer { try? FileManager.default.removeItem(at: temporary) }
+                        let receipt = try inbox.withReceipt(id: id, owner: provider.id) { receipt, folder in
+                            for item in receipt.items where item.kind == .file {
+                                try Task.checkCancellation()
+                                try FileManager.default.copyItem(at: folder.appendingPathComponent(item.value), to: temporary.appendingPathComponent(item.value))
+                            }
+                            return receipt
                         }
-                        return receipt
+                        let accepted = MiniAppIncomingDestination(id: provider.id, title: provider.id.rawValue, typeIdentifiers: provider.typeIdentifiers)
+                        guard receipt.items.allSatisfy({ accepted.accepts($0.typeIdentifier) }) else { throw MiniAppIncomingError.invalidInput }
+                        try Task.checkCancellation()
+                        try await provider.receive(receipt, temporary)
+                        // If receive returns successfully after a late cancellation,
+                        // it has committed. Acknowledge that success, rather than
+                        // inventing a failure after mutating Feature-owned data.
+                        try inbox.acknowledge(id: id, owner: provider.id)
                     }
-                    let accepted = MiniAppIncomingDestination(id: provider.id, title: provider.id.rawValue, typeIdentifiers: provider.typeIdentifiers)
-                    guard receipt.items.allSatisfy({ accepted.accepts($0.typeIdentifier) }) else { throw MiniAppIncomingError.invalidInput }
-                    try Task.checkCancellation()
-                    try await provider.receive(receipt, temporary)
-                    // If receive returns successfully after a late cancellation,
-                    // it has committed. Acknowledge that success, rather than
-                    // inventing a failure after mutating Feature-owned data.
-                    try inbox.acknowledge(id: id, owner: provider.id)
+                    try await withTaskCancellationHandler {
+                        try await work.value
+                    } onCancel: { work.cancel() }
                 }
                 outcome.result = .success(())
             } catch { outcome.result = .failure(error) }

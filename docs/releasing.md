@@ -1,6 +1,7 @@
 # 公開・release手順
 
 更新日: 2026-09-12。最新公開版はGitHub Releasesを正本とする。0.6.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
+0.7.0出荷候補のP0はCIと一括実機を確認済み。直前公開版0.6.0との区分・配布状態は[出荷記録](verification/2026-09-13-0.7-release.md)を参照。
 
 ## 版ごとの出荷判断
 

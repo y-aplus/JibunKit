@@ -2,7 +2,7 @@
 
 更新日: 2026-09-12（公開版と検証sourceの整理。SideStore画面を再検証した日ではない）
 
-最新公開版は0.6.0 build 7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
+出荷候補は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
 
 実機証拠はsourceごとに区別する。0.1.0 build 1→2の上書き・署名更新はiPhone 16e／iOS 26.6／SideStore 0.6.3で確認した[旧版の記録](verification/0.1.md)。2026-09-09にはRecords接続版`afbf4dc`で上書き・署名更新・Widget/Shortcuts/通知・選択復元を確認した[記録](verification/2026-09-09-v1-candidate.md)がある。後者の端末/OS/SideStore版は再報告されておらず、旧環境を転記して断定しない。
 

@@ -233,7 +233,7 @@
       "path": "CHANGELOG.md",
       "outcome": "updated",
       "reason": "Recorded P0-A/P0-B non-device verification and kept P0-C CI, device, and distribution results unconfirmed. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "f8512c6435ba8e4a99b1dbc45dc96cd243500919db160160721f2126fd602cbc"
+      "sha256": "405279af3c9c07fea2e8e2491734ff1c679e598e6f8475c21afff5ac0c662008"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -251,7 +251,7 @@
       "path": "README.md",
       "outcome": "updated",
       "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "9db2a6639612d8529aa22a733ba239c9b5e3e0cc156a89dbcb00d8d154216716"
+      "sha256": "8566ef180010d1124746eb8571c83bf630f0be0c9a3891b6c9331138d3009e7a"
     },
     {
       "path": "SECURITY.md",
@@ -263,7 +263,7 @@
       "path": "THIRD_PARTY_NOTICES.md",
       "outcome": "updated",
       "reason": "Declared the exact ZIPFoundation 0.9.20 dependency and bundled MIT license notice. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording.",
-      "sha256": "dacef58e857bef284e7001780275686e37f8b12a6caab9b3c6aab26d825f0153"
+      "sha256": "ffdec972fc58382d39616a026d5252c1ed4757340134323f6e816959b9831eb6"
     },
     {
       "path": "docs/background-refresh-coordination.md",
@@ -273,9 +273,9 @@
     },
     {
       "path": "docs/build.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
-      "sha256": "2f139effaccb233f706d60c61c4ab0d1619368792abfcb1e12ee5a288fd55c81"
+      "outcome": "updated",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "beae57a834bb90f8323d08ed2b1924c1517a1f1608c77a0ae807b55bf3aa35aa"
     },
     {
       "path": "docs/ci-boundaries.md",
@@ -285,21 +285,21 @@
     },
     {
       "path": "docs/coexistence-boundaries.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
-      "sha256": "4200f514c81da45654d1daaa27107cf4919c4d6b2e1fd3574653488bc805f111"
+      "outcome": "updated",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "5943bb99a1ec18f8deb7a2ae694c174620f59900a828c27ef5673ee9d1c0ffca"
     },
     {
       "path": "docs/coexistence-ledger.md",
       "outcome": "updated",
       "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "14381650ea199ec741639f0cdb23d75d610ccd02ac4f3930252f786bd9618ca2"
+      "sha256": "ae54c58b7bb525bceca49c3627079eed33305760e91292b94db8f84dfaa0cb0f"
     },
     {
       "path": "docs/compatibility.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
-      "sha256": "6127cbe7683e5f8017623abbb06cbef1e2fdbc0f34a9d4cadfbabc9716a227d8"
+      "outcome": "updated",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "718d9fb03be0fcf10651db0ada74c2426b585657cfeb3671a21af8595eb68b4d"
     },
     {
       "path": "docs/delivery/P0-A-contract.md",
@@ -311,13 +311,13 @@
       "path": "docs/delivery/P0-B-contract.md",
       "outcome": "updated",
       "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "326743837717f40845a5c3f90ef8942728a71caac25e5992d4f755bdc9b54e71"
+      "sha256": "b61955ca3bc82c23e6358ae70db6a3fc8e63e9e8b0a62915f479161fc652630e"
     },
     {
       "path": "docs/delivery/P0-C-contract.md",
       "outcome": "updated",
       "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "e5b490b9fd16894264a00a3449f1e046b018e5ab2b6cf0b63394690990e3f214"
+      "sha256": "eb381b2b3fc8b04ba98d191af7eb3a9c64bef9e40e0dcd10daa04b81b0e19ff1"
     },
     {
       "path": "docs/guides/background-execution-ownership.md",
@@ -365,13 +365,13 @@
       "path": "docs/guides/feature-lifetime.md",
       "outcome": "updated",
       "reason": "Updated P0-A from implementation-in-progress to non-device verification complete with device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "7d212ae3f32325eeae8ae0bd4a8ab9456da39ef046df7439c9a6e419d459ccf2"
+      "sha256": "2428e5f20e5f93bd39d91063fb5e13c0616ad09df8df9f7a00a720a4834bfb7d"
     },
     {
       "path": "docs/guides/feature-management.md",
       "outcome": "updated",
       "reason": "Updated P0-B from implementation-in-progress to non-device verification complete with candidate device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "05ebe95803704e24b465c00fe9c4117b9f4a245119ac27f9322386e0cc25ad2e"
+      "sha256": "fff9e54c1e9b9116bf96b16db3587d4b9411c43e470dd28082d47c9883037d3c"
     },
     {
       "path": "docs/guides/feature-owned-presentations.md",
@@ -473,13 +473,13 @@
       "path": "docs/implementation-priorities.md",
       "outcome": "updated",
       "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "36fb0b957378128e79e00f1ade7b4f63ee18b81e2eebe014ea48bd3213a64e15"
+      "sha256": "48e301f38e1084d115d14f6289e2e34687f47bab00a280c84cf59d4b846fea78"
     },
     {
       "path": "docs/mini-apps.md",
       "outcome": "updated",
       "reason": "Replaced the future P0-B integration statement with its current main-only, non-device-verified status. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "4dc135641c81ab5cb94bf61c8cfcc760bc44366799614adeb801f4d619f0cf49"
+      "sha256": "a3cf01ada2a63addd529f987373abaf39c367e98353e39968c5ceefd95c43b73"
     },
     {
       "path": "docs/network-integration.md",
@@ -491,13 +491,13 @@
       "path": "docs/parallel-implementation.md",
       "outcome": "updated",
       "reason": "Synchronized the operating boundary after P0-A/P0-B non-device verification without claiming candidate completion. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "aae53b180796203ef15f42e7444b7cf367ab8a3609773e211168653fdf90d256"
+      "sha256": "ef6a56d5b991fc671b5c45717d6d53d30c1e340863326dfd50525b2dc9a85f87"
     },
     {
       "path": "docs/releasing.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate.",
-      "sha256": "64b8d26ae0dff587e2b7b4bf4aae07348fc2871914c38c4be6348f02eab3b40d"
+      "outcome": "updated",
+      "reason": "Read in full; workflow, evidence separation, and release-gate guidance remain accurate for this candidate. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "5cf3acfab15bb2685dbe840b3d7688531de626f7a7cc4eb88155c4f5b759e3c6"
     },
     {
       "path": "docs/runtime-restore-integration.md",
@@ -513,33 +513,33 @@
     },
     {
       "path": "docs/sidestore.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate.",
-      "sha256": "39032e05e68a1191d67b3c9d64f4ac0782cfca48f59e02334d14a3244fc154a3"
+      "outcome": "updated",
+      "reason": "Read in full; scope, compatibility, ownership, and historical claims remain accurate for the 0.7.0 candidate. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "0fd44c6fdaf32089cfbc04bdd03fef1de7b687593390664488fa84a958944f53"
     },
     {
       "path": "docs/status.md",
       "outcome": "updated",
       "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "8f4c43db3580b794db27c49d5a10bd5d00c439ee73d82b52cb137fca91d69faa"
+      "sha256": "79a256401721fb362f164a086253cbb503da9ee387ff371f0f3ed7499bcd700c"
     },
     {
       "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
       "outcome": "updated",
       "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "82bbdc8461eb8872a8260d05ca89829b435ae2716aa717749e6ecde94d72647f"
+      "sha256": "f14b505aa0b20425cb0a46e8918757da5457345ddd045b379ddf4055bba45dd1"
     },
     {
       "path": "docs/updating.md",
       "outcome": "updated",
-      "reason": "Updated the current P0-B integration status and document review date while retaining public 0.6.0 guidance. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "fedcdeedbfeb600cf6bcd72c2fe7df17b3e8fb8e42d2b3527a326b99ef613b30"
+      "reason": "Updated the current P0-B integration status and document review date while retaining public 0.6.0 guidance. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained. Final tag preparation explicitly separates0.7.0 candidate from previous0.6.0.",
+      "sha256": "55c05c6115b386be7076ec003a91f22859aeb2138cc10a960ccc0a8345c1002c"
     },
     {
       "path": "release-notes-0.7.0.md",
       "outcome": "updated",
       "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
-      "sha256": "1f4b7ac8056a929f4d6773d4ba21caa4a0d772b4d8e4c80600a44a0053e1ddeb"
+      "sha256": "d09be58a798b160e5c755df5f35e915b795d9e02066cd315cecae64aa4972e29"
     }
   ],
   "release": {

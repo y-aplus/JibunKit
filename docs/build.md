@@ -43,7 +43,7 @@ PackageのIntents/Widget/resources、background/Web認証等のnative比較はwo
 
 ## 検証の境界
 
-ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。0.6.0の出荷検証は[公開記録](verification/2026-09-12-0.6-release.md)、公開後mainの追加は[現在状態](status.md)を参照する。Tuist移行時の記録は当時のsourceの履歴である。
+ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。0.7.0出荷候補は[今回の記録](verification/2026-09-13-0.7-release.md)、直前0.6.0の出荷検証は[公開記録](verification/2026-09-12-0.6-release.md)、公開後mainの追加は[現在状態](status.md)を参照する。Tuist移行時の記録は当時のsourceの履歴である。
 
 ## UI失敗の限定再現
 

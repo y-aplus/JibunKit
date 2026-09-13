@@ -2,7 +2,7 @@
 
 更新日: 2026-09-12（公開版と検証sourceの整理。SideStore画面を再検証した日ではない）
 
-出荷候補は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
+最新公開版は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
 
 実機証拠はsourceごとに区別する。0.1.0 build 1→2の上書き・署名更新はiPhone 16e／iOS 26.6／SideStore 0.6.3で確認した[旧版の記録](verification/0.1.md)。2026-09-09にはRecords接続版`afbf4dc`で上書き・署名更新・Widget/Shortcuts/通知・選択復元を確認した[記録](verification/2026-09-09-v1-candidate.md)がある。後者の端末/OS/SideStore版は再報告されておらず、旧環境を転記して断定しない。
 
@@ -10,7 +10,7 @@ SideStore自体の導入とpairing fileの準備は[SideStore公式の導入手�
 
 ## IPAを用意する
 
-公開版は[0.6.0のIPA直リンク](https://github.com/y-aplus/JibunKit/releases/download/0.6.0/JibunKit.ipa)から取得でき、外側のActions ZIPの展開は不要。個人Featureを組み込む場合は[ビルド手順](build.md)に従い、成功runのartifact `JibunKit-ad-hoc`内の`JibunKit.ipa`を取得する。
+公開版は[0.7.0のIPA直リンク](https://github.com/y-aplus/JibunKit/releases/download/0.7.0/JibunKit.ipa)から取得でき、外側のActions ZIPの展開は不要。個人Featureを組み込む場合は[ビルド手順](build.md)に従い、成功runのartifact `JibunKit-ad-hoc`内の`JibunKit.ipa`を取得する。
 
 現在はTuist/Xcodeのnative App Intents metadataを含むIPAを使う。旧xtoolのIPA生成経路は廃止済み。Apple Account、パスワード、2FA、証明書、provisioning profileをActionsへ渡す必要はない。
 

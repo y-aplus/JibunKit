@@ -1,8 +1,16 @@
 # 公開版とmainの現在状態
 
-更新日: 2026-09-13。0.7.0 build8出荷候補のP0全6単位をCIと2026-09-13の一括実機確認で検証済み。正式公開前の安定版は0.6.0。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
+更新日: 2026-09-13。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
 
-## 公開版0.6.0
+## 公開版0.7.0
+
+- [Release](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0) / [IPA](https://github.com/y-aplus/JibunKit/releases/download/0.7.0/JibunKit.ipa)。通常Counter/Reminder、app/Widget0.7.0 build8。
+- tag commit `857c2358e6d18b883abbcd42fb9a92ed104d5074`。製品/IPAはCI34705653297の`baa041f`と同一で、差分は文書/証拠のみ。
+- P0全6単位をCIと一括実機で確認。通常IPA上書き後も変更したCounter/Reminderを保持し、軽い回帰もユーザー確認済み。
+- 公開IPAを認証なしで再取得し、実機確認済みIPAとの全byte一致・CRC・GitHub asset digestを確認。[公開記録](verification/2026-09-13-0.7-release.md)。
+- P1は未完了。需要調査Issue #6は受領し、1.0の正式境界はユーザー判断により0.8.0完了時に確定する。
+
+## 前版0.6.0の記録
 
 - [Release](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0) / [IPA](https://github.com/y-aplus/JibunKit/releases/download/0.6.0/JibunKit.ipa)。本体・Widgetは0.6.0 build 7。
 - sourceは`5e8683f76edbbaeb17a29ed02c1ae6068bc8f759`。通常IPAはCounter/Reminder。
@@ -15,7 +23,7 @@
 - 0.6.0そのものの新しい実機試験は行っていない。以前のユーザー実機結果は各sourceの証拠として保持。
   詳細は[release notes](../release-notes-0.6.0.md)と[公開検証記録](verification/2026-09-12-0.6-release.md)。
 
-## 0.7.0出荷候補の追加（0.6.0比）
+## 公開版0.7.0の追加（0.6.0比）
 
 | 変更 | 確認できたこと | 残る条件 |
 | --- | --- | --- |
@@ -34,7 +42,7 @@ P0-Cの接続診断、Registry漏れ/修正、同じiOS hostへのAだけのPack
 [Issue #5の優先順位](implementation-priorities.md)を導入した。P0の6単位完了を0.7.0、P0を維持したP1の6単位完了を0.8.0とする。
 途中の公開は0.6.x/0.7.xで行う。P0-5はアプリ内でのFeature無効化・削除を必須とする。
 P0は全6単位の出荷条件を確認済み。P1は部分成果があり未完了。5つの[CI境界](ci-boundaries.md)を設定し、minorごとの文書確認を必須にした。
-CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0のCIと実機一括確認は完了。正式公開前。 詳細は[P0-C記録](verification/2026-09-12-p0-c.md)と[実機手順](verification/2026-09-13-0.7-device-check.md)。
+CI34705653297（source baa041f、22分）で共通244試験（skip2）、Records11、native接続診断6ケース、macOS互換更新、生成hostの登録漏れ/修正とiOSのAだけの互換更新、通常URL回帰、通常/診断IPAの検査が成功。P0のCIと実機一括確認は完了。0.7.0公開済み。 詳細は[P0-C記録](verification/2026-09-12-p0-c.md)と[実機手順](verification/2026-09-13-0.7-device-check.md)。
 1.0の最終対応範囲はP2/P3需要調査後にユーザーが決定する。
 
 ## 残っている統合差分
@@ -46,7 +54,7 @@ Control/継続表示、任意SDKや外部identity等に未実装・未検証が�
 
 [1.0完成計画](superpowers/plans/2026-09-08-jibunkit-1.0.md)は再開時に扱う作業の枠組み。
 [停止時引継ぎ](verification/2026-09-12-development-checkpoint.md)にbranch・証拠・保持ファイルを記録した。
-今回の再開は2026-09-12のユーザー指示による。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を2026-09-13に受領。P2-A全体とP2-B通常範囲を原則1.0へ含め、P2-Cを再利用可能な範囲で追加し、P3一般化は後段とする推奨境界の正式採用を確認中。
+今回の再開は2026-09-12のユーザー指示による。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を2026-09-13に受領。P2-A全体とP2-B通常範囲を原則1.0へ含め、P2-Cを再利用可能な範囲で追加し、P3一般化は後段とする推奨境界は提案として保持し、ユーザー判断により0.8.0完了時に正式境界を確定する。
 
 ## 文書の読み分け
 

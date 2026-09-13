@@ -29,6 +29,6 @@ Issue #5のP0全6単位を完成した版です。1.0は未達で、次はP1/0.8
 
 P1の通常OS入口の仕上げ、P2の用途拡張、P3の高度な共存は残ります。同一process内の強制隔離、任意DB/SDK/extensionの透過統合は提供しません。任意のFeatureが自動的に管理対象になるわけではなく、所有資源・保存・解除をIntegrationから接続する必要があります。
 
-[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の需要推定を受領しました。1.0の正式境界の採用はユーザーに確認中で、0.7.0公開を1.0完成と扱いません。
+[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の需要推定を受領しました。1.0の正式境界はユーザー判断により0.8.0完了時に確定するで、0.7.0公開を1.0完成と扱いません。
 
 [出荷記録](docs/verification/2026-09-13-0.7-release.md) / [実機結果](docs/verification/2026-09-13-0.7-device-check.md) / [責任と制約](docs/compatibility.md)

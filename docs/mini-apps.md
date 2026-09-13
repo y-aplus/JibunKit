@@ -30,7 +30,7 @@ Featureをroot Package内に置く方式も使える。その場合はPackageの
 
 ### Package接続に失敗したとき
 
-P0-C候補では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。CI34705653297で実Swift/Tuist診断を検証済み。0.7.0の追加で、以前の0.6.0には含まれない。
+0.7.0では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。CI34705653297で実Swift/Tuist診断を検証済み。0.7.0の追加で、以前の0.6.0には含まれない。
 
 ```bash
 python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
@@ -83,7 +83,7 @@ static let all = makeRegistry([
 
 画面を離れても終わらないTask・接続を持つ場合は[Feature lifetime](guides/feature-lifetime.md)、通常保存と復元・移行・リセットを調停する場合は[保存アクセスの調停](guides/store-access-coordination.md)と[Runtime／復元接続](runtime-restore-integration.md)をIntegrationから接続する。単純な読取り専用画面へダミーのlifetimeや保存providerを追加する必要はない。
 
-P0-Bの管理・同意・削除・提示はmainへ統合済みである。[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)を接続元とする。ただし公開版0.6.0には含まれず、0.7.0候補では実機確認も2026-09-13に完了した。保存データを持つFeatureだけが所有範囲を宣言し、削除callback内部ではhostが既に保持するowner予約を再取得しない。
+P0-Bの管理・同意・削除・提示はmainへ統合済みである。[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)を接続元とする。0.7.0に含まれ、実機確認も2026-09-13に完了した。保存データを持つFeatureだけが所有範囲を宣言し、削除callback内部ではhostが既に保持するowner予約を再取得しない。
 
 通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 
@@ -102,7 +102,7 @@ JibunKitのapp/Widgetは`CFBundleAllowMixedLocalizations = true`を設定して�
 Widgetについてはビルド済み設定の確認までで、翻訳の描画・更新はこの検証に含まない。
 
 同名の純Swift SDK moduleが衝突する場合は、別Package identityであることを確認し、
-標準module aliasによる分離を検討できる。[接続条件と検証範囲](guides/package-sdk-module-aliases.md)を参照。このSDK比較は0.6.0後のmainへの追加であり、iOSでは公開product名も分けるmanifest編集が必要。
+標準module aliasによる分離を検討できる。[接続条件と検証範囲](guides/package-sdk-module-aliases.md)を参照。このSDK比較は0.7.0のソースに含まれ、iOSでは公開product名も分けるmanifest編集が必要。
 同一SDKの複数versionやOS singletonの隔離まで自動的に解決するものではない。
 
 ## ローカル通知も追加する
@@ -184,7 +184,7 @@ App Groupのコンテナは[Appleの公式API](https://developer.apple.com/docum
 
 `MiniAppBackup`は、Feature ID・schema version・任意のDataを共通JSONへ包む。`decode`は外側の形式と全entryを検証し、`selecting`は明示したIDのentryだけ返す。対象のFeatureがpayloadを検証・移行してから保存状態へ適用する。Feature固有の形式には`MiniAppBackupEntry.decodePayload`によるCodable JSON読込みも選べる。
 
-Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録できる。exportはそのFeatureの整合したsnapshotを返し、prepareはpayloadを検証・移行してから適用closureを返す。prepareでは保存値を変更しない。ホストは全選択のprepareを終えてから適用する。適用中の失敗は完了済みと失敗対象を区別し、Feature間のrollbackを保証しない。CounterとReminderが実装例で、一覧のバックアップ操作から書出し・読込み・復元対象選択・上書き確認へ進む画面を実装している。CIでFilesの書出し・再読込みから選択復元、キャンセル、再起動後の値維持まで成功した。0.6.0出荷CIでも通常UIとFiles経由JSON選択復元が成功している。[公開記録](verification/2026-09-12-0.6-release.md)を現在の出荷証拠とし、初期のSimulator操作失敗は過去の経緯として扱う。
+Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録できる。exportはそのFeatureの整合したsnapshotを返し、prepareはpayloadを検証・移行してから適用closureを返す。prepareでは保存値を変更しない。ホストは全選択のprepareを終えてから適用する。適用中の失敗は完了済みと失敗対象を区別し、Feature間のrollbackを保証しない。CounterとReminderが実装例で、一覧のバックアップ操作から書出し・読込み・復元対象選択・上書き確認へ進む画面を実装している。CIでFilesの書出し・再読込みから選択復元、キャンセル、再起動後の値維持まで成功した。0.6.0出荷CIでも通常UIとFiles経由JSON選択復元が成功している。[0.7.0公開記録](verification/2026-09-13-0.7-release.md)を現在の出荷証拠とし、初期のSimulator操作失敗は過去の経緯として扱う。
 
 ## Widget・外部URLから開く
 

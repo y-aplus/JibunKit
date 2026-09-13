@@ -1,7 +1,7 @@
 # 公開・release手順
 
-更新日: 2026-09-12。最新公開版はGitHub Releasesを正本とする。0.6.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
-0.7.0出荷候補のP0はCIと一括実機を確認済み。直前公開版0.6.0との区分・配布状態は[出荷記録](verification/2026-09-13-0.7-release.md)を参照。
+更新日: 2026-09-12。最新公開版はGitHub Releasesを正本とする。0.7.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
+0.7.0を公開済み。P0はCIと一括実機を確認し、前版0.6.0との区分・配布状態は[出荷記録](verification/2026-09-13-0.7-release.md)を参照。
 
 ## 版ごとの出荷判断
 
@@ -61,4 +61,4 @@ gh release create VERSION PATH_TO_IPA --repo y-aplus/JibunKit --verify-tag --tit
 
 公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。README・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。
 
-0.6.0の公開物・参照証拠は[公開記録](verification/2026-09-12-0.6-release.md)で管理する。過去の[0.3.0公開記録](verification/2026-09-10-0.3-release.md)も保持する。
+0.7.0の公開物・参照証拠は[公開記録](verification/2026-09-13-0.7-release.md)で管理する。過去の[0.3.0公開記録](verification/2026-09-10-0.3-release.md)も保持する。

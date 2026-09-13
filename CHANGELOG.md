@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-09-13（出荷候補）
+## [0.7.0] - 2026-09-13
 
 - P0-AでFeatureの開始・停止・再開、通常保存と排他保守、終了進捗を通常hostへ接続し、P0-BでFeature所有の提示、利用同意、無効化・再有効化、登録と所有データの削除・失敗再試行を追加。非実機条件は通常・生成CIで検証済み。0.7.0候補の一括実機も確認済み。
 - P0-CでSwift Package追加時のpath/product/target依存/Registry診断と、二Packageの片側互換更新・復旧手順を追加。0.7.0 build8候補のCI34705653297・実機・配布整合性は確認済み。
@@ -147,7 +147,7 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.7.0...HEAD
 [0.3.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.2.0
 [0.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.1.0

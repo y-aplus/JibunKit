@@ -1,7 +1,7 @@
 # 基盤を更新する
 
-更新日: 2026-09-13。公開版0.6.0と、その後のmainの区別は[現在状態](status.md)を参照。
-0.7.0出荷候補のP0はCIと一括実機を確認済み。直前公開版0.6.0との区分・配布状態は[出荷記録](verification/2026-09-13-0.7-release.md)を参照。
+更新日: 2026-09-13。公開版0.7.0とmainの区別は[現在状態](status.md)を参照。
+0.7.0を公開済み。P0はCIと一括実機を確認し、前版0.6.0との区分・配布状態は[出荷記録](verification/2026-09-13-0.7-release.md)を参照。
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
@@ -50,7 +50,7 @@ AのPackage test、Tuist生成、host compile、旧データdecode、resource比
 
 既に端末上でAのschema移行が始まった場合、コードだけを戻して旧版が新schemaを読めると仮定しない。まずA所有データを保全し、旧schemaも読めるforward fixを優先する。確認済みbackupへ戻す必要がある場合は、利用者確認後にAのproviderだけを選択復元し、Bを選択しない。復旧後もAの再読込とBの値・resource保持を再確認する。Package全体、App Group、UserDefaults suiteを推測で削除しない。
 
-P0-Bの同意・無効化・削除・提示はmainへ統合済みだが、公開版0.6.0には含まれず、0.7.0候補では実機確認も2026-09-13に完了した。接続・復旧判断は[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)に従う。削除済み状態や同意をbackup復元だけで暗黙に有効化しない。
+P0-Bの同意・無効化・削除・提示は0.7.0に含まれ、実機確認も2026-09-13に完了した。接続・復旧判断は[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)に従う。削除済み状態や同意をbackup復元だけで暗黙に有効化しない。
 
 ## 基盤更新を取り込む前
 

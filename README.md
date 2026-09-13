@@ -1,4 +1,4 @@
-> 0.7.0 build8出荷候補のP0全6単位をCIと2026-09-13の一括実機確認で検証済み。正式公開前の安定版は0.6.0。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
+> [0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
 
 # JibunKit
 
@@ -8,19 +8,19 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.6.0の変更と検証範囲](release-notes-0.6.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.7.0の変更と検証範囲](release-notes-0.7.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。P0の出荷候補は0.7.0、次のP1完了は0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。P0は0.7.0で完了し、次のP1完了は0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
-## 公開版0.6.0とmain
+## 公開版0.7.0とmain
 
 通常IPAはCounterとReminderを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
 Package翻訳のmixed localizationを提供します。静的Package Widgetのgallery・描画・他owner保持も検証済みです。
 
-公開後のmainにはSDKのmodule alias比較、shared refresh実機用診断fixture、P0-Aの寿命・保存・終了診断、P0-Bの管理・同意・提示を追加しました。P0-A/P0-Bは通常・生成CIの非実機条件を確認済みです。
+0.7.0にはP0-Aの寿命・保存・終了診断、P0-Bの管理・同意・提示、P0-Cの追加/更新診断と手順を含みます。ソースにはSDKのmodule alias比較とshared refresh診断fixtureも追加しています。P0はCI・実機を確認済みです。
 SDKはiOSで公開product名を分けるmanifest編集が必要です。refreshの実OS受付・起動・期限は未検証です。
 これらを0.6.0配布物へ含めたとは扱いません。[版別の状態と証拠](docs/status.md)を参照してください。
 
@@ -30,7 +30,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.6.0の出荷範囲、未リリース差分、開発状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.7.0の出荷範囲、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |
@@ -58,7 +58,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成です。Issue #5のP0はCI・実機確認を完了し、0.7.0を出荷準備中。次はP1の通常OS入口・通知・HTTP/Webを0.8.0へ進めます。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0推奨境界の正式採用を確認中です。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
+目標はJibunKit v1.0の完成です。Issue #5のP0はCI・実機確認を完了し、0.7.0を公開済み。次はP1の通常OS入口・通知・HTTP/Webを0.8.0へ進めます。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0の正式境界はユーザー判断により0.8.0完了時に確定するです。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
 
 ## 現在の開発基盤
 
@@ -68,7 +68,7 @@ TuistとSwift Packageを標準にする。Featureの単独開発・実行と、J
 
 無料のAppleアカウントとSideStoreを最低条件にします。Windows上のWSLは単体テストに使い、Shortcutsを含むSideStore向けIPAはGitHub Actionsが提供するmacOS／Xcode環境で作ります。Macの購入は前提にしません。
 
-実機確認の履歴は[導入・更新](docs/sidestore.md)、配布物ごとの確認範囲は[0.6.0公開記録](docs/verification/2026-09-12-0.6-release.md)を参照してください。過去の実機成功を0.6.0や現在のmainそのものの実機成功へ読み替えません。
+実機確認の履歴は[導入・更新](docs/sidestore.md)、配布物ごとの確認範囲は[0.7.0公開記録](docs/verification/2026-09-13-0.7-release.md)を参照してください。過去の別sourceの実機成功を現在版の実機成功へ読み替えません。
 
 既存アプリの無修正移植、コンパイル済みIPAの動的実行、ミニアプリストアは提供しません。ソースのあるSwift／SwiftUIアプリをFeatureと薄いIntegrationへ分離する手順は[Recordsの接続例](Modules/Records/README.md)で説明しています。画面数や保存方式を固定せず、必要な共有資源の補完は台帳で追跡します。
 

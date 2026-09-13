@@ -14,7 +14,7 @@
   "dependencies": {
     "P0-C": "docs/verification/2026-09-13-p0-c-evidence.json; published0.7.0; user normal+diagnostic device confirmation"
   },
-  "planned_ci_runs": 2,
+  "planned_ci_runs": 3,
   "budget_exception": "",
   "jobs": [
     {
@@ -94,7 +94,7 @@
       "id": "34745140731/attempt-1",
       "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34745140731",
-      "conclusion": "in_progress"
+      "conclusion": "failure"
     },
     {
       "id": "34745151320/attempt-1",
@@ -123,6 +123,16 @@
       "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
       "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
       "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which remain deferred to0.8."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34745140731/job/103691569559",
+      "observation": "IncomingNativeTests23 passed: Delivery4, FileAccess3, native NSItemProvider5, Store11. Companion34745151320 macOS shared tests and 200 concurrent true-process commits/pin/close/delete/B preservation passed.",
+      "review": "Parent inspected all four suite counts and TEST SUCCEEDED in completed incoming job, downloaded native incoming artifact; inspected successful verify-incoming-processes.py log from generated run. OS share-sheet entry remains separate device criterion.",
+      "reuse_reason": "Corrections since7d4ac9c affect Intent diagnostic optional results, Bash argument construction and Widget fixture layout only; incoming Core/host/Share/native tests are unchanged."
     }
   ],
   "deferred_device": {
@@ -170,8 +180,8 @@
     {
       "run": "34745140731",
       "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
-      "result": "in_progress",
-      "detail": "Completed normal job: shared262(skip2) passed; Bash3.2 set-u empty args array stopped native build-requirement step. Completed intents job: same optional Int issue in fixture root. Incoming/widget jobs were still running at inspection; retain completion queue and do not claim their results."
+      "result": "partial",
+      "detail": "Incoming native23 passed. Widget Timeline4 and standalone A/B gallery passed; combined actual OCR observed A33/B22, disabled A--, reenabled A33, deleted A--, reregistered Aempty/B22. Last recreate tap produced no state change: status remained a-reregistered, button height20.3pt. Do not mark combined gallery complete. Normal/Intent failures already corrected."
     }
   ]
 }

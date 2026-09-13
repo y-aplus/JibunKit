@@ -27,6 +27,7 @@ struct WidgetFixtureHostApp: App {
     }
 
     @State private var status: String
+    @State private var isBusy = false
     private let configuration: Configuration?
 
     init() {
@@ -41,7 +42,7 @@ struct WidgetFixtureHostApp: App {
 
     var body: some Scene {
         WindowGroup {
-            VStack {
+            VStack(spacing: 16) {
                 Text(status).accessibilityIdentifier("widget-fixture.status")
                 Button("Update Feature A") { writeA(33, success: "a-updated") }
                     .accessibilityIdentifier("widget-fixture.update-a")
@@ -72,6 +73,10 @@ struct WidgetFixtureHostApp: App {
                 Button("Write New Feature A") { writeA(44, success: "a-recreated") }
                     .accessibilityIdentifier("widget-fixture.recreate-a")
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .padding()
+            .disabled(isBusy)
             .task { await seedNewInstallationValues() }
         }
     }
@@ -102,7 +107,12 @@ struct WidgetFixtureHostApp: App {
     }
 
     @MainActor private func perform(_ success: String, operation: @escaping @MainActor () async throws -> Void) {
+        guard !isBusy else { return }
+        isBusy = true
+        status = "running:" + success
+        print("widget-fixture operation admitted: " + success)
         Task {
+            defer { isBusy = false }
             do {
                 try await operation()
                 WidgetCenter.shared.reloadAllTimelines()

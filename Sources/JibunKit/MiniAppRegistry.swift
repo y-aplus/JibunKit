@@ -29,7 +29,8 @@ enum MiniAppRegistry {
                 id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
                 unregister: {
                     if let destination = incomingDestination(for: definition) {
-                        try incomingStore.get().setAdmission(destination, enabled: false)
+                        let store = try incomingStore.get()
+                        try await Task.detached { try store.setAdmission(destination, enabled: false) }.value
                     }
                     try await definition.onUnregister?()
                     let context = MiniAppContext(id: definition.id)
@@ -40,7 +41,8 @@ enum MiniAppRegistry {
                 enable: {
                     try MiniAppContext(id: definition.id).replaceNotificationCategories(with: definition.notificationCategories)
                     if let destination = incomingDestination(for: definition) {
-                        try incomingStore.get().setAdmission(destination, enabled: true)
+                        let store = try incomingStore.get()
+                        try await Task.detached { try store.setAdmission(destination, enabled: true) }.value
                     }
                 }
             )
@@ -70,7 +72,8 @@ enum MiniAppRegistry {
         return MiniAppRemovalProvider(id: owner,
             dataDescription: [original?.dataDescription, "未取込みの共有データ"].compactMap { $0 }.joined(separator: "、")) {
                 try await original?.removeData()
-                try store.get().removeOwnedData(for: owner)
+                let inbox = try store.get()
+                try await Task.detached { try inbox.removeOwnedData(for: owner) }.value
             }
     }
 

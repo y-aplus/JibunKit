@@ -5,8 +5,6 @@ import SwiftUI
 
 struct MiniAppListScreen: View {
     @Bindable var navigation: AppNavigation
-    @State private var showingBackup = false
-    @State private var showingManagement = false
     @State private var searchText = ""
 
     private var matchingApps: [MiniAppDefinition] {
@@ -47,6 +45,13 @@ struct MiniAppListScreen: View {
         // Rebuild the stack for its owner while retaining that owner's path.
         .id(navigation.stackID)
         .onChange(of: MiniAppRegistry.registeredIDs) { _, _ in navigation.discardUnavailableOwners() }
+        .sheet(item: $navigation.hostSheet, onDismiss: navigation.hostSheetDidDismiss) { sheet in
+            switch sheet {
+            case .backup: BackupScreen(definitions: MiniAppRegistry.enabled)
+            case .management: MiniAppManagementScreen()
+            case .incoming: MiniAppIncomingScreen(navigation: navigation)
+            }
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if owner != nil {
                 HStack {
@@ -95,16 +100,18 @@ struct MiniAppListScreen: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("管理", systemImage: "slider.horizontal.3") { showingManagement = true }
+                Button("管理", systemImage: "slider.horizontal.3") { navigation.requestHostSheet(.management) }
                     .accessibilityIdentifier("management.open")
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("バックアップ", systemImage: "externaldrive") { showingBackup = true }
+                Button("バックアップ", systemImage: "externaldrive") { navigation.requestHostSheet(.backup) }
                     .accessibilityIdentifier("backup.open")
             }
+            ToolbarItem(placement: .bottomBar) {
+                Button("受信", systemImage: "tray.and.arrow.down") { navigation.requestHostSheet(.incoming) }
+                    .accessibilityIdentifier("incoming.open")
+            }
         }
-        .sheet(isPresented: $showingBackup) { BackupScreen(definitions: MiniAppRegistry.enabled) }
-        .sheet(isPresented: $showingManagement) { MiniAppManagementScreen() }
     }
 }
 #endif

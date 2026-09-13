@@ -329,6 +329,7 @@ jobs:
           check_native python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
           check_native python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           check_native python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
+          check_native python3 Tools/verify-incoming-processes.py
           check_native python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
           if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             check_native python3 Tools/verify-privacy-manifest-ownership.py
@@ -381,6 +382,9 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
+          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              shutil.copyfile('Tests/TemplateIntegration/P1IncomingProbe.swift', 'Sources/JibunKit/P1IncomingProbe.swift')
+              shutil.copyfile('Tests/TemplateIntegration/P1IncomingUITests.swift', 'UITests/P1IncomingUITests.swift')
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationProbe.swift', 'Sources/JibunKit/P0BPresentationProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationUITests.swift', 'UITests/P0BPresentationUITests.swift')
@@ -518,6 +522,8 @@ jobs:
                   '        ReminderMiniApp.definition,\n        PackageResourceHostProbe.definition,\n    ])',
               ))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
+          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+              p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P1IncomingProbe.definitions[0],\n        P1IncomingProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')):
@@ -658,6 +664,7 @@ jobs:
           test -f "$app_entitlements_file"
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements "$widget_entitlements_file" "$widget"
+          python3 Tools/verify-share-extension.py --app "$app" --entitlements-root Derived
           codesign --force --sign - --timestamp=none --generate-entitlement-der \
             --entitlements "$app_entitlements_file" "$app"
           codesign --verify --deep --strict "$app"
@@ -804,6 +811,18 @@ jobs:
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" CODE_SIGNING_ALLOWED=NO
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
+
+      - name: Test native incoming providers and ownership
+        if: inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P1IncomingUITests')
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild test -workspace JibunKit.xcworkspace -scheme IncomingNativeTests \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
+            -resultBundlePath "$RUNNER_TEMP/IncomingNative.xcresult" \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/incoming-native.log"
 
       - name: Test generated standalone Feature
         if: inputs.simulator_tests && inputs.feature_validation
@@ -965,6 +984,7 @@ jobs:
             fi
           done
           codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$widget_entitlements" "$widget"
+          python3 Tools/verify-share-extension.py --app "$app" --entitlements-root "$entitlements_root"
           codesign --force --sign - --timestamp=none --generate-entitlement-der --entitlements "$app_entitlements" "$app"
           codesign --verify --deep --strict "$app"
           package="$RUNNER_TEMP/P0CandidateIPA"
@@ -1099,6 +1119,17 @@ jobs:
             ${{ runner.temp }}/package-app-intents.log
             ${{ runner.temp }}/PackageAppIntents
           if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload incoming native diagnostics
+        if: always() && inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P1IncomingUITests')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: Incoming-native-diagnostics
+          path: |
+            ${{ runner.temp }}/IncomingNative.xcresult
+            ${{ runner.temp }}/incoming-native.log
+          if-no-files-found: warn
           retention-days: 7
 
       - name: Upload package Widget diagnostics

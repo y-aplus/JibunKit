@@ -17,8 +17,8 @@ class HostShortcutCompatibilityTests(unittest.TestCase):
             path = Path(temporary) / "metadata.json"
             path.write_text(json.dumps(metadata), encoding="utf-8")
             result = subprocess.run(
-                [sys.executable, str(ROOT / "Tools/verify-host-shortcut-compatibility.py"), str(path)],
-                capture_output=True, text=True,
+                [sys.executable, "-X", "utf8", str(ROOT / "Tools/verify-host-shortcut-compatibility.py"), str(path)],
+                capture_output=True, text=True, encoding="utf-8",
             )
         self.assertEqual(result.returncode == 0, succeeds, result.stdout + result.stderr)
 

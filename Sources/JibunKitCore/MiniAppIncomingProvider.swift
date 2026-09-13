@@ -28,6 +28,14 @@ public final class MiniAppIncomingDelivery {
 
     public init() {}
 
+    /// Use the same service as deliver so another scene cannot discard a
+    /// receipt while its receiver is committing Feature-owned data.
+    public func discard(id: UUID, owner: MiniAppID, inbox: MiniAppIncomingStore) async throws {
+        guard active.insert(id).inserted else { throw Failure.alreadyDelivering }
+        defer { active.remove(id) }
+        try await Task.detached { try inbox.discard(id: id, owner: owner) }.value
+    }
+
     public func deliver(id: UUID, provider: MiniAppIncomingProvider,
                         lifetime: MiniAppFeatureLifetime?, inbox: MiniAppIncomingStore,
                         coordinator: MiniAppRestoreCoordinator = .shared) async throws {

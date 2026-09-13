@@ -114,6 +114,7 @@ class DeliveryTests(unittest.TestCase):
             delivery.validate_plan(invalid)
 
     def test_release_requires_complete_units_and_v1_decision(self):
+        self.plan["units"][0]["state"] = "partial"
         report = self.report("P0-C", with_device=True)
         with self.assertRaisesRegex(ValueError, "still partial"):
             delivery.validate_report(self.plan, report, "release", version="0.7.0")
@@ -121,6 +122,7 @@ class DeliveryTests(unittest.TestCase):
             delivery.validate_report(self.plan, report, "release", version="1.0.0")
 
     def test_p1_release_requires_p0_and_missing_dependency(self):
+        self.plan["units"][0]["state"] = "partial"
         report = self.report("P1-B", with_device=True)
         for unit in self.plan["units"]:
             if unit["priority"] == "P1":

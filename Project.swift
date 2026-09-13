@@ -9,6 +9,12 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.7.0",
     "CFBundleVersion": "8", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
+    "LSSupportsOpeningDocumentsInPlace": true,
+    "CFBundleDocumentTypes": [[
+        "CFBundleTypeName": "JibunKit Incoming File",
+        "CFBundleTypeRole": "Viewer", "LSHandlerRank": "Alternate",
+        "LSItemContentTypes": ["public.data"],
+    ]],
     "UILaunchScreen": [:],
     "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
     "CFBundleURLTypes": [[
@@ -59,7 +65,8 @@ let project = Project(
             entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
-                           .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension")]
+                           .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension"),
+                           .target(name: "JibunKitShare-Extension")]
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
@@ -71,10 +78,36 @@ let project = Project(
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),
         .target(
+            name: "JibunKitShare-Extension", destinations: .iOS, product: .appExtension,
+            bundleId: "com.jibunkit.app.Share", deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: [
+                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.7.0", "CFBundleVersion": "8",
+                "JibunKitAppGroup": "group.com.jibunkit.shared",
+                "NSExtension": [
+                    "NSExtensionPointIdentifier": "com.apple.share-services",
+                    "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ShareViewController",
+                    "NSExtensionAttributes": [
+                        "NSExtensionActivationRule": "extensionItems.@count > 0 AND SUBQUERY(extensionItems, $item, $item.attachments.@count > 0 AND SUBQUERY($item.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO 'public.data').@count == $item.attachments.@count).@count == extensionItems.@count",
+                    ],
+                ],
+            ]),
+            sources: ["Sources/JibunKitShare/**"],
+            entitlements: .dictionary(sharedEntitlements),
+            dependencies: [.package(product: "JibunKitCore")],
+            settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
+        ),
+        .target(
             name: "MigrationUITests", destinations: .iOS, product: .uiTests,
             bundleId: "com.jibunkit.migration-tests", deploymentTargets: .iOS("26.0"),
             infoPlist: .default, sources: ["UITests/**"],
             dependencies: [.target(name: "JibunKit-App")]
+        ),
+        .target(
+            name: "IncomingNativeTests", destinations: .iOS, product: .unitTests,
+            bundleId: "com.jibunkit.incoming-tests", deploymentTargets: .iOS("26.0"),
+            infoPlist: .default,
+            sources: ["Tests/JibunKitCoreTests/MiniAppIncoming*.swift"],
+            dependencies: [.target(name: "JibunKit-App"), .package(product: "JibunKitCore")]
         ),
         .target(
             name: "CounterExample", destinations: .iOS, product: .app,
@@ -85,6 +118,9 @@ let project = Project(
         ),
     ],
     schemes: [
+        .scheme(name: "IncomingNativeTests", shared: true,
+                buildAction: .buildAction(targets: ["JibunKit-App"]),
+                testAction: .targets(["IncomingNativeTests"], configuration: .debug)),
         .scheme(name: "MigrationUITests", shared: true,
                 buildAction: .buildAction(targets: ["JibunKit-App"]),
                 testAction: .targets(["MigrationUITests"], configuration: .debug)),

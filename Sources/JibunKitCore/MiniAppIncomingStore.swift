@@ -28,11 +28,15 @@ public struct MiniAppIncomingDestination: Codable, Equatable, Identifiable, Send
     public let id: String
     public let title: String
     public let typeIdentifiers: [String]
+    // Changes when admission is republished or re-enabled. An in-flight copy
+    // from before disable must not become a new receipt after re-enable.
+    let admissionID: UUID
 
     public init(id: MiniAppID, title: String, typeIdentifiers: [String]) {
         self.id = id.rawValue
         self.title = title
         self.typeIdentifiers = typeIdentifiers
+        self.admissionID = UUID()
     }
 
     public func accepts(_ typeIdentifier: String) -> Bool {
@@ -53,8 +57,9 @@ public enum MiniAppIncomingError: Error, Equatable, Sendable {
     case coordinationFailed
 }
 
-/// All processes use the same coordination URL. Accessors do only synchronous
-/// filesystem work; no receiver, UI, or async callback runs under this lock.
+/// Catalog publication uses one short cross-process lock; receipt copies and
+/// removal use separate per-owner locks. Large A inputs never hold B's lock.
+/// No receiver, UI, or async callback runs under a file-coordination accessor.
 /// The host closes admission before disabling/removing an owner. Disabling keeps
 /// receipts; deleting clears that owner's receipts after admission is closed.
 public struct MiniAppIncomingStore: Sendable {
@@ -63,6 +68,14 @@ public struct MiniAppIncomingStore: Sendable {
         case url(URL)
         /// The caller keeps source access valid until enqueue returns.
         case file(URL, typeIdentifier: String, displayName: String)
+
+        public var typeIdentifier: String {
+            switch self {
+            case .text: "public.utf8-plain-text"
+            case .url: "public.url"
+            case .file(_, let type, _): type
+            }
+        }
     }
 
     public struct Listing: Sendable {
@@ -72,13 +85,18 @@ public struct MiniAppIncomingStore: Sendable {
     }
 
     private let root: URL
+    private let ownersRoot: URL
     private let lockURL: URL
+    private let ownerLocksRoot: URL
 
     public init(containerURL: URL) throws {
         guard containerURL.isFileURL else { throw MiniAppIncomingError.invalidInput }
         root = containerURL.appendingPathComponent("Library/Application Support/JibunKit/Incoming", isDirectory: true)
+        ownersRoot = root.appendingPathComponent("owners", isDirectory: true)
         lockURL = root.appendingPathComponent("coordination")
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        ownerLocksRoot = root.appendingPathComponent("owner-locks", isDirectory: true)
+        try FileManager.default.createDirectory(at: ownersRoot, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: ownerLocksRoot, withIntermediateDirectories: true)
     }
 
     public static func shared(infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) throws -> Self {
@@ -111,10 +129,13 @@ public struct MiniAppIncomingStore: Sendable {
 
     public func enqueue(for owner: MiniAppID, inputs: [Input]) throws -> MiniAppIncomingReceipt {
         guard owner.isValid, !inputs.isEmpty else { throw MiniAppIncomingError.invalidInput }
-        return try coordinated {
+        let destination = try coordinated {
             guard let destination = try readCatalog().first(where: { $0.id == owner.rawValue }) else {
                 throw MiniAppIncomingError.unavailableOwner(owner.rawValue)
             }
+            return destination
+        }
+        return try coordinated(for: owner) {
             try Task.checkCancellation()
             let id = UUID()
             let parent = try ownerDirectory(owner)
@@ -145,15 +166,20 @@ public struct MiniAppIncomingStore: Sendable {
             }
             let receipt = MiniAppIncomingReceipt(id: id, owner: owner.rawValue, createdAt: .now, items: items)
             try JSONEncoder().encode(receipt).write(to: staging.appendingPathComponent("receipt.json"), options: .atomic)
-            try Task.checkCancellation()
-            try FileManager.default.moveItem(at: staging, to: parent.appendingPathComponent(id.uuidString, isDirectory: true))
-            committed = true
+            try coordinated {
+                guard try readCatalog().contains(where: { $0.id == owner.rawValue && $0.admissionID == destination.admissionID }) else {
+                    throw MiniAppIncomingError.unavailableOwner(owner.rawValue)
+                }
+                try Task.checkCancellation()
+                try FileManager.default.moveItem(at: staging, to: parent.appendingPathComponent(id.uuidString, isDirectory: true))
+                committed = true
+            }
             return receipt
         }
     }
 
     public func pending(for owner: MiniAppID) throws -> Listing {
-        try coordinated {
+        try coordinated(for: owner) {
             let directory = try ownerDirectory(owner)
             guard FileManager.default.fileExists(atPath: directory.path) else { return Listing(receipts: [], unreadableIDs: []) }
             var entries: [MiniAppIncomingReceipt] = []
@@ -174,18 +200,34 @@ public struct MiniAppIncomingStore: Sendable {
         }
     }
 
+    /// Includes owners no longer registered in this build so their undelivered
+    /// data remains visible and can be explicitly discarded by the user.
+    public func ownersWithReceipts() throws -> [MiniAppID] {
+        try coordinated {
+            try FileManager.default.contentsOfDirectory(at: ownersRoot, includingPropertiesForKeys: nil)
+                .compactMap { url in
+                    let name = url.lastPathComponent
+                    let id = MiniAppID(name.replacingOccurrences(of: "%2E", with: "."))
+                    // Include damaged owner entries too: the host reports each
+                    // failed listing without hiding unrelated owners.
+                    guard id.isValid, id.storageNamespace == name else { return nil }
+                    return id
+                }
+        }
+    }
+
     /// Keeps files pinned against removal while a synchronous caller copies
     /// them into its own staging area. Do not call another store method inside.
     public func withReceipt<Value>(id: UUID, owner: MiniAppID,
         operation: (MiniAppIncomingReceipt, URL) throws -> Value) throws -> Value {
-        try coordinated {
+        try coordinated(for: owner) {
             let receipt = try readReceipt(id, owner: owner)
             return try operation(receipt, ownerDirectory(owner).appendingPathComponent(id.uuidString, isDirectory: true))
         }
     }
 
     public func acknowledge(id: UUID, owner: MiniAppID) throws {
-        try coordinated {
+        try coordinated(for: owner) {
             _ = try readReceipt(id, owner: owner)
             try FileManager.default.removeItem(at: ownerDirectory(owner).appendingPathComponent(id.uuidString, isDirectory: true))
         }
@@ -194,16 +236,18 @@ public struct MiniAppIncomingStore: Sendable {
     /// Explicit discard also permits removing a corrupt receipt without decoding
     /// it. UUID and owner generate the path; untrusted JSON never selects it.
     public func discard(id: UUID, owner: MiniAppID) throws {
-        try coordinated {
+        try coordinated(for: owner) {
             let path = try ownerDirectory(owner).appendingPathComponent(id.uuidString, isDirectory: true)
             if FileManager.default.fileExists(atPath: path.path) { try FileManager.default.removeItem(at: path) }
         }
     }
 
     public func removeOwnedData(for owner: MiniAppID) throws {
-        try coordinated {
-            guard try !readCatalog().contains(where: { $0.id == owner.rawValue }) else {
-                throw MiniAppIncomingError.invalidInput
+        try coordinated(for: owner) {
+            try coordinated {
+                guard try !readCatalog().contains(where: { $0.id == owner.rawValue }) else {
+                    throw MiniAppIncomingError.invalidInput
+                }
             }
             let directory = try ownerDirectory(owner)
             if FileManager.default.fileExists(atPath: directory.path) { try FileManager.default.removeItem(at: directory) }
@@ -212,8 +256,8 @@ public struct MiniAppIncomingStore: Sendable {
 
     private func ownerDirectory(_ owner: MiniAppID) throws -> URL {
         guard owner.isValid else { throw MiniAppIncomingError.invalidInput }
-        let directory = root.appendingPathComponent(owner.storageNamespace, isDirectory: true)
-        let resolvedRoot = root.resolvingSymlinksInPath().standardizedFileURL.path + "/"
+        let directory = ownersRoot.appendingPathComponent(owner.storageNamespace, isDirectory: true)
+        let resolvedRoot = ownersRoot.resolvingSymlinksInPath().standardizedFileURL.path + "/"
         guard directory.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(resolvedRoot) else {
             throw MiniAppIncomingError.invalidInput
         }
@@ -264,10 +308,19 @@ public struct MiniAppIncomingStore: Sendable {
     }
 
     private func coordinated<Value>(_ operation: () throws -> Value) throws -> Value {
+        try coordinate(at: lockURL, operation)
+    }
+
+    private func coordinated<Value>(for owner: MiniAppID, _ operation: () throws -> Value) throws -> Value {
+        guard owner.isValid else { throw MiniAppIncomingError.invalidInput }
+        return try coordinate(at: ownerLocksRoot.appendingPathComponent(owner.storageNamespace), operation)
+    }
+
+    private func coordinate<Value>(at url: URL, _ operation: () throws -> Value) throws -> Value {
         let coordinator = NSFileCoordinator(filePresenter: nil)
         var coordinationError: NSError?
         var result: Result<Value, Error>?
-        coordinator.coordinate(writingItemAt: lockURL, options: [], error: &coordinationError) { _ in
+        coordinator.coordinate(writingItemAt: url, options: [], error: &coordinationError) { _ in
             result = Result { try operation() }
         }
         if let result { return try result.get() }

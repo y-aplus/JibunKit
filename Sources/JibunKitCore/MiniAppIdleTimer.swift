@@ -7,6 +7,7 @@ import UIKit
 @MainActor
 public final class MiniAppIdleTimer {
     #if os(iOS)
+    @available(iOSApplicationExtension, unavailable, message: "The containing app owns the device idle timer.")
     public static let shared = MiniAppIdleTimer { UIApplication.shared.isIdleTimerDisabled = $0 }
     #endif
 

@@ -38,7 +38,7 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.text("first"), .file(directory.appendingPathComponent("missing"), typeIdentifier: "public.data", displayName: "missing")]))
         XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
         XCTAssertEqual(try store.pending(for: b).receipts, [saved])
-        let owner = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/" + a.storageNamespace)
+        let owner = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners/" + a.storageNamespace)
         XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: owner.path).isEmpty)
     }
 
@@ -71,7 +71,7 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         let (directory, store) = try fixture()
         let broken = try store.enqueue(for: a, inputs: [.text("first")])
         let valid = try store.enqueue(for: a, inputs: [.text("second")])
-        let manifest = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/" + a.storageNamespace + "/" + broken.id.uuidString + "/receipt.json")
+        let manifest = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners/" + a.storageNamespace + "/" + broken.id.uuidString + "/receipt.json")
         try Data("{".utf8).write(to: manifest)
         let listing = try store.pending(for: a)
         XCTAssertEqual(listing.receipts, [valid])
@@ -90,7 +90,7 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         let link = directory.appendingPathComponent("link.txt")
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: value)
         XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.file(link, typeIdentifier: "public.data", displayName: "link")]))
-        let owner = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/" + b.storageNamespace)
+        let owner = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners/" + b.storageNamespace)
         try FileManager.default.createSymbolicLink(at: owner, withDestinationURL: external)
         try store.setAdmission(.init(id: b, title: "B", typeIdentifiers: ["public.data"]), enabled: false)
         XCTAssertThrowsError(try store.removeOwnedData(for: b))
@@ -103,6 +103,35 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         XCTAssertThrowsError(try store.publish([before[0], before[0]]))
         XCTAssertEqual(try store.destinations(), before)
         XCTAssertThrowsError(try store.enqueue(for: MiniAppID("unknown"), inputs: [.text("no")]))
+    }
+
+    func testLegalOwnerIDsCannotCollideWithHostCoordinationOrCatalogFiles() throws {
+        let (_, store) = try fixture()
+        let owners = [MiniAppID("coordination"), MiniAppID("destinations.json")]
+        try store.publish(owners.map { .init(id: $0, title: $0.rawValue, typeIdentifiers: ["public.data"]) })
+        for owner in owners { _ = try store.enqueue(for: owner, inputs: [.text(owner.rawValue)]) }
+        XCTAssertEqual(Set(try store.ownersWithReceipts()), Set(owners))
+        for owner in owners { XCTAssertEqual(try store.pending(for: owner).receipts.count, 1) }
+        XCTAssertEqual(try store.destinations().count, 2)
+    }
+
+    func testAbandonedStagingIsReapedWithoutPublishingPartialData() throws {
+        let (directory, store) = try fixture()
+        let saved = try store.enqueue(for: a, inputs: [.text("complete")])
+        let abandoned = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners/" + a.storageNamespace + "/.staging-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: abandoned, withIntermediateDirectories: false)
+        try Data("partial bytes".utf8).write(to: abandoned.appendingPathComponent("part"))
+        XCTAssertEqual(try store.pending(for: a).receipts, [saved])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: abandoned.path))
+    }
+
+    func testUnsupportedTypeRejectsWholeBatchAndPreservesOtherOwner() throws {
+        let (_, store) = try fixture()
+        try store.setAdmission(.init(id: a, title: "A", typeIdentifiers: ["public.plain-text"]), enabled: true)
+        let saved = try store.enqueue(for: b, inputs: [.text("B")])
+        XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.text("first"), .url(URL(string: "https://example.com")!)]))
+        XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
+        XCTAssertEqual(try store.pending(for: b).receipts, [saved])
     }
 }
 #endif

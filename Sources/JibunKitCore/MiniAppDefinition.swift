@@ -12,6 +12,7 @@ public struct MiniAppDefinition: Identifiable {
     public let systemImage: String
     public let backup: MiniAppBackupProvider?
     public let fileBackup: MiniAppFileBackupProvider?
+    public let incoming: MiniAppIncomingProvider?
     public let lifetime: MiniAppFeatureLifetime?
     public let presentations: MiniAppPresentationOwner?
     public let removal: MiniAppRemovalProvider?
@@ -37,6 +38,7 @@ public struct MiniAppDefinition: Identifiable {
         systemImage: String,
         backup: MiniAppBackupProvider? = nil,
         fileBackup: MiniAppFileBackupProvider? = nil,
+        incoming: MiniAppIncomingProvider? = nil,
         restoreLifecycle: MiniAppRestoreLifecycle? = nil,
         lifetime: MiniAppFeatureLifetime? = nil,
         presentations: MiniAppPresentationOwner? = nil,
@@ -61,6 +63,8 @@ public struct MiniAppDefinition: Identifiable {
         self.backup = backup
         precondition(fileBackup == nil || fileBackup?.id == id, "File backup provider must belong to this Feature.")
         self.fileBackup = fileBackup
+        precondition(incoming == nil || incoming?.id == id, "Incoming provider must belong to this Feature.")
+        self.incoming = incoming
         // A custom restore lifecycle may include store-specific stop recovery.
         // Otherwise reuse the same lifetime as ordinary host entry.
         precondition(lifetime == nil || lifetime?.id == id, "Lifetime must belong to this Feature.")

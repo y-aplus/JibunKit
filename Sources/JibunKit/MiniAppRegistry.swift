@@ -17,6 +17,8 @@ enum MiniAppRegistry {
     // With no usable shared-group configuration, local management still works.
     // The Widget independently reports unavailable storage in that configuration.
     private static let managementDefaults = (try? MiniAppStorage.sharedDefaults()) ?? .standard
+    static let incomingStore = Result { try MiniAppIncomingStore.shared() }
+    private(set) static var incomingCatalogError: String?
     static let management = makeManagement()
 
     // Keep closure isolation and defaults out of a nested static initializer.
@@ -24,8 +26,11 @@ enum MiniAppRegistry {
     private static func makeManagement() -> MiniAppManagement {
         let registrations: [MiniAppManagement.Registration] = all.map { definition in
             MiniAppManagement.Registration(
-                id: definition.id, lifetime: definition.lifetime, removal: definition.removal,
+                id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
                 unregister: {
+                    if let destination = incomingDestination(for: definition) {
+                        try incomingStore.get().setAdmission(destination, enabled: false)
+                    }
                     try await definition.onUnregister?()
                     let context = MiniAppContext(id: definition.id)
                     await context.removeAllOwnedNotifications()
@@ -34,15 +39,39 @@ enum MiniAppRegistry {
                 },
                 enable: {
                     try MiniAppContext(id: definition.id).replaceNotificationCategories(with: definition.notificationCategories)
+                    if let destination = incomingDestination(for: definition) {
+                        try incomingStore.get().setAdmission(destination, enabled: true)
+                    }
                 }
             )
         }
-        return MiniAppManagement(
+        let result = MiniAppManagement(
             registrations: registrations, defaults: managementDefaults, consents: consents,
             coordinator: MiniAppRestoreCoordinator.shared,
             storageKey: MiniAppManagement.defaultStorageKey,
             onStatusChange: { _, _ in WidgetCenter.shared.reloadAllTimelines() }
         )
+        do {
+            try incomingStore.get().publish(all.filter { result.isEnabled($0.id) }.compactMap(incomingDestination))
+        } catch { incomingCatalogError = error.localizedDescription }
+        return result
+    }
+
+    static func incomingDestination(for definition: MiniAppDefinition) -> MiniAppIncomingDestination? {
+        guard let provider = definition.incoming else { return nil }
+        return .init(id: definition.id, title: definition.title, typeIdentifiers: provider.typeIdentifiers)
+    }
+
+    private static func incomingRemoval(for definition: MiniAppDefinition) -> MiniAppRemovalProvider? {
+        guard definition.incoming != nil else { return definition.removal }
+        let store = incomingStore
+        let owner = definition.id
+        let original = definition.removal
+        return MiniAppRemovalProvider(id: owner,
+            dataDescription: [original?.dataDescription, "未取込みの共有データ"].compactMap { $0 }.joined(separator: "、")) {
+                try await original?.removeData()
+                try store.get().removeOwnedData(for: owner)
+            }
     }
 
     static func makeLifecycleDispatcher() -> MiniAppLifecycleDispatcher {

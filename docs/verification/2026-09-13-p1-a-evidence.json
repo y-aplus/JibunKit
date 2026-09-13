@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "wave": "P1-A",
+  "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+  "contract": {
+    "baseline": "f89ac1b4b68d34e67e205b77db25589efb75ba7d",
+    "interfaces": "docs/delivery/P1-A-contract.md; optional incoming; managed async Intent boundaries; real Widget Definition factories",
+    "ownership": "Parent owns shared Core/Registry/Project/workflow; two Sol low workers each submitted once with one aggregate correction; parent integrated all implementation commits.",
+    "failure_cases": "Incomplete incoming staging; provider cancellation/drain; failed receive stable receipt retry; disabled/removed Intents and Widget stores; atomic Widget increment/overflow; B preservation.",
+    "normal_entrypoints": "Share Extension and external file -> normal inbox; generated host P1Intents and P1Widgets normal Registry management; native standalone/combined OS fixtures.",
+    "invalidation": "Retest ownership/presentation/storage/management normal and generated host; no P1 OS proof inferred from prior0.7 device results. Existing P0 device records remain limited historical evidence; P1 physical checks reserved0.8.",
+    "review": "docs/verification/2026-09-13-p1-a.md includes both consolidated reviews, parent fixes, actual test inventories and exact input plan. Local37 tests, actionlint and source selector checks passed."
+  },
+  "dependencies": {
+    "P0-C": "docs/verification/2026-09-13-p0-c-evidence.json; published0.7.0; user normal+diagnostic device confirmation"
+  },
+  "planned_ci_runs": 2,
+  "budget_exception": "",
+  "jobs": [
+    {
+      "id": "normal-shared-native-tools",
+      "kind": "unit",
+      "criteria": [
+        "P0-1.lifetime",
+        "P0-3.failure",
+        "P0-4.diagnostics",
+        "P0-5.ownership",
+        "P0-6.diagnostics",
+        "P0-6.local"
+      ],
+      "command": "run1 build-ios: Tests/Fixtures/network_server.py --run-tests; verify-feature-build-requirements.py; verify-feature-connection.py; verify-package-compatible-update.py; verify-incoming-processes.py; normal IPA + full UI/Files.",
+      "expected_minutes": 24,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "intents-native",
+      "kind": "unit",
+      "criteria": [
+        "P1-1.metadata"
+      ],
+      "command": "run1 native-surface intents: verify-package-app-intents.py --simulator-id selected; 7 unit +1 managed UI; standalone A/B and combined native metadata + Shortcut contribution removal.",
+      "expected_minutes": 25,
+      "timeout_minutes": 30
+    },
+    {
+      "id": "widgets-native",
+      "kind": "simulator",
+      "criteria": [
+        "P1-2.widget"
+      ],
+      "command": "run1 native-surface widgets: verify-package-widgets-native.py --simulator-id selected; 4 Timeline cases; three actual gallery cases with cold-state OCR, host/extension ownership binary checks.",
+      "expected_minutes": 25,
+      "timeout_minutes": 30
+    },
+    {
+      "id": "incoming-native",
+      "kind": "unit",
+      "criteria": [
+        "P1-3.routing"
+      ],
+      "command": "run1 native-surface incoming: xcodebuild test -scheme IncomingNativeTests; all Store/FileAccess/Delivery/NSItemProvider cases; true macOS multiprocess in normal job.",
+      "expected_minutes": 15,
+      "timeout_minutes": 30
+    },
+    {
+      "id": "generated-host",
+      "kind": "simulator",
+      "criteria": [
+        "P0-1.integration",
+        "P0-2.presentation",
+        "P0-2.uikit",
+        "P0-3.integration",
+        "P0-4.onboarding",
+        "P0-5.ui"
+      ],
+      "command": "run2 build-ios feature_validation=true, normal selector MigrationUITests/MigrationUITests/testPersistenceAndHostIntegration, generated selectors listed in dispatch-2.json; Notes standalone +actual generated host contains incoming/intents/widget Definitions alongside Counter/Reminder and P0 probes.",
+      "expected_minutes": 30,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "artifact-and-guide-review",
+      "kind": "inspection",
+      "criteria": [
+        "P0-4.docs",
+        "P1-1.metadata"
+      ],
+      "command": "After CI inspect exported generated P1IntentsHostMetadata against native StandaloneA/B json using verify-app-intents-integration.py; verify normal metadata Counter preserved and generated A/B Shortcut contributions; review current guide status +diagnostic-only instructions.",
+      "expected_minutes": 20,
+      "timeout_minutes": 30
+    }
+  ],
+  "runs": [
+    {
+      "id": "34745140731/attempt-1",
+      "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34745140731",
+      "conclusion": "in_progress"
+    },
+    {
+      "id": "34745151320/attempt-1",
+      "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34745151320",
+      "conclusion": "in_progress"
+    }
+  ],
+  "evidence": [
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which remain deferred to0.8."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which remain deferred to0.8."
+    }
+  ],
+  "deferred_device": {
+    "P1-1.os": "0.8.0",
+    "P1-2.device": "0.8.0",
+    "P1-3.os": "0.8.0"
+  },
+  "documents": [],
+  "release": {},
+  "metrics": {
+    "review_rounds": 2,
+    "parent_messages": 0,
+    "ci_job_minutes": 0
+  },
+  "acceptance": {
+    "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+    "P0-1.integration": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+    "P0-2.presentation": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+    "P0-2.uikit": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+    "P0-3.failure": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+    "P0-3.integration": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+    "P0-3.device": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+    "P0-4.diagnostics": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+    "P0-4.onboarding": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+    "P0-4.docs": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+    "P0-5.ownership": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+    "P0-5.ui": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+    "P0-5.device": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+    "P0-6.diagnostics": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+    "P0-6.local": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す",
+    "P1-1.os": "OS Shortcutsの発見/候補/引数/実行/戻り値と他owner保持。直接performのみ不可",
+    "P1-1.metadata": "独立A/Bと統合の識別子・参照・削除後保持",
+    "P1-2.widget": "二静的Widgetの追加・描画・A更新/削除後B保持、出荷構成の接続",
+    "P1-2.device": "候補IPAでWidgetの通常追加/更新/他方保持",
+    "P1-3.routing": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
+    "P1-3.os": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持"
+  }
+}

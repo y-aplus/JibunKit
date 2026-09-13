@@ -67,11 +67,11 @@ Intent用に別の保存先を作らず、通常画面と同じFeature storeを�
 
 保存は新しい値を確定してから一度だけ置換し、throw/cancellationを成功結果へ変換しない。失敗後も以前の値を残し、別ownerの保存には触れない。管理削除のcallbackは既にownerの排他予約内なので、そこで`withStoreAccess`を再入せずstoreの予約済み削除操作を呼ぶ。画面の非表示は無効化ではない。
 
-`Tests/PackageAppIntents`はこの接続を二ownerで検証する。既存のIntent/entity/query/parameter/result/phrase識別子比較に加え、直接`perform()`の引数と戻り値、候補検索、取消、保存失敗、再試行、管理再構築後の保持、A無効化・削除時の拒否とB保持を確認する。直接実行試験は保存ロジックの証拠であり、OS Shortcutsの発見や保存済みworkflowの証拠ではない。
+`Tests/PackageAppIntents`はP1-A実装中のfixtureとしてこの接続を二ownerで検証する。Combined系appは`App`初期化時、UI構築前に保存済み管理状態をcoordinatorへ反映してから境界を注入する。これは有効Featureだけに呼ばれる`onHostLaunch`へ置かない。既存のIntent/entity/query/parameter/result/phrase識別子比較に加え、直接`perform()`の引数と戻り値、候補検索、取消、保存失敗、再試行、管理再構築後の保持、A無効化・削除時の拒否とB保持を確認する。直接実行試験は保存ロジックの証拠であり、OS Shortcutsの発見や保存済みworkflowの証拠ではない。Swift/Xcode結果が揃うまでは0.7.0で検証済みの機能として扱わない。
 
 ## 0.8.0候補で行うOS確認
 
-候補IPAを実機へ入れ、ShortcutsアプリからA/Bのactionを発見し、entity候補を選んだworkflowを保存する。正負の引数と返却値、実行中取消、保存失敗表示、再試行、アプリ再起動後の値を確認する。次に通常管理からAを無効化して保存済みA workflowが拒否されること、B workflowとB候補が残ることを確認し、A削除後にも繰り返す。OS表示・候補・workflow保存・Siri/Shortcuts実行はSimulatorの直接`perform()`で代替せず、P1-A時点では未確認のまま0.8.0候補へ予約する。
+候補IPAを実機へ入れ、ShortcutsアプリからA/Bのactionを発見し、entity候補を選んだworkflowを保存する。正負の引数と返却値を確認する。取消はFeature画面の「次の保存を5秒遅延」で一度だけ遅延を設定し、保存workflowを開始して5秒以内にShortcutsから停止する。保存失敗は「次の保存を失敗」を設定して次のworkflowを実行し、失敗表示、旧値保持、その次の再試行成功を確認する。診断設定は既存Intentの引数や識別子を変更しない。さらにアプリ再起動後の値、通常管理からAを無効化した後の保存済みA workflow/query拒否とB workflow/B候補保持、A削除・再有効化後のA空状態とB保持を確認する。OS表示・候補・workflow保存・Siri/Shortcuts実行はSimulatorの直接`perform()`で代替せず、P1-A時点ではSwiftも含め未検証のまま0.8.0候補へ予約する。
 
 ## 統合で消えた定義を検出する
 

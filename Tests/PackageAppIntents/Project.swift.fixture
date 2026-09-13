@@ -26,12 +26,16 @@ let project = Project(name: "PackageIntents", packages: [
     .target(name: "Combined", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.combined", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
-        sources: ["App.swift", "Combined.swift"],
-        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
+        sources: ["App.swift", "Combined.swift", "IntentIntegration.swift"],
+        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB"), .package(product: "JibunKitCore")]),
     .target(name: "IntentExecutionTests", destinations: .iOS, product: .unitTests,
         bundleId: "com.jibunkit.intent-fixture.tests", deploymentTargets: .iOS("26.0"),
         infoPlist: .default, sources: ["IntentExecutionTests.swift", "IntentIntegration.swift"],
         dependencies: [.target(name: "Combined"), .package(product: "IntentFeatureA"), .package(product: "IntentFeatureB"), .package(product: "JibunKitCore")]),
+    .target(name: "ManagedHostUITests", destinations: .iOS, product: .uiTests,
+        bundleId: "com.jibunkit.intent-fixture.ui-tests", deploymentTargets: .iOS("26.0"),
+        infoPlist: .default, sources: ["ManagedHostUITests.swift"],
+        dependencies: [.target(name: "Combined")]),
     .target(name: "OwnedShortcutsA", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.a", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
@@ -45,10 +49,10 @@ let project = Project(name: "PackageIntents", packages: [
     .target(name: "OwnedShortcutsCombined", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.combined", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
-        sources: ["App.swift", "OwnedShortcutsCombined.swift", "Generated/ComposedShortcutsCombined.swift"],
-        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
+        sources: ["App.swift", "OwnedShortcutsCombined.swift", "IntentIntegration.swift", "Generated/ComposedShortcutsCombined.swift"],
+        dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB"), .package(product: "JibunKitCore")]),
 ], schemes: [
     .scheme(name: "IntentExecutionTests", shared: true,
             buildAction: .buildAction(targets: ["Combined"]),
-            testAction: .targets(["IntentExecutionTests"]))
+            testAction: .targets(["IntentExecutionTests", "ManagedHostUITests"]))
 ])

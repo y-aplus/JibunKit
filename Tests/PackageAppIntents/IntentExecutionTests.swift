@@ -11,7 +11,7 @@ final class IntentExecutionTests: XCTestCase {
         for id in [MiniAppID.intentFixtureA, .intentFixtureB] {
             defaults.removeObject(forKey: MiniAppManagement.defaultStorageKey + "." + id.rawValue)
         }
-        IntentFixtureIntegration.resetManagement()
+        IntentFixtureIntegration.reconstructManagement()
         try await IntentFeatureA.FeatureAStore.shared.removeAll()
         try await IntentFeatureB.FeatureBStore.shared.removeAll()
     }
@@ -75,7 +75,7 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(storedB, 93)
     }
 
-    func testCancellationBeforeAdmissionDoesNotWriteEitherOwner() async throws {
+    func testCancellationBeforeAdmissionAndDuringDelayKeepsOldValues() async throws {
         let task = Task<Void, Error> { @MainActor in
             withUnsafeCurrentTask { $0?.cancel() }
             _ = try await FeatureAAddValueIntent(amount: 8).perform()
@@ -86,6 +86,18 @@ final class IntentExecutionTests: XCTestCase {
         let storedB = try await IntentFeatureB.FeatureBStore.shared.value()
         XCTAssertEqual(storedA, 0)
         XCTAssertEqual(storedB, 0)
+
+        _ = try await FeatureAAddValueIntent(amount: 4).perform()
+        IntentFeatureA.FeatureAStore.shared.delayNextSave(nanoseconds: 5_000_000_000)
+        let delayed = Task<Void, Error> { @MainActor in
+            _ = try await FeatureAAddValueIntent(amount: 8).perform()
+        }
+        try await Task.sleep(nanoseconds: 50_000_000)
+        delayed.cancel()
+        do { _ = try await delayed.value; XCTFail("Delayed cancellation committed") }
+        catch is CancellationError { }
+        let afterDelayedCancellation = try await IntentFeatureA.FeatureAStore.shared.value()
+        XCTAssertEqual(afterDelayedCancellation, 4)
     }
 
     func testSaveFailureKeepsPreviousValueAndOtherOwner() async throws {
@@ -100,31 +112,54 @@ final class IntentExecutionTests: XCTestCase {
         XCTAssertEqual(storedA, 4)
         XCTAssertEqual(storedB, 9)
         XCTAssertEqual(retried.value, 6)
+
+        do { _ = try await FeatureAAddValueIntent(amount: .max).perform(); XCTFail("Overflow succeeded") }
+        catch IntentFeatureA.FeatureAStore.Failure.valueOutOfRange { }
     }
 
     func testDisableAndRemovalRejectAWhileBRemainsUsable() async throws {
         _ = try await FeatureAAddValueIntent(amount: 5).perform()
         _ = try await FeatureBAddValueIntent(amount: 20).perform()
+        try await IntentFeatureA.FeatureAStore.shared.replaceEntries(["a": "A candidate"])
+        try await IntentFeatureB.FeatureBStore.shared.replaceEntries(["b": "B candidate"])
         try await IntentFixtureIntegration.management.disable(.intentFixtureA)
+        IntentFixtureIntegration.reconstructManagement()
         do { _ = try await FeatureAAddValueIntent(amount: 1).perform(); XCTFail("Disabled owner wrote") }
         catch let error as MiniAppRestoreCoordinator.Unavailable {
             XCTAssertEqual(error.owners, [.intentFixtureA])
         }
+        do { _ = try await IntentFeatureA.EntryQuery().suggestedEntities(); XCTFail("Disabled owner returned suggestions") }
+        catch let error as MiniAppRestoreCoordinator.Unavailable { XCTAssertEqual(error.owners, [.intentFixtureA]) }
+        do { _ = try await IntentFeatureA.EntryQuery().entities(for: ["a"]); XCTFail("Disabled owner resolved an entity") }
+        catch is MiniAppRestoreCoordinator.Unavailable { }
         let updatedB = try await FeatureBAddValueIntent(amount: 2).perform()
+        let bSuggestions = try await IntentFeatureB.EntryQuery().suggestedEntities()
         XCTAssertEqual(updatedB.value, 22)
+        XCTAssertEqual(bSuggestions.map(\.title), ["B candidate"])
 
         try await IntentFixtureIntegration.management.enable(.intentFixtureA)
         try await IntentFixtureIntegration.management.remove(.intentFixtureA)
+        IntentFixtureIntegration.reconstructManagement()
         do { _ = try await FeatureAAddValueIntent(amount: 1).perform(); XCTFail("Removed owner wrote") }
         catch is MiniAppRestoreCoordinator.Unavailable { }
         let storedB = try await IntentFeatureB.FeatureBStore.shared.value()
         XCTAssertEqual(storedB, 22)
+
+        try await IntentFixtureIntegration.management.enable(.intentFixtureA)
+        let emptyAValue = try await IntentFeatureA.FeatureAStore.shared.value()
+        let emptyASuggestions = try await IntentFeatureA.EntryQuery().suggestedEntities()
+        let retainedBSuggestions = try await IntentFeatureB.EntryQuery().suggestedEntities()
+        XCTAssertEqual(emptyAValue, 0)
+        XCTAssertTrue(emptyASuggestions.isEmpty)
+        XCTAssertEqual(retainedBSuggestions.map(\.title), ["B candidate"])
+        let retainedBValue = try await IntentFeatureB.FeatureBStore.shared.value()
+        XCTAssertEqual(retainedBValue, 22)
     }
 
     func testPersistentValuesSurviveManagementReconstruction() async throws {
         _ = try await FeatureAAddValueIntent(amount: 12).perform()
         _ = try await FeatureBAddValueIntent(amount: 34).perform()
-        IntentFixtureIntegration.resetManagement()
+        IntentFixtureIntegration.reconstructManagement()
         let storedA = try await IntentFeatureA.FeatureAStore.shared.value()
         let storedB = try await IntentFeatureB.FeatureBStore.shared.value()
         XCTAssertEqual(storedA, 12)

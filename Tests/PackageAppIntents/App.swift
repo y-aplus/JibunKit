@@ -1,5 +1,7 @@
 import SwiftUI
 @main
+@MainActor
 struct IntentFixtureApp: App {
-    var body: some Scene { WindowGroup { Text("Package App Intents fixture") } }
+    init() { IntentFixtureBootstrap.start() }
+    var body: some Scene { WindowGroup { IntentFixtureRootView() } }
 }

@@ -100,7 +100,7 @@
       "id": "34745151320/attempt-1",
       "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34745151320",
-      "conclusion": "in_progress"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -159,5 +159,19 @@
     "P1-2.device": "候補IPAでWidgetの通常追加/更新/他方保持",
     "P1-3.routing": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
     "P1-3.os": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持"
-  }
+  },
+  "observations": [
+    {
+      "run": "34745151320",
+      "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+      "result": "partial",
+      "detail": "Generated Release host failed only at P1IntentsProbe.swift optional Int return handling. Before this, shared262 tests(skip2) passed; native build/connection/compatible-update/privacy checks passed; 200 concurrent incoming commits, cross-process pin/close/delete and B preservation/writability passed. Generated UI/IPA not reached."
+    },
+    {
+      "run": "34745140731",
+      "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+      "result": "in_progress",
+      "detail": "Completed normal job: shared262(skip2) passed; Bash3.2 set-u empty args array stopped native build-requirement step. Completed intents job: same optional Int issue in fixture root. Incoming/widget jobs were still running at inspection; retain completion queue and do not claim their results."
+    }
+  ]
 }

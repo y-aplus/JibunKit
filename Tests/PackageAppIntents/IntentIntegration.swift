@@ -104,7 +104,7 @@ private struct FeatureARootView: View {
             Text("A value: \(value)").accessibilityIdentifier("intent-fixture.a.value")
             TextField("Candidate title", text: $title)
             Button("Add A candidate") { run { var next = try await FeatureAStore.shared.entries(); next["a-candidate"] = title; try await FeatureAStore.shared.replaceEntries(next) } }
-            Button("Add 1") { run { value = try await FeatureAAddValueIntent(amount: 1).perform().value } }
+            Button("Add 1") { run { let result = try await FeatureAAddValueIntent(amount: 1).perform(); guard let saved = result.value else { throw IntentFixtureFailure.missingReturnValue }; value = saved } }
             Button("Fail next save") { FeatureAStore.shared.injectNextSaveFailure(); message = "next save will fail" }
             Button("Delay next save 5 seconds") { FeatureAStore.shared.delayNextSave(nanoseconds: 5_000_000_000); message = "next save delayed" }
             ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
@@ -126,7 +126,7 @@ private struct FeatureBRootView: View {
             Text("B value: \(value)").accessibilityIdentifier("intent-fixture.b.value")
             TextField("Candidate title", text: $title)
             Button("Add B candidate") { run { var next = try await FeatureBStore.shared.entries(); next["b-candidate"] = title; try await FeatureBStore.shared.replaceEntries(next) } }
-            Button("Add 1") { run { value = try await FeatureBAddValueIntent(amount: 1).perform().value } }
+            Button("Add 1") { run { let result = try await FeatureBAddValueIntent(amount: 1).perform(); guard let saved = result.value else { throw IntentFixtureFailure.missingReturnValue }; value = saved } }
             Button("Fail next save") { FeatureBStore.shared.injectNextSaveFailure(); message = "next save will fail" }
             Button("Delay next save 5 seconds") { FeatureBStore.shared.delayNextSave(nanoseconds: 5_000_000_000); message = "next save delayed" }
             ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
@@ -137,3 +137,5 @@ private struct FeatureBRootView: View {
     private func run(_ operation: @escaping @MainActor () async throws -> Void) { Task { do { try await operation(); message = "completed" } catch { message = "error: \(error)" }; await reload() } }
     private func reload() async { value = (try? await FeatureBStore.shared.value()) ?? value; entries = (try? await FeatureBStore.shared.entries()) ?? entries }
 }
+
+private enum IntentFixtureFailure: Error { case missingReturnValue }

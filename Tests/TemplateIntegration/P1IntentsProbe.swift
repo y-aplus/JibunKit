@@ -82,8 +82,11 @@ private struct P1IntentFeatureView: View {
         return try await FeatureBStore.shared.value()
     }
     private func addOne() async throws -> Int {
-        if owner == "A" { return try await FeatureAAddValueIntent(amount: 1).perform().value }
-        return try await FeatureBAddValueIntent(amount: 1).perform().value
+        let result: Int?
+        if owner == "A" { result = try await FeatureAAddValueIntent(amount: 1).perform().value }
+        else { result = try await FeatureBAddValueIntent(amount: 1).perform().value }
+        guard let result else { throw MissingIntentReturnValue() }
+        return result
     }
     private func saveCandidate() async throws {
         if owner == "A" { var entries = try await FeatureAStore.shared.entries(); entries["a-candidate"] = title; try await FeatureAStore.shared.replaceEntries(entries) }
@@ -98,4 +101,5 @@ private struct P1IntentFeatureView: View {
         else { FeatureBStore.shared.delayNextSave(nanoseconds: 5_000_000_000) }
     }
 }
+private struct MissingIntentReturnValue: Error {}
 #endif

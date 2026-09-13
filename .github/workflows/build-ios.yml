@@ -355,9 +355,9 @@ jobs:
               failures=$((failures + 1))
             fi
           }
-          args=()
+          args=(python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist")
           if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
-          check_native python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist" "${args[@]}"
+          check_native "${args[@]}"
           check_native python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           check_native python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
           check_native python3 Tools/verify-incoming-processes.py

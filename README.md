@@ -1,4 +1,4 @@
-> 最新公開版: [0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。1.0は未達です。mainにはP0-Aの寿命・保存・終了診断とP0-Bのアプリ内管理・提示をCI検証して反映済みです。実機確認は0.7.0候補へまとめます。
+> 0.7.0 build8出荷候補のP0全6単位をCIと2026-09-13の一括実機確認で検証済み。正式公開前の安定版は0.6.0。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
 
 # JibunKit
 
@@ -10,7 +10,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 公開版は[0.6.0](https://github.com/y-aplus/JibunKit/releases/tag/0.6.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.6.0の変更と検証範囲](release-notes-0.6.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。次はP0完了を0.7.0、P1完了を0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。0.6.0の通常UI11件・Files経由のJSON選択復元とIPA検査は成功済みです。P0の出荷候補は0.7.0、次のP1完了は0.8.0とします。1.0の最終対応範囲は需要調査後に決めます。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)を参照してください。
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
@@ -24,7 +24,7 @@ Package翻訳のmixed localizationを提供します。静的Package Widgetのga
 SDKはiOSで公開product名を分けるmanifest編集が必要です。refreshの実OS受付・起動・期限は未検証です。
 これらを0.6.0配布物へ含めたとは扱いません。[版別の状態と証拠](docs/status.md)を参照してください。
 
-確認用0.7.0 build 8候補は[CI34705653297](https://github.com/y-aplus/JibunKit/actions/runs/34705653297)で非実機条件を確認済みです。[実機の一括手順](docs/verification/2026-09-13-0.7-device-check.md)を残し、正式0.7.0は未公開です。
+0.7.0候補は[CI34705653297](https://github.com/y-aplus/JibunKit/actions/runs/34705653297)と[実機の一括確認](docs/verification/2026-09-13-0.7-device-check.md)を完了しました。[出荷記録](docs/verification/2026-09-13-0.7-release.md)で配布状態を区別します。
 
 ## 文書
 
@@ -58,7 +58,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成ですが、Issue #5の方針でP0-A/P0-Bの非実機条件を確認し、P0-Cを含む0.7.0 build 8候補を固定しました。初回CIの試験コンパイルと次のnative診断判定の不備を修正し、一括検証を再実行します。実機確認と配布整合性は未確認です。[停止時引継ぎ](docs/verification/2026-09-12-development-checkpoint.md)を保存しています。再開時は新しいユーザー方針を先に適用し、[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)に沿って残作業を扱います。候補化や単発のCI成功、0.6.0公開を1.0完成とは扱いません。
+目標はJibunKit v1.0の完成です。Issue #5のP0はCI・実機確認を完了し、0.7.0を出荷準備中。次はP1の通常OS入口・通知・HTTP/Webを0.8.0へ進めます。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0推奨境界の正式採用を確認中です。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
 
 ## 現在の開発基盤
 

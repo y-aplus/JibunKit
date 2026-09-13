@@ -30,7 +30,7 @@ Featureをroot Package内に置く方式も使える。その場合はPackageの
 
 ### Package接続に失敗したとき
 
-P0-C候補では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。ネイティブ実行はまだ未検証で、公開版0.6.0には含まれない。
+P0-C候補では、追加したローカルlibrary productをホストへ直接依存させる経路の診断を用意している。CI34705653297で実Swift/Tuist診断を検証済み。0.7.0の追加で、以前の0.6.0には含まれない。
 
 ```bash
 python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature
@@ -83,7 +83,7 @@ static let all = makeRegistry([
 
 画面を離れても終わらないTask・接続を持つ場合は[Feature lifetime](guides/feature-lifetime.md)、通常保存と復元・移行・リセットを調停する場合は[保存アクセスの調停](guides/store-access-coordination.md)と[Runtime／復元接続](runtime-restore-integration.md)をIntegrationから接続する。単純な読取り専用画面へダミーのlifetimeや保存providerを追加する必要はない。
 
-P0-Bの管理・同意・削除・提示はmainへ統合済みである。[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)を接続元とする。ただし公開版0.6.0には含まれず、0.7.0候補の実機確認も未完了である。保存データを持つFeatureだけが所有範囲を宣言し、削除callback内部ではhostが既に保持するowner予約を再取得しない。
+P0-Bの管理・同意・削除・提示はmainへ統合済みである。[Feature管理](guides/feature-management.md)、[利用同意](guides/feature-consent.md)、[所有データ削除](guides/feature-data-removal.md)、[Feature所有の提示](guides/feature-owned-presentations.md)を接続元とする。ただし公開版0.6.0には含まれず、0.7.0候補では実機確認も2026-09-13に完了した。保存データを持つFeatureだけが所有範囲を宣言し、削除callback内部ではhostが既に保持するowner予約を再取得しない。
 
 通常の画面追加で`MiniAppID.swift`、`MiniAppListScreen.swift`、`AppNavigation.swift`を編集しない。ミニアプリ固有の画面や通知予約処理を`Sources/JibunKit`へ追加しない。JibunKitが受け取るのはFeatureライブラリであり、既存Xcode app targetのfileを名前や条件コンパイルで自動除外する変換器ではない。
 

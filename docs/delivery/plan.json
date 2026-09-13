@@ -10,10 +10,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "寿命と所有処理の終了",
-      "existing": "通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認",
-      "remaining": "0.7.0候補の実機操作とP0-Cでの回帰保持",
+      "existing": "通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "高度な複数window/実行instance",
       "criteria": [
         {
@@ -40,10 +40,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "通常の画面・提示",
-      "existing": "Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認",
-      "remaining": "0.7.0候補の実機提示・UIKit終了",
+      "existing": "Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "任意View可視状態/高度な複数window",
       "criteria": [
         {
@@ -72,10 +72,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "保存・復元・移行・リセット",
-      "existing": "RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認",
-      "remaining": "候補IPAでの選択復元/resetとB保持",
+      "existing": "RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "全DB/別process writer",
       "criteria": [
         {
@@ -110,10 +110,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "追加・ビルド・更新",
-      "existing": "native依存診断6ケース、実Registry欠落/復旧、Notes単独/host、同じiOS hostでAだけ互換更新/B保存・resource保持を34705653297で確認",
-      "remaining": "候補の文書・実機・正式出荷gateへ証拠を接続",
+      "existing": "native依存診断6ケース、実Registry欠落/復旧、Notes単独/host、同じiOS hostでAだけ互換更新/B保存・resource保持を34705653297で確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "万能生成器/任意SDK複数version",
       "criteria": [
         {
@@ -149,10 +149,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "同意・無効化・削除",
-      "existing": "通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認",
-      "remaining": "候補IPAでの同意拒否・無効化・削除・B保持",
+      "existing": "通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "同一processの強制隔離/コード動的除去",
       "criteria": [
         {
@@ -187,10 +187,10 @@
       ],
       "priority": "P0",
       "milestone": "0.7.0",
-      "state": "partial",
+      "state": "complete",
       "title": "基本障害緩和と局所処理",
-      "existing": "終了進捗診断と局所処理の判断基準をP0-A CIで確認",
-      "remaining": "P0-C release gateで証拠と残存制約を再確認",
+      "existing": "終了進捗診断と局所処理の判断基準をP0-A CIで確認。0.7.0候補の必要実機確認も完了",
+      "remaining": "なし（P0範囲）。2026-09-13のCI・実機・文書検証を参照",
       "deferred": "helper/非協調処理の強制隔離",
       "criteria": [
         {

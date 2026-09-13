@@ -207,18 +207,33 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
       "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
       "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md."
+    },
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence."
     }
   ],
-  "deferred_device": {
-    "P0-3.device": "0.7.0",
-    "P0-5.device": "0.7.0"
-  },
+  "deferred_device": {},
   "documents": [
     {
       "path": "CHANGELOG.md",
       "outcome": "updated",
-      "reason": "Recorded P0-A/P0-B non-device verification and kept P0-C CI, device, and distribution results unconfirmed.",
-      "sha256": "49a0d2679595d9c79b7b6c19c9f950db30635560ce8d0c196c7cb8b0515dfece"
+      "reason": "Recorded P0-A/P0-B non-device verification and kept P0-C CI, device, and distribution results unconfirmed. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "f8512c6435ba8e4a99b1dbc45dc96cd243500919db160160721f2126fd602cbc"
     },
     {
       "path": "CONTRIBUTING.md",
@@ -235,8 +250,8 @@
     {
       "path": "README.md",
       "outcome": "updated",
-      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "75fb7a9f5cd4b8789af1578e64a9fadbfac6ab9c75e8a78c41bb8f9e67c4ac73"
+      "reason": "Synchronized current main P0-A/P0-B state and the unconfirmed P0-C release-candidate gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "9db2a6639612d8529aa22a733ba239c9b5e3e0cc156a89dbcb00d8d154216716"
     },
     {
       "path": "SECURITY.md",
@@ -277,8 +292,8 @@
     {
       "path": "docs/coexistence-ledger.md",
       "outcome": "updated",
-      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "100f6f2a961356e0dbd854be725e9f3fbac502d5326ceaeecf24eb9dc85957cc"
+      "reason": "Synchronized the current candidate SHA and explicitly retained unresolved CI, device, and distribution gates. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "14381650ea199ec741639f0cdb23d75d610ccd02ac4f3930252f786bd9618ca2"
     },
     {
       "path": "docs/compatibility.md",
@@ -294,15 +309,15 @@
     },
     {
       "path": "docs/delivery/P0-B-contract.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten.",
-      "sha256": "036261f564c3c637fc985acb027540920c4f17fde277c7bdcbcdb7e9b9d37381"
+      "outcome": "updated",
+      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "326743837717f40845a5c3f90ef8942728a71caac25e5992d4f755bdc9b54e71"
     },
     {
       "path": "docs/delivery/P0-C-contract.md",
-      "outcome": "reviewed-unchanged",
-      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten.",
-      "sha256": "94acaabcab85727ae7dd8635f4fab9e717c0d57fa726b2915aeb8253b223a29d"
+      "outcome": "updated",
+      "reason": "Read in full; retained as a historical delivery contract whose dated evidence and incomplete gates must not be rewritten. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "e5b490b9fd16894264a00a3449f1e046b018e5ab2b6cf0b63394690990e3f214"
     },
     {
       "path": "docs/guides/background-execution-ownership.md",
@@ -349,14 +364,14 @@
     {
       "path": "docs/guides/feature-lifetime.md",
       "outcome": "updated",
-      "reason": "Updated P0-A from implementation-in-progress to non-device verification complete with device verification pending.",
-      "sha256": "c06fb56b640f08787ae50710f526c2e421d695068a922ad81f3c0b7b5fbb93e1"
+      "reason": "Updated P0-A from implementation-in-progress to non-device verification complete with device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "7d212ae3f32325eeae8ae0bd4a8ab9456da39ef046df7439c9a6e419d459ccf2"
     },
     {
       "path": "docs/guides/feature-management.md",
       "outcome": "updated",
-      "reason": "Updated P0-B from implementation-in-progress to non-device verification complete with candidate device verification pending.",
-      "sha256": "489f8c918b52b09337b0043f1870c451bcfed814e1d22422f330299434d07adf"
+      "reason": "Updated P0-B from implementation-in-progress to non-device verification complete with candidate device verification pending. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "05ebe95803704e24b465c00fe9c4117b9f4a245119ac27f9322386e0cc25ad2e"
     },
     {
       "path": "docs/guides/feature-owned-presentations.md",
@@ -457,14 +472,14 @@
     {
       "path": "docs/implementation-priorities.md",
       "outcome": "updated",
-      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "3787b85f5f0ed68006fa9d085ab163b34093c483735295e49b5fc7a9806728f0"
+      "reason": "Changed P0 rows to remaining 0.7.0 checks and preserved all plan states as partial. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "36fb0b957378128e79e00f1ade7b4f63ee18b81e2eebe014ea48bd3213a64e15"
     },
     {
       "path": "docs/mini-apps.md",
       "outcome": "updated",
-      "reason": "Replaced the future P0-B integration statement with its current main-only, non-device-verified status.",
-      "sha256": "cd9f093e5fa969bd20f29abdad13da1687e5e8926e1b8b49e72cb86c08681498"
+      "reason": "Replaced the future P0-B integration statement with its current main-only, non-device-verified status. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "4dc135641c81ab5cb94bf61c8cfcc760bc44366799614adeb801f4d619f0cf49"
     },
     {
       "path": "docs/network-integration.md",
@@ -475,8 +490,8 @@
     {
       "path": "docs/parallel-implementation.md",
       "outcome": "updated",
-      "reason": "Synchronized the operating boundary after P0-A/P0-B non-device verification without claiming candidate completion.",
-      "sha256": "b6204ca65c64ec780ade6f084c2796506be28b6f678bfd81cfe6033f3afd7ccb"
+      "reason": "Synchronized the operating boundary after P0-A/P0-B non-device verification without claiming candidate completion. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "aae53b180796203ef15f42e7444b7cf367ab8a3609773e211168653fdf90d256"
     },
     {
       "path": "docs/releasing.md",
@@ -505,29 +520,36 @@
     {
       "path": "docs/status.md",
       "outcome": "updated",
-      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "1e5609b544aa3a1ddeaa12abfa09c41084525dfb8e3b61b3e6c3cfea996196ba"
+      "reason": "Recorded current main and immutable candidate evidence while leaving CI, device, and distribution unconfirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "8f4c43db3580b794db27c49d5a10bd5d00c439ee73d82b52cb137fca91d69faa"
     },
     {
       "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
       "outcome": "updated",
-      "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "b283af2aac2aa59c6d8e12e2514fbe9ca99e7bbdf7d7913aac613d399dc18156"
+      "reason": "Synchronized current P0-A/P0-B evidence and the remaining P0-C candidate, device, and distribution gates. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "82bbdc8461eb8872a8260d05ca89829b435ae2716aa717749e6ecde94d72647f"
     },
     {
       "path": "docs/updating.md",
       "outcome": "updated",
-      "reason": "Updated the current P0-B integration status and document review date while retaining public 0.6.0 guidance.",
-      "sha256": "afda0fe0bf05207b06587d8013686b43fa9d58ff1d9c1aa4603dc2ded54ad5e9"
+      "reason": "Updated the current P0-B integration status and document review date while retaining public 0.6.0 guidance. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "fedcdeedbfeb600cf6bcd72c2fe7df17b3e8fb8e42d2b3527a326b99ef613b30"
     },
     {
       "path": "release-notes-0.7.0.md",
       "outcome": "updated",
-      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim.",
-      "sha256": "80d40c28eaeaa3b61b09bcde38c25ce2faf27e6e9207d23a6313c18bace6eb20"
+      "reason": "Kept the notes as a candidate and recorded the candidate SHA/run as started but not yet confirmed. Parent reviewed and updated current CI evidence/remaining gates or corrected table/redistribution wording. Parent verified34705086602 native evidence and updated remaining packaging/iOS checks. Parent updated verified34705653297 evidence, actual remaining device/release gates and removed obsolete removal claim. Parent release review: device success and current P0 completion; corrected stale native/pending declarations and research receipt; historical evidence retained.",
+      "sha256": "1f4b7ac8056a929f4d6773d4ba21caa4a0d772b4d8e4c80600a44a0053e1ddeb"
     }
   ],
-  "release": {},
+  "release": {
+    "candidate_ipa": "34705653297 normalIPA SHA256516bc3e85648ca75f4051de4367f20b98afa3c6b1f69ea1e6be8619adb813489; same bytes tested on device and public prerelease re-download.",
+    "normal_regression": "d1adb8e34702137986 normal13+Files; reviewed product diff only optional Validator/defaultempty andversion; baa041f34705653297 fullshared244/Records11 plus normalURL26.090s.",
+    "generated_host": "d1adb8e34700435807 generated8 reused with reviewed source diff; baa041f34705653297 Notes standalone and Registry/iOS compatible update.",
+    "metadata": "34705653297 app/widget bundle IDs, AppIntents metadata, appgroup/signature/CRC0.7.0build8 verified.",
+    "compatibility": "A-source-only same iOS container update olddefaults/write/relaunch/corruptpreservation/repair, B/resource unchanged; device normalIPA update retainsCounter/Reminder.",
+    "physical_review": "docs/verification/2026-09-13-0.7-device-check.md first and second user reports2026-09-13; all1-8 plus normalupdate confirmed."
+  },
   "metrics": {
     "review_rounds": 0,
     "parent_messages": 0,

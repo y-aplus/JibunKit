@@ -61,6 +61,18 @@ public struct EntryQuery: EntityStringQuery {
 
 Apple標準: [PersistentlyIdentifiable](https://developer.apple.com/documentation/appintents/persistentlyidentifiable)、[persistentIdentifier](https://developer.apple.com/documentation/appintents/persistentlyidentifiable/persistentidentifier)。
 
+## 通常保存・管理へ接続する
+
+Intent用に別の保存先を作らず、通常画面と同じFeature storeを呼ぶ。Core非依存のFeature packageでは、storeに小さなoperation boundaryを注入し、統合側で`MiniAppRestoreCoordinator.shared.withStoreAccess(for:)`へ接続する。owner IDは通常の`MiniAppDefinition`、`MiniAppManagement.Registration`、backup/restoreと同じものを使う。管理の初期化が保存済みのdisabled/removed状態をcoordinatorへ反映するため、Intentの読み書きとentity候補取得は対象ownerが無効なら拒否される。
+
+保存は新しい値を確定してから一度だけ置換し、throw/cancellationを成功結果へ変換しない。失敗後も以前の値を残し、別ownerの保存には触れない。管理削除のcallbackは既にownerの排他予約内なので、そこで`withStoreAccess`を再入せずstoreの予約済み削除操作を呼ぶ。画面の非表示は無効化ではない。
+
+`Tests/PackageAppIntents`はこの接続を二ownerで検証する。既存のIntent/entity/query/parameter/result/phrase識別子比較に加え、直接`perform()`の引数と戻り値、候補検索、取消、保存失敗、再試行、管理再構築後の保持、A無効化・削除時の拒否とB保持を確認する。直接実行試験は保存ロジックの証拠であり、OS Shortcutsの発見や保存済みworkflowの証拠ではない。
+
+## 0.8.0候補で行うOS確認
+
+候補IPAを実機へ入れ、ShortcutsアプリからA/Bのactionを発見し、entity候補を選んだworkflowを保存する。正負の引数と返却値、実行中取消、保存失敗表示、再試行、アプリ再起動後の値を確認する。次に通常管理からAを無効化して保存済みA workflowが拒否されること、B workflowとB候補が残ることを確認し、A削除後にも繰り返す。OS表示・候補・workflow保存・Siri/Shortcuts実行はSimulatorの直接`perform()`で代替せず、P1-A時点では未確認のまま0.8.0候補へ予約する。
+
 ## 統合で消えた定義を検出する
 
 通常のbuild成功だけでは同名定義の衝突を検出できなかったため、意図した単独版のnative metadataと統合版を比較するツールを用意した。

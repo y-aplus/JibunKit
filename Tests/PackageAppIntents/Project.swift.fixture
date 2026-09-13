@@ -13,7 +13,7 @@ try FeatureAppShortcuts.writeProvider(includeShortcutA ? [shortcutA, shortcutB] 
 
 
 let project = Project(name: "PackageIntents", packages: [
-    .package(path: "FeatureA"), .package(path: "FeatureB"),
+    .package(path: "FeatureA"), .package(path: "FeatureB"), .package(path: "__JIBUNKIT_PATH__"),
 ], targets: [
     .target(name: "StandaloneA", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.a", deploymentTargets: .iOS("26.0"),
@@ -30,8 +30,8 @@ let project = Project(name: "PackageIntents", packages: [
         dependencies: [.package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
     .target(name: "IntentExecutionTests", destinations: .iOS, product: .unitTests,
         bundleId: "com.jibunkit.intent-fixture.tests", deploymentTargets: .iOS("26.0"),
-        infoPlist: .default, sources: ["IntentExecutionTests.swift"],
-        dependencies: [.target(name: "Combined"), .package(product: "IntentFeatureA"), .package(product: "IntentFeatureB")]),
+        infoPlist: .default, sources: ["IntentExecutionTests.swift", "IntentIntegration.swift"],
+        dependencies: [.target(name: "Combined"), .package(product: "IntentFeatureA"), .package(product: "IntentFeatureB"), .package(product: "JibunKitCore")]),
     .target(name: "OwnedShortcutsA", destinations: .iOS, product: .app,
         bundleId: "com.jibunkit.intent-fixture.shortcuts.a", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),

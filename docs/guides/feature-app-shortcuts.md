@@ -32,3 +32,7 @@ try FeatureAppShortcuts.writeProvider([
 同じownerの二重登録・空のowner・空ファイル・読めないファイルは生成前に拒否する。全入力を読み終わってから一つの出力を置換するため、読み取り失敗時に以前の生成物を部分的に上書きしない。登録を外して再生成すればそのShortcut式も消え、空の登録ならProvider宣言を出さない。出力先は専用の生成ファイルを指定する。
 
 OSのShortcut表示・Siri実行・app全体の枠や並び順などは、このソース組込みだけで解決したとは扱わない。metadata比較と実行検証を分ける。補助処理は本体のIntent識別子や実装、保存先、Runtimeを変更しない。
+
+通常接続ではfragmentのownerと、Intentが使う`MiniAppDefinition`/management/store accessのownerを一致させる。登録を外す操作はShortcut式の寄与だけを消す場合と、通常管理でFeatureを無効化・削除する場合を区別する。後者では保存済みShortcut自体がOSに残り得るため、`perform()`入口の通常store accessが必ず拒否を返す必要がある。Aの寄与やデータを外してもBの式、候補、保存値を変更しない。
+
+native metadataの単独A/B対統合比較と寄与削除buildは、永続識別子・phrase式・引数・戻り値が保持された証拠になる。`perform()` XCTestは保存と管理境界の証拠になる。しかし、どちらもShortcutsアプリでの発見、候補picker、workflow保存、保存済みworkflow実行、取消表示の代替ではない。これらの実機操作は0.8.0候補で一括し、結果と端末/OS/buildを記録する。

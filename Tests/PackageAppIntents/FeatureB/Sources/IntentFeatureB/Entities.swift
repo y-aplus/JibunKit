@@ -16,22 +16,13 @@ public struct Entry: AppEntity {
     }
 }
 
-@MainActor
-public enum EntryStore {
-    private static let defaults = UserDefaults(suiteName: "com.jibunkit.intent-fixture.b")!
-    public static var titles: [String: String] {
-        get { defaults.dictionary(forKey: "entry-titles") as? [String: String] ?? [:] }
-        set { defaults.set(newValue, forKey: "entry-titles") }
-    }
-}
-
 public struct EntryQuery: EntityStringQuery {
     public static let persistentIdentifier = "com.jibunkit.intent-fixture.b.entry-query"
     public init() {}
 
     @MainActor
     public func entities(for identifiers: [String]) async throws -> [Entry] {
-        let titles = EntryStore.titles
+        let titles = try await FeatureBStore.shared.entries()
         return identifiers.compactMap { id in titles[id].map { Entry(id: id, title: $0) } }
     }
 
@@ -42,7 +33,8 @@ public struct EntryQuery: EntityStringQuery {
 
     @MainActor
     public func suggestedEntities() async throws -> [Entry] {
-        EntryStore.titles.sorted { $0.key < $1.key }.map { Entry(id: $0.key, title: $0.value) }
+        try await FeatureBStore.shared.entries().sorted { $0.key < $1.key }
+            .map { Entry(id: $0.key, title: $0.value) }
     }
 }
 

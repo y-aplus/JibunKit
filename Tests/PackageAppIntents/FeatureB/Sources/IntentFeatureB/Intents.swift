@@ -3,15 +3,6 @@ import Foundation
 
 public struct FeatureBIntentPackage: AppIntentsPackage {}
 
-@MainActor
-public enum FeatureBValues {
-    private static let defaults = UserDefaults(suiteName: "com.jibunkit.intent-fixture.b")!
-    public static var value: Int {
-        get { defaults.integer(forKey: "value") }
-        set { defaults.set(newValue, forKey: "value") }
-    }
-}
-
 public struct FeatureBAddValueIntent: AppIntent {
     public static let title: LocalizedStringResource = "Add Feature B value"
     public static var supportedModes: IntentModes { [.background] }
@@ -20,7 +11,7 @@ public struct FeatureBAddValueIntent: AppIntent {
     public init(amount: Int) { self.amount = amount }
     @MainActor
     public func perform() async throws -> some IntentResult & ReturnsValue<Int> {
-        FeatureBValues.value += amount
-        return .result(value: FeatureBValues.value)
+        let value = try await FeatureBStore.shared.add(amount)
+        return .result(value: value)
     }
 }

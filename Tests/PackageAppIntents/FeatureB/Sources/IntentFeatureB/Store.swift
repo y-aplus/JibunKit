@@ -62,11 +62,15 @@ public final class FeatureBStore {
     }
     public func replaceEntries(_ entries: [String: String]) async throws {
         let defaults = defaults
-        try await boundary.perform { defaults.set(entries, forKey: "entry-titles") }
+        try await boundary.perform {
+            try Task.checkCancellation()
+            defaults.set(entries, forKey: "entry-titles")
+        }
     }
     public func removeAll() async throws {
         let defaults = defaults
         try await boundary.perform {
+            try Task.checkCancellation()
             defaults.removeObject(forKey: "value")
             defaults.removeObject(forKey: "entry-titles")
         }

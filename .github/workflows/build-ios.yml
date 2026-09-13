@@ -27,6 +27,10 @@ on:
         description: Compare independent and combined package Widgets (requires simulator_tests)
         type: boolean
         default: false
+      incoming_validation:
+        description: Native incoming provider/ownership tests in a parallel iOS job (requires simulator_tests)
+        type: boolean
+        default: false
       package_resources_validation:
         description: Compare package resources and generated-host localization (requires simulator_tests; host check also requires feature_validation)
         type: boolean
@@ -64,6 +68,27 @@ permissions:
   contents: read
 
 jobs:
+  intents-native:
+    if: inputs.package_intents_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: intents
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
+  widgets-native:
+    if: inputs.package_widgets_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: widgets
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
+  incoming-native:
+    if: inputs.incoming_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: incoming
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   package-sdk-aliases:
     if: inputs.package_sdk_aliases_only
     name: Native Swift SDK module aliases
@@ -201,6 +226,12 @@ jobs:
         if: inputs.package_intents_validation && !inputs.simulator_tests
         run: |
           echo "package_intents_validation requires simulator_tests" >&2
+          exit 1
+
+      - name: Validate incoming inputs
+        if: inputs.incoming_validation && !inputs.simulator_tests
+        run: |
+          echo "incoming_validation requires simulator_tests" >&2
           exit 1
 
       - name: Validate package Widget inputs
@@ -753,25 +784,6 @@ jobs:
               2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
           fi
 
-      - name: Verify package App Intents
-        if: inputs.simulator_tests && inputs.package_intents_validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f Tools/verify-package-app-intents.py ]]; then
-            python3 -m unittest discover -s Tools/tests -p test_app_intents_identities.py
-            python3 Tools/verify-package-app-intents.py --simulator-id "$SIMULATOR_ID" \
-              2>&1 | tee "$RUNNER_TEMP/package-app-intents.log"
-          fi
-
-      - name: Verify package Widgets
-        if: inputs.simulator_tests && inputs.package_widgets_validation
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 Tools/verify-package-widgets-native.py --simulator-id "$SIMULATOR_ID" \
-            2>&1 | tee "$RUNNER_TEMP/package-widgets.log"
-
       - name: Verify package resources and localization
         if: inputs.simulator_tests && inputs.package_resources_validation
         shell: bash
@@ -811,18 +823,6 @@ jobs:
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" CODE_SIGNING_ALLOWED=NO
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
-
-      - name: Test native incoming providers and ownership
-        if: inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P1IncomingUITests')
-        shell: bash
-        run: |
-          set -euo pipefail
-          xcodebuild test -workspace JibunKit.xcworkspace -scheme IncomingNativeTests \
-            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath "$RUNNER_TEMP/SimulatorDerivedData" \
-            -resultBundlePath "$RUNNER_TEMP/IncomingNative.xcresult" \
-            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
-            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/incoming-native.log"
 
       - name: Test generated standalone Feature
         if: inputs.simulator_tests && inputs.feature_validation
@@ -1109,39 +1109,6 @@ jobs:
             ${{ runner.temp }}/WebAuthentication.xcresult
           if-no-files-found: ignore
           retention-days: 7
-
-      - name: Upload package App Intents diagnostics
-        if: always() && inputs.simulator_tests && inputs.package_intents_validation
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: Package-App-Intents-diagnostics
-          path: |
-            ${{ runner.temp }}/package-app-intents.log
-            ${{ runner.temp }}/PackageAppIntents
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload incoming native diagnostics
-        if: always() && inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P1IncomingUITests')
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: Incoming-native-diagnostics
-          path: |
-            ${{ runner.temp }}/IncomingNative.xcresult
-            ${{ runner.temp }}/incoming-native.log
-          if-no-files-found: warn
-          retention-days: 7
-
-      - name: Upload package Widget diagnostics
-        if: always() && inputs.simulator_tests && inputs.package_widgets_validation
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: Package-Widget-diagnostics
-          path: |
-            ${{ runner.temp }}/package-widgets.log
-            ${{ runner.temp }}/PackageWidgets
-          if-no-files-found: ignore
-          retention-days: 14
 
       - name: Upload backup picker diagnostics
         if: always() && inputs.simulator_tests

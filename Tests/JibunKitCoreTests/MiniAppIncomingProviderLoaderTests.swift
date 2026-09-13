@@ -53,6 +53,28 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase {
         XCTAssertTrue(progress.isCancelled)
     }
 
+    func testNativeProviderThatNeverRepliesCanBeCancelled() async {
+        let entered = expectation(description: "provider requested")
+        let finished = expectation(description: "loader cancelled without callback")
+        let provider = NSItemProvider()
+        provider.registerFileRepresentation(forTypeIdentifier: UTType.data.identifier, fileOptions: [], visibility: .all) { _ in
+            entered.fulfill()
+            return Progress(totalUnitCount: 1)
+        }
+        let task = Task { @MainActor in
+            defer { finished.fulfill() }
+            do {
+                let result = try await MiniAppIncomingProviderLoader.load([provider])
+                try? result.removeTemporaryFiles()
+                XCTFail("Silent provider unexpectedly completed")
+            } catch is CancellationError { }
+            catch { XCTFail("Wrong failure: \(error)") }
+        }
+        await fulfillment(of: [entered], timeout: 5)
+        task.cancel()
+        await fulfillment(of: [finished], timeout: 5)
+    }
+
     func testCancellationDrainsActiveCopyBeforeResumingAndIgnoresDuplicateCallback() async throws {
         let gate = ProviderContinuation()
         let finishedCopy = expectation(description: "copy finished")

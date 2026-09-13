@@ -25,7 +25,7 @@ func widgetExtension(
     )
 }
 
-func host(name: String, displayName: String, bundleID: String, widget: String) -> Target {
+func host(name: String, displayName: String, bundleID: String, widget: String, owners: String) -> Target {
     let appGroup = "group.\(bundleID)"
     return .target(
         name: name,
@@ -36,13 +36,17 @@ func host(name: String, displayName: String, bundleID: String, widget: String) -
         infoPlist: .extendingDefault(with: [
             "CFBundleDisplayName": .string(displayName),
             "JibunKitAppGroup": .string(appGroup),
+            "WidgetFixtureOwners": .string(owners),
             "UILaunchScreen": [:],
         ]),
         sources: ["HostApp.swift"],
         entitlements: .dictionary([
             "com.apple.security.application-groups": .array([.string(appGroup)]),
         ]),
-        dependencies: [.target(name: widget), .package(product: "JibunKitCore")]
+        dependencies: [
+            .target(name: widget), .package(product: "JibunKitCore"),
+            .package(product: "WidgetFeatureA"), .package(product: "WidgetFeatureB"),
+        ]
     )
 }
 
@@ -76,9 +80,9 @@ let project = Project(
                         dependencies: [.package(product: "WidgetFeatureB")]),
         widgetExtension(name: "CombinedWidget", hostBundleID: "com.jibunkit.fixture.combined", source: "Combined.swift",
                         dependencies: [.package(product: "WidgetFeatureA"), .package(product: "WidgetFeatureB")]),
-        host(name: "StandaloneA", displayName: "Widget Fixture A", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget"),
-        host(name: "StandaloneB", displayName: "Widget Fixture B", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget"),
-        host(name: "Combined", displayName: "Widget Fixture Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget"),
+        host(name: "StandaloneA", displayName: "Widget Fixture A", bundleID: "com.jibunkit.fixture.standalone-a", widget: "StandaloneAWidget", owners: "A"),
+        host(name: "StandaloneB", displayName: "Widget Fixture B", bundleID: "com.jibunkit.fixture.standalone-b", widget: "StandaloneBWidget", owners: "B"),
+        host(name: "Combined", displayName: "Widget Fixture Combined", bundleID: "com.jibunkit.fixture.combined", widget: "CombinedWidget", owners: "A,B"),
         galleryTests(name: "StandaloneAGalleryUITests", host: "StandaloneA", appName: "Widget Fixture A", expectedWidgets: "A"),
         galleryTests(name: "StandaloneBGalleryUITests", host: "StandaloneB", appName: "Widget Fixture B", expectedWidgets: "B"),
         galleryTests(name: "CombinedGalleryUITests", host: "Combined", appName: "Widget Fixture Combined", expectedWidgets: "A,B"),
@@ -91,6 +95,7 @@ let project = Project(
             infoPlist: .default,
             sources: ["TimelineTests.swift"],
             dependencies: [
+                .package(product: "JibunKitCore"),
                 .package(product: "WidgetFeatureA"),
                 .package(product: "WidgetFeatureB"),
             ]

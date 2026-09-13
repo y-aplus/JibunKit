@@ -1,0 +1,4 @@
+"miniapp.title" = "機能A";
+"miniapp.data-description" = "機能Aが保存したウィジェット値";
+"widget.name" = "機能A";
+"widget.description" = "機能Aが所有する静的ウィジェット";

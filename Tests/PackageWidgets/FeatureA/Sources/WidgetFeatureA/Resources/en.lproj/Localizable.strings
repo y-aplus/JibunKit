@@ -1,0 +1,4 @@
+"miniapp.title" = "Feature A";
+"miniapp.data-description" = "Feature A's saved widget value";
+"widget.name" = "Feature A";
+"widget.description" = "Static widget owned by Feature A";

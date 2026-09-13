@@ -74,6 +74,42 @@ final class GalleryUITests: XCTestCase {
                 on: springboard,
                 evidenceName: "\(appName)-widget-updated"
             ) else { return }
+
+            app.activate()
+            app.buttons["widget-fixture.disable-a"].tap()
+            guard require(app.staticTexts["a-disabled"], timeout: 5, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:--", "B:22"], absent: ["A:33"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-disabled"
+            ) else { return }
+
+            app.activate()
+            app.buttons["widget-fixture.enable-a"].tap()
+            guard require(app.staticTexts["a-enabled"], timeout: 5, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:33", "B:22"], absent: ["A:--"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-enabled"
+            ) else { return }
+
+            app.activate()
+            app.buttons["widget-fixture.delete-a"].tap()
+            guard require(app.staticTexts["a-deleted"], timeout: 5, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:--", "B:22"], absent: ["A:33"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-deleted"
+            ) else { return }
+
+            app.activate()
+            app.buttons["widget-fixture.reregister-a"].tap()
+            guard require(app.staticTexts["a-reregistered"], timeout: 5, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:44", "B:22"], absent: ["A:--", "A:33"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-reregistered"
+            ) else { return }
         }
     }
 

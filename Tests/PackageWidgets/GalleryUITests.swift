@@ -75,9 +75,21 @@ final class GalleryUITests: XCTestCase {
                 evidenceName: "\(appName)-widget-updated"
             ) else { return }
 
+            app.terminate()
+            app.launch()
+            guard require(app.staticTexts["ready"], timeout: 10, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:33", "B:22"], absent: ["A:11"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-updated-cold-launch"
+            ) else { return }
+
             app.activate()
             app.buttons["widget-fixture.disable-a"].tap()
             guard require(app.staticTexts["a-disabled"], timeout: 5, on: app) else { return }
+            app.terminate()
+            app.launch()
+            guard require(app.staticTexts["ready"], timeout: 10, on: app) else { return }
             springboard.activate()
             guard waitForText(
                 expected: ["A:--", "B:22"], absent: ["A:33"], timeout: 20,
@@ -96,6 +108,9 @@ final class GalleryUITests: XCTestCase {
             app.activate()
             app.buttons["widget-fixture.delete-a"].tap()
             guard require(app.staticTexts["a-deleted"], timeout: 5, on: app) else { return }
+            app.terminate()
+            app.launch()
+            guard require(app.staticTexts["ready"], timeout: 10, on: app) else { return }
             springboard.activate()
             guard waitForText(
                 expected: ["A:--", "B:22"], absent: ["A:33"], timeout: 20,
@@ -107,8 +122,17 @@ final class GalleryUITests: XCTestCase {
             guard require(app.staticTexts["a-reregistered"], timeout: 5, on: app) else { return }
             springboard.activate()
             guard waitForText(
-                expected: ["A:44", "B:22"], absent: ["A:--", "A:33"], timeout: 20,
-                on: springboard, evidenceName: "\(appName)-widget-a-reregistered"
+                expected: ["A:empty", "B:22"], absent: ["A:--", "A:33", "A:11"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-reregistered-empty"
+            ) else { return }
+
+            app.activate()
+            app.buttons["widget-fixture.recreate-a"].tap()
+            guard require(app.staticTexts["a-recreated"], timeout: 5, on: app) else { return }
+            springboard.activate()
+            guard waitForText(
+                expected: ["A:44", "B:22"], absent: ["A:empty", "A:33"], timeout: 20,
+                on: springboard, evidenceName: "\(appName)-widget-a-recreated"
             ) else { return }
         }
     }

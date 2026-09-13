@@ -1,4 +1,5 @@
 "miniapp.title" = "Feature B";
 "miniapp.data-description" = "Feature B's saved widget value";
+"miniapp.increment" = "Increment Feature B";
 "widget.name" = "Feature B";
 "widget.description" = "Static widget owned by Feature B";

@@ -1,4 +1,5 @@
 "miniapp.title" = "機能A";
 "miniapp.data-description" = "機能Aが保存したウィジェット値";
+"miniapp.increment" = "機能Aを1増やす";
 "widget.name" = "機能A";
 "widget.description" = "機能Aが所有する静的ウィジェット";

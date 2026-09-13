@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P1-A",
-  "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
+  "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
   "contract": {
     "baseline": "f89ac1b4b68d34e67e205b77db25589efb75ba7d",
     "interfaces": "docs/delivery/P1-A-contract.md; optional incoming; managed async Intent boundaries; real Widget Definition factories",
@@ -9,7 +9,7 @@
     "failure_cases": "Incomplete incoming staging; provider cancellation/drain; failed receive stable receipt retry; disabled/removed Intents and Widget stores; atomic Widget increment/overflow; B preservation.",
     "normal_entrypoints": "Share Extension and external file -> normal inbox; generated host P1Intents and P1Widgets normal Registry management; native standalone/combined OS fixtures.",
     "invalidation": "Retest ownership/presentation/storage/management normal and generated host; no P1 OS proof inferred from prior0.7 device results. Existing P0 device records remain limited historical evidence; P1 physical checks reserved0.8.",
-    "review": "docs/verification/2026-09-13-p1-a.md includes both consolidated reviews, parent fixes, actual test inventories and exact input plan. Local37 tests, actionlint and source selector checks passed."
+    "review": "docs/verification/2026-09-13-p1-a.md includes both consolidated reviews, parent fixes, actual test inventories and exact input plan. Local37 tests, actionlint and source selector checks passed. All initial jobs reviewed; optional Intent values and Bash empty-array failures fixed; final Widget recreation evidence remains required after improving hit targets and operation feedback. Incoming23+true-process proof reused with unchanged source paths."
   },
   "dependencies": {
     "P0-C": "docs/verification/2026-09-13-p0-c-evidence.json; published0.7.0; user normal+diagnostic device confirmation"
@@ -28,8 +28,8 @@
         "P0-6.diagnostics",
         "P0-6.local"
       ],
-      "command": "run1 build-ios: Tests/Fixtures/network_server.py --run-tests; verify-feature-build-requirements.py; verify-feature-connection.py; verify-package-compatible-update.py; verify-incoming-processes.py; normal IPA + full UI/Files.",
-      "expected_minutes": 24,
+      "command": "run3 normal+generated shared job: full normal IPA/UI/Files, shared tests and native build requirements; same job as generated-host (one30-minute estimate, not additive).",
+      "expected_minutes": 30,
       "timeout_minutes": 45
     },
     {
@@ -38,7 +38,7 @@
       "criteria": [
         "P1-1.metadata"
       ],
-      "command": "run1 native-surface intents: verify-package-app-intents.py --simulator-id selected; 7 unit +1 managed UI; standalone A/B and combined native metadata + Shortcut contribution removal.",
+      "command": "run3 native-surface intents: verify-package-app-intents.py --simulator-id selected; 7 unit +1 managed UI; standalone A/B and combined native metadata + Shortcut contribution removal.",
       "expected_minutes": 25,
       "timeout_minutes": 30
     },
@@ -48,18 +48,8 @@
       "criteria": [
         "P1-2.widget"
       ],
-      "command": "run1 native-surface widgets: verify-package-widgets-native.py --simulator-id selected; 4 Timeline cases; three actual gallery cases with cold-state OCR, host/extension ownership binary checks.",
+      "command": "run3 native-surface widgets: verify-package-widgets-native.py --simulator-id selected; 4 Timeline cases; three actual gallery cases with cold-state OCR, host/extension ownership binary checks.",
       "expected_minutes": 25,
-      "timeout_minutes": 30
-    },
-    {
-      "id": "incoming-native",
-      "kind": "unit",
-      "criteria": [
-        "P1-3.routing"
-      ],
-      "command": "run1 native-surface incoming: xcodebuild test -scheme IncomingNativeTests; all Store/FileAccess/Delivery/NSItemProvider cases; true macOS multiprocess in normal job.",
-      "expected_minutes": 15,
       "timeout_minutes": 30
     },
     {
@@ -73,7 +63,7 @@
         "P0-4.onboarding",
         "P0-5.ui"
       ],
-      "command": "run2 build-ios feature_validation=true, normal selector MigrationUITests/MigrationUITests/testPersistenceAndHostIntegration, generated selectors listed in dispatch-2.json; Notes standalone +actual generated host contains incoming/intents/widget Definitions alongside Counter/Reminder and P0 probes.",
+      "command": "run3 same normal+generated job: feature_validation=true and all9 selectors from dispatch-3.json; full normal ui_test_filter empty; Notes standalone +normal registry with three P1 diagnostic pairs; estimated job30min total.",
       "expected_minutes": 30,
       "timeout_minutes": 45
     },
@@ -101,6 +91,12 @@
       "source": "7d4ac9cc80ead90848316221a3dc4edb2b1b1bce",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34745151320",
       "conclusion": "failure"
+    },
+    {
+      "id": "34746211458/attempt-1",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458",
+      "conclusion": "in_progress"
     }
   ],
   "evidence": [

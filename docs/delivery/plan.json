@@ -219,8 +219,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "Shortcuts実利用",
-      "existing": "metadata/Shortcut式/entity/query識別子と直接実行",
-      "remaining": "OS上の発見・候補・引数・戻り値・取消を二Featureで確認",
+      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認",
+      "remaining": "0.8候補でOS Shortcuts発見/候補/保存workflow/取消と他owner保持の実機確認",
       "deferred": "Control等の高度な接続",
       "criteria": [
         {
@@ -249,8 +249,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "静的Widget通常接続",
-      "existing": "Package Widget/gallery/home描画とApp Group比較",
-      "remaining": "通常接続・出荷構成へ反映、片側更新/削除後の他方維持",
+      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認",
+      "remaining": "0.8候補で通常Widget追加/更新/無効化/削除と他方保持の実機確認",
       "deferred": "設定可能/操作可能Widget・Control/任意extension",
       "criteria": [
         {
@@ -280,8 +280,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "URL・外部ファイル・Share入口",
-      "existing": "URL resolver/曖昧一致拒否/scene接続",
-      "remaining": "security-scoped URLの寿命、汎用Share Extensionの受信先選択と保存/終了契約",
+      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認",
+      "remaining": "0.8候補でOS共有シート/外部ファイル入口から対象選択・取消・再起動保持の実機確認",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {

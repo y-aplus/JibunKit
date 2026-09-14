@@ -9,7 +9,7 @@
     "failure_cases": "Incomplete incoming staging; provider cancellation/drain; failed receive stable receipt retry; disabled/removed Intents and Widget stores; atomic Widget increment/overflow; B preservation.",
     "normal_entrypoints": "Share Extension and external file -> normal inbox; generated host P1Intents and P1Widgets normal Registry management; native standalone/combined OS fixtures.",
     "invalidation": "Retest ownership/presentation/storage/management normal and generated host; no P1 OS proof inferred from prior0.7 device results. Existing P0 device records remain limited historical evidence; P1 physical checks reserved0.8.",
-    "review": "Run4 full job and downloaded simulator log inspected. No Widget store/management implementation failure inferred from a15s wait: native Spotlight callback completed after17.3s. Changed only targeted deletion XCTest deadline, inbox confirmation UI/test, and workflow failure dependencies. All37 Tools tests passed; actionlint caught and resolved simulator-step ID placement before commit; final actionlint/diff/source-selector checks pass. Root navigation composite passed and is reused; no physical P1 acceptance claimed."
+    "review": "Run4 full job and downloaded simulator log inspected. No Widget store/management implementation failure inferred from a15s wait: native Spotlight callback completed after17.3s. Changed only targeted deletion XCTest deadline, inbox confirmation UI/test, and workflow failure dependencies. All37 Tools tests passed; actionlint caught and resolved simulator-step ID placement before commit; final actionlint/diff/source-selector checks pass. Root navigation composite passed and is reused; no physical P1 acceptance claimed. Run5 inspected: all test steps and artifact uploads succeeded; GitHub annotation states45m job timeout during final cleanup. Cancelled status retained. Full tests accepted individually, no rerun just for a green summary. Final matrix-only workflow split validated by actionlint; runtime verification of matrix reserved next P1-B CI. Product paths unchanged since tested77b5f5d."
   },
   "dependencies": {
     "P0-C": "docs/verification/2026-09-13-p0-c-evidence.json; published0.7.0; user normal+diagnostic device confirmation"
@@ -108,7 +108,7 @@
       "id": "34794545131/attempt-1",
       "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131",
-      "conclusion": "in_progress"
+      "conclusion": "cancelled"
     }
   ],
   "evidence": [
@@ -201,6 +201,91 @@
       "observation": "P0ARecordsUITests and P0ASQLiteUITests actual host maintenance passed.",
       "review": "Records attachment restore/B preservation and native DB close/reopen/rollback/B preservation checked via actual probe assertions.",
       "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131/job/103825007134",
+      "observation": "Shared262(skip2) passed including FeatureLifetime/Runtime/TaskScope normal startup, cancellation/drain and other-owner preservation.",
+      "review": "Read named suite pass markers and full shared262/zero failures in run5 log. Simulator test passes separately counted; build-only success is not substituted."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131/job/103825007134",
+      "observation": "Shared262(skip2), independent Records11, BackupRestoreUI6 and Files1 passed; cancelled/invalid selected restore, partial apply failure and other-owner preservation verified.",
+      "review": "Read named suite pass markers and full shared262/zero failures in run5 log. Simulator test passes separately counted; build-only success is not substituted."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131/job/103825007134",
+      "observation": "MiniAppManagementTests and owned storage/Runtime suites passed; normal UI consent and disable/restart/cancel/delete/reregister13-suite passed.",
+      "review": "Read named suite pass markers and full shared262/zero failures in run5 log. Simulator test passes separately counted; build-only success is not substituted."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131/job/103825007134",
+      "observation": "Runtime/TaskScope/shared suites passed, including shutdown progress until actual owned task/cleanup completion.",
+      "review": "Read named suite pass markers and full shared262/zero failures in run5 log. Simulator test passes separately counted; build-only success is not substituted."
+    },
+    {
+      "criterion": "P0-5.ui",
+      "kind": "simulator",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131/job/103825007134",
+      "observation": "Normal management consent refusal, disable/restart/delete cancellation/removal/reregister/B preservation passed; run3 dedicated removal failure/retry also passed.",
+      "review": "Combined actual normal2 management methods in run5 with immutable P0BManagementFailure pass from run3. Shared management implementation unchanged between them."
+    },
+    {
+      "criterion": "P0-4.docs",
+      "kind": "inspection",
+      "source": "18968deac95bcb046741c9f2c7aa1afe86c80785",
+      "result": "passed",
+      "reference": "docs/mini-apps.md; docs/updating.md; docs/status.md; docs/guides/feature-incoming.md; docs/guides/package-app-intents.md; docs/guides/package-static-widgets.md",
+      "observation": "README→mini-apps/updating/status links cover addition, ownership, failure/recovery and new incoming/Intents/Widget guides. Four P1 guides aligned with real source-specific CI success and pending0.8 physical checks.",
+      "review": "Reviewed current paths and public registration/lifetime/async ownership descriptions; does not claim a new whole minor audit or0.8 release.",
+      "reuse_reason": "Guide edits follow tested product77b5f5d; commit18968de changes only docs and CI partitioning, no library/host/Feature implementation. CI partition execution remains a next-wave validation item."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed."
+    },
+    {
+      "criterion": "P0-4.onboarding",
+      "kind": "simulator",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed."
     }
   ],
   "deferred_device": {
@@ -212,8 +297,8 @@
   "release": {},
   "metrics": {
     "review_rounds": 2,
-    "parent_messages": 0,
-    "ci_job_minutes": 69.12
+    "parent_messages": 4,
+    "ci_job_minutes": 195.33
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -268,6 +353,12 @@
       "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
       "result": "partial",
       "detail": "Job28m26. Root navigation/Records/scene/Notes composite passed395.841s; normal-host P1Intents passed55.939s. Incoming test stopped before receive because cancellation button was absent from native confirmation popover. Widget test waited15s for removal, timed out; app log shows notification cleanup complete, Spotlight delete at00:53:08.689 and removed announcement00:53:25.988 (17.3s). It did not complete later reregistration/B checks in this run. IPA/shared/native build requirement steps pass; normal UI/Files skipped. Run5 corrects cancellation presentation and evidence-based wait and allows independent normal UI after generated failure."
+    },
+    {
+      "run": "34794545131",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "result": "tests-passed-run-cancelled",
+      "detail": "45m job timeout annotation. All actual test and artifact steps succeeded: P1Incoming66.445s, P1Intents57.609s, P1Widgets60.386s, normal UI13, Files1, RecordsUI2, Notes standalone1 and shared262(skip2)/Records11. IPA retrieved2190686bytes, CRC valid, SHA256871908440fa1fdb05e750e61abeb6a42ea6d2dc3e5898fa6c0531cca6f209cd4; embedded Share+Widget present. Upload finished01:46:26, cleanup01:46:31, job timeout45m. No unfinished test inferred from summary cancellation."
     }
   ]
 }

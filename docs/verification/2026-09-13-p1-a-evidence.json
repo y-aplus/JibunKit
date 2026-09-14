@@ -103,6 +103,12 @@
       "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34792716605",
       "conclusion": "failure"
+    },
+    {
+      "id": "34794545131/attempt-1",
+      "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34794545131",
+      "conclusion": "in_progress"
     }
   ],
   "evidence": [

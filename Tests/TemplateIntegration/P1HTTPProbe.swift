@@ -47,7 +47,11 @@ private final class P1HTTPOwner {
     private var stableCookie: String { id.rawValue + "-stable" }
 
     private func openSession() async throws {
-        let base = try await P1DeviceHTTPFixture.shared.start()
+        let base: URL
+        if let raw = ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] {
+            guard let port = UInt16(raw), port > 0 else { throw Failure.fixtureUnavailable }
+            base = URL(string: "http://127.0.0.1:\(port)")!
+        } else { base = try await P1DeviceHTTPFixture.shared.start() }
         let context = MiniAppContext(id: id)
         let cookies = try MiniAppCookieStore(context: context), credentials = try MiniAppPasswordCredentialStore(context: context)
         // A retained custom disk cache is evidence inside reconstructed sessions;

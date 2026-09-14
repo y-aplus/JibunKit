@@ -49,12 +49,14 @@ private final class Owner {
     private var needsReload = true
     private var authentication: MiniAppWebAuthentication?
     private var authenticationRequest: MiniAppWebAuthenticationRequest?
+    private var authenticationBaseURL: URL?
     private let presentation = PresentationProvider()
     private static let authenticationCoordinator = MiniAppWebAuthenticationCoordinator()
 
     @ObservationIgnored
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
+        self.authenticationBaseURL = try await P1DeviceHTTPFixture.shared.start()
         self.authentication = try runtime.makeWebAuthentication(
             context: MiniAppContext(id: self.id),
             coordinator: Self.authenticationCoordinator,
@@ -66,6 +68,7 @@ private final class Owner {
             self?.operationID = nil
             self?.authenticationRequest = nil
             self?.authentication = nil
+            self?.authenticationBaseURL = nil
         }
     }
 
@@ -145,18 +148,7 @@ private final class Owner {
     }
 
     func startAuthentication(path: String) {
-        authenticationResult = "starting"
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                let base = try await P1DeviceHTTPFixture.shared.start()
-                await self.startAuthentication(path: path, base: base)
-            }
-            catch { self.authenticationResult = "failed: \(error)" }
-        }
-    }
-
-    private func startAuthentication(path: String, base: URL) async {
+        guard let base = authenticationBaseURL else { authenticationResult = "failed: not running"; return }
         guard let authentication else { authenticationResult = "failed: not running"; return }
         guard authenticationRequest == nil else { authenticationResult = "busy: own request"; return }
         do {

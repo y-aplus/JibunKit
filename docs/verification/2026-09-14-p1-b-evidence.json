@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P1-B",
-  "source": "e51c8874e5e0120a71b54c1fb6a2d343a60c31a8",
+  "source": "e6019fec58314098164f87c457e36f8b282f623f",
   "contract": {
     "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
     "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
@@ -14,19 +14,18 @@
   "dependencies": {
     "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
   },
-  "planned_ci_runs": 9,
-  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged. Run5 completed all ten methods but exceeded the job deadline. Run6 verifies new self-contained device HTTP/Web endpoints and packages the combined P1-A/P1-B candidate; it is not a status-only rerun. Split UI across two identical hosts and add one small dedicated real-network XCTest job. No child CI. Run6 built both complete diagnostic Release hosts and passed all six embedded HTTP XCTest methods, but Bash 3.2 nounset rejected expansion of an empty optional command prefix before either UI suite started. Run7 uses a nonempty env prefix, runs both previously unexecuted UI shards and packages IPA. Reuse the exact unchanged dedicated fixture sources/tests from run6 rather than spending another native job. Run7 executed all eleven methods: five passed, six failed. Device fixed-port listener used requiredLocalEndpoint plus an explicit on port, rejected by Network (confirmed in simulator-app.log). Six previous fixture tests used only ephemeral ports and missed this. A Web management search also dismissed its sheet by swiping down at the top. Run8 fixes both, adds exact-default fixed-port XCTest, reruns all eight affected P1 UI methods and seven fixture tests. Three unchanged P0 methods are reused; preserve their probe in both Registries without selecting their tests. Run8 passed all seven native fixture methods, HTTP/notification UI3 and Web4, and packaged the diagnostic IPA. Only Web disable test failed in its pre-test unconditional deletion: native unregister still in progress after60s. Run9 limits blank-data reset to the test that needs it, bounds native management completion at120s, and reruns Web5 only. Reuse completed network job/IPA and native7 unchanged. Same full Registry and original filter feed host generation; generated_ui_shard selects only execution job.",
+  "planned_ci_runs": 10,
+  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged. Run5 completed all ten methods but exceeded the job deadline. Run6 verifies new self-contained device HTTP/Web endpoints and packages the combined P1-A/P1-B candidate; it is not a status-only rerun. Split UI across two identical hosts and add one small dedicated real-network XCTest job. No child CI. Run6 built both complete diagnostic Release hosts and passed all six embedded HTTP XCTest methods, but Bash 3.2 nounset rejected expansion of an empty optional command prefix before either UI suite started. Run7 uses a nonempty env prefix, runs both previously unexecuted UI shards and packages IPA. Reuse the exact unchanged dedicated fixture sources/tests from run6 rather than spending another native job. Run7 executed all eleven methods: five passed, six failed. Device fixed-port listener used requiredLocalEndpoint plus an explicit on port, rejected by Network (confirmed in simulator-app.log). Six previous fixture tests used only ephemeral ports and missed this. A Web management search also dismissed its sheet by swiping down at the top. Run8 fixes both, adds exact-default fixed-port XCTest, reruns all eight affected P1 UI methods and seven fixture tests. Three unchanged P0 methods are reused; preserve their probe in both Registries without selecting their tests. Run8 passed all seven native fixture methods, HTTP/notification UI3 and Web4, and packaged the diagnostic IPA. Only Web disable test failed in its pre-test unconditional deletion: native unregister still in progress after60s. Run9 limits blank-data reset to the test that needs it, bounds native management completion at120s, and reruns Web5 only. Reuse completed network job/IPA and native7 unchanged. Same full Registry and original filter feed host generation; generated_ui_shard selects only execution job. Run9 failed: Web3 passed, disable stalled in Core Spotlight domain deletion despite120s, auth failed preparing inherited disabling state. Notification pending/delivered/category cleanup completed before Spotlight call. Run10 is a small independent native first-request comparison (five bounded operations in one test), not another full generated UI rerun. No production bypass or larger timeout. UI setup now retries persisted interrupted management through normal buttons; that change is not yet iOS-verified.",
   "jobs": [
     {
-      "id": "generated-web-management",
+      "id": "spotlight-cold-start",
       "kind": "simulator",
       "criteria": [
-        "P1-6.storage",
-        "P1-6.auth"
+        "P1-6.storage"
       ],
-      "command": "Same complete P1/P0 host; Web five methods only. Blank reset only for cancellation test, native management completion <=120s. Other jobs/IPA reused unchanged.",
-      "expected_minutes": 29,
-      "timeout_minutes": 45
+      "command": "native-surface.yml workflow_dispatch surface=spotlight-cold-start; independent native empty domain deletion twice, async overlay, index item and populated domain deletion. Each callback bound30s; failures remain failures. No JibunKit import or generated UI rerun.",
+      "expected_minutes": 6,
+      "timeout_minutes": 30
     },
     {
       "id": "guide-review",
@@ -92,7 +91,7 @@
       "id": "34819734774/attempt-1",
       "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774",
-      "conclusion": "in_progress"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -320,7 +319,7 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 6,
-    "ci_job_minutes": 321.49
+    "ci_job_minutes": 349.59
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -431,5 +430,12 @@
       "checkpoint": "0.8.0",
       "procedure": "docs/verification/2026-09-14-0.8-device-check.md section3: actual OS notification cards, mark/reply text, foreground policy and retained delivered B after A cleanup; prior simulator foreground/attachment passes do not cover these remaining actions."
     }
-  ]
+  ],
+  "spotlight_diagnosis": {
+    "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+    "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774/job/103898309278",
+    "result": "unresolved",
+    "observation": "08:03:19.206 pending request; .212 pending0 returned; .245 delivered0 returned; .486 installed4 categories; .490 Core Spotlight deleteSearchableItemsWithDomainIdentifiers called; .493 IndexAgent XPC connection started. At08:05:29 management remained unregistering. Web3 methods passed; disable245.850s and auth154.268s failed. Later authentication failure was missing enable action while persisted disabling; not an authentication API result.",
+    "next": "Independent native callback/async comparison before another expensive UI run. Native-vs-host or simulator-vs-device cause not established."
+  }
 }

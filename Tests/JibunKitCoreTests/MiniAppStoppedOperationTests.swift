@@ -76,7 +76,9 @@ final class MiniAppStoppedOperationTests: XCTestCase, @unchecked Sendable {
         let a = MiniAppFeatureLifetime(id: MiniAppID("a"))
         let b = MiniAppFeatureLifetime(id: MiniAppID("b"))
         let manager = MiniAppManagement(registrations: [
-            .init(id: a.id, lifetime: a, removal: .init(id: a.id, dataDescription: "A") { events.deleted = true }),
+            .init(id: a.id, lifetime: a, removal: .init(id: a.id, dataDescription: "A") {
+                await MainActor.run { events.deleted = true }
+            }),
             .init(id: b.id, lifetime: b)
         ], defaults: defaults, consents: .init(defaults: defaults), coordinator: coordinator)
         try await a.start()

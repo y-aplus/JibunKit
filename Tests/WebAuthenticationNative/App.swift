@@ -81,7 +81,7 @@ private final class AuthenticationModel: NSObject, ObservableObject,
                 }
             }
             status = "presented"
-        } catch { status = "failed" }
+        } catch { status = "failed: \(error)" }
     }
 
     private func complete(_ callbackURL: URL?, error: Error?, owner: String = "native-probe") {
@@ -90,7 +90,7 @@ private final class AuthenticationModel: NSObject, ObservableObject,
             status = "cancelled"
         } else if error as? MiniAppWebAuthenticationCoordinator.Failure == .cancelled {
             status = "cancelled"
-        } else { status = "failed" }
+        } else { status = "failed: \(String(describing: error))" }
         session = nil
         request = nil
     }

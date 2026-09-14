@@ -34,7 +34,7 @@ final class WebAuthenticationNativeUITests: XCTestCase {
         app.buttons[startButton].tap()
         acceptConsentIfPresent()
         let returnLink = app.links["Return to App"]
-        XCTAssertTrue(returnLink.waitForExistence(timeout: 10))
+        guard waitForReturnPage(returnLink) else { return }
         returnLink.tap()
         confirmOpenIfPresent()
         waitForStatus(status, timeout: 15)
@@ -58,6 +58,34 @@ final class WebAuthenticationNativeUITests: XCTestCase {
         let systemContinue = springboard.buttons["Continue"]
         if appContinue.waitForExistence(timeout: 2) { appContinue.tap() }
         else if systemContinue.waitForExistence(timeout: 2) { systemContinue.tap() }
+    }
+
+    private func waitForReturnPage(_ link: XCUIElement) -> Bool {
+        // A cold AuthenticationServices browser can finish presenting its
+        // consent/welcome control after the initial short consent check. Wait
+        // for real page content and handle that control when it appears.
+        let deadline = Date().addingTimeInterval(45)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        while Date() < deadline {
+            if link.waitForExistence(timeout: 5) { return true }
+            for button in [app.buttons["Continue"], springboard.buttons["Continue"]] {
+                if button.exists && button.isHittable { button.tap() }
+            }
+            let status = app.staticTexts["auth.status"]
+            if status.exists && (status.label.hasPrefix("failed") || status.label == "rejected") { break }
+        }
+        for (name, surface) in [("app", app), ("system", springboard)] {
+            let screenshot = XCTAttachment(screenshot: surface.screenshot())
+            screenshot.name = "auth-page-missing-" + name
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            let tree = XCTAttachment(string: surface.debugDescription)
+            tree.name = "auth-page-missing-" + name + "-hierarchy"
+            tree.lifetime = .keepAlways
+            add(tree)
+        }
+        XCTFail("Native authentication page did not become ready; see page-missing attachments")
+        return false
     }
 
     private func confirmOpenIfPresent() {

@@ -18,7 +18,7 @@ enum P1NotificationsProbe {
             id: owner.id, title: title, systemImage: "bell.badge",
             lifetime: owner.lifetime,
             removal: .init(id: owner.id, dataDescription: "通知検証の画像原本と操作記録") {
-                try owner.removeData()
+                try await owner.removeData()
             },
             onUnregister: { try owner.attachments.removeStagingFiles() },
             onNotificationAction: { await owner.receive($0) },
@@ -239,7 +239,7 @@ private final class NotificationCancellationGate {
     private var continuation: CheckedContinuation<Void, Error>?
     func wait() async throws {
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
                 else { self.continuation = continuation }
             }

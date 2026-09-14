@@ -238,7 +238,7 @@ private final class PrecommitHold {
             cancellationRequested = false
         }
         try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 if cancellationRequested {
                     cancellationRequested = false
                     continuation.resume(throwing: CancellationError())

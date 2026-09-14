@@ -127,6 +127,15 @@ jobs:
               ;;
           esac
 
+      - name: Export native web screenshots and accessibility evidence
+        if: always() && inputs.surface == 'web-authentication'
+        shell: bash
+        run: |
+          if [[ -d "$RUNNER_TEMP/WebAuthentication.xcresult" ]]; then
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/WebAuthentication.xcresult" \
+              --output-path "$RUNNER_TEMP/WebAuthentication-attachments"
+          fi
+
       - name: Upload surface diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -142,5 +151,6 @@ jobs:
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
             ${{ runner.temp }}/WebAuthentication-tests.json
+            ${{ runner.temp }}/WebAuthentication-attachments
           if-no-files-found: warn
           retention-days: 14

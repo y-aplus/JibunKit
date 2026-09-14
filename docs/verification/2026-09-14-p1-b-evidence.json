@@ -9,7 +9,7 @@
     "failure_cases": "Pending attachment failure/cancel/drain; HTTP distinct precommit candidates, native request cancellation/logout; Web precommit failure/held writer; stopped cleanup cancellation and management; B preservation.",
     "normal_entrypoints": "Ten generated UI methods through the normal Registry/management plus normal IPA/UI; five independent native Web auth tests.",
     "invalidation": "Core lifetime and management changed: rerun shared unit suite, P0 lifetime2, management failure1, normal management UI; unchanged native Intent metadata/Widget and other P0 paths reused with scoped review.",
-    "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI."
+    "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI. Run1: fixed MainActor hops in test/removal and explicit Void continuation types. Native auth 4/5 passed; initial wrapper page missing, cold-page wait and late Continue handling plus failure attachments added; cause remains unproven until run2."
   },
   "dependencies": {
     "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
@@ -72,7 +72,7 @@
       "id": "34801232847/attempt-1",
       "source": "5538dd96087093f57801b44b4fffae57e933dd4a",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34801232847",
-      "conclusion": "in_progress"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -190,7 +190,7 @@
   "metrics": {
     "review_rounds": 2,
     "parent_messages": 4,
-    "ci_job_minutes": 0
+    "ci_job_minutes": 16.7
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",

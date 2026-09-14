@@ -37,17 +37,17 @@ private final class P1HTTPOwner {
     @ObservationIgnored private var holdToken: String?
 
     @ObservationIgnored lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
-        guard let self else { return }; try self.openSession()
+        guard let self else { return }; try await self.openSession()
         try runtime.onShutdown { [weak self] in self?.closeSession() }
     }
     init(id: String, password: String) { self.id = MiniAppID(id); stablePassword = password }
-    private var port: Int? { ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"].flatMap(Int.init) }
-    private var base: URL? { port.flatMap { URL(string: "http://127.0.0.1:\($0)") } }
+    private var port: Int? { base?.port }
+    private var base: URL?
     private var cacheRoot: URL { FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0] }
     private var stableCookie: String { id.rawValue + "-stable" }
 
-    private func openSession() throws {
-        guard port != nil else { throw Failure.fixtureUnavailable }
+    private func openSession() async throws {
+        let base = try await P1DeviceHTTPFixture.shared.start()
         let context = MiniAppContext(id: id)
         let cookies = try MiniAppCookieStore(context: context), credentials = try MiniAppPasswordCredentialStore(context: context)
         // A retained custom disk cache is evidence inside reconstructed sessions;
@@ -56,9 +56,9 @@ private final class P1HTTPOwner {
         let config = URLSessionConfiguration.default
         config.httpCookieStorage = cookies.storage; config.urlCredentialStorage = credentials.storage
         config.urlCache = cache; config.requestCachePolicy = .useProtocolCachePolicy
-        self.cookies = cookies; self.credentials = credentials; session = URLSession(configuration: config)
+        self.base = base; self.cookies = cookies; self.credentials = credentials; session = URLSession(configuration: config)
     }
-    private func closeSession() { session?.invalidateAndCancel(); session = nil; cookies = nil; credentials = nil }
+    private func closeSession() { session?.invalidateAndCancel(); session = nil; cookies = nil; credentials = nil; base = nil }
 
     func login() { startWriter("login") { [self] in try await performLogin(candidate: failNextSave) } }
     func reload() { startWriter("reload") { [self] in try await readState(checkCache: false) } }
@@ -162,7 +162,7 @@ private final class P1HTTPOwner {
             try cookies.reload(); try credentials.reload()
             // Reconstruct to discard URLSession's remembered authentication
             // challenges as well as the candidate in-memory store values.
-            closeSession(); try openSession(); try await readState(checkCache: false)
+            closeSession(); try await openSession(); try await readState(checkCache: false)
             throw Failure.injectedPrecommitFailure
         }
         try cookies.save(); try credentials.save()

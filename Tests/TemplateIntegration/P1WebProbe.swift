@@ -145,12 +145,23 @@ private final class Owner {
     }
 
     func startAuthentication(path: String) {
+        authenticationResult = "starting"
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let base = try await P1DeviceHTTPFixture.shared.start()
+                await self.startAuthentication(path: path, base: base)
+            }
+            catch { self.authenticationResult = "failed: \(error)" }
+        }
+    }
+
+    private func startAuthentication(path: String, base: URL) async {
         guard let authentication else { authenticationResult = "failed: not running"; return }
         guard authenticationRequest == nil else { authenticationResult = "busy: own request"; return }
-        authenticationResult = "starting"
         do {
             authenticationRequest = try authentication.start(
-                url: URL(string: "http://127.0.0.1:8765/\(path)")!,
+                url: base.appendingPathComponent(path),
                 callbackURLScheme: "jibunkit-auth-probe"
             ) { [weak self] result in
                 switch result {

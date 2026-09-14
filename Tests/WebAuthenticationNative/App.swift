@@ -55,6 +55,7 @@ private final class AuthenticationModel: NSObject, ObservableObject,
     }
 
     func startWrapper(path: String, owner: String = "native-probe") {
+        guard request == nil else { status = "busy"; return }
         status = "starting"
         do {
             let authentication: MiniAppWebAuthentication
@@ -76,7 +77,7 @@ private final class AuthenticationModel: NSObject, ObservableObject,
             ) { [weak self] result in
                 switch result {
                 case let .success(url): self?.complete(url, error: nil, owner: owner)
-                case let .failure(error): self?.complete(nil, error: error)
+                case let .failure(error): self?.complete(nil, error: error, owner: owner)
                 }
             }
             status = "presented"

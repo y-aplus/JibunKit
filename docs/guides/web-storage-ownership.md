@@ -45,9 +45,17 @@ lifetime and invokes removal.
 
 Cancellation is cooperative. Runtime stop closes admission, cancels its owned
 task, and waits for the page operation to return before cleanup. Check task
-cancellation both before and after `callAsyncJavaScript`; JavaScript that has
-already begun may still finish in WebKit. A cancelled Swift task is therefore
-not proof that a WebKit transaction was rolled back.
+cancellation before admitting a write; JavaScript that has already begun may
+still finish in WebKit. A cancelled Swift task is therefore not proof that a
+WebKit transaction was rolled back.
+
+For a deliberate pre-commit hold, acquire ordinary store access first, then
+publish the waiting state and suspend on a Feature-owned continuation. It must
+be resumed exactly once by an explicit release or task cancellation; do not use
+a wall-clock delay as evidence that management encountered an in-flight writer.
+Once `callAsyncJavaScript` has returned its page acknowledgement, preserve that
+successful result rather than rewriting it to cancellation because the task was
+cancelled later.
 
 When checking that an IndexedDB database was deleted, do not call
 `indexedDB.open(name)` first: opening a missing database creates it. Check

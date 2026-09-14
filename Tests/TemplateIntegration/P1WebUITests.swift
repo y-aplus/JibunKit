@@ -2,18 +2,21 @@ import XCTest
 
 @MainActor
 final class P1WebUITests: XCTestCase {
-    private var app: XCUIApplication!
+    private let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
+    private let owners = ["p1-web-a", "p1-web-b"]
 
     override func setUp() {
         continueAfterFailure = false
-        app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
+        openManagement()
+        for owner in owners { enableIfNeeded(owner) }
+        closeManagement()
     }
 
-    func testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB() {
-        for owner in ["p1-web-a", "p1-web-b"] {
-            open(owner)
+    func testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB() throws {
+        for owner in owners {
+            try open(owner)
             tap("p1.web.write")
             expectResult("local=\(owner) cookie=\(owner) indexeddb=\(owner)")
             tap("p1.web.write-fail")
@@ -23,83 +26,126 @@ final class P1WebUITests: XCTestCase {
             backToList()
         }
         backgroundTerminateAndLaunch()
-        open("p1-web-a")
+        try open("p1-web-a")
         tap("p1.web.read")
         expectResult("local=p1-web-a cookie=p1-web-a indexeddb=p1-web-a")
         backToList()
 
-        tap("management.open")
-        tap("management.delete.p1-web-a")
+        openManagement()
+        tapManagement("management.delete.p1-web-a")
         XCTAssertTrue(app.alerts.buttons["キャンセル"].waitForExistence(timeout: 5))
         app.alerts.buttons["キャンセル"].tap()
-        tap("management.delete.p1-web-a")
+        tapManagement("management.delete.p1-web-a")
         app.alerts.buttons["削除"].tap()
-        expectText(identifier: "management.status.p1-web-a", label: "削除済み", timeout: 20)
-        app.navigationBars.buttons["閉じる"].tap()
+        expectManagement("p1-web-a", "削除済み", timeout: 20)
+        closeManagement()
 
-        open("p1-web-b")
+        try open("p1-web-b")
         tap("p1.web.read")
         expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
         backToList()
-        tap("management.open")
-        tap("management.enable.p1-web-a")
-        expectText(identifier: "management.status.p1-web-a", label: "有効", timeout: 15)
-        app.navigationBars.buttons["閉じる"].tap()
-        open("p1-web-a")
+        openManagement()
+        enableIfNeeded("p1-web-a")
+        expectManagement("p1-web-a", "有効")
+        closeManagement()
+        try open("p1-web-a")
         tap("p1.web.read")
         expectResult("local=missing cookie=missing indexeddb=missing")
+        backToList()
     }
 
-    func testCancellingDelayedWriterAllowsDisableAndBRemainsUsable() {
-        open("p1-web-a")
+    func testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable() throws {
+        try open("p1-web-a")
         tap("p1.web.write-delayed")
         expectResult("write waiting")
         tap("p1.web.cancel-write")
         expectResult("cancelled")
+        tap("p1.web.read")
+        expectResult("local=missing cookie=missing indexeddb=missing")
         backToList()
-        tap("management.open")
-        tap("management.disable.p1-web-a")
-        expectText(identifier: "management.status.p1-web-a", label: "無効（データを保持）", timeout: 20)
-        app.navigationBars.buttons["閉じる"].tap()
-        XCTAssertFalse(app.buttons["miniapp.p1-web-a"].isEnabled)
-        open("p1-web-b")
+        try open("p1-web-b")
         tap("p1.web.write")
         expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
         backToList()
-        tap("management.open")
-        tap("management.enable.p1-web-a")
-        expectText(identifier: "management.status.p1-web-a", label: "有効", timeout: 15)
     }
 
-    /// Requires the parent-owned management ordering change recorded in the submission:
-    /// close admission, stop/drain the lifetime, then acquire the deletion reservation.
-    func testManagementStopsInFlightWriterBeforeOwnerDeletion() {
-        open("p1-web-a")
+    func testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB() throws {
+        try open("p1-web-b")
+        tap("p1.web.write")
+        expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
+        backToList()
+        try open("p1-web-a")
         tap("p1.web.write-delayed")
         expectResult("write waiting")
         backToList()
-        tap("management.open")
-        tap("management.delete.p1-web-a")
+        openManagement()
+        tapManagement("management.delete.p1-web-a")
         app.alerts.buttons["削除"].tap()
-        expectText(identifier: "management.status.p1-web-a", label: "削除済み", timeout: 20)
-        app.navigationBars.buttons["閉じる"].tap()
-        tap("management.open")
-        tap("management.enable.p1-web-a")
-        expectText(identifier: "management.status.p1-web-a", label: "有効", timeout: 15)
-        app.navigationBars.buttons["閉じる"].tap()
-        open("p1-web-a")
+        expectManagement("p1-web-a", "削除済み", timeout: 20)
+        closeManagement()
+        openManagement()
+        enableIfNeeded("p1-web-a")
+        closeManagement()
+        try open("p1-web-a")
+        expectResult("cancelled")
         tap("p1.web.read")
         expectResult("local=missing cookie=missing indexeddb=missing")
+        backToList()
+        try open("p1-web-b")
+        tap("p1.web.read")
+        expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
+        backToList()
     }
 
-    private func open(_ owner: String) {
-        let direct = app.buttons["miniapp.\(owner)"]
-        if direct.waitForExistence(timeout: 2) { direct.tap() }
-        else {
-            tap("miniapp.switch.open")
-            tap("miniapp.switch.\(owner)")
-        }
+    func testDisableRejectsDeepLinkWhileBRemainsUsable() throws {
+        openManagement()
+        tapManagement("management.disable.p1-web-a")
+        expectManagement("p1-web-a", "無効（データを保持）")
+        closeManagement()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/p1-web-a")))
+        XCTAssertFalse(app.staticTexts["p1.web.page"].waitForExistence(timeout: 3), app.debugDescription)
+        openManagement()
+        expectManagement("p1-web-a", "無効（データを保持）")
+        closeManagement()
+        try open("p1-web-b")
+        tap("p1.web.write")
+        expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
+        backToList()
+        openManagement()
+        enableIfNeeded("p1-web-a")
+        closeManagement()
+    }
+
+    private func open(_ owner: String) throws {
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/" + owner)))
         expectText(identifier: "p1.web.page", label: "page-ready", timeout: 20)
+    }
+
+    private func openManagement() { tap("management.open") }
+    private func closeManagement() { tap("閉じる") }
+
+    private func enableIfNeeded(_ owner: String) {
+        let enable = managementButton("management.enable." + owner)
+        if enable.exists { enable.tap(); expectManagement(owner, "有効") }
+    }
+
+    private func tapManagement(_ identifier: String) {
+        let button = managementButton(identifier)
+        XCTAssertTrue(button.exists && button.isHittable, app.debugDescription)
+        button.tap()
+    }
+
+    private func managementButton(_ identifier: String) -> XCUIElement {
+        let button = app.buttons[identifier]
+        for _ in 0..<12 {
+            if button.exists && button.isHittable { return button }
+            app.swipeUp()
+        }
+        return button
+    }
+
+    private func expectManagement(_ owner: String, _ value: String, timeout: TimeInterval = 15) {
+        expectText(identifier: "management.status." + owner, label: value, timeout: timeout)
     }
 
     private func tap(_ identifier: String) {
@@ -108,9 +154,7 @@ final class P1WebUITests: XCTestCase {
         button.tap()
     }
 
-    private func expectResult(_ value: String) {
-        expectText(identifier: "p1.web.result", label: value, timeout: 15)
-    }
+    private func expectResult(_ value: String) { expectText(identifier: "p1.web.result", label: value, timeout: 15) }
 
     private func expectResultPrefix(_ value: String) {
         let element = app.staticTexts.matching(identifier: "p1.web.result")
@@ -124,11 +168,7 @@ final class P1WebUITests: XCTestCase {
         XCTAssertTrue(element.waitForExistence(timeout: timeout), app.debugDescription)
     }
 
-    private func backToList() {
-        let back = app.navigationBars.buttons["ミニアプリ"]
-        XCTAssertTrue(back.waitForExistence(timeout: 10), app.debugDescription)
-        back.tap()
-    }
+    private func backToList() { tap("miniapp.back-to-list") }
 
     private func backgroundTerminateAndLaunch() {
         XCUIDevice.shared.press(.home)

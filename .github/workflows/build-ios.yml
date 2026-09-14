@@ -735,6 +735,7 @@ jobs:
           retention-days: 7
 
       - name: Prepare simulator tests
+        id: simulator-prepare
         if: inputs.simulator_tests
         env:
           REQUESTED_RUNTIME: ${{ inputs.simulator_runtime }}
@@ -825,6 +826,7 @@ jobs:
           echo "PACKAGE_RESOURCE_STALE_A_BUNDLES before=$stale_before after=$stale_after"
 
       - name: Build and install standalone Counter
+        id: standalone-counter
         if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
         shell: bash
         run: |
@@ -909,7 +911,8 @@ jobs:
           PY
 
       - name: Build and install backup UI harness
-        if: inputs.simulator_tests && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))
+        id: backup-harness
+        if: ${{ !cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/')) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -920,7 +923,10 @@ jobs:
 
       - name: Run simulator integration checks
         id: integration
-        if: inputs.simulator_tests
+        # A generated-host failure must not suppress the independent normal host.
+        # Focused tests may intentionally omit Counter or the backup harness;
+        # a failed prerequisite is never treated as an intentional skip.
+        if: ${{ !cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (steps.standalone-counter.outcome == 'success' || (inputs.focused_ui_validation && steps.standalone-counter.outcome == 'skipped')) && (steps.backup-harness.outcome == 'success' || (inputs.focused_ui_validation && steps.backup-harness.outcome == 'skipped')) }}
         shell: bash
         env:
           UI_TEST_FILTER: ${{ inputs.ui_test_filter }}

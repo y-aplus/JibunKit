@@ -27,7 +27,9 @@ final class P1WidgetsUITests: XCTestCase {
         let confirm = app.alerts.buttons["削除"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         confirm.tap()
-        expect("management.status.owner-a", "削除済み")
+        // The native Spotlight acknowledgement took ~17s in run34792716605.
+        // Wait for the actual terminal state; never retry/skip deletion to pass.
+        expect("management.status.owner-a", "削除済み", timeout: 60)
         tap("management.enable.owner-a")
         expect("management.status.owner-a", "有効")
         app.terminate()
@@ -47,9 +49,9 @@ final class P1WidgetsUITests: XCTestCase {
         XCTAssertTrue(button.waitForExistence(timeout: 15), app.debugDescription)
         button.tap()
     }
-    private func expect(_ id: String, _ value: String) {
+    private func expect(_ id: String, _ value: String, timeout: TimeInterval = 15) {
         let element = app.staticTexts[id]
         let match = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", value), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [match], timeout: 15), .completed, app.debugDescription)
+        XCTAssertEqual(XCTWaiter.wait(for: [match], timeout: timeout), .completed, app.debugDescription)
     }
 }

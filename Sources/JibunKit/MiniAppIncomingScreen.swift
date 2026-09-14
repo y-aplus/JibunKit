@@ -82,14 +82,12 @@ struct MiniAppIncomingScreen: View {
                     }
                 }
             }
-            .confirmationDialog("この未取込みデータを破棄しますか？", isPresented: Binding(
+            .alert("この未取込みデータを破棄しますか？", isPresented: Binding(
                 get: { discardTarget != nil }, set: { if !$0 { discardTarget = nil } }
-            ), titleVisibility: .visible) {
-                if let target = discardTarget {
-                    Button("破棄する", role: .destructive) { discard(target) }
-                }
+            ), presenting: discardTarget) { target in
+                Button("破棄する", role: .destructive) { discard(target) }
                 Button("キャンセル", role: .cancel) { discardTarget = nil }
-            } message: { Text("取り込まれたミニアプリのデータや、他の受信は変更しません。") }
+            } message: { _ in Text("取り込まれたミニアプリのデータや、他の受信は変更しません。") }
             .task { await reload() }
             .refreshable { await reload() }
             .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload() } } }

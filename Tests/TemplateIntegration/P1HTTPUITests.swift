@@ -67,7 +67,7 @@ final class P1HTTPUITests: XCTestCase {
         expect("p1.http.status", "logout completed; reopen to inspect", timeout: 30)
         tap("p1.http.reload")
         expect("p1.http.status", "completed reload")
-        expect("p1.http.cookie", "")
+        expect("p1.http.cookie", "(empty)")
         expect("p1.http.auth", "unauthenticated")
 
         tap("miniapp.back-to-list")
@@ -93,7 +93,7 @@ final class P1HTTPUITests: XCTestCase {
         try open("p1-http-a")
         tap("p1.http.reload")
         expect("p1.http.status", "completed reload")
-        expect("p1.http.cookie", "")
+        expect("p1.http.cookie", "(empty)")
         expect("p1.http.auth", "unauthenticated")
         tap("miniapp.back-to-list")
         try open("p1-http-b")

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P1-B",
-  "source": "e0843719bd93cab673320493202cd4cae57ea13d",
+  "source": "5538dd96087093f57801b44b4fffae57e933dd4a",
   "contract": {
     "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
     "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
@@ -67,7 +67,14 @@
       "timeout_minutes": 30
     }
   ],
-  "runs": [],
+  "runs": [
+    {
+      "id": "34801232847/attempt-1",
+      "source": "5538dd96087093f57801b44b4fffae57e933dd4a",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34801232847",
+      "conclusion": "in_progress"
+    }
+  ],
   "evidence": [
     {
       "criterion": "P0-3.device",

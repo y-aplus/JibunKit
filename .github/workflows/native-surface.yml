@@ -1,6 +1,15 @@
 name: Native package surface
 
 on:
+  workflow_dispatch:
+    inputs:
+      surface:
+        required: true
+        type: choice
+        options: [spotlight-cold-start]
+      simulator_runtime:
+        default: ''
+        type: string
   workflow_call:
     inputs:
       surface:
@@ -31,7 +40,7 @@ jobs:
           SURFACE: ${{ inputs.surface }}
         shell: bash
         run: |
-          case "$SURFACE" in intents|widgets|incoming|web-authentication|device-http) ;; *) exit 2 ;; esac
+          case "$SURFACE" in intents|widgets|incoming|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
 
       - name: Select Xcode 26.6
         shell: bash
@@ -90,6 +99,9 @@ jobs:
         run: |
           set -euo pipefail
           case "$SURFACE" in
+            spotlight-cold-start)
+              python3 Tools/verify-spotlight-cold-start.py --simulator-id "$SIMULATOR_ID"
+              ;;
             device-http)
               python3 Tools/verify-p1-device-http.py --simulator-id "$SIMULATOR_ID"
               ;;
@@ -130,6 +142,15 @@ jobs:
               ;;
           esac
 
+      - name: Export Spotlight service diagnostics
+        if: always() && inputs.surface == 'spotlight-cold-start'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/SpotlightColdStart"
+          xcrun simctl spawn "$SIMULATOR_ID" log show --style compact --last 20m \
+            --predicate 'subsystem CONTAINS[c] "spotlight" OR process CONTAINS[c] "spotlight" OR eventMessage CONTAINS "IndexAgent"' \
+            > "$RUNNER_TEMP/SpotlightColdStart/simulator-service.log" 2>&1
+
       - name: Export native web screenshots and accessibility evidence
         if: always() && inputs.surface == 'web-authentication'
         shell: bash
@@ -145,6 +166,7 @@ jobs:
         with:
           name: Native-${{ inputs.surface }}-diagnostics
           path: |
+            ${{ runner.temp }}/SpotlightColdStart
             ${{ runner.temp }}/P1DeviceHTTP
             ${{ runner.temp }}/package-app-intents.log
             ${{ runner.temp }}/PackageAppIntents

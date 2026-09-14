@@ -202,6 +202,19 @@ final class P1WebUITests: XCTestCase {
         let status = app.staticTexts["management.status." + owner]
         reveal(status)
         XCTAssertTrue(status.exists, app.debugDescription)
+        // A preceding failed test may have exited during native unregister.
+        // Recover via the same retry actions as a user after process restart;
+        // never clear persisted management state behind the host's back.
+        if status.label.hasPrefix("無効化が未完了") {
+            tapManagement("management.disable." + owner)
+            expectManagement(owner, "無効（データを保持）")
+        } else if status.label.hasPrefix("削除が未完了") {
+            tapManagement("management.delete." + owner)
+            let confirmation = app.alerts.buttons["削除"]
+            XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+            confirmation.tap()
+            expectManagement(owner, "削除済み")
+        }
         if status.label != "有効" {
             tapManagement("management.enable." + owner)
             expectManagement(owner, "有効")

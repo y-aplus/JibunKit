@@ -1,0 +1,18 @@
+import ProjectDescription
+
+let project = Project(name: "SpotlightColdStart", targets: [
+    .target(
+        name: "SpotlightColdStart", destinations: .iOS, product: .app,
+        bundleId: "com.jibunkit.spotlight-cold-start",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+        sources: ["App.swift"]
+    ),
+    .target(
+        name: "SpotlightColdStartTests", destinations: .iOS, product: .unitTests,
+        bundleId: "com.jibunkit.spotlight-cold-start.tests",
+        deploymentTargets: .iOS("26.0"), infoPlist: .default,
+        sources: ["Tests.swift"],
+        dependencies: [.target(name: "SpotlightColdStart")]
+    ),
+])

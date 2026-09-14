@@ -15,6 +15,10 @@ on:
         description: Verify standalone Features, template generation and host integration
         type: boolean
         default: false
+      generated_validation_only:
+        description: Retry generated host and Records UI; reuse prior normal, requirements and standalone Notes evidence
+        type: boolean
+        default: false
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -193,7 +197,7 @@ jobs:
       matrix:
         # One completion boundary, independent normal and generated host jobs.
         # Focused and build-only calls retain the existing combined behavior.
-        lane: ${{ fromJSON(inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
+        lane: ${{ fromJSON(inputs.generated_validation_only && '["generated"]' || inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -205,6 +209,16 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+
+      - name: Validate generated-only retry
+        if: inputs.generated_validation_only
+        env:
+          VALID: ${{ inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' }}
+        run: |
+          if [[ "$VALID" != true ]]; then
+            echo "generated_validation_only requires feature_validation + simulator_tests, no focused/normal UI filter" >&2
+            exit 1
+          fi
 
       - name: Check publication boundary
         shell: bash
@@ -355,7 +369,7 @@ jobs:
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
       - name: Verify Feature build requirements
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ !inputs.focused_ui_validation && !inputs.generated_validation_only }}
         shell: bash
         run: |
           set -euo pipefail
@@ -845,7 +859,7 @@ jobs:
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
       - name: Test generated standalone Feature
-        if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
+        if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal') && !inputs.generated_validation_only
         shell: bash
         run: |
           set -euo pipefail
@@ -868,21 +882,11 @@ jobs:
           for feature_filter in "${feature_filters[@]}"; do
             selection+=("-only-testing:$feature_filter")
           done
+          fixture=()
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* ]]; then
-            port_file="$RUNNER_TEMP/p1-http-port"
-            python3 Tests/Fixtures/network_server.py "$port_file" &
-            fixture_pid=$!
-            trap 'kill "$fixture_pid" 2>/dev/null || true; wait "$fixture_pid" 2>/dev/null || true' EXIT
-            for _ in $(seq 1 50); do
-              [[ -s "$port_file" ]] && break
-              kill -0 "$fixture_pid" || exit 1
-              sleep 0.1
-            done
-            test -s "$port_file"
-            export JIBUNKIT_NETWORK_TEST_PORT="$(cat "$port_file")"
-            export SIMCTL_CHILD_JIBUNKIT_NETWORK_TEST_PORT="$JIBUNKIT_NETWORK_TEST_PORT"
+            fixture=(python3 Tests/Fixtures/network_server.py --run-command)
           fi
-          xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
+          "${fixture[@]}" xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TemplateHost.xcresult" \

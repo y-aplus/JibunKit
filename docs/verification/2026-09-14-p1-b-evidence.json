@@ -18,21 +18,6 @@
   "budget_exception": "",
   "jobs": [
     {
-      "id": "normal",
-      "kind": "unit",
-      "criteria": [
-        "P0-1.lifetime",
-        "P0-3.failure",
-        "P0-5.ownership",
-        "P0-6.diagnostics",
-        "P1-3.routing",
-        "P1-4.ownership"
-      ],
-      "command": "normal matrix: full shared Swift/HTTP/Core tests including StoppedOperation and attachment tests; normal IPA, Counter and normal UI/Files.",
-      "expected_minutes": 29,
-      "timeout_minutes": 45
-    },
-    {
       "id": "generated",
       "kind": "simulator",
       "criteria": [
@@ -42,8 +27,8 @@
         "P1-5.http",
         "P1-6.storage"
       ],
-      "command": "generated matrix: Notes/generated Release and standalone checks; exact 10 UI methods in execution_inputs; Records regression. Notification OS action/text-input remains separately pending 0.8 device evidence.",
-      "expected_minutes": 30,
+      "command": "generated_validation_only: regenerate/build host and run all 10 selected P1/P0 UI methods plus Records build/UI. Reuse run2 Feature requirements and standalone Notes successes; their implementations/targets are unchanged. Native notification action/text remains unproven.",
+      "expected_minutes": 27,
       "timeout_minutes": 45
     },
     {
@@ -78,7 +63,7 @@
       "id": "34802338245/attempt-1",
       "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245",
-      "conclusion": "queued"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -181,6 +166,66 @@
       "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
       "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
       "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Shared 270 tests, 2 known skips, 0 failures. Both StoppedOperation tests pass: real drain before cleanup, restart waiting, cancellation retaining management exclusion and B continuity.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Shared maintenance/backup failure, cancellation, reservation and preservation tests pass in the 270-test suite; normal selective backup UI also passes.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Management tests with actual owned store access pass after drain/reservation ordering change; normal disable/restart/delete/reregister UI preserves Reminder.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Shared runtime shutdown diagnostics tests pass; stopped-operation cleanup retains its lifetime boundary until actual completion.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Shared incoming routing/ambiguity/cancellation/security-scope lifetime tests pass; native external share/file OS evidence remains separately scoped to P1-A.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245/job/103847358242",
+      "observation": "Five notification attachment staging tests pass, including original preservation, OS-style move, failure/cancellation and B staging retention. Real notification delivery/action is not implied by these unit results.",
+      "review": "Parent read full normal job log, individual new test pass markers and zero-failure suite totals; also checked 13 normal UI passes and the Files round trip.",
+      "reuse_reason": "Run3 changes only CI fixture startup/environment, diagnostic native Web UI and Records UI navigation. Core, Feature implementations, storage, normal app/IPA and normal UI sources are unchanged. The modified Python fixture command lifecycle was separately exercised locally with real HTTP, success/failure exit propagation and server teardown."
     }
   ],
   "deferred_device": {
@@ -196,7 +241,7 @@
   "metrics": {
     "review_rounds": 2,
     "parent_messages": 4,
-    "ci_job_minutes": 16.7
+    "ci_job_minutes": 81.37
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -232,11 +277,26 @@
     "feature_validation": true,
     "focused_ui_validation": false,
     "web_authentication_validation": true,
-    "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P0ALifetimeUITests/testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner,MigrationUITests/P0ALifetimeUITests/testStartupFailureShowsRetryAndKeepsOtherFeatureRunning,MigrationUITests/P0BManagementFailureUITests/testUnregisterFailurePreservesDataThenRetryRemovesAndReregistersWithoutChangingCounter"
+    "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P0ALifetimeUITests/testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner,MigrationUITests/P0ALifetimeUITests/testStartupFailureShowsRetryAndKeepsOtherFeatureRunning,MigrationUITests/P0BManagementFailureUITests/testUnregisterFailurePreservesDataThenRetryRemovesAndReregistersWithoutChangingCounter",
+    "generated_validation_only": true
   },
   "pending_acceptance": [
     "Notification action/text input and delivered-other-owner preservation require actual OS evidence beyond the two automated notification tests.",
     "Candidate device HTTP endpoint setup and P1-A/P1-B update/signing checks remain before 0.8.",
     "Full minor-document audit and user v1 boundary decision remain."
-  ]
+  ],
+  "retry_scope": {
+    "prior_source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+    "prior_run": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245",
+    "reused": [
+      "normal 270 shared tests (2 skipped), package tests, IPA, 13 normal UI, Files UI",
+      "Feature build requirement checks",
+      "Notes standalone UI"
+    ],
+    "invalidation_review": "No product/target/generation/Notes changes since the passed run. Records UI and native Web UI are changed and rerun. HTTP bootstrap and runner environment changed and are exercised by the generated host. UI host compile and all 10 P1/P0 integration methods rerun.",
+    "estimate": "Run2 generated 26.00 min minus 4.55 min requirements and 4.88 min Notes UI plus unmeasured 10 min P1/P0 UI = about 27 min. This remains an estimate because run2 failed before host UI. If exceeded, split independent jobs inside the next aggregate boundary before another full retry.",
+    "normal_actual_minutes": 33.82,
+    "ipa_sha256": "15cad6ebff7d66b53fdd192f88d3b59561f61dd6fb4d72fb9fddd37a0bc7c0f2",
+    "ipa_bytes": 2226509
+  }
 }

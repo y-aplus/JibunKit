@@ -1,11 +1,10 @@
 import XCTest
 
 final class WebAuthenticationNativeUITests: XCTestCase {
-    private var app: XCUIApplication!
+    private let app = XCUIApplication()
 
     override func setUp() {
         continueAfterFailure = false
-        app = XCUIApplication()
         app.launch()
     }
 

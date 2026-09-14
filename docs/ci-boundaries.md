@@ -129,7 +129,9 @@ P1-A run34794545131は全試験・artifact upload終了後に45分timeoutとな�
 
 `feature_validation=true`、`simulator_tests=true`、通常UI filter空、focused=falseの場合、同じrunのbuild matrixをnormal/generatedの二jobに分ける。normalは共有tests、通常IPA、Counter、backup harness、通常UI/Files。generatedはFeature生成/Release・単独/統合UI・Records UI。native Intents/Widget/incomingの専用jobは従来どおり独立する。build-onlyやfocused呼出は従来のcombined経路を保つ。
 
-fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generated`を付ける（例: `JibunKit-simulator-evidence-generated`）。通常IPA名は`JibunKit-ad-hoc`のまま。Recordsは通常UIの成否ではなく自身のtemplate workspaceとSimulator準備の成功に依存する。現行P1-A入力なら実績からnormal29分/generated23分を見込み、両方45分を上限とする。この構成はactionlintと入力/依存の静的レビュー済みで、初回の実行証拠は次のP1-B境界で取る。
+fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generated`を付ける（例: `JibunKit-simulator-evidence-generated`）。通常IPA名は`JibunKit-ad-hoc`のまま。Recordsは通常UIの成否ではなく自身のtemplate workspaceとSimulator準備の成功に依存する。P1-B run34802338245でnormalは33.82分で成功し、旧29分見込みを超えた。generatedは26分で失敗し、P1 UIは未開始のため正常所要時間の実績ではない。両方45分が上限。次の全体境界ではこの実績を使い、旧見込みをそのまま転用しない。
+
+通常実装を変えず、生成host/Records UIや試験準備だけを直す場合は`generated_validation_only=true`で再検証する。`feature_validation=true`、`simulator_tests=true`、通常UI filter空、focused=falseが必須。通常job、Feature build requirements、Notes単独UIを省略し、生成hostの作成/Release build、指定した生成host UI、Records build/UIは実行する。省略対象の成功run/sourceと差分の再利用理由を検証記録へ残す。未成功・変更済み対象を省略する用途には使わない。nativeオプションは独立jobとして同じrunで実行できる。
 
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
 

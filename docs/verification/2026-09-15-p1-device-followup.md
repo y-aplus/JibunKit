@@ -20,3 +20,14 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 ## 残件
 
 切り分けCI結果、Widget gallery/上書き、新しい候補でOS Shareの成功/取消/再試行とShortcuts制御の確認、必要回帰・配布整合性・文書再確認。今は追加実機操作を依頼しない。過去の58件レビューはそのcommitの記録であり、本変更後の出荷確認にそのまま転用しない。
+
+## 独立準備: gallery・次の候補
+
+切り分けrun34881183837はsource `6dd95ccc1861d4609747d1f3f7227885e5d55109`。待機中の独立準備は別branchで行い、実行中のsourceは動かさない。
+
+- 既存native gallery試験の操作/OCR補助を共用し、通常のCounter-only hostを同じbundle/versionでinstall/launchした後、生成P1 hostへ削除なしで置換する試験を追加。A/Bの通常保存値を取得し、gallery preview・ホーム画面の実描画と照合する。SideStoreの署名変更はSimulatorで代替できず、実機残件として保持する。
+- `verify-p1-device-ipa.py`で本体/Widget/Shareの版・識別子、ZIP CRC、Widget実行ファイル内の3kind、A/Bのextension内resourceを検査。収録検査はgallery公開を保証しない。旧6beb877 IPAも検査を通り、未同梱説を否定する追加証拠となった。4つのローカルtoolテストで通常Counter-onlyやresource欠落・版/extension取り違えが失敗することを確認。
+- OS ShareLink→Share Extensionの受信先→本体inbox→取込みを文字列/URL/ファイル順で通すUI試験を追加。文字列で保存後失敗/再試行による重複なし、再起動後保持とB保持を確認する。基本経路で失敗したら後続を進めずUI階層を出す。未実行のため成功証拠にはしない。
+- 次の候補の本体/Widget/ShareとCI期待値を0.7.1/build9へ揃える。公開済みではなく、切り分け結果を反映してから通常/診断buildと必要回帰・実機を行う。公開tagや配布済み0.7.0/build8は変更しない。
+
+この準備を含む次のCI入力は切り分け結果後に固定する。今回の実機結果・手順改善点を別ファイルへ移さず、再依頼の短い操作列も元の手順書へ追記する。

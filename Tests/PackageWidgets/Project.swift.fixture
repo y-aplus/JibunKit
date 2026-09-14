@@ -58,7 +58,7 @@ func galleryTests(name: String, host: String, appName: String, expectedWidgets: 
             "ExpectedWidgets": .string(expectedWidgets),
             "WidgetAppName": .string(appName),
         ]),
-        sources: ["GalleryUITests.swift"],
+        sources: ["GalleryUITests.swift", "WidgetGallerySupport.swift"],
         dependencies: [.target(name: host)]
     )
 }

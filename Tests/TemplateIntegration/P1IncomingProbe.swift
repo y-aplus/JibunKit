@@ -99,8 +99,12 @@ private struct P1IncomingProbeView: View {
             }.accessibilityIdentifier("p1.incoming.seed")
             Section("OS共有シート（実機確認）") {
                 ShareLink("文字列を共有", item: "Shared text from " + owner.rawValue)
+                    .accessibilityIdentifier("p1.incoming.share.text")
                 ShareLink("URLを共有", item: URL(string: "https://example.com/" + owner.rawValue)!)
-                if let file { ShareLink("ファイルを共有", item: file) }
+                    .accessibilityIdentifier("p1.incoming.share.url")
+                if let file {
+                    ShareLink("ファイルを共有", item: file).accessibilityIdentifier("p1.incoming.share.file")
+                }
             }
         }
         .task {

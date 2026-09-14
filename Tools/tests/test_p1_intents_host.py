@@ -69,6 +69,10 @@ class CombinedDiagnosticHostTests(DiagnosticHostTests):
             target = self.host / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
+        for name in ["Tests/PackageWidgets/WidgetGallerySupport.swift", "Tests/TemplateIntegration/P1WidgetGalleryUITests.swift"]:
+            target = self.host / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, target)
         spec = importlib.util.spec_from_file_location("p1_widgets_host", ROOT / "Tools/prepare-p1-widgets-host.py")
         self.widgets = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.widgets)

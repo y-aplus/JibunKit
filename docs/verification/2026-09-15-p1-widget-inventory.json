@@ -1,0 +1,17 @@
+{
+  "ipa": "JibunKit-P1-check-6beb877.ipa",
+  "sha256": "b815cb203cb356f31943ddb98fb931180c84bc8acf6c3c9a2960be65a430ecd3",
+  "version": "0.7.0",
+  "build": "8",
+  "bundle_ids": [
+    "com.jibunkit.app",
+    "com.jibunkit.app.Widget",
+    "com.jibunkit.app.Share"
+  ],
+  "widget_kinds": [
+    "JibunKitCounterWidget",
+    "com.jibunkit.fixture.feature-a.widget",
+    "com.jibunkit.fixture.feature-b.widget"
+  ],
+  "scope": "Archive CRC, identity/version, executable kind strings and localized resources only; OS gallery/rendering requires separate evidence."
+}

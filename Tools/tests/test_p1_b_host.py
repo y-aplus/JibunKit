@@ -39,6 +39,10 @@ class P1BHostTests(unittest.TestCase):
             shutil.copyfile(ROOT / relative, target)
         for name in ["P1IntentsProbe.swift", "P1IntentsUITests.swift", "P1WidgetsProbe.swift", "P1WidgetsUITests.swift"]:
             shutil.copyfile(ROOT / "Tests/TemplateIntegration" / name, self.host / "Tests/TemplateIntegration" / name)
+        support = self.host / "Tests/PackageWidgets/WidgetGallerySupport.swift"
+        support.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / "Tests/PackageWidgets/WidgetGallerySupport.swift", support)
+        shutil.copyfile(ROOT / "Tests/TemplateIntegration/P1WidgetGalleryUITests.swift", self.host / "Tests/TemplateIntegration/P1WidgetGalleryUITests.swift")
         for lane in ["intents", "widgets"]:
             spec = importlib.util.spec_from_file_location(lane, ROOT / f"Tools/prepare-p1-{lane}-host.py")
             module = importlib.util.module_from_spec(spec)

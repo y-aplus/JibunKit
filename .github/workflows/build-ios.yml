@@ -661,7 +661,7 @@ jobs:
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             python3 Tools/prepare-p1-intents-host.py --host "$smoke"
           fi
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WidgetGalleryUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             python3 Tools/prepare-p1-widgets-host.py --host "$smoke"
           fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1NotificationsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WebUITests* ]]; then
@@ -778,10 +778,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.7.0"
+            "0.7.1"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "8"
+            "9"
           require_equal "widget short version" \
             "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"
@@ -934,6 +934,21 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateSimulatorDerivedData" \
             -resultBundlePath "$RUNNER_TEMP/TemplateLaunch.xcresult" \
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-launch.log"
+
+      - name: Install normal Widget host before diagnostic update
+        if: inputs.feature_validation && matrix.lane != 'normal' && contains(inputs.feature_ui_test_filter, 'P1WidgetGalleryUITests') && matrix.ui_shard != 'network'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Build this checkout's normal registration, then let xcodebuild test
+          # replace it with the generated diagnostic registration at the same ID/version.
+          tuist generate --no-open
+          xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
+            -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/NormalBeforeP1Update" CODE_SIGNING_ALLOWED=NO
+          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/NormalBeforeP1Update/Build/Products/Debug-iphonesimulator/JibunKit_App.app"
+          xcrun simctl launch "$SIMULATOR_ID" com.jibunkit.app
+          xcrun simctl terminate "$SIMULATOR_ID" com.jibunkit.app
 
       - name: Test generated Feature in host
         id: generated-integration
@@ -1092,8 +1107,8 @@ jobs:
           app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
           widget="$app/PlugIns/JibunKitWidget_Extension.appex"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.0
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 8
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.1
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 9
           entitlements_root="$RUNNER_TEMP/template-check/Derived"
           app_entitlements="$(find "$entitlements_root" -type f -name 'JibunKit-App.entitlements')"
           widget_entitlements="$(find "$entitlements_root" -type f -name 'JibunKitWidget-Extension.entitlements')"
@@ -1114,13 +1129,19 @@ jobs:
           (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$ipa")
           unzip -t "$ipa"
           shasum --algorithm 256 "$ipa"
+          if [[ "$CANDIDATE_KIND" == P1 ]]; then
+            python3 Tools/verify-p1-device-ipa.py "$ipa" --version 0.7.1 --build 9 \
+              --output artifacts/P1-device-inventory.json
+          fi
 
       - name: Upload candidate diagnostic IPA
         if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard == 'network'))
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-device-check${{ env.EVIDENCE_SUFFIX }}
-          path: artifacts/JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-check.ipa
+          path: |
+            artifacts/JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-check.ipa
+            artifacts/P1-device-inventory.json
           retention-days: 14
 
       - name: Export simulator screenshots

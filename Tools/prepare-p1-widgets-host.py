@@ -38,8 +38,9 @@ def prepare(host):
     text = once(widget.read_text(encoding="utf-8"), 'import CounterFeature',
                 'import CounterFeature\nimport P1WidgetFeatureA\nimport P1WidgetFeatureB')
     changes[widget] = once(text, '        CounterWidget()', '        CounterWidget()\n        FeatureAWidget()\n        FeatureBWidget()')
-    for name, directory in [("P1WidgetsProbe.swift", "Sources/JibunKit"), ("P1WidgetsUITests.swift", "UITests")]:
+    for name, directory in [("P1WidgetsProbe.swift", "Sources/JibunKit"), ("P1WidgetsUITests.swift", "UITests"), ("P1WidgetGalleryUITests.swift", "UITests")]:
         changes[host / directory / name] = (host / "Tests/TemplateIntegration" / name).read_text(encoding="utf-8")
+    changes[host / "UITests/WidgetGallerySupport.swift"] = (host / "Tests/PackageWidgets/WidgetGallerySupport.swift").read_text(encoding="utf-8")
     for path, content in changes.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8", newline="\n")

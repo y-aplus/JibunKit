@@ -6,6 +6,59 @@ import XCTest
 final class P1IncomingUITests: XCTestCase {
     private let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
 
+    func testOSShareTextURLAndFileReachInboxAndRetryWithoutDuplicateCommit() throws {
+        continueAfterFailure = false
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        try open("incoming-b")
+        expect(app.staticTexts["p1.incoming.status"], "loaded")
+        let beforeB = app.staticTexts["p1.incoming.count"].label
+        try open("incoming-a")
+        expect(app.staticTexts["p1.incoming.status"], "loaded")
+        let beforeA = try XCTUnwrap(Int(app.staticTexts["p1.incoming.count"].label))
+        for (index, type) in ["text", "url", "file"].enumerated() {
+            if index == 0 {
+                tap("p1.incoming.fail")
+                expect(app.staticTexts["p1.incoming.status"], "failure armed")
+            }
+            tap("p1.incoming.share." + type)
+            let share = app.buttons.matching(NSPredicate(format: "label == %@", "JibunKit")).firstMatch
+            XCTAssertTrue(share.waitForExistence(timeout: 10), app.debugDescription)
+            share.tap()
+            let target = app.buttons["share.destination.incoming-a"]
+            // On a provider/extension error the hierarchy includes share.error.
+            // Stop the smoke test here instead of trying dependent import steps.
+            XCTAssertTrue(target.waitForExistence(timeout: 15), app.debugDescription)
+            target.tap()
+            let completed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: target)
+            XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 15), .completed, app.debugDescription)
+            app.activate()
+            tap("miniapp.back-to-list")
+            tap("incoming.open")
+            tap("incoming.apply.incoming-a")
+            if index == 0 {
+                let failure = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label CONTAINS %@", "診断: 保存後の応答失敗"), object: app.staticTexts["incoming.message"])
+                XCTAssertEqual(XCTWaiter.wait(for: [failure], timeout: 15), .completed, app.debugDescription)
+                tap("incoming.apply.incoming-a")
+            }
+            XCTAssertTrue(app.staticTexts["未取込みの共有データはありません。"].waitForExistence(timeout: 10), app.debugDescription)
+            tap("閉じる")
+            try open("incoming-a")
+            expect(app.staticTexts["p1.incoming.status"], "loaded")
+            XCTAssertEqual(app.staticTexts["p1.incoming.count"].label, String(beforeA + index + 1))
+            let expected = type == "text" ? "Shared text from incoming-a" : type == "url" ? "https://example.com/incoming-a" : "Shared file from incoming-a"
+            XCTAssertTrue(app.staticTexts["p1.incoming.contents"].label.contains(expected))
+        }
+        app.terminate()
+        app.launch()
+        try open("incoming-b")
+        expect(app.staticTexts["p1.incoming.status"], "loaded")
+        XCTAssertEqual(app.staticTexts["p1.incoming.count"].label, beforeB)
+        try open("incoming-a")
+        expect(app.staticTexts["p1.incoming.status"], "loaded")
+        XCTAssertEqual(app.staticTexts["p1.incoming.count"].label, String(beforeA + 3))
+    }
+
     func testPersistentIncomingFailureRetryIsIdempotentAndOtherOwnerRemainsIndependent() throws {
         continueAfterFailure = false
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]

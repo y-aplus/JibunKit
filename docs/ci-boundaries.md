@@ -99,6 +99,8 @@ CIの完了待ちはOS側の監視とqueue通知へ任せ、モデルpollや`gh 
 
 `p1_device_validation=true`はP1-A/P1-Bの診断Featureを同じRegistryへ組み込み、端末内HTTPを選び、network jobで診断IPAを生成する。`generated_validation_only=true`、`split_generated_ui=true`、`simulator_tests=true`、`feature_validation=true`、`records_validation=false`と、HTTP/通知/Webを含む明示的method一覧が必要。Recordsを省略する場合は既存成功sourceからの差分を記録する。
 
+P1候補IPAは`verify-p1-device-ipa.py`で版/識別子、Widget kindとextension内resource、CRCを検査しinventoryを添付する。これはOS gallery露出の証拠ではない。`P1WidgetGalleryUITests`を含む場合、通常Counter-only hostを先に同じbundle/versionでinstall/launchし、そのまま診断構成へ上書きしてgalleryと描画を確認する。
+
 二jobは同じ全Feature構成をbuildし、`split-generated-ui.py`が実行methodだけを分ける。HTTP+通知はnetwork、残りはweb-management。少なくとも一つの未実行/変更後の条件を検証するために起動し、run表示を緑にするだけの再実行はしない。
 
 専用端末HTTP XCTestは`p1_device_http_validation`のdefault=trueで実行する。fixture Swift・XCTest・専用Project・runnerに変更がなく、既存runの個別passとartifactを照合したときだけfalseで再利用できる。診断IPA生成を無効化する入力ではない。fixture試験成功を通常host UIや実機の成功へ拡大しない。

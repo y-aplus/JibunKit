@@ -1,21 +1,21 @@
 {
   "schema": 1,
   "wave": "P1-B",
-  "source": "2d8a97f0ba44bfbbd97e6561044fdfdf9af25ed2",
+  "source": "8def972df5cc196696deea06aa2d351a8b0ad5b9",
   "contract": {
     "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
     "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
     "ownership": "Two separate HTTP/Web Codex worktrees, initially Sol low, capacity recovery Terra low; one aggregate review per lane; parent owns Core and integration. No child CI.",
     "failure_cases": "Pending attachment failure/cancel/drain; HTTP distinct precommit candidates, native request cancellation/logout; Web precommit failure/held writer; stopped cleanup cancellation and management; B preservation.",
-    "normal_entrypoints": "Eleven generated UI methods through the normal Registry/management; six dedicated embedded HTTP fixture XCTest methods; previously passed normal/native baselines reused only for unchanged sources.",
+    "normal_entrypoints": "Eight P1 normal-host UI methods plus seven dedicated real-network XCTest methods; three P0 methods reused unchanged from run7; normal/independent native baseline reuse is source-scoped.",
     "invalidation": "Core lifetime and management changed: rerun shared unit suite, P0 lifetime2, management failure1, normal management UI; unchanged native Intent metadata/Widget and other P0 paths reused with scoped review.",
     "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI. Run1: fixed MainActor hops in test/removal and explicit Void continuation types. Native auth 4/5 passed; initial wrapper page missing, cold-page wait and late Continue handling plus failure attachments added; cause remains unproven until run2. Device worker returned one consolidated review; parent found remaining send-before-cancel, ineffective deadline, idle waiter reclamation and stopped-logout endpoint loss, fixed locally and expanded real TCP/URLSession tests before CI."
   },
   "dependencies": {
     "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
   },
-  "planned_ci_runs": 7,
-  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged. Run5 completed all ten methods but exceeded the job deadline. Run6 verifies new self-contained device HTTP/Web endpoints and packages the combined P1-A/P1-B candidate; it is not a status-only rerun. Split UI across two identical hosts and add one small dedicated real-network XCTest job. No child CI. Run6 built both complete diagnostic Release hosts and passed all six embedded HTTP XCTest methods, but Bash 3.2 nounset rejected expansion of an empty optional command prefix before either UI suite started. Run7 uses a nonempty env prefix, runs both previously unexecuted UI shards and packages IPA. Reuse the exact unchanged dedicated fixture sources/tests from run6 rather than spending another native job.",
+  "planned_ci_runs": 8,
+  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged. Run5 completed all ten methods but exceeded the job deadline. Run6 verifies new self-contained device HTTP/Web endpoints and packages the combined P1-A/P1-B candidate; it is not a status-only rerun. Split UI across two identical hosts and add one small dedicated real-network XCTest job. No child CI. Run6 built both complete diagnostic Release hosts and passed all six embedded HTTP XCTest methods, but Bash 3.2 nounset rejected expansion of an empty optional command prefix before either UI suite started. Run7 uses a nonempty env prefix, runs both previously unexecuted UI shards and packages IPA. Reuse the exact unchanged dedicated fixture sources/tests from run6 rather than spending another native job. Run7 executed all eleven methods: five passed, six failed. Device fixed-port listener used requiredLocalEndpoint plus an explicit on port, rejected by Network (confirmed in simulator-app.log). Six previous fixture tests used only ephemeral ports and missed this. A Web management search also dismissed its sheet by swiping down at the top. Run8 fixes both, adds exact-default fixed-port XCTest, reruns all eight affected P1 UI methods and seven fixture tests. Three unchanged P0 methods are reused; preserve their probe in both Registries without selecting their tests.",
   "jobs": [
     {
       "id": "generated-network",
@@ -32,14 +32,23 @@
       "id": "generated-web-management",
       "kind": "simulator",
       "criteria": [
-        "P0-1.integration",
-        "P0-5.ui",
         "P1-6.storage",
         "P1-6.auth"
       ],
-      "command": "Identical complete host; five Web methods including real embedded ASWebAuthenticationSession callback/OS cancellation, plus three P0 management/lifetime methods.",
-      "expected_minutes": 30,
+      "command": "Same complete P1/P0 diagnostic Registry; five Web UI methods. P0 management/lifetime implementations, tests and probe composition are unchanged and their run7 passes reused.",
+      "expected_minutes": 26,
       "timeout_minutes": 45
+    },
+    {
+      "id": "device-http-native",
+      "kind": "simulator",
+      "criteria": [
+        "P1-5.http",
+        "P1-6.auth"
+      ],
+      "command": "Seven real TCP/URLSession methods including exact default 127.0.0.1:8766 binding; previous ephemeral-port six alone did not cover candidate configuration.",
+      "expected_minutes": 5,
+      "timeout_minutes": 30
     },
     {
       "id": "guide-review",
@@ -87,6 +96,12 @@
       "id": "34813362141/attempt-1",
       "source": "2e0438e76a72228c09a9a17f1eabfb7522e672d7",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34813362141",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34814352424/attempt-1",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424",
       "conclusion": "failure"
     }
   ],
@@ -264,22 +279,22 @@
     {
       "criterion": "P0-1.integration",
       "kind": "simulator",
-      "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
       "result": "passed",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34806399426/job/103859014780",
-      "observation": "Both normal-host lifetime methods pass: selection/shutdown/failure/retry with B preservation (36.230s), and startup failure/retry with the other Feature continuing (14.474s).",
-      "review": "Read both individual pass markers and suite result from the generated host full log.",
-      "reuse_reason": "Only other UI suites/fixture visibility helper and CI selection changed since this run; Core and P0A probe/test sources are unchanged. The same two methods are also kept in run5 as cheap integrated regression."
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424/job/103881819596",
+      "observation": "Two normal lifetime UI methods passed33.151/15.376s.",
+      "review": "Parent matched individual method pass markers in full failed-step log. Run7 failed in HTTP/Web; these P0 methods completed successfully.",
+      "reuse_reason": "Run8 does not change P0 sources/helpers/Core or Registry composition. P1-only helper and diagnostic listener changes do not affect these methods."
     },
     {
       "criterion": "P0-5.ui",
       "kind": "simulator",
-      "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
       "result": "passed",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34808525786/job/103865067199",
-      "observation": "Normal management failed unregister/data preservation/retry/remove/reregister/B preservation passed238.521s. Earlier normal consent/disable/delete UI remains covered by run2.",
-      "review": "Parent checked all10 method pass markers, test-suite0 failures, TEST SUCCEEDED, all10 selector validators and downloaded template-host.log/xcresult artifact10334184131. The job exceeded45m and is recorded cancelled; this is method-level evidence, not a successful run claim.",
-      "reuse_reason": "Historical baseline only for the changed device candidate: all affected integration selectors are rerun in run6; do not interpret these earlier passes as validation of the new embedded server."
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424/job/103881819596",
+      "observation": "Normal management failure/retry/removal/reregistration and Counter preservation passed193.062s.",
+      "review": "Parent matched individual method pass markers in full failed-step log. Run7 failed in HTTP/Web; these P0 methods completed successfully.",
+      "reuse_reason": "Run8 does not change P0 sources/helpers/Core or Registry composition. P1-only helper and diagnostic listener changes do not affect these methods."
     },
     {
       "criterion": "P1-5.http",
@@ -315,7 +330,7 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 6,
-    "ci_job_minutes": 208.49
+    "ci_job_minutes": 252.09
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -351,16 +366,16 @@
     "feature_validation": true,
     "focused_ui_validation": false,
     "web_authentication_validation": false,
-    "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P0ALifetimeUITests/testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner,MigrationUITests/P0ALifetimeUITests/testStartupFailureShowsRetryAndKeepsOtherFeatureRunning,MigrationUITests/P0BManagementFailureUITests/testUnregisterFailurePreservesDataThenRetryRemovesAndReregistersWithoutChangingCounter,MigrationUITests/P1WebUITests/testEmbeddedAuthenticationReturnsToEachOwnerAndOSCancelPreservesA",
+    "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P1WebUITests/testEmbeddedAuthenticationReturnsToEachOwnerAndOSCancelPreservesA",
     "generated_validation_only": true,
     "records_validation": false,
     "split_generated_ui": true,
     "p1_device_validation": true,
-    "p1_device_http_validation": false
+    "p1_device_http_validation": true
   },
   "pending_acceptance": [
     "Notification action/text input and delivered-other-owner preservation require actual OS evidence beyond the two automated notification tests.",
-    "Dedicated device HTTP XCTest passed6/0; both combined Release hosts build. Embedded normal-host HTTP/Web UI and diagnostic IPA remain unverified because the shell stopped before xcodebuild test; update/signing device checks remain.",
+    "Fixed-port default was not covered by prior six fixture tests; corrected constructor and new default-port test await run8. HTTP/Web normal-host acceptance and diagnostic IPA/device update checks still pending.",
     "Full minor-document audit and user v1 boundary decision remain."
   ],
   "retry_scope": {
@@ -372,10 +387,11 @@
       "Notes standalone UI",
       "run34805047488 native Web authentication five UI methods",
       "run34806399426 Records attachment import/persistence/delete105.990s and edit/persistence71.428s; its Release build also passed",
-      "run34813362141 six dedicated device HTTP XCTest methods; downloaded tests.json/log checked"
+      "run34813362141 six dedicated device HTTP XCTest methods; downloaded tests.json/log checked",
+      "run34814352424 P0 lifetime33.151/15.376s and management failure/retry193.062s, all passed; no helper/implementation/probe change"
     ],
-    "invalidation_review": "No product/target/generation/Notes changes since the passed run. Records UI and native Web UI are changed and rerun. HTTP bootstrap and runner environment changed and are exercised by the generated host. UI host compile and all 10 P1/P0 integration methods rerun. Run4 only changes two UI test sources; native Web authentication from run3 is unchanged and reused. UI preparation now runs directly from MainActor test methods, like the HTTP/notification suites. Run5 modifies only test UI positioning, host fixture copy tooling and CI selection. Records implementation/UI, native Web auth, normal app/Core remain unchanged. All P1 tests receive the new helper, so even the three passed Web methods rerun. Run6 changes diagnostic HTTP server/probes, diagnostic ATS/callback configuration and adds P1-A probes to both hosts. Rerun all affected HTTP/Web UI and composition regression; compile all diagnostic targets/Intents metadata, package candidate, run six real TCP/URLSession unit methods. Production Core/Feature/Records/Notes and independent native Web baseline are unchanged. Run7 changes shell command prefix selection only. Both complete host Release builds succeeded in run6, but Debug UI never began; rerun generation/Release plus all eleven UI methods and candidate packaging. Dedicated HTTP sources/tests/runner are identical and skipped via p1_device_http_validation=false.",
-    "estimate": "Two UI jobs only, network26min and Web+management30min. Run6 stopped before UI so does not revise these estimates. Dedicated native job actually took3.68min and is reused unchanged.",
+    "invalidation_review": "No product/target/generation/Notes changes since the passed run. Records UI and native Web UI are changed and rerun. HTTP bootstrap and runner environment changed and are exercised by the generated host. UI host compile and all 10 P1/P0 integration methods rerun. Run4 only changes two UI test sources; native Web authentication from run3 is unchanged and reused. UI preparation now runs directly from MainActor test methods, like the HTTP/notification suites. Run5 modifies only test UI positioning, host fixture copy tooling and CI selection. Records implementation/UI, native Web auth, normal app/Core remain unchanged. All P1 tests receive the new helper, so even the three passed Web methods rerun. Run6 changes diagnostic HTTP server/probes, diagnostic ATS/callback configuration and adds P1-A probes to both hosts. Rerun all affected HTTP/Web UI and composition regression; compile all diagnostic targets/Intents metadata, package candidate, run six real TCP/URLSession unit methods. Production Core/Feature/Records/Notes and independent native Web baseline are unchanged. Run7 changes shell command prefix selection only. Both complete host Release builds succeeded in run6, but Debug UI never began; rerun generation/Release plus all eleven UI methods and candidate packaging. Dedicated HTTP sources/tests/runner are identical and skipped via p1_device_http_validation=false. Run8 changes diagnostic listener constructor and the shared P1 UI search order. All P1 HTTP/notification/Web tests use that helper and rerun; native fixture source changes and seven tests run. P0 UI helpers/Core/management and probe composition remain unchanged, so reuse run7 three P0 passes.",
+    "estimate": "Run8 network26min, Web26min (three P0 tests reused), native5min. Run7 actual jobs25.32/18.28min but HTTP/Web failed before their full paths, so retain complete-path estimates.",
     "normal_actual_minutes": 33.82,
     "ipa_sha256": "15cad6ebff7d66b53fdd192f88d3b59561f61dd6fb4d72fb9fddd37a0bc7c0f2",
     "ipa_bytes": 2226509
@@ -402,6 +418,7 @@
     "seconds": 0.723,
     "review": "Downloaded Native-device-http-diagnostics; tests.json lists all six methods and tests.log has the same six passes and zero failures. Concurrent/restarted startup, real cache/HTML, hold ordering/duplicates, capacity/expiration and malformed/EOF/size/deadline cleanup passed.",
     "limits": "Fixture-only real TCP/URLSession evidence, not complete P1 HTTP/Web normal-host acceptance or physical-device evidence.",
-    "reuse_reason": "Run7 changes workflow command execution and a local workflow regression test only; Swift fixture, XCTest, host Project and native runner unchanged."
+    "reuse_reason": "Historical six-method ephemeral-port baseline only. Fixed-port constructor changed; rerun all seven methods in run8 before validating this candidate.",
+    "valid_for_current_candidate": false
   }
 }

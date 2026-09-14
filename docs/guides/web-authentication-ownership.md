@@ -31,6 +31,14 @@ Apple documents `ASWebAuthenticationSession` as a request object initialized wit
 
 Provider-injection tests prove deterministic start/conflict/callback/cancel routing without displaying authentication UI or contacting an OAuth service. A per-request native provider is retained while its request is active and released on completion; this matters because `ASWebAuthenticationSession.presentationContextProvider` is weak. The isolated native probe separately compares direct Apple baseline sessions with the JibunKit wrapper on the same scene anchor and local page. Both follow a user-activated link through a registered custom callback and check OS cancellation; the wrapper path uses Apple's standard `.customScheme` callback descriptor. The probe does not prove a real provider login, an associated HTTPS callback, or that an explicit consent prompt appears on every OS/configuration.
 
+The P1 native probe also starts the wrapper for `p1-web-a` and `p1-web-b` in
+sequence and requires each callback result to name the owner that initiated the
+OS session. The deterministic coordinator tests remain the evidence that a busy
+A presentation rejects B without creating a B native session, and that A
+completion, cancellation, start failure, or old-runtime shutdown cannot consume
+or cancel B's later request. Together these cover native UI handoff and routing;
+neither kind of test alone is presented as both.
+
 ## Apple references
 
 - [ASWebAuthenticationSession](https://developer.apple.com/documentation/authenticationservices/aswebauthenticationsession)

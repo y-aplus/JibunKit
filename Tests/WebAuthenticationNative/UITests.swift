@@ -25,14 +25,19 @@ final class WebAuthenticationNativeUITests: XCTestCase {
         cancel(startButton: "wrapper.cancel")
     }
 
-    private func complete(startButton: String) {
+    func testOwnerCallbacksReturnOnlyToTheCorrectOwner() {
+        complete(startButton: "wrapper.owner-a.complete", status: "completed p1-web-a")
+        complete(startButton: "wrapper.owner-b.complete", status: "completed p1-web-b")
+    }
+
+    private func complete(startButton: String, status: String = "completed") {
         app.buttons[startButton].tap()
         acceptConsentIfPresent()
         let returnLink = app.links["Return to App"]
         XCTAssertTrue(returnLink.waitForExistence(timeout: 10))
         returnLink.tap()
         confirmOpenIfPresent()
-        waitForStatus("completed", timeout: 15)
+        waitForStatus(status, timeout: 15)
     }
 
     private func cancel(startButton: String) {

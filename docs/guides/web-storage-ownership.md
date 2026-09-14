@@ -34,7 +34,20 @@ to clear—for example Cookies, local storage, and IndexedDB databases—rather 
 assuming one type removes another. Do not clear `WKWebsiteDataStore.default()`
 or enumerate unrelated identifiers as a substitute. Existing WebViews using a
 store must be coordinated by the Feature before deletion; automatic lifetime
-coordination is not currently provided.
+coordination is not currently provided by the store factory. In a managed
+Feature, keep the `WKWebView` and store in the Feature object, attach it to
+`MiniAppFeatureLifetime`, and perform each page read/write inside
+`MiniAppRestoreCoordinator.withStoreAccess(for:operation:)`. Register a
+`MiniAppRemovalProvider` which calls `removeData` directly on the already
+reserved owner's store. The removal callback must not re-enter store access:
+`MiniAppManagement` already holds the exclusive reservation while it stops the
+lifetime and invokes removal.
+
+Cancellation is cooperative. Runtime stop closes admission, cancels its owned
+task, and waits for the page operation to return before cleanup. Check task
+cancellation both before and after `callAsyncJavaScript`; JavaScript that has
+already begun may still finish in WebKit. A cancelled Swift task is therefore
+not proof that a WebKit transaction was rolled back.
 
 When checking that an IndexedDB database was deleted, do not call
 `indexedDB.open(name)` first: opening a missing database creates it. Check

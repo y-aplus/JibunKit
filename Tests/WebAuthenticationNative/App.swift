@@ -18,6 +18,10 @@ struct WebAuthenticationNativeProbeApp: App {
                     .accessibilityIdentifier("wrapper.complete")
                 Button("Wrapper Cancel") { model.startWrapper(path: "hold") }
                     .accessibilityIdentifier("wrapper.cancel")
+                Button("Owner A Complete") { model.startWrapper(path: "complete", owner: "p1-web-a") }
+                    .accessibilityIdentifier("wrapper.owner-a.complete")
+                Button("Owner B Complete") { model.startWrapper(path: "complete", owner: "p1-web-b") }
+                    .accessibilityIdentifier("wrapper.owner-b.complete")
                 Text(model.status).accessibilityIdentifier("auth.status")
             }
         }
@@ -31,6 +35,8 @@ private final class AuthenticationModel: NSObject, ObservableObject,
     private var session: ASWebAuthenticationSession?
     private var request: MiniAppWebAuthenticationRequest?
     private let runtime = MiniAppRuntime()
+    private let ownerARuntime = MiniAppRuntime()
+    private let ownerBRuntime = MiniAppRuntime()
     private let coordinator = MiniAppWebAuthenticationCoordinator()
     private var authentication: MiniAppWebAuthentication?
 
@@ -48,18 +54,19 @@ private final class AuthenticationModel: NSObject, ObservableObject,
         status = session.start() ? "presented" : "rejected"
     }
 
-    func startWrapper(path: String) {
+    func startWrapper(path: String, owner: String = "native-probe") {
         status = "starting"
         do {
             let authentication: MiniAppWebAuthentication
-            if let existing = self.authentication { authentication = existing }
+            if owner == "native-probe", let existing = self.authentication { authentication = existing }
             else {
-                authentication = try runtime.makeWebAuthentication(
-                    context: MiniAppContext(id: MiniAppID("native-probe")),
+                let selectedRuntime = owner == "p1-web-a" ? ownerARuntime : owner == "p1-web-b" ? ownerBRuntime : runtime
+                authentication = try selectedRuntime.makeWebAuthentication(
+                    context: MiniAppContext(id: MiniAppID(owner)),
                     coordinator: coordinator,
                     presentationContextProvider: self,
                     prefersEphemeralWebBrowserSession: true)
-                self.authentication = authentication
+                if owner == "native-probe" { self.authentication = authentication }
             }
             request = try authentication.start(
                 url: URL(string: "http://127.0.0.1:8765/\(path)")!,
@@ -68,7 +75,7 @@ private final class AuthenticationModel: NSObject, ObservableObject,
                 prefersEphemeralWebBrowserSession: true
             ) { [weak self] result in
                 switch result {
-                case let .success(url): self?.complete(url, error: nil)
+                case let .success(url): self?.complete(url, error: nil, owner: owner)
                 case let .failure(error): self?.complete(nil, error: error)
                 }
             }
@@ -76,8 +83,8 @@ private final class AuthenticationModel: NSObject, ObservableObject,
         } catch { status = "failed" }
     }
 
-    private func complete(_ callbackURL: URL?, error: Error?) {
-        if callbackURL?.host == "callback" { status = "completed" }
+    private func complete(_ callbackURL: URL?, error: Error?, owner: String = "native-probe") {
+        if callbackURL?.host == "callback" { status = owner == "native-probe" ? "completed" : "completed \(owner)" }
         else if (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin {
             status = "cancelled"
         } else if error as? MiniAppWebAuthenticationCoordinator.Failure == .cancelled {

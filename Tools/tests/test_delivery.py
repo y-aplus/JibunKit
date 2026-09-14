@@ -59,6 +59,31 @@ class DeliveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing passed evidence"):
             delivery.validate_report(self.plan, report, "ci")
 
+    def test_mixed_os_criterion_can_plan_device_but_cannot_claim_ci_pass(self):
+        report = self.report(wave="P1-B", with_device=True)
+        report["evidence"] = [e for e in report["evidence"] if e["criterion"] != "P1-4.os"]
+        check = {"criterion": "P1-4.os", "source": SHA, "checkpoint": "0.8.0",
+                 "procedure": "Candidate notification card mark/reply, foreground and other-owner retention"}
+        report["planned_device_checks"] = [check]
+        delivery.validate_report(self.plan, report, "preflight")
+        ready_plan = copy.deepcopy(self.plan)
+        for unit in ready_plan["units"]:
+            unit["state"] = "complete"
+        for stage in ["ci", "release"]:
+            with self.assertRaisesRegex(ValueError, "missing passed evidence: P1-4.os"):
+                delivery.validate_report(ready_plan, report, stage, version="0.8.0")
+        for key, value, error in [("source", "short", "incomplete planned"),
+                                  ("procedure", "", "incomplete planned"),
+                                  ("checkpoint", "0.9.0", "wrong planned"),
+                                  ("criterion", "P1-4.ownership", "invalid planned")]:
+            bad = copy.deepcopy(report)
+            bad["planned_device_checks"][0][key] = value
+            with self.assertRaisesRegex(ValueError, error):
+                delivery.validate_report(self.plan, bad, "preflight")
+        report["planned_device_checks"].append(check)
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            delivery.validate_report(self.plan, report, "preflight")
+
     def test_evidence_type_and_duplicate_and_unknown(self):
         report = self.report(with_device=True)
         device = next(e for e in report["evidence"] if e["kind"] == "device")

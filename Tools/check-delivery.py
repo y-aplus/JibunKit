@@ -153,6 +153,18 @@ def validate_report(plan, report, stage, root=ROOT, version=None):
             require(nonempty(item.get("reuse_reason")), f"different source requires reviewed reuse: {cid}")
         proven.add(cid)
     deferred = report["deferred_device"]
+    # A criterion may permit either Simulator or device evidence. Planning its
+    # remaining OS interactions on the candidate device is not a passed result
+    # or a deferral of a CI-only criterion.
+    device_checks = report.get("planned_device_checks", [])
+    unique([check["criterion"] for check in device_checks], "planned device criterion")
+    planned_device = set()
+    for check in device_checks:
+        cid = check["criterion"]
+        require(cid in criteria and "device" in criteria[cid]["kinds"], f"invalid planned device check: {cid}")
+        require(nonempty(check["procedure"]) and source(check["source"]), f"incomplete planned device check: {cid}")
+        require(check["checkpoint"] == units[cid.split(".")[0]]["milestone"], f"wrong planned device checkpoint: {cid}")
+        planned_device.add(cid)
     for cid, target in deferred.items():
         require(cid in criteria and set(criteria[cid]["kinds"]) == {"device"}, f"invalid device deferral: {cid}")
         uid = cid.split(".")[0]
@@ -163,7 +175,7 @@ def validate_report(plan, report, stage, root=ROOT, version=None):
         device_only = set(criterion["kinds"]) == {"device"}
         if stage != "release" and device_only and cid in deferred:
             continue
-        require(stage == "preflight" and not device_only and cid in scheduled,
+        require(stage == "preflight" and not device_only and (cid in scheduled or cid in planned_device),
                 f"missing {'planned check' if stage == 'preflight' else 'passed evidence'}: {cid}")
     if stage != "preflight":
         require(runs, "no CI runs recorded")

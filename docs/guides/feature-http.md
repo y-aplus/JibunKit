@@ -53,15 +53,18 @@ it must not re-enter `withStoreAccess`. Deletion must be idempotent. Never seed
 credentials or cookies merely because a view or process starts, since that would
 recreate data after management deletion.
 
-A feature-specific logout controller that runs after `lifetime.stop()` is
-external to that stopped runtime, so retain and serialize it explicitly with
-startup/writer controls. It must first await all runtime writers, then use one
-ordinary StoreAccess reservation for logout. Current Core has no public
-"stopped control lease" that also blocks a new `MiniAppFeatureLifetime.start()`;
-candidate hosts must not treat a visible stopped-state resume button as proof
-that external logout has completed. A reusable product solution would need a
-Core-owned lease which makes start join/reject until the external control action
-releases it, without changing management's own admission state.
+The P1-B candidate adds `lifetime.withStoppedOperation` for external cleanup
+such as logout. Call it outside runtime-owned work: it drains that work, runs
+the cleanup, and makes concurrent start/stop and management wait for actual
+completion. Inside the operation, obtain the normal exclusive
+`withStoreMaintenance` reservation before changing stored credentials/cookies.
+The boundary does not reopen management admission or automatically restart the
+Feature. A normal resume request waits until the cleanup completes. Cancellation
+also waits for actual completion; the operation determines whether cancellation
+occurred before or after its durable commit. Do not call start/stop, restore
+lifecycle, or another stopped operation on the same lifetime from the callback.
+This addition has source/tests in the candidate and awaits Swift/iOS validation;
+it is not part of the published 0.7.0 contract.
 
 Persist only after a successful response. If validation or persistence fails,
 retain the prior durable snapshot and report failure. `MiniAppCookieStore.clear`

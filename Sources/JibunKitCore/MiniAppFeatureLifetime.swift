@@ -15,7 +15,7 @@ public final class MiniAppFeatureLifetime {
         case stopped, starting, running, stopping
         case failed(String)
     }
-    public enum Failure: Error { case suspendedForRestore, startsDisabled }
+    public enum Failure: Error { case suspendedForRestore, startsDisabled, stoppedOperationInProgress }
 
     public nonisolated let id: MiniAppID
     public private(set) var state: State = .stopped
@@ -26,6 +26,7 @@ public final class MiniAppFeatureLifetime {
     private let configure: @MainActor @Sendable (MiniAppRuntime) async throws -> Void
     private var starting: Task<Void, Error>?
     private var stopping: Task<Void, Never>?
+    private var stoppedOperation: Task<Void, Never>?
     private var suspendedForRestore = false
     private var resumeAfterRestore = false
 
@@ -41,7 +42,10 @@ public final class MiniAppFeatureLifetime {
     public func start() async throws {
         try Task.checkCancellation()
         guard isStartAllowed else { throw Failure.startsDisabled }
-        while let stopping { await stopping.value }
+        while stoppedOperation != nil || stopping != nil {
+            if let stoppedOperation { await stoppedOperation.value }
+            if let stopping { await stopping.value }
+        }
         try Task.checkCancellation()
         guard isStartAllowed else { throw Failure.startsDisabled }
         guard !suspendedForRestore else { throw Failure.suspendedForRestore }
@@ -96,7 +100,34 @@ public final class MiniAppFeatureLifetime {
     /// An explicit stop during restore also cancels automatic resumption.
     public func stop() async {
         resumeAfterRestore = false
+        while let stoppedOperation { await stoppedOperation.value }
         await stopRuntime()
+    }
+
+    /// Stop owned work, then keep this owner stopped until external cleanup has
+    /// actually finished. Concurrent start/stop and management join the boundary.
+    /// The operation must obtain its normal store-maintenance reservation; this
+    /// method does not reserve data or change persisted management admission.
+    /// Call outside owned runtime work. Do not call this lifetime's start/stop,
+    /// restore lifecycle or another stopped operation from inside the operation.
+    public func withStoppedOperation<Value: Sendable>(
+        _ operation: @escaping @MainActor @Sendable () async throws -> Value
+    ) async throws -> Value {
+        try Task.checkCancellation()
+        guard isStartAllowed else { throw Failure.startsDisabled }
+        guard !suspendedForRestore else { throw Failure.suspendedForRestore }
+        guard stoppedOperation == nil else { throw Failure.stoppedOperationInProgress }
+        resumeAfterRestore = false
+        let task = Task { @MainActor in
+            defer { self.stoppedOperation = nil }
+            await self.stopRuntime()
+            try Task.checkCancellation()
+            return try await operation()
+        }
+        stoppedOperation = Task { _ = await task.result }
+        return try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: { task.cancel() }
     }
 
     private func stopRuntime() async {
@@ -129,6 +160,7 @@ public final class MiniAppFeatureLifetime {
         guard !suspendedForRestore else { throw Failure.suspendedForRestore }
         suspendedForRestore = true
         resumeAfterRestore = state == .running || state == .starting
+        while let stoppedOperation { await stoppedOperation.value }
         await stopRuntime()
     }
 

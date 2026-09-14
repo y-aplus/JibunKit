@@ -24,7 +24,11 @@ enum P1HTTPProbe {
 private final class P1HTTPOwner {
     let id: MiniAppID
     private let stablePassword: String
-    var status = "ready", cookie = "--", authentication = "--", cached = "--", failNextSave = false
+    var status = "ready"
+    var cookie = "--"
+    var authentication = "--"
+    var cached = "--"
+    var failNextSave = false
     @ObservationIgnored private var cookies: MiniAppCookieStore?
     @ObservationIgnored private var credentials: MiniAppPasswordCredentialStore?
     @ObservationIgnored private var session: URLSession?
@@ -57,7 +61,8 @@ private final class P1HTTPOwner {
     private func closeSession() { session?.invalidateAndCancel(); session = nil; cookies = nil; credentials = nil }
 
     func login() { startWriter("login") { [self] in try await performLogin(candidate: failNextSave) } }
-    func reload() { startWriter("reload") { [self] in try await readState(checkCache: true) } }
+    func reload() { startWriter("reload") { [self] in try await readState(checkCache: false) } }
+    func readCache() { startWriter("cache") { [self] in try await readState(checkCache: true) } }
     func startHeldWrite() {
         startWriter("held-write") { [self] in
             guard let base, let session else { throw Failure.resourceLost }
@@ -73,14 +78,18 @@ private final class P1HTTPOwner {
     func cancelHeldWrite() {
         guard let writer, let token = holdToken, control == nil else { status = "rejected: no held writer"; return }
         status = "cancelling held writer"; writer.cancel()
-        control = Task { [self] in
-            await writer.value
-            do {
-                try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: id) { try await releaseAndVerify(token) }
-                status = "cancelled held-write; no late cookie"
-            } catch { status = "failed cancellation verification: \(error.localizedDescription)" }
-            holdToken = nil; control = nil
-        }
+        do {
+            guard let runtime = lifetime.runtime else { throw Failure.resourceLost }
+            control = try runtime.start { [self] in await finishCancellation(writer, token: token) }
+        } catch { status = "failed cancellation verification: \(error.localizedDescription)" }
+    }
+    private func finishCancellation(_ writer: Task<Void, Never>, token: String) async {
+        await writer.value
+        do {
+            try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: id) { try await releaseAndVerify(token) }
+            status = "cancelled held-write; no late cookie"
+        } catch { status = "failed cancellation verification: \(error.localizedDescription)" }
+        holdToken = nil; control = nil
     }
     func expectedHTTPFailure() {
         startWriter("unauthenticated-request") { [self] in
@@ -91,20 +100,24 @@ private final class P1HTTPOwner {
             throw Failure.expectedHTTPFailure
         }
     }
-    // Retained external control work serializes UI startup/writers/logout. It
-    // drains the lifetime first, then uses normal StoreAccess while stopped.
+    // The lifetime owns the stopped boundary, including concurrent restart and
+    // management. The external caller must not be a task drained by that lifetime.
     func stopThenLogout() {
         guard control == nil else { status = "rejected: control busy"; return }
         status = "stopping writers for logout"
         control = Task { [self] in
-            await lifetime.stop()
-            do { try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: id) { try await stoppedLogout() }; status = "logout completed; reopen to inspect" }
+            do {
+                try await lifetime.withStoppedOperation { [self] in
+                    try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(for: id) { try await stoppedLogout() }
+                }
+                status = "logout completed; reopen to inspect"
+            }
             catch { status = "logout failed: \(error.localizedDescription)" }
             control = nil
         }
     }
     func removeOwnedData() throws {
-        precondition(lifetime.runtime == nil && control == nil, "management must serialize stopped HTTP cleanup")
+        precondition(lifetime.runtime == nil, "management must serialize stopped HTTP cleanup")
         let context = MiniAppContext(id: id)
         try MiniAppCookieStore(context: context).clear(); try MiniAppPasswordCredentialStore(context: context).clear()
         try context.urlCache(memoryCapacity: 0, diskCapacity: 4_194_304, containerURL: cacheRoot).removeAllCachedResponses()
@@ -146,7 +159,10 @@ private final class P1HTTPOwner {
             failNextSave = false
             // A deliberate precommit failure, not a simulated Keychain failure:
             // neither store is saved and no cross-store atomicity is claimed.
-            try cookies.reload(); try credentials.reload(); try await readState(checkCache: false)
+            try cookies.reload(); try credentials.reload()
+            // Reconstruct to discard URLSession's remembered authentication
+            // challenges as well as the candidate in-memory store values.
+            closeSession(); try openSession(); try await readState(checkCache: false)
             throw Failure.injectedPrecommitFailure
         }
         try cookies.save(); try credentials.save()
@@ -170,8 +186,13 @@ private final class P1HTTPOwner {
     private func stoppedLogout() async throws {
         guard let base else { throw Failure.fixtureUnavailable }; let context = MiniAppContext(id: id)
         let cookies = try MiniAppCookieStore(context: context), credentials = try MiniAppPasswordCredentialStore(context: context)
-        let config = URLSessionConfiguration.default; config.httpCookieStorage = cookies.storage; config.urlCredentialStorage = credentials.storage
+        let config = URLSessionConfiguration.default; config.httpCookieStorage = cookies.storage; config.urlCredentialStorage = credentials.storage; config.urlCache = nil
         let logout = URLSession(configuration: config); defer { logout.finishTasksAndInvalidate() }
+        if let token = holdToken {
+            let (_, released) = try await logout.data(from: base.appendingPathComponent("release/" + token))
+            try require(released, 200)
+            holdToken = nil
+        }
         let (_, response) = try await logout.data(from: base.appendingPathComponent("logout")); try require(response, 200)
         try cookies.save(); try credentials.clear()
     }
@@ -187,6 +208,6 @@ private enum Failure: LocalizedError { case fixtureUnavailable, resourceLost, no
 private struct P1HTTPProbeView: View { let owner: P1HTTPOwner; @Bindable private var state: P1HTTPOwner
     init(owner: P1HTTPOwner) { self.owner = owner; _state = Bindable(owner) }
     var body: some View { List { Section("状態") { Text(state.status).accessibilityIdentifier("p1.http.status"); Text(state.cookie).accessibilityIdentifier("p1.http.cookie"); Text(state.authentication).accessibilityIdentifier("p1.http.auth"); Text(state.cached).accessibilityIdentifier("p1.http.cache") }
-        Section("操作") { Button("Login and persist") { owner.login() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.login"); Button("Reload persisted HTTP state") { owner.reload() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.reload"); Button("Hold writer") { owner.startHeldWrite() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.hold"); Button("Cancel held writer") { owner.cancelHeldWrite() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.cancel"); Button("Fail next precommit") { owner.failNextSave = true; owner.status = "precommit failure armed" }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.fail-save"); Button("Request unauthenticated endpoint") { owner.expectedHTTPFailure() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.fail-connect"); Button("Stop writers, then logout") { owner.stopThenLogout() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.logout") } }.navigationTitle(owner.id.rawValue) }
+        Section("操作") { Button("Login and persist") { owner.login() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.login"); Button("Reload persisted HTTP state") { owner.reload() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.reload"); Button("Read owner cache") { owner.readCache() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.read-cache"); Button("Hold writer") { owner.startHeldWrite() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.hold"); Button("Cancel held writer") { owner.cancelHeldWrite() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.cancel"); Button("Fail next precommit") { owner.failNextSave = true; owner.status = "precommit failure armed" }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.fail-save"); Button("Request unauthenticated endpoint") { owner.expectedHTTPFailure() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.fail-connect"); Button("Stop writers, then logout") { owner.stopThenLogout() }.buttonStyle(.bordered).accessibilityIdentifier("p1.http.logout") } }.navigationTitle(owner.id.rawValue) }
 }
 #endif

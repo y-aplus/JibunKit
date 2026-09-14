@@ -19,8 +19,8 @@ final class P1HTTPUITests: XCTestCase {
         expect("p1.http.cookie", "account=p1-http-a-stable")
         expect("p1.http.auth", authorization(password: "owner-a-stable"))
         expect("p1.http.cache", "p1-http-a-stable")
-        tap("p1.http.reload")
-        expect("p1.http.status", "completed reload")
+        tap("p1.http.read-cache")
+        expect("p1.http.status", "completed cache")
         expect("p1.http.cache", "p1-http-a-stable")
         tap("miniapp.back-to-list")
 

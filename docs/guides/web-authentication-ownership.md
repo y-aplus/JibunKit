@@ -39,6 +39,15 @@ completion, cancellation, start failure, or old-runtime shutdown cannot consume
 or cancel B's later request. Together these cover native UI handoff and routing;
 neither kind of test alone is presented as both.
 
+The self-contained P1 device candidate serves its diagnostic authentication
+page from the embedded loopback fixture; it does not require a PC server or a
+real account. Its normal-host A/B callback and OS-cancel UI method passed in
+run34816553410. In run34819734774 the authentication method instead failed in
+management preparation, before starting an authentication session. The host
+unregister issue and physical-device acceptance remain open; see
+[P1-B verification](../verification/2026-09-14-p1-b.md). Earlier isolated native
+authentication evidence does not replace those conditions.
+
 ## Apple references
 
 - [ASWebAuthenticationSession](https://developer.apple.com/documentation/authenticationservices/aswebauthenticationsession)

@@ -10,6 +10,31 @@ import UniformTypeIdentifiers
 @Observable
 final class SpotlightOwnershipProbeState {
     var result = "idle"
+    var deletionResult = "idle"
+
+    // Compare native and namespaced calls inside the complete validation host,
+    // without entering management, notification cleanup or a Feature lifetime.
+    func compareDomainDeletion() async {
+        let index = CSSearchableIndex.default()
+        let context = MiniAppContext(id: MiniAppID("spotlight-cold-probe"))
+        let namespace = MiniAppSpotlightNamespace(context: context)
+        do {
+            deletionResult = "native pending"
+            let nativeStart = Date()
+            print("SPOTLIGHT_HOST native begin")
+            try await index.deleteSearchableItems(withDomainIdentifiers: [namespace.domainIdentifier])
+            print("SPOTLIGHT_HOST native end seconds=\(Date().timeIntervalSince(nativeStart))")
+            deletionResult = "namespaced pending"
+            let ownedStart = Date()
+            print("SPOTLIGHT_HOST namespaced begin")
+            try await namespace.deleteAll(from: index)
+            print("SPOTLIGHT_HOST namespaced end seconds=\(Date().timeIntervalSince(ownedStart))")
+            deletionResult = "native=passed namespaced=passed"
+        } catch {
+            deletionResult = "failed: \(error)"
+            print("SPOTLIGHT_HOST \(deletionResult)")
+        }
+    }
 
     func run() async {
         result = "running"
@@ -80,6 +105,10 @@ enum SpotlightOwnershipProbe {
         id: MiniAppID("spotlight-probe"), title: "Spotlight probe", systemImage: "magnifyingglass"
     ) { _ in
         VStack {
+            Text(state.deletionResult).accessibilityIdentifier("spotlight.deletion.result")
+            Button("Compare Spotlight domain deletion") {
+                Task { await state.compareDomainDeletion() }
+            }.accessibilityIdentifier("spotlight.deletion.run")
             Text(state.result).accessibilityIdentifier("spotlight.ownership.result")
             Button("Run Spotlight ownership check") {
                 Task { await state.run() }

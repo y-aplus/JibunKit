@@ -31,7 +31,7 @@ jobs:
           SURFACE: ${{ inputs.surface }}
         shell: bash
         run: |
-          case "$SURFACE" in intents|widgets|incoming) ;; *) exit 2 ;; esac
+          case "$SURFACE" in intents|widgets|incoming|web-authentication) ;; *) exit 2 ;; esac
 
       - name: Select Xcode 26.6
         shell: bash
@@ -108,6 +108,10 @@ jobs:
                 -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
                 CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/incoming-native.log"
               ;;
+            web-authentication)
+              python3 Tools/verify-web-authentication-native.py --simulator-id "$SIMULATOR_ID" \
+                2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
+              ;;
           esac
 
       - name: Upload surface diagnostics
@@ -122,5 +126,7 @@ jobs:
             ${{ runner.temp }}/PackageWidgets
             ${{ runner.temp }}/IncomingNative.xcresult
             ${{ runner.temp }}/incoming-native.log
+            ${{ runner.temp }}/web-authentication-native.log
+            ${{ runner.temp }}/WebAuthentication.xcresult
           if-no-files-found: warn
           retention-days: 14

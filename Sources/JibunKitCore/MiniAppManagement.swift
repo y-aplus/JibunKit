@@ -152,6 +152,13 @@ public final class MiniAppManagement {
         failures[id] = nil
         defer { stages[id] = nil }
         do {
+            // Owned work may hold ordinary store access until cancellation has
+            // actually finished. Drain it before requesting exclusive access;
+            // admission is already closed, so no new ordinary work can enter.
+            stages[id] = .stopping
+            await registration.lifetime?.stop()
+            try Task.checkCancellation()
+            stages[id] = .reservation
             try await coordinator.withOwnerDeactivation(for: id) { [self] in
                 try await self.performDeactivation(registration, deleting: deleting)
             }
@@ -165,9 +172,6 @@ public final class MiniAppManagement {
 
     private func performDeactivation(_ registration: Registration, deleting: Bool) async throws {
         let id = registration.id
-        stages[id] = .stopping
-        await registration.lifetime?.stop()
-        try Task.checkCancellation()
         stages[id] = .unregistering
         try await registration.unregister()
         if deleting {

@@ -89,6 +89,13 @@ jobs:
       surface: incoming
       simulator_runtime: ${{ inputs.simulator_runtime }}
 
+  web-authentication-native:
+    if: inputs.web_authentication_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: web-authentication
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   package-sdk-aliases:
     if: inputs.package_sdk_aliases_only
     name: Native Swift SDK module aliases
@@ -577,6 +584,9 @@ jobs:
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* ]]; then
             python3 Tools/prepare-p1-widgets-host.py --host "$smoke"
           fi
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1NotificationsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WebUITests* ]]; then
+            python3 Tools/prepare-p1-b-host.py --host "$smoke" --ui-test-filter "$FEATURE_UI_TEST_FILTER"
+          fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
             python3 "$GITHUB_WORKSPACE/Tools/prepare-package-compatible-update-host.py" --host "$smoke" --stage v1
             for owner in A B; do
@@ -792,16 +802,6 @@ jobs:
           fi
           python3 Tools/verify-backgroundtasks-native.py --simulator-id "$SIMULATOR_ID" "${compile_flag[@]}" \
             2>&1 | tee "$RUNNER_TEMP/backgroundtasks-native.log"
-
-      - name: Verify native web authentication handoff
-        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.web_authentication_validation) }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f Tools/verify-web-authentication-native.py ]]; then
-            python3 Tools/verify-web-authentication-native.py --simulator-id "$SIMULATOR_ID" \
-              2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
-          fi
 
       - name: Verify package resources and localization
         if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.package_resources_validation) }}
@@ -1121,17 +1121,6 @@ jobs:
             ${{ runner.temp }}/BackgroundTasksNative.xcresult
             ${{ runner.temp }}/SharedRefresh.xcresult
             ${{ runner.temp }}/shared-refresh-xcodebuild.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Upload web authentication diagnostics
-        if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.web_authentication_validation) }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: Web-authentication-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
-          path: |
-            ${{ runner.temp }}/web-authentication-native.log
-            ${{ runner.temp }}/WebAuthentication.xcresult
           if-no-files-found: ignore
           retention-days: 7
 

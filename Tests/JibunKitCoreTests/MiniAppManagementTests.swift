@@ -100,7 +100,7 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
             do { try await manager.remove(id); XCTFail("Busy store was removed") } catch {}
         }
         XCTAssertEqual(manager.failures[id]?.stage, .reservation)
-        XCTAssertFalse(runtime.isClosed)
+        XCTAssertTrue(runtime.isClosed, "Owned work stops even when external store access prevents deletion")
         XCTAssertFalse(lifetime.isStartAllowed)
         let values = await store.values
         XCTAssertEqual(values["a"], 7)
@@ -190,7 +190,7 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
-    func testRemovalWaitsForOwnedWorkBeforeUnregisteringOrDeleting() async throws {
+    func testRemovalDrainsOwnedStoreAccessBeforeUnregisteringOrDeleting() async throws {
         let suite = "MiniAppManagementTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -199,15 +199,19 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         let cancelled = expectation(description: "Owned work received cancellation")
         let gate = ManagementStopGate()
         let data = ManagementData()
+        let coordinator = MiniAppRestoreCoordinator()
         let lifetime = MiniAppFeatureLifetime(id: a) { runtime in
             try runtime.start {
-                await withTaskCancellationHandler {
-                    await gate.wait(entered: entered)
-                } onCancel: { cancelled.fulfill() }
+                do {
+                    try await coordinator.withStoreAccess(for: a) {
+                        await withTaskCancellationHandler {
+                            await gate.wait(entered: entered)
+                        } onCancel: { cancelled.fulfill() }
+                    }
+                } catch { XCTFail("Owned store access failed: \(error)") }
             }
         }
         let other = MiniAppFeatureLifetime(id: b)
-        let coordinator = MiniAppRestoreCoordinator()
         let manager = MiniAppManagement(registrations: [
             .init(id: a, lifetime: lifetime,
                   removal: .init(id: a, dataDescription: "A") { await data.removeA() },
@@ -225,6 +229,10 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         let pendingUnregisters = await data.unregisters
         XCTAssertEqual(pendingValues, ["a": 7, "b": 9])
         XCTAssertEqual(pendingUnregisters, 0)
+        do {
+            try await coordinator.withStoreAccess(for: a) { }
+            XCTFail("Stopping owner accepted new access")
+        } catch is MiniAppRestoreCoordinator.Unavailable {} catch { XCTFail("Unexpected error: \(error)") }
         let otherValue = try await coordinator.withStoreAccess(for: b) { await data.values["b"] }
         XCTAssertEqual(otherValue, 9)
         XCTAssertFalse(try XCTUnwrap(other.runtime).isClosed)
@@ -236,6 +244,62 @@ final class MiniAppManagementTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(finalValues, ["b": 9])
         XCTAssertEqual(finalUnregisters, 1)
         await other.stop()
+    }
+    @MainActor
+    func testCancelledDisableStillDrainsWriterAndRetryPreservesData() async throws {
+        let suite = "MiniAppManagementTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let a = MiniAppID("a"), b = MiniAppID("b")
+        let entered = expectation(description: "Writer holds store access")
+        let cancelled = expectation(description: "Writer cancellation requested")
+        let gate = ManagementStopGate()
+        let data = ManagementData()
+        let coordinator = MiniAppRestoreCoordinator()
+        let lifetime = MiniAppFeatureLifetime(id: a) { runtime in
+            try runtime.start {
+                do {
+                    try await coordinator.withStoreAccess(for: a) {
+                        await withTaskCancellationHandler {
+                            await gate.wait(entered: entered)
+                        } onCancel: { cancelled.fulfill() }
+                    }
+                } catch { XCTFail("Writer admission failed: \(error)") }
+            }
+        }
+        let manager = MiniAppManagement(registrations: [
+            .init(id: a, lifetime: lifetime,
+                  unregister: { await data.unregisterA() }),
+            .init(id: b)
+        ], defaults: defaults, consents: .init(defaults: defaults), coordinator: coordinator)
+        try await lifetime.start()
+        await fulfillment(of: [entered], timeout: 5)
+        let disabling = Task { try await manager.disable(a) }
+        await fulfillment(of: [cancelled], timeout: 5)
+        disabling.cancel()
+        XCTAssertEqual(manager.stages[a], .stopping)
+        let beforeDrain = await data.unregisters
+        XCTAssertEqual(beforeDrain, 0)
+        await gate.release()
+        do {
+            try await disabling.value
+            XCTFail("Cancelled disable reported success")
+        } catch let failure as MiniAppManagement.Failure {
+            XCTAssertEqual(failure.stage, .stopping)
+        }
+        XCTAssertEqual(lifetime.state, .stopped)
+        XCTAssertEqual(manager.status(for: a), .disabling)
+        XCTAssertFalse(lifetime.isStartAllowed)
+        let values = try await coordinator.withStoreAccess(for: b) { await data.values }
+        XCTAssertEqual(values, ["a": 7, "b": 9])
+        let failedUnregisters = await data.unregisters
+        XCTAssertEqual(failedUnregisters, 0)
+        try await manager.disable(a)
+        XCTAssertEqual(manager.status(for: a), .disabled)
+        let finalUnregisters = await data.unregisters
+        XCTAssertEqual(finalUnregisters, 1)
+        let retained = await data.values
+        XCTAssertEqual(retained, ["a": 7, "b": 9])
     }
 }
 

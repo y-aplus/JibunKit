@@ -25,3 +25,11 @@ try await coordinator.withStoreAccess(for: context.id) {
 すでにOSへ渡した添付の削除は、[Appleの仕様](https://developer.apple.com/documentation/usernotifications/unnotificationattachment)どおり対応するpending/delivered requestを`UNUserNotificationCenter`から削除する。Featureの管理削除はまず所有処理を止め、ownerの通知を解除し、その後に準備コピーや業務データを削除する。OS添付URLをキャッシュの掃除対象に混ぜない。取得済み添付の[URLへのアクセス](https://developer.apple.com/documentation/usernotifications/unnotificationattachment/url)にはsecurity scopeが必要。
 
 Foundation試験では原本保持、nativeのmoveに相当する移動、登録失敗・取消・途中コピー失敗の掃除、A削除中のBコピー保持、取消要求後もoperation終了まではコピーを保つことを確認する予定。通常Definitionと実UNUserNotificationCenterの登録/配信/取消、foregroundとaction/text inputはP1-Bのhost fixtureへ接続し、別の受入条件として検証する。
+
+## 0.8候補の通常接続（実行待ち）
+
+`Tests/TemplateIntegration/P1NotificationsProbe.swift`は通知A/Bを通常Definitionとして登録する診断画面。`prepare-p1-b-host.py`が指定された検証hostにだけ接続し、通常IPAへ常設しない。OSから読み返したpending添付をsecurity scope内で開き、画像原本とbyte一致を確認する。登録完了、配信時のforeground callback、通知操作callbackは別欄に表示する。Aはforeground非表示、Bはbanner/list/sound。同じローカルrequest/category/action名を両方で使う。
+
+「準備後に停止して待つ」は準備コピーと通常store accessを保持し、明示取消または管理からの停止で終了する。時間経過では解放しない。管理から無効化すると受付を閉じて処理をdrainし、通知の解除と一時コピーの掃除を行う。無効化では画像原本を保持し、削除ではAの画像と操作記録も消す。登録前の故障注入では、既存のOS予約と原本を保持する。これはOS内部の全故障条件の再現ではない。
+
+自動試験はnative予約/添付読込、取消、通常管理、B保持、foreground callbackを対象にする。OS通知カードからの「記録」および文字入力「返信」、background配信済みB通知の保持は、0.8候補の実機一括確認にも含める。これらは未実行で、画面を追加しただけでは合格にならない。

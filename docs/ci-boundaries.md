@@ -132,3 +132,5 @@ P1-A run34794545131は全試験・artifact upload終了後に45分timeoutとな�
 fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generated`を付ける（例: `JibunKit-simulator-evidence-generated`）。通常IPA名は`JibunKit-ad-hoc`のまま。Recordsは通常UIの成否ではなく自身のtemplate workspaceとSimulator準備の成功に依存する。現行P1-A入力なら実績からnormal29分/generated23分を見込み、両方45分を上限とする。この構成はactionlintと入力/依存の静的レビュー済みで、初回の実行証拠は次のP1-B境界で取る。
 
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
+
+P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの新しい経路の初回実動はP1-B統合CIで検証する。

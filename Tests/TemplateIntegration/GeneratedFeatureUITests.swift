@@ -17,7 +17,8 @@ final class GeneratedFeatureUITests: XCTestCase {
                 // accessibility element still reports isHittable.
                 let frame = row.frame
                 let search = app.searchFields.firstMatch
-                let bottom = search.exists ? search.frame.minY : app.frame.maxY - 40
+                let bottom = search.exists && search.frame.minY > app.frame.midY
+                    ? search.frame.minY : app.frame.maxY - 100
                 let top = app.navigationBars.firstMatch.frame.maxY
                 if frame.minY > top && frame.maxY < bottom { return true }
                 if frame.minY <= top {
@@ -87,6 +88,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -136,6 +140,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -174,6 +181,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -212,6 +222,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -265,6 +278,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -312,6 +328,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -368,6 +387,9 @@ final class GeneratedFeatureUITests: XCTestCase {
             app.launch()
             func tap(_ id: String) {
                 let button = app.buttons[id]
+                if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                    revealLauncherRow(button, in: app)
+                }
                 XCTAssertTrue(button.waitForExistence(timeout: 10))
                 button.tap()
             }
@@ -410,6 +432,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10), app.debugDescription)
             button.tap()
         }
@@ -465,6 +490,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -508,6 +536,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -547,6 +578,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -599,6 +633,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -645,6 +682,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -705,6 +745,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -736,6 +779,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -771,6 +817,9 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launch()
         func tap(_ id: String) {
             let button = app.buttons[id]
+            if id.hasPrefix("miniapp."), !id.hasPrefix("miniapp.switch."), id != "miniapp.back-to-list" {
+                revealLauncherRow(button, in: app)
+            }
             XCTAssertTrue(button.waitForExistence(timeout: 10))
             button.tap()
         }
@@ -799,7 +848,8 @@ final class GeneratedFeatureUITests: XCTestCase {
         let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
-        XCTAssertTrue(app.buttons["miniapp.lifecycle-a"].waitForExistence(timeout: 10))
+        revealLauncherRow(app.buttons["miniapp.lifecycle-a"], in: app)
+        XCTAssertTrue(app.buttons["miniapp.lifecycle-a"].exists)
         // Neither Feature's root view has been created yet.
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
@@ -807,6 +857,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         var observed: [String] = []
         for id in ["lifecycle-a", "lifecycle-b"] {
             let entry = app.buttons["miniapp.\(id)"]
+            revealLauncherRow(entry, in: app)
             XCTAssertTrue(entry.waitForExistence(timeout: 10))
             entry.tap()
             let events = app.staticTexts["lifecycle.events"]
@@ -825,6 +876,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         func tap(_ element: XCUIElement) {
+            if element.identifier.hasPrefix("miniapp.") { revealLauncherRow(element, in: app) }
             XCTAssertTrue(element.waitForExistence(timeout: 10))
             element.tap()
         }

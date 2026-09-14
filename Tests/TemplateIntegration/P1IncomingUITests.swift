@@ -20,9 +20,15 @@ final class P1IncomingUITests: XCTestCase {
         expect(app.staticTexts["p1.incoming.status"], "A/B queued")
         tap("miniapp.back-to-list")
         tap("incoming.open")
+        tap("incoming.discard.incoming-a")
+        XCTAssertTrue(app.buttons["破棄する"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["キャンセル"].tap()
+        XCTAssertTrue(app.buttons["incoming.apply.incoming-a"].exists)
+        XCTAssertTrue(app.buttons["incoming.apply.incoming-b"].exists)
         tap("incoming.apply.incoming-a")
         let failed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label CONTAINS %@", "診断: 保存後の応答失敗"), object: app.staticTexts["incoming.message"])
         XCTAssertEqual(XCTWaiter.wait(for: [failed], timeout: 15), .completed, app.debugDescription)
+        XCTAssertFalse(app.buttons["破棄する"].exists, "Receiving must not also activate the row's discard action")
 
         // A committed before the injected response failure. Restart retains its
         // pending receipt; the stable ID prevents a second business commit.
@@ -31,6 +37,7 @@ final class P1IncomingUITests: XCTestCase {
         tap("incoming.open")
         tap("incoming.apply.incoming-a")
         expect(app.staticTexts["incoming.message"], "取り込みました。")
+        XCTAssertFalse(app.buttons["破棄する"].exists, "Retry must not present discard confirmation")
         XCTAssertTrue(app.buttons["incoming.apply.incoming-b"].exists)
         tap("incoming.apply.incoming-b")
         let empty = app.staticTexts["未取込みの共有データはありません。"]
@@ -53,7 +60,8 @@ final class P1IncomingUITests: XCTestCase {
     private func tap(_ id: String) {
         let button = app.buttons[id]
         XCTAssertTrue(button.waitForExistence(timeout: 15), app.debugDescription)
-        XCTAssertTrue(button.isHittable, app.debugDescription)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true AND enabled == true"), object: button)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 10), .completed, app.debugDescription)
         button.tap()
     }
     private func expect(_ element: XCUIElement, _ text: String) {

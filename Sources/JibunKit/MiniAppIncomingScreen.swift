@@ -62,7 +62,11 @@ struct MiniAppIncomingScreen: View {
                                 } else { Text("受信先が無効、またはこの版に登録されていません。データは保持されています。") }
                             } else { Text("受信データを読み取れません。破損した項目を破棄することはできます。") }
                             Button("破棄", role: .destructive) { discardTarget = row }
+                                .accessibilityIdentifier("incoming.discard.\(row.owner.rawValue)")
                         }
+                        // Each action belongs to its own control. List's automatic
+                        // row button style otherwise activates both receive and discard.
+                        .buttonStyle(.bordered)
                         .disabled(operation != nil)
                     }
                 }
@@ -84,6 +88,7 @@ struct MiniAppIncomingScreen: View {
                 if let target = discardTarget {
                     Button("破棄する", role: .destructive) { discard(target) }
                 }
+                Button("キャンセル", role: .cancel) { discardTarget = nil }
             } message: { Text("取り込まれたミニアプリのデータや、他の受信は変更しません。") }
             .task { await reload() }
             .refreshable { await reload() }

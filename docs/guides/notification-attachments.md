@@ -1,6 +1,6 @@
 # 通知添付の原本と一時コピー
 
-P1-B実装中。公開0.7.0には含まれず、追加コードのSwift/native検証は未実施。
+P1-B実装・検証中。公開0.7.0には含まれない。Foundation試験と通常hostのnative通知/添付/foreground UI試験は成功し、OS通知カードの操作等の実機条件が残る。
 
 Appleの[UNNotificationAttachment](https://developer.apple.com/documentation/usernotifications/unnotificationattachment)は、検証した添付をOSの管理領域へ移す。Featureの文書や写真の原本をそのまま渡すと、通常画面が読むファイルを失い得る。`MiniAppNotificationAttachments`は任意の通常ファイルからowner別の一時コピーを作り、そのコピーで標準のnative requestを組み立てるための補助である。独自の添付型や通知機能を制限するwrapperではない。
 
@@ -24,7 +24,7 @@ try await coordinator.withStoreAccess(for: context.id) {
 
 すでにOSへ渡した添付の削除は、[Appleの仕様](https://developer.apple.com/documentation/usernotifications/unnotificationattachment)どおり対応するpending/delivered requestを`UNUserNotificationCenter`から削除する。Featureの管理削除はまず所有処理を止め、ownerの通知を解除し、その後に準備コピーや業務データを削除する。OS添付URLをキャッシュの掃除対象に混ぜない。取得済み添付の[URLへのアクセス](https://developer.apple.com/documentation/usernotifications/unnotificationattachment/url)にはsecurity scopeが必要。
 
-Foundation試験では原本保持、nativeのmoveに相当する移動、登録失敗・取消・途中コピー失敗の掃除、A削除中のBコピー保持、取消要求後もoperation終了まではコピーを保つことをrun34802338245で確認した。通常Definitionと実UNUserNotificationCenterの登録/配信/取消、foregroundもrun34808525786の2 UI methodで成功。action/text inputは別の受入条件として残る。[P1-B記録](../verification/2026-09-14-p1-b.md)を参照。
+Foundation試験では原本保持、nativeのmoveに相当する移動、登録失敗・取消・途中コピー失敗の掃除、A削除中のBコピー保持、取消要求後もoperation終了まではコピーを保つことをrun34802338245で確認した。通常Definitionと実UNUserNotificationCenterの登録/配信/取消、foregroundはrun34816553410のnetwork jobの2 UI methodでも成功。run全体は別Web jobの失敗によりfailureであり、通知の個別証拠として扱う。action/text inputは別の受入条件として残る。[P1-B記録](../verification/2026-09-14-p1-b.md)を参照。
 
 ## 0.8候補の通常接続（自動試験成功・OS操作の確認が残る）
 

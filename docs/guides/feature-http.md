@@ -64,9 +64,11 @@ also waits for actual completion; the operation determines whether cancellation
 occurred before or after its durable commit. Do not call start/stop, restore
 lifecycle, or another stopped operation on the same lifetime from the callback.
 This candidate addition passed shared Swift tests in run34802338245 and the
-normal-host HTTP/logout/management UI flow in run34808525786. It is not part
-of the published 0.7.0 contract. See the [P1-B evidence](../verification/2026-09-14-p1-b.md)
-for the cancelled job status, completed tests and remaining device checks.
+normal-host HTTP/logout/management UI flow in the successful network job of
+run34816553410. That run failed in its separate Web job; it is not an overall
+green-run claim. It is not part of the published 0.7.0 contract. See the
+[P1-B evidence](../verification/2026-09-14-p1-b.md) for method results and
+remaining device checks.
 
 Persist only after a successful response. If validation or persistence fails,
 retain the prior durable snapshot and report failure. `MiniAppCookieStore.clear`
@@ -83,5 +85,10 @@ Keychain error preservation.
 
 `P1HTTPProbe.ownerADefinition` and `ownerBDefinition` are candidate-host examples
 using the normal Definition, lifetime, store access, and management removal paths.
-Their loopback fixture is `Tests/Fixtures/network_server.py`; it uses fixed values
-and never reaches an external service.
+For the device candidate their loopback fixture is
+`Tests/TemplateIntegration/P1DeviceHTTPFixture.swift`, running inside the app at
+127.0.0.1:8766. No PC server is needed. CI can also use the external
+`Tests/Fixtures/network_server.py` through an explicit test-runner environment
+override. Both use diagnostic credentials and avoid external services. These
+servers are test fixtures, not a mandatory transport or authentication provider
+for Features built with JibunKit.

@@ -17,4 +17,4 @@ let provider = MiniAppRemovalProvider(
 
 Counterは`counter.value`、Reminderは`reminder.message`に相当するcontext由来キーだけを削除する。削除後にstoreを作り直すとそれぞれ`0`と空文字列を返し、既存schema 1バックアップは引き続き復元できる。Reminderの通知request/category削除とCounterのRuntime終了はhost側の所有解除手順で扱う。
 
-削除はコードをIPAから除く操作ではない。再登録時は初期保存状態から始まり、Feature内同意やOS権限を暗黙に復活させない。
+削除はコードをIPAから除く操作ではない。再登録時は初期保存状態から始まり、Feature内同意は未確認に戻る。iOSがJibunKitに付与した権限自体はFeature削除で取り消されず、同意と別に扱う。再登録の操作だけでOS権限要求や業務処理を開始しない。

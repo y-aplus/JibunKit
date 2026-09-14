@@ -1,6 +1,6 @@
 # 大きなCI単位の準備・検証
 
-更新日: 2026-09-12。対象は[5つのCI境界](implementation-priorities.md)。計画の正本は[plan.json](delivery/plan.json)。
+更新日: 2026-09-14。対象は[5つのCI境界](implementation-priorities.md)。計画の正本は[plan.json](delivery/plan.json)。
 この手順は小変更ごとのCI・親子レビューを置き換える。試験を一つの巨大な直列jobへ詰め込む指示ではない。
 
 ## 境界を開始する前
@@ -121,3 +121,14 @@ python -m unittest discover -s Tools/tests -p test_delivery.py -v
 
 `metrics`のreview_rounds/parent_messages/ci_job_minutesは全担当の実数を集約する。
 最初のP0-Aと各minorで比較し、管理コストを含めた運用改善を判断する。
+
+
+## 通常・生成hostの並行実行
+
+P1-A run34794545131は全試験・artifact upload終了後に45分timeoutとなった。通常UI12.1分、Files3.7分、生成host7.9分、Records4.0分の実績があり、30分の直列見込みは成立しなかった。
+
+`feature_validation=true`、`simulator_tests=true`、通常UI filter空、focused=falseの場合、同じrunのbuild matrixをnormal/generatedの二jobに分ける。normalは共有tests、通常IPA、Counter、backup harness、通常UI/Files。generatedはFeature生成/Release・単独/統合UI・Records UI。native Intents/Widget/incomingの専用jobは従来どおり独立する。build-onlyやfocused呼出は従来のcombined経路を保つ。
+
+fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generated`を付ける（例: `JibunKit-simulator-evidence-generated`）。通常IPA名は`JibunKit-ad-hoc`のまま。Recordsは通常UIの成否ではなく自身のtemplate workspaceとSimulator準備の成功に依存する。現行P1-A入力なら実績からnormal29分/generated23分を見込み、両方45分を上限とする。この構成はactionlintと入力/依存の静的レビュー済みで、初回の実行証拠は次のP1-B境界で取る。
+
+追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。

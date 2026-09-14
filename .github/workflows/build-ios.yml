@@ -180,7 +180,13 @@ jobs:
 
   build:
     if: ${{ !inputs.package_sdk_aliases_only }}
-    name: Xcode 26.6
+    name: Xcode 26.6 (${{ matrix.lane }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # One completion boundary, independent normal and generated host jobs.
+        # Focused and build-only calls retain the existing combined behavior.
+        lane: ${{ fromJSON(inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -286,7 +292,7 @@ jobs:
             echo "error: focused_ui_validation requires ui_test_filter" >&2
             exit 1
           fi
-          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
+          if [[ "${{ (inputs.feature_validation && matrix.lane != 'normal') }}" == "true" ]]; then
             echo "error: focused ui_test_filter cannot be combined with feature_validation" >&2
             exit 1
           fi
@@ -307,7 +313,7 @@ jobs:
           if [[ -n "$UI_TEST_FILTER" ]]; then
             python3 Tools/validate-focused-ui-test.py "$UI_TEST_FILTER" --allow-suite
           fi
-          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then
+          if [[ "${{ (inputs.feature_validation && matrix.lane != 'normal') }}" == "true" ]]; then
             IFS=',' read -r -a feature_filters <<< "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}"
             for feature_filter in "${feature_filters[@]}"; do
               python3 Tools/validate-focused-ui-test.py "$feature_filter" --allow-suite \
@@ -337,7 +343,7 @@ jobs:
           "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests
 
@@ -356,29 +362,29 @@ jobs:
             fi
           }
           args=(python3 Tools/verify-feature-build-requirements.py --tuist-runtime "$RUNNER_TEMP/tuist")
-          if [[ "${{ inputs.feature_validation }}" == "true" ]]; then args+=(--build-probe); fi
+          if [[ "${{ (inputs.feature_validation && matrix.lane != 'normal') }}" == "true" ]]; then args+=(--build-probe); fi
           check_native "${args[@]}"
           check_native python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           check_native python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
           check_native python3 Tools/verify-incoming-processes.py
           check_native python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
-          if [[ "${{ inputs.feature_validation }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
+          if [[ "${{ (inputs.feature_validation && matrix.lane != 'normal') }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             check_native python3 Tools/verify-privacy-manifest-ownership.py
           fi
           test "$failures" -eq 0
 
       - name: Measure backup memory in separate test processes
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         run: |
           swift test --skip-build --filter LargeAttachmentBackupTests/testLargeAttachmentRoundTripWithoutWholeFileData
           swift test --skip-build --filter LargeAttachmentBackupTests/testLegacyPayloadMemoryBaseline
 
       - name: Test independent Feature packages
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         run: python3 Tools/test-module-packages.py Modules
 
       - name: Build independent Records app
-        if: inputs.feature_validation
+        if: (inputs.feature_validation && matrix.lane != 'normal')
         shell: bash
         run: |
           set -euo pipefail
@@ -388,7 +394,8 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/RecordsDerivedData" CODE_SIGNING_ALLOWED=NO
 
       - name: Verify native Feature template
-        if: inputs.feature_validation
+        id: feature-template
+        if: (inputs.feature_validation && matrix.lane != 'normal')
         shell: bash
         env:
           PACKAGE_RESOURCES_VALIDATION: ${{ inputs.package_resources_validation }}
@@ -591,13 +598,14 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
 
       - name: Generate Xcode workspace
+        if: matrix.lane != 'generated'
         run: |
           set -euo pipefail
           tuist generate --no-open
           xcodebuild -workspace JibunKit.xcworkspace -list
 
       - name: Build with Xcode
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -610,7 +618,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
       - name: Verify, ad-hoc sign, and package IPA
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -726,10 +734,10 @@ jobs:
           shasum --algorithm 256 artifacts/JibunKit.ipa
 
       - name: Upload IPA
-        if: ${{ !inputs.focused_ui_validation }}
+        if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-ad-hoc
+          name: JibunKit-ad-hoc${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: artifacts/JibunKit.ipa
           if-no-files-found: error
           retention-days: 7
@@ -766,7 +774,7 @@ jobs:
           xcrun simctl bootstatus "$sim_id" -b
 
       - name: Verify native background URLSession ownership
-        if: inputs.simulator_tests && inputs.background_urlsession_validation
+        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.background_urlsession_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -774,7 +782,7 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/background-urlsession-native.log"
 
       - name: Verify native BackgroundTasks pending ownership
-        if: inputs.simulator_tests && inputs.backgroundtasks_validation
+        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.backgroundtasks_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -786,7 +794,7 @@ jobs:
             2>&1 | tee "$RUNNER_TEMP/backgroundtasks-native.log"
 
       - name: Verify native web authentication handoff
-        if: inputs.simulator_tests && inputs.web_authentication_validation
+        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.web_authentication_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -796,7 +804,7 @@ jobs:
           fi
 
       - name: Verify package resources and localization
-        if: inputs.simulator_tests && inputs.package_resources_validation
+        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && inputs.package_resources_validation) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -827,7 +835,7 @@ jobs:
 
       - name: Build and install standalone Counter
         id: standalone-counter
-        if: inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')
+        if: ${{ matrix.lane != 'generated' && (inputs.simulator_tests && (!inputs.focused_ui_validation || inputs.ui_test_filter == 'MigrationUITests/MigrationUITests/testStandaloneCounterUsesIndependentStorage')) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -837,7 +845,7 @@ jobs:
           xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/SimulatorDerivedData/Build/Products/Debug-iphonesimulator/CounterExample.app"
 
       - name: Test generated standalone Feature
-        if: inputs.simulator_tests && inputs.feature_validation
+        if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
         shell: bash
         run: |
           set -euo pipefail
@@ -848,7 +856,8 @@ jobs:
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/template-launch.log"
 
       - name: Test generated Feature in host
-        if: inputs.simulator_tests && inputs.feature_validation
+        id: generated-integration
+        if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
         env:
           FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
         shell: bash
@@ -872,7 +881,7 @@ jobs:
           done
 
       - name: Verify A-only package update in the same installed host
-        if: inputs.simulator_tests && inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0CCompatibleUpdateV1UITests')
+        if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0CCompatibleUpdateV1UITests')
         shell: bash
         run: |
           set -euo pipefail
@@ -912,7 +921,7 @@ jobs:
 
       - name: Build and install backup UI harness
         id: backup-harness
-        if: ${{ !cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/')) }}
+        if: ${{ matrix.lane != 'generated' && (!cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (!inputs.focused_ui_validation || startsWith(inputs.ui_test_filter, 'MigrationUITests/BackupRestoreUITests/'))) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -926,7 +935,7 @@ jobs:
         # A generated-host failure must not suppress the independent normal host.
         # Focused tests may intentionally omit Counter or the backup harness;
         # a failed prerequisite is never treated as an intentional skip.
-        if: ${{ !cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (steps.standalone-counter.outcome == 'success' || (inputs.focused_ui_validation && steps.standalone-counter.outcome == 'skipped')) && (steps.backup-harness.outcome == 'success' || (inputs.focused_ui_validation && steps.backup-harness.outcome == 'skipped')) }}
+        if: ${{ matrix.lane != 'generated' && (!cancelled() && inputs.simulator_tests && steps.simulator-prepare.outcome == 'success' && (steps.standalone-counter.outcome == 'success' || (inputs.focused_ui_validation && steps.standalone-counter.outcome == 'skipped')) && (steps.backup-harness.outcome == 'success' || (inputs.focused_ui_validation && steps.backup-harness.outcome == 'skipped'))) }}
         shell: bash
         env:
           UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
@@ -952,7 +961,7 @@ jobs:
           fi
 
       - name: Run Files backup round trip
-        if: ${{ !cancelled() && inputs.simulator_tests && inputs.ui_test_filter == '' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
+        if: ${{ matrix.lane != 'generated' && (!cancelled() && inputs.simulator_tests && inputs.ui_test_filter == '' && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure')) }}
         shell: bash
         run: |
           set -euo pipefail
@@ -968,7 +977,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/files-round-trip.log"
 
       - name: Test Records editing and persistence
-        if: ${{ !cancelled() && inputs.simulator_tests && inputs.feature_validation && (steps.integration.outcome == 'success' || steps.integration.outcome == 'failure') }}
+        if: ${{ !cancelled() && inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal') && steps.feature-template.outcome == 'success' && steps.simulator-prepare.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -980,7 +989,7 @@ jobs:
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
       - name: Package 0.7 candidate diagnostic IPA
-        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        if: (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
         shell: bash
         run: |
           set -euxo pipefail
@@ -1011,10 +1020,10 @@ jobs:
           shasum --algorithm 256 artifacts/JibunKit-P0-check.ipa
 
       - name: Upload 0.7 candidate diagnostic IPA
-        if: inputs.feature_validation && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+        if: (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-P0-device-check
+          name: JibunKit-P0-device-check${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: artifacts/JibunKit-P0-check.ipa
           retention-days: 14
 
@@ -1066,7 +1075,7 @@ jobs:
         if: always() && inputs.simulator_tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Simulator-text-diagnostics
+          name: Simulator-text-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/simulator-tests.log
             ${{ runner.temp }}/simulator-app.log
@@ -1076,7 +1085,7 @@ jobs:
         if: always() && !inputs.focused_ui_validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Feature-build-requirement-diagnostics
+          name: Feature-build-requirement-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/feature-build-requirements.log
             ${{ runner.temp }}/feature-connection/
@@ -1092,10 +1101,10 @@ jobs:
           retention-days: 14
 
       - name: Upload background URLSession diagnostics
-        if: always() && inputs.simulator_tests && inputs.background_urlsession_validation
+        if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.background_urlsession_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Background-URLSession-diagnostics
+          name: Background-URLSession-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/background-urlsession-native.log
             ${{ runner.temp }}/BackgroundURLSessionNative.xcresult
@@ -1103,10 +1112,10 @@ jobs:
           retention-days: 7
 
       - name: Upload BackgroundTasks diagnostics
-        if: always() && inputs.simulator_tests && inputs.backgroundtasks_validation
+        if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.backgroundtasks_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: BackgroundTasks-diagnostics
+          name: BackgroundTasks-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/backgroundtasks-native.log
             ${{ runner.temp }}/BackgroundTasksNative.xcresult
@@ -1116,10 +1125,10 @@ jobs:
           retention-days: 7
 
       - name: Upload web authentication diagnostics
-        if: always() && inputs.simulator_tests && inputs.web_authentication_validation
+        if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.web_authentication_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Web-authentication-diagnostics
+          name: Web-authentication-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
@@ -1127,10 +1136,10 @@ jobs:
           retention-days: 7
 
       - name: Upload backup picker diagnostics
-        if: always() && inputs.simulator_tests
+        if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Backup-picker-diagnostics
+          name: Backup-picker-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/simulator-screenshots/*.png
             ${{ runner.temp }}/simulator-screenshots/*.txt
@@ -1141,10 +1150,10 @@ jobs:
           retention-days: 7
 
       - name: Upload focused Records diagnostics
-        if: always() && inputs.simulator_tests && inputs.feature_validation
+        if: always() && inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Records-focused-diagnostics
+          name: Records-focused-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/records-ui.log
             ${{ runner.temp }}/records-test-index.json
@@ -1156,7 +1165,7 @@ jobs:
         if: always() && inputs.simulator_tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-simulator-evidence
+          name: JibunKit-simulator-evidence${{ matrix.lane == 'generated' && '-generated' || '' }}
           path: |
             ${{ runner.temp }}/records-screenshots
             ${{ runner.temp }}/records-diagnostics

@@ -1,6 +1,6 @@
 # 公開版とmainの現在状態
 
-更新日: 2026-09-13。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
+更新日: 2026-09-14。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了、1.0の範囲は需要調査後に決定する。
 
 ## 公開版0.7.0
 
@@ -62,3 +62,12 @@ Control/継続表示、任意SDKや外部identity等に未実装・未検証が�
 `docs/history`、日付付き検証記録、調査スナップショット、過去のrelease notesは履歴であり、
 古いsourceの結果を新しいsourceへ自動的に引き継がない。
 0.6.0タグ内の文書は出荷時点で固定されているため、公開後の状態説明はmainの文書を参照する。
+
+
+## mainのP1-A追加（公開0.7.0には含まれない）
+
+共有入力の持続する受信・取消・冪等再試行、通常保存/管理へ接続した二Package Intents、二静的Widgetの通常接続を追加した。P1-Aの実機以外の受入条件は確認済み。P1-1/2/3全体は実機条件が残るためpartialを維持し、P1-Bの通知/HTTP/Webと合わせて0.8.0候補で確認する。1.0の正式境界はユーザー判断により0.8.0完了時に確定する。
+
+source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3件、通常UI13件、Files復元1件、Records UI2件が成功した。run全体は45分上限によるcancelledで、成功と書き換えない。テストとartifact公開は終了しており、チェックrunの時間超過annotationと個別結果を照合して採用した。native Intents8件・Widget7件と元のP0/接続証拠はsource差分を確認して再利用する。[P1-A記録](verification/2026-09-13-p1-a.md)。
+
+通常IPAはCounter/Reminderに加えて汎用Share Extensionを埋め込む。P1の検証用A/B Feature、Records、ローカルZaikoを出荷Featureとして自動追加しない。共有を受け取る独自Featureにはincomingの登録が必要。現在の公開IPAは0.7.0のままで、ここに記載したmainの追加を公開版の保証と混同しない。

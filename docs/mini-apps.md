@@ -341,3 +341,10 @@ background連携は[短時間の処理継続](guides/background-execution-owners
 [background URLSession再接続](guides/background-urlsession-reconnect.md)、
 [共有refresh枠](background-refresh-coordination.md)に分けて接続します。
 登録API・注入試験の成功を、実OSの起動や期限配送の保証に置き換えません。
+
+
+## 共有入力と静的Widget（mainのP1-A追加）
+
+公開0.7.0に含まれない追加。外部ファイルとShare Extensionからの受信は、通常Definitionのoptional `incoming`へ接続する。[共有入力ガイド](guides/feature-incoming.md)に受信先選択、receipt IDでの冪等保存、取消・再試行とファイル寿命を示す。業務モデルをCoreへ移す必要はない。
+
+静的Widgetは既存Widget extensionへ標準のWidgetBundle登録を追加する。[二Packageの静的Widget接続](guides/package-static-widgets.md)に所有store、管理状態、kind、翻訳と他owner保持を示す。App Intentsは[Package接続](guides/package-app-intents.md)と[App Shortcuts寄与](guides/feature-app-shortcuts.md)を参照。P1-AのCI証拠と0.8候補で行う実機確認は[検証記録](verification/2026-09-13-p1-a.md)で区別する。

@@ -66,6 +66,12 @@
       "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34806399426",
       "conclusion": "failure"
+    },
+    {
+      "id": "34808525786/attempt-1",
+      "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34808525786",
+      "conclusion": "queued"
     }
   ],
   "evidence": [

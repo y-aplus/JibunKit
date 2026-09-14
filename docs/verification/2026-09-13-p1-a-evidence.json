@@ -97,6 +97,12 @@
       "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458",
       "conclusion": "failure"
+    },
+    {
+      "id": "34792716605/attempt-1",
+      "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34792716605",
+      "conclusion": "in_progress"
     }
   ],
   "evidence": [
@@ -244,6 +250,12 @@
       "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
       "result": "partial",
       "detail": "Normal/generated job40m37 failed: GeneratedFeature class selected21 methods,19 failed primarily inaccessible lazy launcher entries (root composite duplicates its own cases); Notes coexistence and Records independence passed. P0 dedicated7 passed; P1Intents/P1Widgets normal UI passed. P1Incoming receive invoked discard confirmation too, blocking nextB tap. Native Intents8 and Widgets7 passed. Normal IPA built/uploaded; normal UI/Files not reached. Unselected historical methods are not newly certified by narrowing run4; their launcher helper correction is represented by the root composite and must be revalidated when those individual surfaces next change. P0-5.ui remains pending full normal management tests; one passing failure/retry method alone does not close that criterion."
+    },
+    {
+      "run": "34792716605",
+      "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
+      "result": "pending",
+      "detail": "Run4 dispatched from frozen codex/p1-a-validation-r2 after preflight/source selector checks. Native OS monitor started and observed in_progress; exactly one codex queue notification on completion. Four connection guides reviewed: distinguish native CI success from pending inbox/device acceptance; Widget seeding requires absent persisted management state; async Intent access reservation spans awaited work. Guide-only changes after source do not alter candidate binary."
     }
   ]
 }

@@ -31,6 +31,10 @@ on:
         description: Build the complete P1 device diagnostic IPA and validate its embedded HTTP fixture
         type: boolean
         default: false
+      p1_device_http_validation:
+        description: Run embedded HTTP XCTest (disable only when unchanged passed evidence is recorded)
+        type: boolean
+        default: true
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -85,7 +89,7 @@ permissions:
 
 jobs:
   device-http-native:
-    if: inputs.p1_device_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    if: inputs.p1_device_validation && inputs.p1_device_http_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml
     with:
       surface: device-http
@@ -853,11 +857,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          compile_flag=()
+          command=(python3 Tools/verify-backgroundtasks-native.py --simulator-id "$SIMULATOR_ID")
           if [[ "${{ inputs.backgroundtasks_compile_only }}" == "true" ]]; then
-            compile_flag+=(--build-only)
+            command+=(--build-only)
           fi
-          python3 Tools/verify-backgroundtasks-native.py --simulator-id "$SIMULATOR_ID" "${compile_flag[@]}" \
+          "${command[@]}" \
             2>&1 | tee "$RUNNER_TEMP/backgroundtasks-native.log"
 
       - name: Verify package resources and localization
@@ -930,7 +934,9 @@ jobs:
           for feature_filter in "${feature_filters[@]}"; do
             selection+=("-only-testing:$feature_filter")
           done
-          fixture=()
+          # macOS Bash 3.2 treats an empty array as unset under nounset.
+          # env forwards the command unchanged and keeps both paths nonempty.
+          fixture=(env)
           if [[ "$P1_DEVICE_VALIDATION" == true ]]; then
             export TEST_RUNNER_JIBUNKIT_USE_DEVICE_HTTP_FIXTURE=1
           elif [[ "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* ]]; then

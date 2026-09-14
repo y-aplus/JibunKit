@@ -36,7 +36,7 @@ enum P1WebProbe {
 @MainActor
 @Observable
 private final class Owner {
-    let id: MiniAppID
+    nonisolated let id: MiniAppID
     let dataStore: WKWebsiteDataStore
     let webView: WKWebView
     var ready = false
@@ -45,13 +45,14 @@ private final class Owner {
     var authenticationResult = "idle"
     private var operationTask: Task<Void, Never>?
     private var operationID: UUID?
-    private let precommitHold = PrecommitHold()
+    private var precommitHold: PrecommitHold?
     private var needsReload = true
     private var authentication: MiniAppWebAuthentication?
     private var authenticationRequest: MiniAppWebAuthenticationRequest?
     private let presentation = PresentationProvider()
     private static let authenticationCoordinator = MiniAppWebAuthenticationCoordinator()
 
+    @ObservationIgnored
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
         self.authentication = try runtime.makeWebAuthentication(
@@ -82,6 +83,8 @@ private final class Owner {
         guard let runtime = lifetime.runtime else { result = "failed: not running"; return }
         guard operationTask == nil else { result = "busy"; return }
         let token = UUID()
+        let hold = PrecommitHold()
+        precommitHold = hold
         operationID = token
         result = "writing"
         do {
@@ -91,7 +94,7 @@ private final class Owner {
                     let value = try await MiniAppRestoreCoordinator.shared.withStoreAccess(for: self.id) {
                         if heldBeforeCommit {
                             await self.markWriteWaiting(token: token)
-                            try await self.precommitHold.wait()
+                            try await hold.wait()
                         }
                         try Task.checkCancellation()
                         return try await self.evaluateWrite(failBeforeCommit: failBeforeCommit)
@@ -127,7 +130,7 @@ private final class Owner {
         } catch { operationID = nil; result = "failed: closed" }
     }
 
-    func releaseWrite() { precommitHold.release() }
+    func releaseWrite() { precommitHold?.release() }
     func cancelOperation() { operationTask?.cancel() }
 
     func removeData() async {
@@ -197,6 +200,7 @@ private final class Owner {
         self.result = result
         operationID = nil
         operationTask = nil
+        precommitHold = nil
     }
 
     func preparePage(coordinator: WKNavigationDelegate) {

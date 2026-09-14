@@ -111,6 +111,19 @@ jobs:
             web-authentication)
               python3 Tools/verify-web-authentication-native.py --simulator-id "$SIMULATOR_ID" \
                 2>&1 | tee "$RUNNER_TEMP/web-authentication-native.log"
+              python3 - <<'PY'
+          import json, os, re
+          from pathlib import Path
+          source = Path('Tests/WebAuthenticationNative/UITests.swift').read_text()
+          methods = re.findall(r'\bfunc\s+(test\w+)\s*\(', source)
+          assert methods and len(methods) == len(set(methods)), 'Missing or duplicate native test methods'
+          root = Path(os.environ['RUNNER_TEMP'])
+          log = (root / 'web-authentication-native.log').read_text(errors='replace')
+          for method in methods:
+              pattern = rf"Test Case '-\[(?:[A-Za-z0-9_]+\.)?WebAuthenticationNativeUITests {re.escape(method)}\]' passed \("
+              assert len(re.findall(pattern, log)) == 1, f'Expected one native pass for {method}'
+          (root / 'WebAuthentication-tests.json').write_text(json.dumps({'passed': methods}, indent=2) + '\n')
+          PY
               ;;
           esac
 
@@ -128,5 +141,6 @@ jobs:
             ${{ runner.temp }}/incoming-native.log
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
+            ${{ runner.temp }}/WebAuthentication-tests.json
           if-no-files-found: warn
           retention-days: 14

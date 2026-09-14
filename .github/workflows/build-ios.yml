@@ -868,6 +868,20 @@ jobs:
           for feature_filter in "${feature_filters[@]}"; do
             selection+=("-only-testing:$feature_filter")
           done
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* ]]; then
+            port_file="$RUNNER_TEMP/p1-http-port"
+            python3 Tests/Fixtures/network_server.py "$port_file" &
+            fixture_pid=$!
+            trap 'kill "$fixture_pid" 2>/dev/null || true; wait "$fixture_pid" 2>/dev/null || true' EXIT
+            for _ in $(seq 1 50); do
+              [[ -s "$port_file" ]] && break
+              kill -0 "$fixture_pid" || exit 1
+              sleep 0.1
+            done
+            test -s "$port_file"
+            export JIBUNKIT_NETWORK_TEST_PORT="$(cat "$port_file")"
+            export SIMCTL_CHILD_JIBUNKIT_NETWORK_TEST_PORT="$JIBUNKIT_NETWORK_TEST_PORT"
+          fi
           xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -derivedDataPath "$RUNNER_TEMP/TemplateHostSimulatorDerivedData" \

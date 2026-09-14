@@ -10,6 +10,18 @@ final class P1WebUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         openManagement()
+        // The cancellation case must begin with genuinely empty A storage,
+        // regardless of method ordering or a previous installed candidate.
+        let aStatus = app.staticTexts["management.status.p1-web-a"]
+        reveal(aStatus)
+        XCTAssertTrue(aStatus.exists, app.debugDescription)
+        if aStatus.label != "削除済み" {
+            tapManagement("management.delete.p1-web-a")
+            let confirmation = app.alerts.buttons["削除"]
+            XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+            confirmation.tap()
+            expectManagement("p1-web-a", "削除済み", timeout: 60)
+        }
         for owner in owners { enableIfNeeded(owner) }
         closeManagement()
     }
@@ -118,6 +130,7 @@ final class P1WebUITests: XCTestCase {
 
     private func open(_ owner: String) throws {
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/" + owner)))
+        XCTAssertTrue(app.navigationBars[owner].waitForExistence(timeout: 15), app.debugDescription)
         expectText(identifier: "p1.web.page", label: "page-ready", timeout: 20)
     }
 
@@ -125,8 +138,13 @@ final class P1WebUITests: XCTestCase {
     private func closeManagement() { tap("閉じる") }
 
     private func enableIfNeeded(_ owner: String) {
-        let enable = managementButton("management.enable." + owner)
-        if enable.exists { enable.tap(); expectManagement(owner, "有効") }
+        let status = app.staticTexts["management.status." + owner]
+        reveal(status)
+        XCTAssertTrue(status.exists, app.debugDescription)
+        if status.label != "有効" {
+            tapManagement("management.enable." + owner)
+            expectManagement(owner, "有効")
+        }
     }
 
     private func tapManagement(_ identifier: String) {
@@ -137,11 +155,20 @@ final class P1WebUITests: XCTestCase {
 
     private func managementButton(_ identifier: String) -> XCUIElement {
         let button = app.buttons[identifier]
-        for _ in 0..<12 {
-            if button.exists && button.isHittable { return button }
-            app.swipeUp()
-        }
+        reveal(button)
         return button
+    }
+
+    private func reveal(_ element: XCUIElement, downFirst: Bool = false) {
+        if element.exists && element.isHittable { return }
+        for _ in 0..<12 {
+            if downFirst { app.swipeDown() } else { app.swipeUp() }
+            if element.exists && element.isHittable { return }
+        }
+        for _ in 0..<12 {
+            if downFirst { app.swipeUp() } else { app.swipeDown() }
+            if element.exists && element.isHittable { return }
+        }
     }
 
     private func expectManagement(_ owner: String, _ value: String, timeout: TimeInterval = 15) {
@@ -150,6 +177,7 @@ final class P1WebUITests: XCTestCase {
 
     private func tap(_ identifier: String) {
         let button = app.buttons[identifier]
+        reveal(button)
         XCTAssertTrue(button.waitForExistence(timeout: 15), app.debugDescription)
         button.tap()
     }
@@ -157,12 +185,14 @@ final class P1WebUITests: XCTestCase {
     private func expectResult(_ value: String) { expectText(identifier: "p1.web.result", label: value, timeout: 15) }
 
     private func expectResultPrefix(_ value: String) {
+        reveal(app.staticTexts["p1.web.result"], downFirst: true)
         let element = app.staticTexts.matching(identifier: "p1.web.result")
             .matching(NSPredicate(format: "label BEGINSWITH %@", value)).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: 15), app.debugDescription)
     }
 
     private func expectText(identifier: String, label: String, timeout: TimeInterval) {
+        reveal(app.staticTexts[identifier], downFirst: identifier.hasPrefix("p1.web."))
         let element = app.staticTexts.matching(identifier: identifier)
             .matching(NSPredicate(format: "label == %@", label)).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: timeout), app.debugDescription)

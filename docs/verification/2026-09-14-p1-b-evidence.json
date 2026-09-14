@@ -34,7 +34,7 @@
       "criteria": [
         "P0-4.docs"
       ],
-      "command": "Review candidate HTTP/notification/Web guidance against APIs and separate unreleased changes from published 0.7.0; full minor document audit still required before 0.8.",
+      "command": "Read and cross-check all 58 current documents before device acceptance; document_review records the reviewed commit and complete inventory. Final device/version/candidate changes require release-time synchronization and re-review.",
       "expected_minutes": 20,
       "timeout_minutes": 30
     }
@@ -326,7 +326,240 @@
     "P1-3.os": "0.8.0",
     "P1-5.device": "0.8.0"
   },
-  "documents": [],
+  "documents": [
+    {
+      "path": "CHANGELOG.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "Modules/Records/README.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "README.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "SECURITY.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/background-refresh-coordination.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/build.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/ci-boundaries.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/coexistence-boundaries.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/coexistence-ledger.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P0-A-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P0-B-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P0-C-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P1-A-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P1-B-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/background-execution-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/background-urlsession-reconnect.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/database-files.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-app-shortcuts.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-build-requirements.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-consent.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-data-removal.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-http.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-incoming.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-lifetime.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-management.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-owned-presentations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-privacy-manifests.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-url-routing.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/keychain-access-control.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/management-removal-failure-fixture.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/notification-attachments.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/notification-request-snapshots.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/owned-notification-observations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-app-intents.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-sdk-module-aliases.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-static-widgets.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/runtime-shutdown-progress.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/scene-feature-activity.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/scene-idle-timer.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/spotlight-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/store-access-coordination.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/web-authentication-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/web-storage-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/implementation-priorities.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/mini-apps.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/network-integration.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/parallel-implementation.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/releasing.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/runtime-restore-integration.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/scene-navigation.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/sidestore.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/status.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/updating.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "release-notes-0.8.0.md",
+      "outcome": "updated"
+    }
+  ],
   "release": {},
   "metrics": {
     "review_rounds": 3,
@@ -477,5 +710,14 @@
       "testNativeSpotlightDeletionWithoutManagement": 13.294
     },
     "review": "Downloaded UI artifact/template-host.log and Simulator text log. Every selected test passed. Native delete08:53:15.566 to first observed disabled label08:54:18.552=62.986s (observation interval, not precise API callback duration). Added stdout traces were not present in exported logs; no trace-based duration claimed. Direct host calls recorded08:57:45.154 and08:57:46.907. No unregister bypass, wait increase or Spotlight prewarm before first disable."
+  },
+  "document_review": {
+    "source": "795157839f9528afe5a0083828ecd59d59d61bef",
+    "summary": "Pre-device full reading review of 58 current documents. Synchronized published 0.7.0, main P1-A and branch P1-B; corrected stale implementation/verification claims and overstatements about cross-process DB isolation and forced stopping arbitrary code. Updated Share/build references, received research and deferred v1 scope decision, existing device acceptance instructions, and an explicitly unreleased 0.8 release-note draft. Unchanged documents retain applicable API/operational contracts and correctly bounded evidence. Historical release records remain unchanged. No new Swift/native/device validation or external documentation freshness is claimed. See 2026-09-14-0.8-document-audit.md for consolidated details.",
+    "unresolved": [
+      "P1 grouped physical-device acceptance is pending, including initial Spotlight disable latency; the previous 120-second overrun and approximately 63-second completion remain unexplained.",
+      "After device feedback, update release/build version and validate the final candidate/artifacts and reused evidence; synchronize and re-review current documents before the minor release gate. This record is pre-device, not release approval.",
+      "The user will decide the formal v1 scope at 0.8 completion using received Issue #6."
+    ]
   }
 }

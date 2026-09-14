@@ -1,0 +1,229 @@
+{
+  "schema": 1,
+  "wave": "P1-B",
+  "source": "e0843719bd93cab673320493202cd4cae57ea13d",
+  "contract": {
+    "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
+    "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
+    "ownership": "Two separate HTTP/Web Codex worktrees, initially Sol low, capacity recovery Terra low; one aggregate review per lane; parent owns Core and integration. No child CI.",
+    "failure_cases": "Pending attachment failure/cancel/drain; HTTP distinct precommit candidates, native request cancellation/logout; Web precommit failure/held writer; stopped cleanup cancellation and management; B preservation.",
+    "normal_entrypoints": "Ten generated UI methods through the normal Registry/management plus normal IPA/UI; five independent native Web auth tests.",
+    "invalidation": "Core lifetime and management changed: rerun shared unit suite, P0 lifetime2, management failure1, normal management UI; unchanged native Intent metadata/Widget and other P0 paths reused with scoped review.",
+    "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI."
+  },
+  "dependencies": {
+    "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
+  },
+  "planned_ci_runs": 3,
+  "budget_exception": "",
+  "jobs": [
+    {
+      "id": "normal",
+      "kind": "unit",
+      "criteria": [
+        "P0-1.lifetime",
+        "P0-3.failure",
+        "P0-5.ownership",
+        "P0-6.diagnostics",
+        "P1-3.routing",
+        "P1-4.ownership"
+      ],
+      "command": "normal matrix: full shared Swift/HTTP/Core tests including StoppedOperation and attachment tests; normal IPA, Counter and normal UI/Files.",
+      "expected_minutes": 29,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "generated",
+      "kind": "simulator",
+      "criteria": [
+        "P0-1.integration",
+        "P0-5.ui",
+        "P1-4.os",
+        "P1-5.http",
+        "P1-6.storage"
+      ],
+      "command": "generated matrix: Notes/generated Release and standalone checks; exact 10 UI methods in execution_inputs; Records regression. Notification OS action/text-input remains separately pending 0.8 device evidence.",
+      "expected_minutes": 30,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "web-authentication-native",
+      "kind": "simulator",
+      "criteria": [
+        "P1-6.auth"
+      ],
+      "command": "Independent native-surface web-authentication job; all five source methods must each have one passed log; retain xcresult and JSON.",
+      "expected_minutes": 12,
+      "timeout_minutes": 30
+    },
+    {
+      "id": "guide-review",
+      "kind": "inspection",
+      "criteria": [
+        "P0-4.docs"
+      ],
+      "command": "Review candidate HTTP/notification/Web guidance against APIs and separate unreleased changes from published 0.7.0; full minor document audit still required before 0.8.",
+      "expected_minutes": 20,
+      "timeout_minutes": 30
+    }
+  ],
+  "runs": [],
+  "evidence": [
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which remain deferred to0.8. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which remain deferred to0.8. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P1-1.metadata",
+      "kind": "unit",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516588",
+      "observation": "7 IntentExecution +1 ManagedHost UI passed; six native builds/removal checks passed. Parent verifier compared generated-host metadata with StandaloneA/B:8 definitions preserved; autoShortcuts contains FeatureAAddValueIntent, FeatureBAddValueIntent, AddCounterValueIntent.",
+      "review": "Downloaded Native-intents-diagnostics and generated P1IntentsHostMetadata artifacts. Actual identities, parameter/output/entity/query references compared by verify-app-intents-integration.py; native run success is not OS Shortcuts discovery/device acceptance.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P1-2.widget",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516367",
+      "observation": "Timeline4 and gallery3 passed. Combined OCR A11→33→disabled--→33→deleted--→reregistered empty→44; B22 throughout. Normal-host P1Widgets deletion/reregister/relaunch test also passed.",
+      "review": "Inspected all7 pass markers and actual gallery OCR including previously failing final recreation. Normal host Definition uses same managed storage. Physical gallery check remains reserved0.8.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-2.presentation",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests both owned presentation/external route and generation replacement/B preservation passed.",
+      "review": "Read two XCTest pass markers; new inbox button interaction remains separately unverified until run4.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-2.uikit",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests owned SwiftUI/UIKit presentation paths passed.",
+      "review": "Tests exercise presentation probe native UIViewController and ownership teardown, not OS share-sheet handoff.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-3.integration",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0ARecordsUITests and P0ASQLiteUITests actual host maintenance passed.",
+      "review": "Records attachment restore/B preservation and native DB close/reopen/rollback/B preservation checked via actual probe assertions.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    },
+    {
+      "criterion": "P0-4.onboarding",
+      "kind": "simulator",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims."
+    }
+  ],
+  "deferred_device": {
+    "P0-3.device": "0.7.0",
+    "P0-5.device": "0.7.0",
+    "P1-1.os": "0.8.0",
+    "P1-2.device": "0.8.0",
+    "P1-3.os": "0.8.0",
+    "P1-5.device": "0.8.0"
+  },
+  "documents": [],
+  "release": {},
+  "metrics": {
+    "review_rounds": 2,
+    "parent_messages": 4,
+    "ci_job_minutes": 0
+  },
+  "acceptance": {
+    "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+    "P0-1.integration": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+    "P0-2.presentation": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+    "P0-2.uikit": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+    "P0-3.failure": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+    "P0-3.integration": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+    "P0-3.device": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+    "P0-4.diagnostics": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+    "P0-4.onboarding": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+    "P0-4.docs": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+    "P0-5.ownership": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+    "P0-5.ui": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+    "P0-5.device": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+    "P0-6.diagnostics": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+    "P0-6.local": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す",
+    "P1-1.os": "OS Shortcutsの発見/候補/引数/実行/戻り値と他owner保持。直接performのみ不可",
+    "P1-1.metadata": "独立A/Bと統合の識別子・参照・削除後保持",
+    "P1-2.widget": "二静的Widgetの追加・描画・A更新/削除後B保持、出荷構成の接続",
+    "P1-2.device": "候補IPAでWidgetの通常追加/更新/他方保持",
+    "P1-3.routing": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
+    "P1-3.os": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持",
+    "P1-4.ownership": "foreground方針/添付削除寿命/予約と取消の交差でB保持",
+    "P1-4.os": "通知action/文字入力/foreground表示/添付・他方通知と画面の保持",
+    "P1-5.http": "実HTTPの認証/Cookie/cache、終了後logout、取消/失敗とB保持",
+    "P1-5.device": "候補IPAの再起動・上書き更新/署名更新で資格情報/状態保持とlogout",
+    "P1-6.storage": "通常Webデータの再起動保持と片側削除、書込中・取消・失敗時B保持",
+    "P1-6.auth": "OS Web認証の開始/取消/返却先と他ownerの要求・状態保持"
+  },
+  "execution_inputs": {
+    "simulator_tests": true,
+    "feature_validation": true,
+    "focused_ui_validation": false,
+    "web_authentication_validation": true,
+    "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P0ALifetimeUITests/testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner,MigrationUITests/P0ALifetimeUITests/testStartupFailureShowsRetryAndKeepsOtherFeatureRunning,MigrationUITests/P0BManagementFailureUITests/testUnregisterFailurePreservesDataThenRetryRemovesAndReregistersWithoutChangingCounter"
+  },
+  "pending_acceptance": [
+    "Notification action/text input and delivered-other-owner preservation require actual OS evidence beyond the two automated notification tests.",
+    "Candidate device HTTP endpoint setup and P1-A/P1-B update/signing checks remain before 0.8.",
+    "Full minor-document audit and user v1 boundary decision remain."
+  ]
+}

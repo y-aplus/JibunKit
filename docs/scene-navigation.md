@@ -38,10 +38,10 @@ Stackの識別子とbindingの世代を切替時に更新する。同じSwift型
 
 二navigation実体の試験は、OSの二つのwindowを操作する試験ではない。iPadOSの複数windowを有効にするscene manifest、window生成・破棄・前面化の運用、scene session identifierを用いた明示配送は未実装/未検証。これはOSにより不可能と判定した制約ではない。
 
-同じsceneでFeatureを切り替えた際の各FeatureのView内入力状態保持、複数sheet要求の所有者/調停、UIViewControllerによるrootの接続契約も残る。今回の変更だけでD04全体を完了とはしない。OSによる永続的な全画面状態保存も保証しない。
+P0-Bでは[Feature所有の提示](guides/feature-owned-presentations.md)を追加し、sheet/full-screen/UIKit提示の取消・終了と外部遷移前の終了待ちを接続した。0.7.0でCI・実機確認済み。Feature切替をまたぐ入力はFeature所有モデルへ保持できるが、任意のView内`@State`やOSによる永続的な全画面状態保存を自動保証するものではない。任意UIKit rootや複数OS window全体の調停は残り、D04全体を完了とはしない。
 
 ## 検証経過
 
-[34440305199](https://github.com/y-aplus/JibunKit/actions/runs/34440305199)（source `26a5d45`）は共有テストのコンパイルで失敗。CoreだけをimportするテストがCounterFeatureで定義されるMiniAppID.counterを参照していた。Coreテストは専用の明示IDへ変更し、同じ参照を持つiOS確認画面もMiniAppID("counter")へ変更した。CoreにCounterFeatureの依存は追加しない。このrunではscene routerの実行試験・iOS build/UIへ到達していないため、変更全体の検証待ちは継続する。
+[34440305199](https://github.com/y-aplus/JibunKit/actions/runs/34440305199)（source `26a5d45`）は共有テストのコンパイルで失敗。CoreだけをimportするテストがCounterFeatureで定義されるMiniAppID.counterを参照していた。Coreテストは専用の明示IDへ変更し、同じ参照を持つiOS確認画面もMiniAppID("counter")へ変更した。CoreにCounterFeatureの依存は追加しない。このrunではscene routerの実行試験・iOS build/UIへ到達しておらず、当時は変更全体が検証待ちだった。次のrunで解消している。
 
 34440565104（source `6a4d2fd`）で修正後のCIが成功。scene routerのcold start・選択/解除・再入の3unitも成功した。実window操作の証拠へ読み替えない。

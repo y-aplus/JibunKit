@@ -43,8 +43,11 @@ The self-contained P1 device candidate serves its diagnostic authentication
 page from the embedded loopback fixture; it does not require a PC server or a
 real account. Its normal-host A/B callback and OS-cancel UI method passed in
 run34816553410. In run34819734774 the authentication method instead failed in
-management preparation, before starting an authentication session. The host
-unregister issue and physical-device acceptance remain open; see
+management preparation, before starting an authentication session. Subsequent
+run34823801940 passed both the disable and normal-host authentication methods,
+including A/B callback routing and B OS cancellation with A state retained.
+The earlier unregister delay remains unexplained and physical-device acceptance
+is still pending for the distributed diagnostic IPA; see
 [P1-B verification](../verification/2026-09-14-p1-b.md). Earlier isolated native
 authentication evidence does not replace those conditions.
 

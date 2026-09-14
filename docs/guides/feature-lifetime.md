@@ -49,3 +49,7 @@ applyで取消/失敗が起きても、復帰をcallerの取消で省略しな�
 lifetimeだけでは未登録の保存操作を止められず、DB transactionやschema移行を肩代わりしない。
 Counter/Reminderの通常Definitionもlifetimeを持つが、OSに予約済みの通知等の登録解除・データ削除とは別の操作。
 それらはP0-Bでアプリ内管理へ接続し、非実機条件を確認済みである。候補の実機確認も2026-09-13に完了。
+
+## 停止後の処理と再開を調停する
+
+P1-B開発branchでは`withStoppedOperation`を追加した。外側の呼出元からFeatureを停止し、logout等の処理が実際に終わるまで同じlifetimeの再開・管理を待たせる。通常の保存排他は別途同じcoordinatorで取得する。callbackから自身のstart/stopや別の停止操作をawaitしない。[HTTP接続の順序と検証範囲](feature-http.md#operation-and-shutdown-order)を参照。公開0.7.0には含まれない。

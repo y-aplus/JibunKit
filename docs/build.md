@@ -7,8 +7,8 @@
 ## 構成の所有場所
 
 - `Package.swift`: 共通ロジック・Feature・Integrationのlibrary productsとテスト。
-- `Project.swift`: app・Widget・UI tests・CounterExample、Info.plist値、iOS build settings。
-- 本体とWidgetのentitlements: App Groupの宣言。
+- `Project.swift`: app・Widget・Share Extension・UI tests・CounterExample、Info.plist値、iOS build settings。
+- 本体・Widget・Share Extensionのentitlements: App Groupの宣言。
 - `Tuist/Templates/feature`: 独立Featureと単独appの標準雛形。
 
 生成されるxcodeproj・workspace・Derivedは編集・commitしない。旧Info.plistとxtool.ymlは削除済み。
@@ -35,7 +35,7 @@ workflowは固定SHA-256でTuistを導入し、Swiftテスト、通常app／Widg
 
 上記は通常回帰と生成Feature検証の指定であり、個別のnative比較をすべて有効にする指定ではない。入力省略時は両フラグがfalseで、共有・Moduleテストと通常IPAの検査を実行する。`feature_validation=true`でRecords単独、Tuist templateの生成・単独ビルド・ホスト組込みを追加する。
 
-`simulator_tests=true`ではバックアップの選択復元・Files往復、本体の保存・通知と、単独Counterの加算・再起動・保存先分離をUIで検証する。両フラグがtrueなら生成Featureの単独起動・ホスト共存とRecordsの編集・添付も検証する。UI targetはTuistが生成する。Rubyによる後加工やmetadata手動コピーは行わない。結果・画面・診断ログは`JibunKit-simulator-evidence` artifactへ保存する。
+`simulator_tests=true`ではバックアップの選択復元・Files往復、本体の保存・通知と、単独Counterの加算・再起動・保存先分離をUIで検証する。両フラグがtrueなら生成Featureの単独起動・ホスト共存とRecordsの編集・添付も検証する。UI targetはTuistが生成する。Rubyによる後加工やmetadata手動コピーは行わない。結果・画面・診断ログは通常側の`JibunKit-simulator-evidence`と生成側の`JibunKit-simulator-evidence-generated`へ保存する。生成UIを分割した診断ではさらに`-network`/`-web-management`が付く。[分割条件と証拠再利用](ci-boundaries.md)を参照し、通常側のartifactだけで生成側の検証も完了したと扱わない。
 
 エージェントによる長時間CIの待機は、モデルを動かさないOS側のバックグラウンド監視と、完了時に一度だけ送る同じ会話への`codex queue`で行う。`gh run watch --interval`やモデルによる定期確認は使わない。具体的なローカル監視設定はリポジトリへ同梱せず、[並列運用](parallel-implementation.md)のCI前レビューと完了通知の契約に従う。
 

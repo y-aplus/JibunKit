@@ -32,7 +32,7 @@
 | P0-Bの提示・同意・アプリ内管理 | 同sourceの生成34700435807（8件）と通常34702137986（共通241/skip2、Records11、通常UI13、Files選択JSON復元）成功。提示中URL遷移、UIKit終了、無効化/再登録/削除/失敗再試行/B保持 | 2026-09-13の実機で同意/管理/提示、外部URL切替、Widget/Shortcut反映を確認。[P0-B記録](verification/2026-09-12-p0-b.md) |
 | shared refresh実機用診断fixture | 34684495878でiOS注入試験16件と診断app/UI targetのコンパイルが成功 | 実OSのpending受付・launch・期限は未検証。実機用IPAの公開や操作依頼は未実施 |
 
-このmainの追加を0.6.0配布物の機能・検証に含めない。
+上記は0.7.0に含む追加であり、0.6.0配布物の機能・検証に含めない。
 [SDK記録](verification/2026-09-12-package-sdk-aliases.md) / [refresh診断記録](verification/2026-09-12-shared-refresh-native.md)。
 
 P0-Cの接続診断、Registry漏れ/修正、同じiOS hostへのAだけのPackage更新とB/resource保持もCI34705653297で確認済み。[P0-C記録](verification/2026-09-12-p0-c.md)。通常IPA更新後のCounter/Reminder保持と軽い回帰もユーザー確認済み。
@@ -61,7 +61,7 @@ Control/継続表示、任意SDKや外部identity等に未実装・未検証が�
 現在の手順は`docs`直下と`docs/guides`、現在状態はこの文書と台帳を参照する。
 `docs/history`、日付付き検証記録、調査スナップショット、過去のrelease notesは履歴であり、
 古いsourceの結果を新しいsourceへ自動的に引き継がない。
-0.6.0タグ内の文書は出荷時点で固定されているため、公開後の状態説明はmainの文書を参照する。
+各公開tag内の文書は出荷時点で固定されているため、公開後の状態説明はmainの文書を参照する。開発branchの成果はその旨を明記する。
 
 
 ## mainのP1-A追加（公開0.7.0には含まれない）

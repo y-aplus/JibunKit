@@ -37,7 +37,7 @@ public enum EnabledFeatureBuildRequirements {
 
 Tuistが生成したentitlementsをXcode設定とCIのad-hoc署名の両方で使用する。古い固定entitlementsファイルを別途署名へ渡す経路は削除した。指定値がIPAの署名へ入ることと、SideStore再署名後に許可されること、OSサービスを実際に利用できることは別々に検証する。
 
-この合成はcapabilityを取得せず、プロビジョニングを購入/変更しない。background modeが書けてもscheduler登録・期限・再配送が実装されたわけではなく、権限用途説明があってもFeature別同意は未実装。OSの同意単位はホストアプリのままである。署名依存の必然的な条件と、残るJibunKit実装の仕事を混同しない。
+この合成はcapabilityを取得せず、プロビジョニングを購入/変更しない。background modeの宣言とは別にscheduler登録・期限・再配送を接続する必要があり、権限用途説明とは別に[Feature内の利用同意](feature-consent.md)を通常管理へ接続する。Feature別同意はP0-Bで実装・検証済みだが、OSの同意単位はホストアプリのままである。署名依存の必然的な条件と、残るJibunKit実装の仕事を混同しない。
 
 [検証記録](../verification/2026-09-11-feature-build-requirements.md)と、Tuist公式の[コード共有](https://docs.tuist.dev/en/guides/features/projects/code-sharing)、[entitlements](https://tuist.github.io/tuist/main/documentation/projectdescription/entitlements/)を参照。
 

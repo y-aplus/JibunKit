@@ -1,6 +1,6 @@
 # SideStoreで導入・更新する
 
-更新日: 2026-09-12（公開版と検証sourceの整理。SideStore画面を再検証した日ではない）
+更新日: 2026-09-14（公開版とmainの構成・検証sourceの整理。SideStore画面を再検証した日ではない）
 
 最新公開版は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
 
@@ -57,7 +57,9 @@ SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`
 
 JibunKitはSideStoreの`My Apps`上では1つのアプリであり、無料Appleアカウントのactive app枠を1つ使う。SideStore自身もactive app枠を使う。公式FAQでは無料アカウントはSideStoreを含め同時に3アプリ、7日間に10個の異なるアプリ（App IDs）までと説明されている。[SideStore FAQ](https://docs.sidestore.io/docs/faq)
 
-JibunKitのIPAには本体1つとWidget extension 1つが入る。Widgetは別のホーム画面アプリではなく、JibunKitのactive app枠とは別に数えない。App Groupもアプリ枠ではない。一方、署名処理では本体とextensionのbundle ID・profileを扱うため、「1アプリ」「2 bundle IDs」「1 Widget extension」「1 App Group」を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。
+公開版0.7.0のIPAには本体1つとWidget extension 1つが入る。mainのP1-A追加とP1診断IPAにはShare Extensionも含み、本体/Widget/Shareの3つのbundle IDを持つ（Shareは`com.jibunkit.app.Share`）。通常IPAでの追加構成は[P1-A記録](verification/2026-09-13-p1-a.md)、配布済み診断IPAと実機未確認の範囲は[P1実機手順](verification/2026-09-14-0.8-device-check.md)を参照する。
+
+WidgetやShare Extensionは別のホーム画面アプリではなく、App Groupもアプリ枠ではない。署名処理では本体とextensionのbundle ID・profileを扱うため、app枠・bundle ID数・extension数・App Group数を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。P1の上書き・署名更新実績は今回の確認結果を待ち、旧構成の実績から推定しない。
 
 ## 保証しない境界
 

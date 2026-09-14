@@ -71,7 +71,11 @@ The candidate's storage persistence, explicit cancellation, and management
 drain/removal methods passed in run34819734774, using the embedded loopback
 fixture and normal Feature entrypoints. The same run failed during Spotlight
 unregister in the first disable test; the next authentication test inherited
-that incomplete management state. Storage method passes do not establish that
-the complete management path is ready. The earlier four-method pass in the
+that incomplete management state. Subsequent run34823801940 passed the disable,
+authentication, and same-host direct Spotlight comparison methods. The first
+disable took about 63 seconds from domain deletion to the observed completed
+UI; the earlier 120-second overrun remains unexplained. These passes establish
+the tested operations, not a fix for the delay or physical-device acceptance.
+The earlier four-method pass in the
 cancelled run34808525786 remains historical evidence. P1-B is unreleased and
 physical-device checks remain; see [P1-B verification](../verification/2026-09-14-p1-b.md).

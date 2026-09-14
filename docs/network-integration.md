@@ -27,7 +27,9 @@ let session = URLSession(configuration: configuration)
 
 [MiniAppHTTPIsolationTests](../Tests/JibunKitCoreTests/MiniAppHTTPIsolationTests.swift)はloopback HTTP serverからSet-Cookieを受け、同URLに異なる応答をcacheし、ネットワークを使わない再読出しを比較する。認証challenge・redirect・サーバー側Cookie失効は34432354335で成功。
 
-永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の明示保存は34437448875でmacOS実HTTPとiOS再起動を検証済み。iOSでの実HTTP送信、process再生成後のdisk cache、background再接続、独自delegateの共有状態は未完。恒久的なログインを必要とするアプリへephemeral化を強制しない。App Group cookie storeは署名で許可されたgroupの共有用であり、任意のFeature名で隔離できるとは扱わない。
+永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の明示保存は34437448875でmacOS実HTTPとiOS再起動を検証済み。P1-B開発branchでは34816553410の通常host UIで実URLSessionの認証・Cookie・cache読出し、停止後logout・管理削除とB保持を確認した。[通常Feature接続](guides/feature-http.md)と[実機の残件](verification/2026-09-14-0.8-device-check.md)を参照。公開0.7.0の実績へ追加しない。
+
+URLCacheはOSが破棄でき、process再生成・IPA更新・署名更新をまたぐ保持を永続契約にしない。background再接続は[専用ガイド](guides/background-urlsession-reconnect.md)の接続と検証範囲に従い、独自delegateの任意の共有状態まで隔離済みとはしない。恒久的なログインを必要とするアプリへephemeral化を強制しない。App Group cookie storeは署名で許可されたgroupの共有用であり、任意のFeature名で隔離できるとは扱わない。
 
 D09全体は未達。詳細と各CIは[検証記録](verification/2026-09-10-network-isolation.md)。
 

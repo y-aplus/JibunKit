@@ -26,6 +26,6 @@ MiniAppDefinition(
 
 OSがURLをhostへ配送する設定は別に必要。custom schemeはapp targetの`CFBundleURLTypes`、Universal LinkはAssociated Domainsと対応するwebサイトの関連付けを設定する。[Feature build requirements](feature-build-requirements.md)でhostとFeatureの要求を合成する。異なるnameのURL宣言は自動で集め、既存の`jibunkit` schemeも保持する。同じnameの異値衝突を明示resolutionで解決する場合は、hostを含む必要な宣言を解決値に保持する。実例は隔離CI用の`Tests/TemplateIntegration/URLRoutingBuildRequirements.swift.fixture`にある。Widgetへ不要なschemeを複製しない。
 
-この接続は画面へのアドレス配送を扱う。一般の操作callback、ASWebAuthenticationSessionの完了処理、外部ファイルのsecurity scope、`UIOpenURLContext`のoptions、実OS上の複数window選択は別途検証・補完が必要。
+この接続は画面へのアドレス配送を扱う。ASWebAuthenticationSessionの完了処理は[Web認証](web-authentication-ownership.md)、外部ファイルのsecurity scopeと受信先選択は[共有入力](feature-incoming.md)の別経路へ接続する。P1の自動検証と実機未確認を各ガイドで区別する。一般の操作callback、`UIOpenURLContext`のoptions、実OS上の複数window選択までこのresolverが自動で扱うものではない。
 
 根拠: Apple [onOpenURL(perform:)](https://developer.apple.com/documentation/swiftui/view/onopenurl(perform:))はcustom URL/Universal Linkとsceneへの配送を説明している。現在の検証範囲は[記録](../verification/2026-09-11-feature-url-routing.md)を参照。

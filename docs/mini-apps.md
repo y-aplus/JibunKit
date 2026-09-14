@@ -154,7 +154,7 @@ JibunKitはFeature同士の識別・保存先の分離と共通APIの契約を�
 
 同じRoot Viewを単独アプリでも使う場合、単独版のApp Shellが`NavigationStack { FeatureRootView(context: ...) }`で包む。JibunKit内のためだけに独立版の起動・画面構成をFeatureへ埋め込まない。
 
-foregroundの通知はホストがbanner・通知センターのlist・soundを指定する。表示内容や予約条件はFeatureが持ち、タップ後の入口はContextのpayloadを使う。システム設定による実際の表示・音の可否は別に検証する。
+foregroundの通知は通知所有者の`MiniAppDefinition.notificationPresentation`で方針を指定でき、省略時はbanner・通知センターのlist・soundを使う。表示中の別Featureの方針へ置き換えない。無効な所有者の通知は抑止する。表示内容や予約条件はFeatureが持ち、タップ後の入口はContextのpayloadを使う。システム設定による実際の表示・音の可否は別に検証する。
 
 ## ファイル・データベースを保存する
 
@@ -190,7 +190,7 @@ Featureは任意の`MiniAppBackupProvider`を定義の`backup:`へ登録でき�
 
 `MiniAppLink.url(for: id)`で`jibunkit://mini-app/<Feature ID>`を生成できる。ホストは登録済みFeatureの入口へ遷移し、起動中ならホストの遷移先を置き換える。Counter Widgetが使用例。Widget targetにも`JibunKitCore`を依存として追加する。
 
-URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。詳細画面には`MiniAppLink.url(for: id, destination: recordID)`を使う。ホストは`MiniAppDefinition.appendDestination`へ文字列を渡し、Integrationが型・形式を検証してFeature所有のnavigation valueをpathへ追加する。拒否時はfalseを返す。RecordsのUUID接続が実例であり、ホストへFeature別switchを追加しない。表示中のsheetを強制終了しないため、sheetがあるときは閉じた後に遷移先が見える。独立版ではそのApp ShellがURL登録・受信を担う。
+URLは画面を開く用途のみで、保存値の変更・復元・任意処理は実行しない。未知のID、不正なID、未対応のpath・query・fragmentは無視し現在の画面を保つ。詳細画面には`MiniAppLink.url(for: id, destination: recordID)`を使う。ホストは`MiniAppDefinition.appendDestination`へ文字列を渡し、Integrationが型・形式を検証してFeature所有のnavigation valueをpathへ追加する。拒否時はfalseを返す。RecordsのUUID接続が実例であり、ホストへFeature別switchを追加しない。[所有提示](guides/feature-owned-presentations.md)へ接続したsheet/UIKit提示があれば、その終了要求と実際の終了通知を待ってから遷移する。任意の未登録sheetをhostが自動検出・終了する契約ではない。独立版ではそのApp ShellがURL登録・受信を担う。
 
 [AppleのWidget連携](https://developer.apple.com/documentation/widgetkit/linking-to-specific-app-scenes-from-your-widget-or-live-activity)に従い、Widgetの`widgetURL`とホストの`onOpenURL`を接続している。カスタムschemeは認証境界ではなく、同じschemeを登録する別アプリとの競合はOSの扱いに依存する。
 
@@ -234,11 +234,11 @@ Taskのoperationがscopeを所有するruntime自身を強参照し続けると�
 
 複数Taskの終了確認にはruntime側から`await scope.cancelAllAndWait()`を使える。対象は呼出時点のTask群であり、待機中の新規startは対象外。終了中に新規処理を受けるかはruntimeが決める。scope内のoperationから呼ぶと自分自身の完了待ちになるため、外側の調停処理から呼ぶ。取消に応じないoperationがある場合は完了しない。
 
-## 通知操作の所有者配送（開発中）
+## 通知操作の所有者配送
 
-IntegrationはonNotificationActionへasyncハンドラを任意登録できる。open/dismiss/custom(action ID)、request ID、destination、文字入力を受け取る。通常openだけが既存の画面遷移を行い、dismiss/customではホストが勝手に画面を切り替えない。未登録ownerやハンドラなしの操作を他Featureへ転送しない。ハンドラ完了後にOSへ完了を返すため、長時間処理や終了しない処理を置かない。category/action宣言の合成とOS経由の独自action実証は未完。userInfo全体を渡すAPIではない。
+IntegrationはonNotificationActionへasyncハンドラを任意登録できる。open/dismiss/custom(action ID)、request ID、destination、文字入力を受け取る。通常openだけが既存の画面遷移を行い、dismiss/customではホストが勝手に画面を切り替えない。未登録ownerやハンドラなしの操作を他Featureへ転送しない。ハンドラ完了後にOSへ完了を返すため、長時間処理や終了しない処理を置かない。category/action宣言の合成とOS経由の独自actionは[既存のnative回帰](verification/2026-09-11-notification-ui-regression.md)で検証済み。独自userInfo/content/trigger等は任意の[requestSnapshot](guides/notification-request-snapshots.md)から読める。P1候補の文字入力・添付等の実機は[一括確認](verification/2026-09-14-0.8-device-check.md)に残る。
 
-通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に全Featureの和集合を一度登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。実行中の更新には`context.replaceNotificationCategories(with:)`を使い、他Featureの登録を維持する。下の動的更新手順を参照。
+通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に有効なFeatureの和集合を登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。実行中の更新には`context.replaceNotificationCategories(with:)`を使い、他Featureの登録を維持する。下の動的更新手順を参照。
 
 `await context.removeAllOwnedNotifications()`は、そのFeatureのnamespaceに属する予約中・配信済み通知のみを取り消す。従来の単一request IDも対象。他Featureや名前空間外の通知は保持する。取得したID一覧に対する操作なので、新規予約との原子的な停止は保証しない。復元・削除時に新規予約を止める必要がある場合はFeature runtimeで受付を調停する。Records復元後の取消が使用例。
 
@@ -250,12 +250,12 @@ IntegrationはonNotificationActionへasyncハンドラを任意登録できる�
 
 callback内で長時間処理をしないでください。これはhostが前面にある場合のOSへの表示指定であり、Featureの画面表示状態の判定や通知権限の分離を自動提供するものではありません。空のoption setによる抑止を含む標準動作は[AppleのwillPresent仕様](https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate/usernotificationcenter(_:willpresent:withcompletionhandler:))に従います。
 
-所有者別方針・既定値の単体テストを追加しました。実通知の複数Feature表示検証は未完です。
+所有者別方針・既定値の単体テストと実foreground通知の二Feature比較は検証済みです。P1-Bの通常hostでもAの非表示/Bのbannerと添付をCIで確認し、OSカードの操作と今回の実機条件は[通知添付ガイド](guides/notification-attachments.md)で区別しています。
 
 
 ### 実行中の通知カテゴリ更新
 
-`try context.replaceNotificationCategories(with: categories)` は、そのFeatureの登録だけを置き換えます。空配列でそのFeatureのカテゴリだけを解除できます。hostは起動時に全Featureを`MiniAppNotificationCategoryRegistry.shared`へ登録し、更新時には他Featureのカテゴリを保った全体集合をOSに渡します。各識別子は`context.notificationCategoryIdentifier(for:)`で作成してください。所有者不一致・重複・未登録Featureの更新はthrowし、既存登録を変更しません。
+`try context.replaceNotificationCategories(with: categories)` は、そのFeatureの登録だけを置き換えます。空配列でそのFeatureのカテゴリだけを解除できます。hostは起動時に有効なFeatureを`MiniAppNotificationCategoryRegistry.shared`へ登録し、更新時には他Featureのカテゴリを保った全体集合をOSに渡します。各識別子は`context.notificationCategoryIdentifier(for:)`で作成してください。所有者不一致・重複・未登録Featureの更新はthrowし、既存登録を変更しません。
 
 MainActor上で同期的に検証・合成・標準API呼出しを行います。OS側の適用完了通知は標準APIにないため、このメソッドの成功はOS内の適用完了を保証しません。動的な登録はプロセス内の状態です。次回起動時に必要なカテゴリはFeatureが定義または永続化した情報から再登録してください。カテゴリ解除は通知要求自体の取消ではありません。
 
@@ -280,7 +280,7 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 
 識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
 
-全データ削除はそのストアの`removeData`を使います。使用中WebViewとの調停やFeature削除時のストア自体の破棄は未実装です。同じbase URLの実ページを使うCookie/localStorage/IndexedDBの分離・通常背景化後の再起動保持・A削除後のB保持は検証済みです（[接続と範囲](guides/web-storage-ownership.md)）。任意の認証provider、即時永続化、その他のWebデータ一般まで確認済みとはしません。
+所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持はP1-B開発branchの通常hostで検証済みです（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。公開0.7.0と今回の実機未確認の接続を区別してください。
 
 
 ### 自動ロック抑止の共存
@@ -303,7 +303,7 @@ shutdownは所有Task自身から呼ばず、外部の調整役から呼んで�
 
 `MiniAppDefinition.restoreLifecycle`に`MiniAppRestoreLifecycle(stop:resume:)`を登録すると、hostのJSON/ファイル復元は各対象Featureについてstop→apply→resumeの順で実行します。未選択Featureのhookは呼びません。stopでは新規受付を閉じて保存先の利用終了を待ちます。`MiniAppRuntime.shutdown()`を利用した場合、resumeでは新しいruntimeを作ってFeatureの参照先を切り替えます。
 
-stopが失敗するとapply/resumeは呼ばないため、stop自身が失敗時に利用可能な状態へ戻す必要があります。applyが失敗してもresumeを呼び、両方失敗した場合は両方の理由を保持します。resume失敗はデータ適用済みの場合もあるため、復元全体のロールバック成功とは表示しません。後続Featureへの適用は既存の失敗報告に従って停止します。
+stopが失敗するとapply/resumeは呼ばず、登録されていれば`recoverAfterFailedStop`を待ちます。この回復callbackを登録するか、stop自身が失敗時に利用可能な状態へ戻す必要があります。回復も失敗した場合は両方の理由を報告します。applyが失敗してもresumeを呼び、両方失敗した場合は両方の理由を保持します。resume失敗はデータ適用済みの場合もあるため、復元全体のロールバック成功とは表示しません。後続Featureへの適用は既存の失敗報告に従って停止します。
 
 hook未指定のFeatureは従来どおりです。これは全Featureの処理を自動検出して停止する機能ではなく、Feature所有者の停止・DB再接続・再開処理を共有復元経路へ接続する契約です。直接planを使う場合も`apply(lifecycles:)`へ登録を渡します。同一Featureの重複復元は下記の既定coordinatorが調停します。通常書込みとの排他と別プロセスの利用調整は別途必要です。
 

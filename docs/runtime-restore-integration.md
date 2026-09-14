@@ -44,6 +44,7 @@ DB接続の状態確認、必要な再接続、新しいRuntime作成、UI以外
 - unit: 受付閉鎖、Task完了待ち、同期/非同期解放順序、同時shutdown合流、重複予約拒否、取消、snapshotとの競合、他owner継続。
 - CIの実画面: 選択復元の成功と4つの失敗経路、AのRuntime再開とBのTask/データ維持。
 - ユーザー実機: カウンターJSONの書出し・読込み・選択・上書き復元。
-- 残件: SQLite以外のDBと実Featureへのadapter接続、通常書込みや購読の一般接続、Widget等の別プロセスとの排他、移行/リセットの接続。native SQLiteのWAL・片側削除/復元・BUSY closeは[比較検証済み](verification/2026-09-11-sqlite-isolation.md)。D02/D07全体の完成は未達。
+- P0-AではRecordsのJSON/添付とnative SQLiteを通常保存・停止復帰・移行/リセットへ接続してCIで確認し、0.7.0候補の一括実機も確認済み（[P0-A記録](verification/2026-09-12-p0-a.md)）。native SQLiteのWAL・片側削除/復元・BUSY closeの独立比較は[以前の記録](verification/2026-09-11-sqlite-isolation.md)に保持する。
+- 残件: 採用方式以外のDBへのadapter接続、任意の通常書込み・購読・別process writerまでの一般化。P0の移行/リセット接続が未実装という意味ではなく、D02/D07全体の完成は未達。
 
-0.6.0出荷CIでFiles経由のJSON選択復元と添付ZIP往復は成功済み（[公開記録](verification/2026-09-12-0.6-release.md)）。以前のFiles操作失敗は[経緯](verification/2026-09-10-runtime-lifetime.md)として保持し、現在の待機対象にはしない。領域全体の判定は[統合差分台帳](coexistence-ledger.md)を参照。
+現在の出荷証拠は[0.7.0公開記録](verification/2026-09-13-0.7-release.md)を参照する。0.6.0のFiles経由JSON選択復元と添付ZIP往復の成功、以前の[Files操作失敗](verification/2026-09-10-runtime-lifetime.md)はsource付き履歴として保持し、現在の待機対象にはしない。領域全体の判定は[統合差分台帳](coexistence-ledger.md)を参照。

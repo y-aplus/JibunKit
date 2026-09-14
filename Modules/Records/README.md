@@ -12,7 +12,7 @@ RecordStoreはversion付きJSON indexとUUID名の添付を、呼出側が指定
 
 macOSでは`swift test --package-path Modules/Records`で保存処理を検証する。`tuist generate --path Modules/Records --no-open`でRecordsExample workspaceを生成し、RecordsExample schemeで実行する。Example/App.swiftがNavigationStackとApplication Supportの保存先を供給する。
 
-WindowsからはGitHub Actionsを利用する。`feature_validation=true`で独立版・生成Featureのビルド、さらに`simulator_tests=true`で独立起動とホスト共存のUI回帰まで実行する。[CIの実行モード](../../docs/verification/2026-09-08-ci-structure.md)を参照。
+WindowsからはGitHub Actionsを利用する。`feature_validation=true`で独立版・生成Featureのビルド、さらに`simulator_tests=true`で独立起動とホスト共存のUI回帰まで実行する。[現在のビルド手順](../../docs/build.md)と[CI分割・再利用条件](../../docs/ci-boundaries.md)を参照。
 
 ## 既存アプリを分離して組み込む
 
@@ -24,6 +24,8 @@ WindowsからはGitHub Actionsを利用する。`feature_validation=true`で独�
 6. 単独版・ホスト版それぞれの保存と起動、再起動後の詳細、他Featureの保存維持を確認する。単独版からホスト版への既存データは明示的なsnapshot移行で扱う。App間で保存先が自動共有されるわけではない。
 
 TMAの固定target数は要求しない。RecordsのPackageはFeatureとテストだけで、JibunKit依存の接続は外にある。この分離は既存アプリの不具合を基盤が補償する仕組みではない。
+
+P0-Aで`RecordStoreOperationBoundary`を追加し、standaloneは既定の直接実行、hostは`RecordsStoreOperationBoundary`を注入する。通常の読書き・添付操作をStoreAccessへ、`migrateIfNeeded`/`reset`を排他的な保守へ接続する。予約済みのbackup callbackは低層のsnapshot操作を使う。[保存・移行・リセットの接続](../../docs/guides/store-access-coordination.md)と[P0-AのCI/実機記録](../../docs/verification/2026-09-12-p0-a.md)を参照。
 
 ## バックアップと更新
 

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P1-A",
-  "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
+  "source": "77b5f5d8f44d62f290c546aa181a0a0902f76363",
   "contract": {
     "baseline": "f89ac1b4b68d34e67e205b77db25589efb75ba7d",
     "interfaces": "docs/delivery/P1-A-contract.md; optional incoming; managed async Intent boundaries; real Widget Definition factories",
@@ -9,13 +9,13 @@
     "failure_cases": "Incomplete incoming staging; provider cancellation/drain; failed receive stable receipt retry; disabled/removed Intents and Widget stores; atomic Widget increment/overflow; B preservation.",
     "normal_entrypoints": "Share Extension and external file -> normal inbox; generated host P1Intents and P1Widgets normal Registry management; native standalone/combined OS fixtures.",
     "invalidation": "Retest ownership/presentation/storage/management normal and generated host; no P1 OS proof inferred from prior0.7 device results. Existing P0 device records remain limited historical evidence; P1 physical checks reserved0.8.",
-    "review": "All run3 jobs inspected. Native Intents8 and Widgets4+3 pass; generated native8 identity/reference comparison and Counter+A+B Shortcut contributions pass. P0 dedicated7 and normal-host P1Intents/P1Widgets pass. Inbox failure hierarchy showed a discard confirmation after receive, fixed with explicit independent button style and cancellation/no-dialog regression assertions. Launcher helpers now materialize lazy rows, correctly handling top versus bottom search. Local37 tests/actionlint passed. Windows does not validate Swift or UIKit behavior."
+    "review": "Run4 full job and downloaded simulator log inspected. No Widget store/management implementation failure inferred from a15s wait: native Spotlight callback completed after17.3s. Changed only targeted deletion XCTest deadline, inbox confirmation UI/test, and workflow failure dependencies. All37 Tools tests passed; actionlint caught and resolved simulator-step ID placement before commit; final actionlint/diff/source-selector checks pass. Root navigation composite passed and is reused; no physical P1 acceptance claimed."
   },
   "dependencies": {
     "P0-C": "docs/verification/2026-09-13-p0-c-evidence.json; published0.7.0; user normal+diagnostic device confirmation"
   },
-  "planned_ci_runs": 4,
-  "budget_exception": "Run3 exposed a real inbox List row activating both receive/discard, plus lazy launcher assumptions in an accidentally whole-class historical regression selection. One consolidated run4 verifies the fixes and previously unreached normal UI/Files. Reuse passing native Intents/Widgets, incoming23/process, and dedicated P0 UI on immutable sources; no per-failure or worker CI. Whole generated class took about12min including duplicate composite cases; run4 explicitly selects the root/navigation composite and three P1 suites.",
+  "planned_ci_runs": 5,
+  "budget_exception": "Run3 exposed a real inbox List row activating both receive/discard, plus lazy launcher assumptions in an accidentally whole-class historical regression selection. One consolidated run4 verifies the fixes and previously unreached normal UI/Files. Reuse passing native Intents/Widgets, incoming23/process, and dedicated P0 UI on immutable sources; no per-failure or worker CI. Whole generated class took about12min including duplicate composite cases; run4 explicitly selects the root/navigation composite and three P1 suites. Run4 passed the395.841s navigation composite and Intents UI, but incoming cancel queried a button suppressed by native confirmation popover presentation. Use an explicit destructive alert consistent with management. Widget deletion reached Spotlight at00:53:08.689 and removed at00:53:25.988 after its15s XCTest deadline; allow60s only for actual terminal deletion. Run5 reuses root success and runs the three P1 suites plus normal UI/Files in one job, with independent normal tests no longer skipped after generated-test failure.",
   "jobs": [
     {
       "id": "normal-shared-native-tools",
@@ -28,7 +28,7 @@
         "P0-6.diagnostics",
         "P0-6.local"
       ],
-      "command": "Run4 normal+generated job: full normal IPA/shared/unit/native build requirements, full normal UI and Files roundtrip. Same combined job as generated-host; total estimate30min/timeout45.",
+      "command": "Run5 combined normal+generated job: normal IPA/shared/native build requirements, full normal UI and Files. Explicit prerequisite outcomes allow normal tests after generated-host test failure; unavailable build dependencies/cancellation still block. Total estimate30min/timeout45.",
       "expected_minutes": 30,
       "timeout_minutes": 45
     },
@@ -63,7 +63,7 @@
         "P0-4.onboarding",
         "P0-5.ui"
       ],
-      "command": "Run4 same combined job: feature_validation=true; GeneratedFeatureUITests/testFeatureRootNavigationRegression + P1IncomingUITests + P1IntentsUITests + P1WidgetsUITests. P0 dedicated7 passed run3 and are reused; no Core/lifetime/presentation/DB changes since tested source. Normal UI filter empty. Four generated XCTest methods, root method contains four existing navigation/Records/Notes scenarios.",
+      "command": "Run5 combined job: feature_validation=true; P1IncomingUITests + P1IntentsUITests + P1WidgetsUITests only. Reuse run4 root composite395.841s pass and run3 P0 dedicated7 pass. Only inbox alert product change; Core/lifetime/DB/Widget/Intent paths unchanged. Normal full suite and Files follow even if generated test fails.",
       "expected_minutes": 30,
       "timeout_minutes": 45
     },
@@ -102,7 +102,7 @@
       "id": "34792716605/attempt-1",
       "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34792716605",
-      "conclusion": "in_progress"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -144,7 +144,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516588",
       "observation": "7 IntentExecution +1 ManagedHost UI passed; six native builds/removal checks passed. Parent verifier compared generated-host metadata with StandaloneA/B:8 definitions preserved; autoShortcuts contains FeatureAAddValueIntent, FeatureBAddValueIntent, AddCounterValueIntent.",
       "review": "Downloaded Native-intents-diagnostics and generated P1IntentsHostMetadata artifacts. Actual identities, parameter/output/entity/query references compared by verify-app-intents-integration.py; native run success is not OS Shortcuts discovery/device acceptance.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     },
     {
       "criterion": "P1-2.widget",
@@ -154,7 +154,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516367",
       "observation": "Timeline4 and gallery3 passed. Combined OCR A11→33→disabled--→33→deleted--→reregistered empty→44; B22 throughout. Normal-host P1Widgets deletion/reregister/relaunch test also passed.",
       "review": "Inspected all7 pass markers and actual gallery OCR including previously failing final recreation. Normal host Definition uses same managed storage. Physical gallery check remains reserved0.8.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     },
     {
       "criterion": "P0-1.integration",
@@ -164,7 +164,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
       "observation": "P0ALifetimeUITests both normal-host lifecycle/failure/retry cases passed.",
       "review": "Read both XCTest pass markers; startup failure/other owner state and shutdown failure/retry validated.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     },
     {
       "criterion": "P0-2.presentation",
@@ -174,7 +174,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
       "observation": "P0BPresentationUITests both owned presentation/external route and generation replacement/B preservation passed.",
       "review": "Read two XCTest pass markers; new inbox button interaction remains separately unverified until run4.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     },
     {
       "criterion": "P0-2.uikit",
@@ -184,7 +184,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
       "observation": "P0BPresentationUITests owned SwiftUI/UIKit presentation paths passed.",
       "review": "Tests exercise presentation probe native UIViewController and ownership teardown, not OS share-sheet handoff.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     },
     {
       "criterion": "P0-3.integration",
@@ -194,7 +194,7 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
       "observation": "P0ARecordsUITests and P0ASQLiteUITests actual host maintenance passed.",
       "review": "Records attachment restore/B preservation and native DB close/reopen/rollback/B preservation checked via actual probe assertions.",
-      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed."
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations."
     }
   ],
   "deferred_device": {
@@ -256,6 +256,12 @@
       "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
       "result": "pending",
       "detail": "Run4 dispatched from frozen codex/p1-a-validation-r2 after preflight/source selector checks. Native OS monitor started and observed in_progress; exactly one codex queue notification on completion. Four connection guides reviewed: distinguish native CI success from pending inbox/device acceptance; Widget seeding requires absent persisted management state; async Intent access reservation spans awaited work. Guide-only changes after source do not alter candidate binary."
+    },
+    {
+      "run": "34792716605",
+      "source": "ec0e13c96de855235d7dcc506f495d91a5e9a9db",
+      "result": "partial",
+      "detail": "Job28m26. Root navigation/Records/scene/Notes composite passed395.841s; normal-host P1Intents passed55.939s. Incoming test stopped before receive because cancellation button was absent from native confirmation popover. Widget test waited15s for removal, timed out; app log shows notification cleanup complete, Spotlight delete at00:53:08.689 and removed announcement00:53:25.988 (17.3s). It did not complete later reregistration/B checks in this run. IPA/shared/native build requirement steps pass; normal UI/Files skipped. Run5 corrects cancellation presentation and evidence-based wait and allows independent normal UI after generated failure."
     }
   ]
 }

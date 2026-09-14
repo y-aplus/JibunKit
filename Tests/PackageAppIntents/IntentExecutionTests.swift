@@ -19,6 +19,47 @@ final class IntentExecutionTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
+    func testDiagnosticControlsSurviveStoreReconstructionAndRemainOwnerScoped() async throws {
+        let suiteA = "diagnostic-a-" + UUID().uuidString
+        let suiteB = "diagnostic-b-" + UUID().uuidString
+        let defaultsA = try XCTUnwrap(UserDefaults(suiteName: suiteA))
+        let defaultsB = try XCTUnwrap(UserDefaults(suiteName: suiteB))
+        defer {
+            defaultsA.removePersistentDomain(forName: suiteA)
+            defaultsB.removePersistentDomain(forName: suiteB)
+        }
+        let initialA = IntentFeatureA.FeatureAStore(defaults: defaultsA)
+        let initialB = IntentFeatureB.FeatureBStore(defaults: defaultsB)
+        _ = try await initialA.add(4)
+        _ = try await initialB.add(9)
+        initialA.injectNextSaveFailure()
+        initialB.injectNextSaveFailure()
+        let reopenedA = IntentFeatureA.FeatureAStore(defaults: try XCTUnwrap(UserDefaults(suiteName: suiteA)))
+        let reopenedB = IntentFeatureB.FeatureBStore(defaults: try XCTUnwrap(UserDefaults(suiteName: suiteB)))
+        do { _ = try await reopenedA.add(1); XCTFail("A lost injected failure") }
+        catch IntentFeatureA.FeatureAStore.Failure.injectedSaveFailure { }
+        do { _ = try await reopenedB.add(1); XCTFail("B lost injected failure") }
+        catch IntentFeatureB.FeatureBStore.Failure.injectedSaveFailure { }
+        let nextA = try await reopenedA.add(1)
+        let nextB = try await reopenedB.add(1)
+        XCTAssertEqual(nextA, 5)
+        XCTAssertEqual(nextB, 10)
+
+        initialA.delayNextSave(nanoseconds: 60_000_000_000)
+        let entered = expectation(description: "reconstructed store entered delayed save")
+        reopenedA.configure(boundary: ObservedBoundary(entered: entered))
+        let task = Task { try await reopenedA.add(100) }
+        await fulfillment(of: [entered], timeout: 5)
+        task.cancel()
+        do { _ = try await task.value; XCTFail("Reconstructed store lost delay") }
+        catch is CancellationError { }
+        let a = try await initialA.value()
+        let b = try await initialB.value()
+        XCTAssertEqual(a, 5)
+        XCTAssertEqual(b, 10)
+    }
+
+    @MainActor
     func testSameNamedEntityQueriesResolveOnlyTheirOwner() async throws {
         try await IntentFeatureA.FeatureAStore.shared.replaceEntries(["shared-id": "A first", "a-only": "A extra"])
         try await IntentFeatureB.FeatureBStore.shared.replaceEntries(["shared-id": "B first", "b-only": "B extra"])

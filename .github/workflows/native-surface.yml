@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start]
+        options: [spotlight-cold-start, p1-input-repair]
       simulator_runtime:
         default: ''
         type: string
@@ -24,6 +24,12 @@ permissions:
 
 jobs:
   native:
+    name: Native ${{ matrix.surface }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # One device-followup boundary; independent builds finish/report once.
+        surface: ${{ fromJSON(inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || format('["{0}"]', inputs.surface)) }}
     runs-on: macos-26
     timeout-minutes: 30
     env:
@@ -37,7 +43,7 @@ jobs:
 
       - name: Validate surface
         env:
-          SURFACE: ${{ inputs.surface }}
+          SURFACE: ${{ matrix.surface }}
         shell: bash
         run: |
           case "$SURFACE" in intents|widgets|incoming|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
@@ -94,7 +100,7 @@ jobs:
 
       - name: Verify selected native surface
         env:
-          SURFACE: ${{ inputs.surface }}
+          SURFACE: ${{ matrix.surface }}
         shell: bash
         run: |
           set -euo pipefail
@@ -143,7 +149,7 @@ jobs:
           esac
 
       - name: Export Spotlight service diagnostics
-        if: always() && inputs.surface == 'spotlight-cold-start'
+        if: always() && matrix.surface == 'spotlight-cold-start'
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/SpotlightColdStart"
@@ -152,7 +158,7 @@ jobs:
             > "$RUNNER_TEMP/SpotlightColdStart/simulator-service.log" 2>&1
 
       - name: Export native web screenshots and accessibility evidence
-        if: always() && inputs.surface == 'web-authentication'
+        if: always() && matrix.surface == 'web-authentication'
         shell: bash
         run: |
           if [[ -d "$RUNNER_TEMP/WebAuthentication.xcresult" ]]; then
@@ -164,7 +170,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Native-${{ inputs.surface }}-diagnostics
+          name: Native-${{ matrix.surface }}-diagnostics
           path: |
             ${{ runner.temp }}/SpotlightColdStart
             ${{ runner.temp }}/P1DeviceHTTP

@@ -194,6 +194,7 @@ with tempfile.TemporaryDirectory(prefix="jibunkit-package-intents-") as temp:
     assert result.returncode == 0, f"Native intent execution failed: {result.returncode}"
     expected_tests = {
         "IntentExecutionTests": [
+            "testDiagnosticControlsSurviveStoreReconstructionAndRemainOwnerScoped",
             "testPackageIntentExecutionChangesOnlyItsOwner",
             "testSameNamedEntityQueriesResolveOnlyTheirOwner",
             "testCancellationBeforeAdmissionAndDuringDelayKeepsOldValues",

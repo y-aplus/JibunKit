@@ -5,6 +5,46 @@ import UniformTypeIdentifiers
 
 final class MiniAppIncomingProviderLoaderTests: XCTestCase, @unchecked Sendable {
     @MainActor
+    func testProviderInputsEnqueueInActualHostAppGroup() async throws {
+        let inbox = try MiniAppIncomingStore.shared()
+        let owner = MiniAppID("native-incoming-" + UUID().uuidString.lowercased())
+        let destination = MiniAppIncomingDestination(id: owner, title: "Native input", typeIdentifiers: ["public.data"])
+        try inbox.setAdmission(destination, enabled: true)
+        defer {
+            try? inbox.setAdmission(destination, enabled: false)
+            try? inbox.removeOwnedData(for: owner)
+        }
+        let provider = NSItemProvider()
+        provider.registerDataRepresentation(forTypeIdentifier: UTType.utf8PlainText.identifier, visibility: .all) { callback in
+            callback(Data("Native shared text".utf8), nil)
+            return nil
+        }
+        let prepared = try await MiniAppIncomingProviderLoader.load([
+            provider, NSItemProvider(object: NSURL(string: "https://example.com/shared")!),
+        ])
+        defer { try? prepared.removeTemporaryFiles() }
+        let receipt = try inbox.enqueue(for: owner, inputs: prepared.inputs)
+        XCTAssertEqual(try MiniAppIncomingStore.shared().pending(for: owner).receipts, [receipt])
+        XCTAssertEqual(receipt.items.map(\.value), ["Native shared text", "https://example.com/shared"])
+    }
+
+    @MainActor
+    func testDataOnlyTextProviderDoesNotRequireNSStringConversion() async throws {
+        for (type, encoding) in [(UTType.utf8PlainText, String.Encoding.utf8), (.utf16PlainText, .utf16)] {
+            let provider = NSItemProvider()
+            let bytes = try XCTUnwrap("共有テキスト 📝".data(using: encoding))
+            provider.registerDataRepresentation(forTypeIdentifier: type.identifier, visibility: .all) { callback in
+                callback(bytes, nil)
+                return nil
+            }
+            let result = try await MiniAppIncomingProviderLoader.load([provider])
+            defer { try? result.removeTemporaryFiles() }
+            guard case .text(let value)? = result.inputs.first else { return XCTFail("Missing text") }
+            XCTAssertEqual(value, "共有テキスト 📝")
+        }
+    }
+
+    @MainActor
     func testNativeTextAndURLProvidersKeepExactValues() async throws {
         let result = try await MiniAppIncomingProviderLoader.load([
             NSItemProvider(object: "共有テキスト" as NSString),

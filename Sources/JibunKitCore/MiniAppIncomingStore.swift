@@ -48,13 +48,24 @@ public struct MiniAppIncomingDestination: Codable, Equatable, Identifiable, Send
     }
 }
 
-public enum MiniAppIncomingError: Error, Equatable, Sendable {
+public enum MiniAppIncomingError: Error, Equatable, Sendable, LocalizedError {
     case invalidInput
     case unavailableOwner(String)
     case invalidReceipt(UUID)
     case invalidCatalog
     case notRegularFile
     case coordinationFailed
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidInput: "受信データの形式または保存先を確認できませんでした（invalidInput）。"
+        case .unavailableOwner: "受信先が無効または変更されたため保存できませんでした（unavailableOwner）。"
+        case .invalidReceipt: "保存済みの受信データを確認できませんでした（invalidReceipt）。"
+        case .invalidCatalog: "受信先一覧を確認できませんでした（invalidCatalog）。"
+        case .notRegularFile: "通常のファイルとして読み込めませんでした（notRegularFile）。"
+        case .coordinationFailed: "受信データの保存・削除を調停できませんでした（coordinationFailed）。"
+        }
+    }
 }
 
 /// Catalog publication uses one short cross-process lock; receipt copies and

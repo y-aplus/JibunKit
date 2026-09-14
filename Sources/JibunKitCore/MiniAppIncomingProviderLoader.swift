@@ -62,10 +62,17 @@ public enum MiniAppIncomingProviderLoader {
                         }
                     }
                 } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                    progress = provider.loadObject(ofClass: NSString.self) { item, error in
+                    // ShareLink/Transferable may vend a data representation only.
+                    // Conforming to plain text does not promise NSString loading.
+                    let type = [UTType.utf8PlainText, .utf16PlainText, .plainText]
+                        .first { provider.hasItemConformingToTypeIdentifier($0.identifier) }!
+                    progress = provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, error in
                         gate.run {
                             if let error { throw error }
-                            guard let text = item as? String else { throw MiniAppIncomingError.invalidInput }
+                            let encoding: String.Encoding = type == .utf16PlainText ? .utf16 : .utf8
+                            guard let data, let text = String(data: data, encoding: encoding) else {
+                                throw MiniAppIncomingError.invalidInput
+                            }
                             return .text(text)
                         }
                     }

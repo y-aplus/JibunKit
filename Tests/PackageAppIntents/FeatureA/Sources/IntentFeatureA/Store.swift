@@ -26,16 +26,18 @@ public final class FeatureAStore {
     public static let shared = FeatureAStore()
     private let defaults: UserDefaults
     private var boundary: any StoreOperationBoundary = DirectStoreOperationBoundary()
-    private var failNextSave = false
-    private var nextSaveDelayNanoseconds: UInt64 = 0
+    // Diagnostic controls must survive reconstruction by OS AppIntent execution.
+    // They use this fixture owner's existing persistent store, not UI memory.
+    private static let failureKey = "diagnostic.fail-next-save"
+    private static let delayKey = "diagnostic.next-save-delay"
 
     public init(defaults: UserDefaults = UserDefaults(suiteName: "com.jibunkit.intent-fixture.a")!) {
         self.defaults = defaults
     }
 
     public func configure(boundary: any StoreOperationBoundary) { self.boundary = boundary }
-    public func injectNextSaveFailure() { failNextSave = true }
-    public func delayNextSave(nanoseconds: UInt64) { nextSaveDelayNanoseconds = nanoseconds }
+    public func injectNextSaveFailure() { defaults.set(true, forKey: Self.failureKey) }
+    public func delayNextSave(nanoseconds: UInt64) { defaults.set(NSNumber(value: nanoseconds), forKey: Self.delayKey) }
 
     public func value() async throws -> Int {
         let defaults = defaults
@@ -44,10 +46,10 @@ public final class FeatureAStore {
 
     public func add(_ amount: Int) async throws -> Int {
         let defaults = defaults
-        let shouldFail = failNextSave
-        let delay = nextSaveDelayNanoseconds
-        failNextSave = false
-        nextSaveDelayNanoseconds = 0
+        let shouldFail = defaults.bool(forKey: Self.failureKey)
+        let delay = (defaults.object(forKey: Self.delayKey) as? NSNumber)?.uint64Value ?? 0
+        defaults.removeObject(forKey: Self.failureKey)
+        defaults.removeObject(forKey: Self.delayKey)
         try Task.checkCancellation()
         return try await boundary.perform {
             try Task.checkCancellation()
@@ -83,6 +85,8 @@ public final class FeatureAStore {
             try Task.checkCancellation()
             defaults.removeObject(forKey: "value")
             defaults.removeObject(forKey: "entry-titles")
+            defaults.removeObject(forKey: Self.failureKey)
+            defaults.removeObject(forKey: Self.delayKey)
         }
     }
 
@@ -90,5 +94,7 @@ public final class FeatureAStore {
     public func removeAllReserved() {
         defaults.removeObject(forKey: "value")
         defaults.removeObject(forKey: "entry-titles")
+        defaults.removeObject(forKey: Self.failureKey)
+        defaults.removeObject(forKey: Self.delayKey)
     }
 }

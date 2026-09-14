@@ -105,6 +105,10 @@ CIの完了待ちはOS側の監視とqueue通知へ任せ、モデルpollや`gh 
 
 macOS標準Bashの`set -u`では空配列の展開も失敗し得るため、optionalなコマンドprefixは非空の`env`を既定とする。引数・環境変数・終了コードの受渡しは`test_workflow_command_prefix.py`で検証する。ローカルBashでの検査とmacOS CIの結果は分けて記録する。
 
+### 実機NG後のnative入力切り分け
+
+`native-surface.yml`の`surface=p1-input-repair`は、既存incoming/intents runnerを独立jobとして一runで実行する。通常IPAやgalleryを検証したとは扱わない。目的・再利用・次の候補境界は[2026-09-15記録](verification/2026-09-15-p1-device-followup.md)を参照する。
+
 ## マイナー版の文書・出荷gate
 
 ### 文書の正本と履歴

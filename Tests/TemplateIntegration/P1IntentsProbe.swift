@@ -63,7 +63,7 @@ private struct P1IntentFeatureView: View {
             Button("候補を保存") { run { try await saveCandidate() } }
             Button("1を追加") { run { value = try await addOne() } }.accessibilityIdentifier("p1.intent.add")
             Button("次の保存を失敗") { injectFailure(); message = "armed failure" }
-            Button("次の保存を5秒遅延") { injectDelay(); message = "armed delay" }
+            Button("次の保存を20秒遅延") { injectDelay(); message = "armed delay" }
             Button("値と候補を再読込") { run { try await reload() } }
             ForEach(entries.keys.sorted(), id: \.self) { key in Text("\(key): \(entries[key]!)") }
             Text(message).accessibilityIdentifier("p1.intent.status")
@@ -97,8 +97,8 @@ private struct P1IntentFeatureView: View {
         else { FeatureBStore.shared.injectNextSaveFailure() }
     }
     private func injectDelay() {
-        if owner == "A" { FeatureAStore.shared.delayNextSave(nanoseconds: 5_000_000_000) }
-        else { FeatureBStore.shared.delayNextSave(nanoseconds: 5_000_000_000) }
+        if owner == "A" { FeatureAStore.shared.delayNextSave(nanoseconds: 20_000_000_000) }
+        else { FeatureBStore.shared.delayNextSave(nanoseconds: 20_000_000_000) }
     }
 }
 private struct MissingIntentReturnValue: Error {}

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P1-B",
-  "source": "94d3ea7bd99f89d691b23664095c2a2663449338",
+  "source": "772ffc1e33e3b4b4ce6a9a974076ec573f0d790b",
   "contract": {
     "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
     "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",

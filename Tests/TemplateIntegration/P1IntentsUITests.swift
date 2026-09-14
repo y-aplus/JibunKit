@@ -12,10 +12,11 @@ final class P1IntentsUITests: XCTestCase {
         app.launch()
         tap("management.open")
         for owner in ["a", "b"] {
+            P1UIVisibility.reveal(app.staticTexts["management.status.intent-fixture-" + owner], in: app)
             let enable = app.buttons["management.enable.intent-fixture-" + owner]
             if enable.exists {
                 enable.tap()
-                expect(app.staticTexts["management.status.intent-fixture-" + owner], "有効")
+                expectManagement(owner, "有効")
             }
         }
         tap("閉じる")
@@ -27,11 +28,11 @@ final class P1IntentsUITests: XCTestCase {
         tap("miniapp.back-to-list")
         tap("management.open")
         tap("management.disable.intent-fixture-a")
-        expect(app.staticTexts["management.status.intent-fixture-a"], "無効（データを保持）")
+        expectManagement("a", "無効（データを保持）")
         app.terminate()
         app.launch()
         tap("management.open")
-        expect(app.staticTexts["management.status.intent-fixture-a"], "無効（データを保持）")
+        expectManagement("a", "無効（データを保持）")
         tap("閉じる")
         try open("intent-fixture-b")
         expect(value, "B:\(old + 1)")
@@ -40,7 +41,7 @@ final class P1IntentsUITests: XCTestCase {
         tap("miniapp.back-to-list")
         tap("management.open")
         tap("management.enable.intent-fixture-a")
-        expect(app.staticTexts["management.status.intent-fixture-a"], "有効")
+        expectManagement("a", "有効")
     }
 
     private func open(_ id: String) throws {
@@ -52,11 +53,18 @@ final class P1IntentsUITests: XCTestCase {
     }
     private func tap(_ id: String) {
         let button = app.buttons[id]
+        P1UIVisibility.reveal(button, in: app)
         XCTAssertTrue(button.waitForExistence(timeout: 15), app.debugDescription)
         button.tap()
     }
-    private func expect(_ element: XCUIElement, _ text: String) {
+    private func expectManagement(_ owner: String, _ text: String) {
+        let status = app.staticTexts["management.status.intent-fixture-" + owner]
+        P1UIVisibility.reveal(status, in: app)
+        // Same native cleanup allowance as the complete host's Web checks.
+        expect(status, text, timeout: 120)
+    }
+    private func expect(_ element: XCUIElement, _ text: String, timeout: TimeInterval = 15) {
         let match = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", text), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [match], timeout: 15), .completed, app.debugDescription)
+        XCTAssertEqual(XCTWaiter.wait(for: [match], timeout: timeout), .completed, app.debugDescription)
     }
 }

@@ -219,8 +219,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "Shortcuts実利用",
-      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認",
-      "remaining": "2026-09-15実機でOS Shortcutsの正負加算/候補/保存/再起動/A管理/B保持は成功。取消/失敗注入は画面内状態のため機能せず、永続制御への修正と再確認が残る。",
+      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認。34881183837で永続診断制御を含む実行8+UI1/metadata成功",
+      "remaining": "実機の正負加算/候補/保存/再起動/A管理/B保持は成功。永続化した取消/失敗診断はOS Shortcutsで再確認が必要。完全hostの管理UIは画面外行の操作を修正して再検証する。",
       "deferred": "Control等の高度な接続",
       "criteria": [
         {
@@ -249,8 +249,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "静的Widget通常接続",
-      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認",
-      "remaining": "2026-09-15実機でgalleryはCounterだけで診断A/Bを確認できず。配布IPAには両Widgetのコード/resourceがあり未組込みとは断定しない。同一hostのgallery/更新を切り分け、実機表示/管理/上書き保持を再確認する。",
+      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認。34883605285で通常hostから診断hostへの削除なし更新後、gallery A/Bとホームの実描画/OCRが成功",
+      "remaining": "実機では旧候補のgalleryがCounterだけだった原因は未確定。コード/resourceは収録済み、Simulatorの同一host更新/galleryも成功。新候補で実機表示/管理/上書き・署名更新保持を再確認する。",
       "deferred": "設定可能/操作可能Widget・Control/任意extension",
       "criteria": [
         {
@@ -280,8 +280,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "URL・外部ファイル・Share入口",
-      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認",
-      "remaining": "2026-09-15実機で文字列のNSString変換とURL enqueueが失敗。基本経路を直し、OS文字列/URL/Filesと失敗再試行・更新保持を再確認する。",
+      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功",
+      "remaining": "文字列変換はnative修正成功、実機URL保存失敗は未解決。OS共有UI試験は共有先のセル選択を修正して再検証。OS文字列/URL/Filesと失敗再試行・更新保持を実機で再確認する。",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {

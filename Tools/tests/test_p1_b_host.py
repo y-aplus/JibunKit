@@ -24,7 +24,7 @@ class P1BHostTests(unittest.TestCase):
             shutil.copyfile(ROOT / name, target)
         fixtures = self.host / "Tests/TemplateIntegration"
         fixtures.mkdir(parents=True)
-        (fixtures / "P1UIVisibility.swift").write_text("// shared visibility helper\n", encoding="utf-8")
+        shutil.copyfile(ROOT / "Tests/TemplateIntegration/P1UIVisibility.swift", fixtures / "P1UIVisibility.swift")
         (fixtures / "P1DeviceHTTPFixture.swift").write_text("// loopback fixture\n", encoding="utf-8")
         for name in MODULE.PROBES.values():
             for suffix in ["Probe", "UITests"]:

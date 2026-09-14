@@ -1,0 +1,51 @@
+{
+  "source": "8c54d6e1f1525cf3764dcc12f1a8fd7f30f0151a",
+  "run": 34883605285,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34883605285",
+  "conclusion": "failure",
+  "normal": {
+    "conclusion": "success",
+    "job_seconds": 1970,
+    "shared_tests": 270,
+    "shared_skipped": 2,
+    "records_tests": 11,
+    "ui_tests": 13,
+    "files_restore_tests": 1,
+    "ipa": {
+      "artifact": "JibunKit-ad-hoc",
+      "filename": "JibunKit.ipa",
+      "bytes": 2231818,
+      "sha256": "8bc2ba51f49010123f20b53694b8542157e03b29b11e86baa0f3ff6c0fbe474a",
+      "version": "0.7.1",
+      "build": "9",
+      "crc": "passed",
+      "published": false
+    }
+  },
+  "generated": {
+    "job_seconds": 1734,
+    "passed": {
+      "normal_UI_before_update_seconds": 27.044,
+      "persistent_incoming_retry_seconds": 70.908,
+      "widget_gallery_and_home_seconds": 129.798
+    },
+    "ocr": {
+      "gallery_a": [
+        "A:1"
+      ],
+      "gallery_b": [
+        "B:1"
+      ],
+      "home": [
+        "A:1",
+        "B:1"
+      ]
+    },
+    "failed": {
+      "OS_share": "Before extension execution: queried Button, actual activityCollectionView contains shareCell labelled JibunKit.",
+      "Intent_management": "management.list exists but initial notification/HTTP rows are visible; offscreen Intent A disable control was not materialized."
+    },
+    "diagnostic_ipa": "Not packaged because preceding generated UI failed."
+  },
+  "review": "Both failures are identified test interaction errors from UI hierarchy. No production input error was reached. Normal-to-diagnostic simulator gallery passed; device gallery cause remains unknown. Retry only the two failed methods and candidate packaging with unchanged full registry."
+}

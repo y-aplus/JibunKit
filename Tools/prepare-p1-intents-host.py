@@ -44,7 +44,11 @@ def prepare(host):
         'struct JibunKitApp: App {\n'
         '    init() {\n        _ = MiniAppRegistry.management\n        P1IntentsProbe.bootstrap()\n    }')
     for name, directory in [("P1IntentsProbe.swift", "Sources/JibunKit"),
-                            ("P1IntentsUITests.swift", "UITests")]:
+                            ("P1IntentsUITests.swift", "UITests"),
+                            ("P1UIVisibility.swift", "UITests")]:
+        target = host / directory / name
+        if target.exists() and target.read_bytes() != (host / "Tests/TemplateIntegration" / name).read_bytes():
+            raise ValueError(f"Refusing to overwrite changed diagnostic source: {target}")
         changes[host / directory / name] = (host / "Tests/TemplateIntegration" / name).read_text(encoding="utf-8")
     changes[host / "Sources/JibunKit/P1IntentPackages.swift"] = '''import AppIntents
 import IntentFeatureA

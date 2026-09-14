@@ -22,8 +22,11 @@ final class P1IncomingUITests: XCTestCase {
                 expect(app.staticTexts["p1.incoming.status"], "failure armed")
             }
             tap("p1.incoming.share." + type)
-            let share = app.buttons.matching(NSPredicate(format: "label == %@", "JibunKit")).firstMatch
+            // The OS share activity is a shareCell, not a Button (iOS 26 hierarchy).
+            let share = app.collectionViews["activityCollectionView"].cells.matching(
+                NSPredicate(format: "identifier == %@ AND label == %@", "shareCell", "JibunKit")).firstMatch
             XCTAssertTrue(share.waitForExistence(timeout: 10), app.debugDescription)
+            XCTAssertTrue(share.isHittable, app.debugDescription)
             share.tap()
             let target = app.buttons["share.destination.incoming-a"]
             // On a provider/extension error the hierarchy includes share.error.

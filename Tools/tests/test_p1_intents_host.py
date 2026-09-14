@@ -18,7 +18,8 @@ class DiagnosticHostTests(unittest.TestCase):
         self.host = Path(self.temp.name)
         for name in ["Project.swift", "Package.swift", "Sources/JibunKit/MiniAppRegistry.swift",
                      "Sources/JibunKit/JibunKitApp.swift", "Tests/TemplateIntegration/P1IntentsProbe.swift",
-                     "Tests/TemplateIntegration/P1IntentsUITests.swift"]:
+                     "Tests/TemplateIntegration/P1IntentsUITests.swift",
+                     "Tests/TemplateIntegration/P1UIVisibility.swift"]:
             target = self.host / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)

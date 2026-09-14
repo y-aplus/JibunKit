@@ -50,3 +50,13 @@ normalは共通試験、通常UI/Files復元、通常IPAの0.7.1/build9・署名
 診断Registryはfilterと独立にP1-A/P1-B/Incoming全ペアを保持する。旧HTTP/Web/通知UI8件は実装/fixtureが変わっておらず、device実績と既存CIの成功を範囲限定で再利用する。HTTP native7件はrun34816553410、Web storage/cancel/drain3件は34819734774、disable/authは34823801940、HTTP/通知UI3件は34816553410。Records実装/試験も差分なし、34806399426の成功を再利用する。native incoming/intentsは本節のrunから変更なし。版変更と新UIは今回のCIで検証し、これら再利用の成功には含めない。追加予算3runの2回目であり、残り1回を修正用に保持する。
 
 投入前のローカル検査: P1 host/IPA tool22件、workflowコマンド転送1件、focused UI検査1件（継承解決、未知/循環/重複baseとpass欠落/重複を拒否）が成功。4 selectorの実source解決、workflow YAMLとdiff checkも成功。新galleryの共通XCTestCase継承を検査ツールへ反映し、iOS jobを始める前の誤拒否を除いた。native実績の機械可読記録は[入力切り分け証拠](2026-09-15-p1-input-native-evidence.json)。
+
+## 候補CI34883605285: 通常成功、生成UI2件の操作を修正
+
+source `8c54d6e1f1525cf3764dcc12f1a8fd7f30f0151a`。normal32分50秒で成功、generated28分54秒で失敗。[個別証拠と通常IPA digest](2026-09-15-p1-candidate-evidence.json)。通常の共通270件(skip2)、Records11、通常UI13とFiles JSON復元1、0.7.1/build9 IPAの本体/両extension検査が成功。通常IPAを取得しCRC/版を再確認した。まだ未公開。
+
+生成側は通常hostのcold/warm URL UI27.044秒を通し、削除なし診断host更新後のWidget gallery・ホーム描画129.798秒が成功。OCRはA:1/B:1。永続inboxの保存後失敗/再起動/再試行も70.908秒で成功。SideStoreでのgallery問題を再現したことにはしない。
+
+失敗は2件。OS共有はextension開始前、テストがButtonを探したが実階層では`activityCollectionView`内の`shareCell`、label `JibunKit`が表示されていた。観測したセルを選ぶよう修正する。Intent管理は`management.list`が正常に開き、上部の通知/HTTP行だけがmaterializeされていた。画面外のA操作を待つだけだったため、既存P1UIVisibilityを同試験へ共用し、状態確認も対象行を表示してから行う。native解除の状態待ちは既存完全host Web管理と同じ120秒上限、通常値読出しは15秒を維持する。製品の受付やcleanupを迂回しない。
+
+次は追加3run予算の3回目。`generated_validation_only=true`へ変更し、完全Registryのまま失敗したOS共有とIntent管理の2methodだけを実行、診断IPA inventory/packagingを行う（計画25分、上限45分）。通常IPA・回帰、Widget gallery、永続inbox再試行、Notes単独/requirementsは本runの成功を再利用。修正はUITestとテスト補助の接続だけで、通常/診断製品コード・保存形式・識別子に差分なし。元の4件境界を縮小して未検証を消すのではなく、2成功+2再試行をsource付きで合成する。結果次第で原因を再評価し、予算だけを根拠に同じ再試行を続けない。

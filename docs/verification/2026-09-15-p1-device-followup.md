@@ -15,11 +15,11 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 
 前回までの11runを維持し、今回の実機NG後は最大3runを追加予算とする。最初は上記の原因切り分け、次に結果を反映した通常/診断候補とgallery/OS受信を一括、3回目は必要な修正時だけ。成功run数を増やす目的の再実行や子CIは行わない。実機から既に原因不明が見つかったため、3失敗を待たず切り分けを先行する。
 
-ローカルでP1 host構成18件・Intent identity tool4件が成功。workflow YAMLの解析とdiff check成功。WindowsではSwift/Xcodeを実行しておらず、コード修正はCI待ち。確認済みHTTP/Web/通知とP0実機は元sourceを保持し、今後の候補への適用は差分レビューする。0.8には昇格しない。実機確認を区切りに版を進める指示に従い、P1全条件が閉じなければ次の公開は0.7.1として版変更・通常出荷検証を行う。
+ローカルでP1 host構成18件・Intent identity tool4件が成功。workflow YAMLの解析とdiff check成功。WindowsではSwift/Xcodeを実行しておらず、下記native CIまで成功。確認済みHTTP/Web/通知とP0実機は元sourceを保持し、今後の候補への適用は差分レビューする。0.8には昇格しない。実機確認を区切りに版を進める指示に従い、P1全条件が閉じなければ次の公開は0.7.1として版変更・通常出荷検証を行う。
 
 ## 残件
 
-切り分けCI結果、Widget gallery/上書き、新しい候補でOS Shareの成功/取消/再試行とShortcuts制御の確認、必要回帰・配布整合性・文書再確認。今は追加実機操作を依頼しない。過去の58件レビューはそのcommitの記録であり、本変更後の出荷確認にそのまま転用しない。
+Widget gallery/上書き、新しい候補でOS Shareの成功/取消/再試行とShortcuts制御の確認、必要回帰・配布整合性・文書再確認。今は追加実機操作を依頼しない。過去の58件レビューはそのcommitの記録であり、本変更後の出荷確認にそのまま転用しない。
 
 ## 独立準備: gallery・次の候補
 
@@ -31,3 +31,22 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 - 次の候補の本体/Widget/ShareとCI期待値を0.7.1/build9へ揃える。公開済みではなく、切り分け結果を反映してから通常/診断buildと必要回帰・実機を行う。公開tagや配布済み0.7.0/build8は変更しない。
 
 この準備を含む次のCI入力は切り分け結果後に固定する。今回の実機結果・手順改善点を別ファイルへ移さず、再依頼の短い操作列も元の手順書へ追記する。
+
+## 切り分け結果と次の固定境界
+
+[run34881183837](https://github.com/y-aplus/JibunKit/actions/runs/34881183837)、source `6dd95ccc1861d4609747d1f3f7227885e5d55109` は成功。incoming25件（11.688秒）はdata-only日本語UTF-8/UTF-16、既存NSString provider、URL、ファイル、取消/drain、実host App Groupのprovider→enqueue→再読込を含む。Intentは単独A/Bと統合metadataのactions/Shortcuts一致、実行8件（0.544秒）とUI1件（43.201秒）が成功。再生成storeの診断制御/owner分離は8件内で実行済み。job時間はincoming9分48秒、intents13分16秒、合計23分04秒。
+
+通常hostでURL enqueue失敗は再現しなかった。Share Extensionの実行環境との差は未解決なので、URLの実機不具合を修正済みとはしない。Shortcutsの別OS文脈とWidget一覧も未確認のまま。
+
+次は一runにnormal/generatedの二jobをまとめる。`simulator_tests=true, feature_validation=true, records_validation=false, p1_device_validation=true, p1_device_http_validation=false`、generated-only/split/focused/nativeオプションはfalse。通常UI filterは空。generatedは次の4件だけを明示選択する。
+
+- `P1IncomingUITests/testOSShareTextURLAndFileReachInboxAndRetryWithoutDuplicateCommit`
+- `P1IncomingUITests/testPersistentIncomingFailureRetryIsIdempotentAndOtherOwnerRemainsIndependent`
+- `P1IntentsUITests/testNormalHostKeepsDisabledAAndWritableBAcrossRelaunch`
+- `P1WidgetGalleryUITests/testNormalToDiagnosticUpdateExposesBothWidgetPreviews`
+
+normalは共通試験、通常UI/Files復元、通常IPAの0.7.1/build9・署名・metadata等の既存出荷検査を実行。前回33.82分、上限45分。generatedはhost Release build、上記4件、通常hostのcold/warm URL UIを通した後の削除なし診断host置換、診断IPA inventoryを実行（計画30分、上限45分）。ギャラリーを実行したjob自身で診断IPAも検査する。
+
+診断Registryはfilterと独立にP1-A/P1-B/Incoming全ペアを保持する。旧HTTP/Web/通知UI8件は実装/fixtureが変わっておらず、device実績と既存CIの成功を範囲限定で再利用する。HTTP native7件はrun34816553410、Web storage/cancel/drain3件は34819734774、disable/authは34823801940、HTTP/通知UI3件は34816553410。Records実装/試験も差分なし、34806399426の成功を再利用する。native incoming/intentsは本節のrunから変更なし。版変更と新UIは今回のCIで検証し、これら再利用の成功には含めない。追加予算3runの2回目であり、残り1回を修正用に保持する。
+
+投入前のローカル検査: P1 host/IPA tool22件、workflowコマンド転送1件、focused UI検査1件（継承解決、未知/循環/重複baseとpass欠落/重複を拒否）が成功。4 selectorの実source解決、workflow YAMLとdiff checkも成功。新galleryの共通XCTestCase継承を検査ツールへ反映し、iOS jobを始める前の誤拒否を除いた。native実績の機械可読記録は[入力切り分け証拠](2026-09-15-p1-input-native-evidence.json)。

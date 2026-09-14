@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -58,7 +60,8 @@ class P1BHostTests(unittest.TestCase):
 
     def testAllPairsPreserveNormalTargetsAndCopyExactSources(self):
         original = self.snapshot()
-        MODULE.prepare(self.host, ["notifications", "http", "web"])
+        subprocess.run([sys.executable, str(ROOT / "Tools/prepare-p1-b-host.py"),
+                        "--host", str(self.host), "--all-lanes"], check=True)
         registry = (self.host / "Sources/JibunKit/MiniAppRegistry.swift").read_text(encoding="utf-8")
         for name in MODULE.PROBES.values():
             for owner in ["A", "B"]:

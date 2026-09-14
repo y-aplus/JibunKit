@@ -174,3 +174,10 @@ run34808525786では10 UIが全成功したが、試験自体33.03分、host ste
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
 
 P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの新しい経路の初回実動はP1-B統合CIで検証する。
+
+
+### P1実機後の集中候補境界（2026-09-15）
+
+診断IPAの収録範囲をUI filterから切り離した。`p1_device_validation=true`はP1-A/IncomingとP1-B全ペアを必ず接続する（Bは`--all-lanes`）。既存B-onlyの生成はfilter選択を維持する。候補はexplicit method selectorを必須とし、通常/生成の二jobでも実行可能。長い全P1 UIを回す場合は既存splitを使い、成功済み範囲の再利用はrun/sourceと差分理由を境界記録へ書く。splitなしはgenerated job、split時はnetwork jobが診断IPAを出力する。filterを減らすことで配布物からFeatureが消える状態を防ぐ。
+
+共有入力/Intent/Widgetの4件に絞った境界ではsplitを使わず、通常回帰+IPAと並行する。通常hostの実UI成立を確認してから同じID/versionの診断hostへ削除なしで置換し、galleryを確認する。IPA inventoryのkind/resource収録成功だけでgallery成功を代替しない。詳細な入力・再利用範囲は[実機後の記録](verification/2026-09-15-p1-device-followup.md)に固定する。

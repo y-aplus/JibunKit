@@ -277,13 +277,13 @@ jobs:
       - name: Validate P1 device candidate boundary
         if: inputs.p1_device_validation
         env:
-          VALID: ${{ inputs.generated_validation_only && inputs.split_generated_ui && inputs.simulator_tests && inputs.feature_validation && !inputs.records_validation }}
+          VALID: ${{ inputs.simulator_tests && inputs.feature_validation && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && !inputs.records_validation }}
           FEATURE_FILTER: ${{ inputs.feature_ui_test_filter }}
         run: |
           test "$VALID" = true
-          for suite in P1HTTPUITests P1NotificationsUITests P1WebUITests; do
-            [[ "$FEATURE_FILTER" == *"$suite/"* ]] || exit 1
-          done
+          # Registry composition is fixed independently of the selected tests.
+          # Require explicit methods; reuse of other evidence belongs in preflight.
+          python3 Tools/split-generated-ui.py --filter "$FEATURE_FILTER" --shard all
 
       - name: Check publication boundary
         shell: bash
@@ -403,7 +403,7 @@ jobs:
             IFS=',' read -r -a feature_filters <<< "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}"
             for feature_filter in "${feature_filters[@]}"; do
               python3 Tools/validate-focused-ui-test.py "$feature_filter" --allow-suite \
-                --source-root UITests --source-root Tests/TemplateIntegration
+                --source-root UITests --source-root Tests/TemplateIntegration --source-root Tests/PackageWidgets
             done
           fi
 
@@ -664,7 +664,9 @@ jobs:
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WidgetGalleryUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             python3 Tools/prepare-p1-widgets-host.py --host "$smoke"
           fi
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1NotificationsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WebUITests* ]]; then
+          if [[ "$P1_DEVICE_VALIDATION" == true ]]; then
+            python3 Tools/prepare-p1-b-host.py --host "$smoke" --all-lanes
+          elif [[ "$FEATURE_UI_TEST_FILTER" == *P1NotificationsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WebUITests* ]]; then
             python3 Tools/prepare-p1-b-host.py --host "$smoke" --ui-test-filter "$FEATURE_UI_TEST_FILTER"
           fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P0CCompatibleUpdateV1UITests* ]]; then
@@ -940,15 +942,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Build this checkout's normal registration, then let xcodebuild test
-          # replace it with the generated diagnostic registration at the same ID/version.
+          # Observe the normal host through its existing UI before replacement;
+          # process launch alone is not evidence of a usable baseline.
           tuist generate --no-open
-          xcodebuild build -workspace JibunKit.xcworkspace -scheme JibunKit-App \
+          xcodebuild test -workspace JibunKit.xcworkspace -scheme MigrationUITests \
             -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-            -derivedDataPath "$RUNNER_TEMP/NormalBeforeP1Update" CODE_SIGNING_ALLOWED=NO
-          xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/NormalBeforeP1Update/Build/Products/Debug-iphonesimulator/JibunKit_App.app"
-          xcrun simctl launch "$SIMULATOR_ID" com.jibunkit.app
-          xcrun simctl terminate "$SIMULATOR_ID" com.jibunkit.app
+            -derivedDataPath "$RUNNER_TEMP/NormalBeforeP1Update" \
+            -resultBundlePath "$RUNNER_TEMP/NormalBeforeP1Update.xcresult" \
+            -only-testing:MigrationUITests/MigrationUITests/testMiniAppLinksOpenColdAndSwitchWarm \
+            -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
+            CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/normal-before-p1-update.log"
+          python3 Tools/validate-focused-ui-test.py MigrationUITests/MigrationUITests/testMiniAppLinksOpenColdAndSwitchWarm \
+            --source-root UITests --log "$RUNNER_TEMP/normal-before-p1-update.log"
 
       - name: Test generated Feature in host
         id: generated-integration
@@ -1097,7 +1102,7 @@ jobs:
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
       - name: Package candidate diagnostic IPA
-        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard == 'network'))
+        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard != 'web-management'))
         env:
           CANDIDATE_KIND: ${{ inputs.p1_device_validation && 'P1' || 'P0' }}
         shell: bash
@@ -1135,7 +1140,7 @@ jobs:
           fi
 
       - name: Upload candidate diagnostic IPA
-        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard == 'network'))
+        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard != 'web-management'))
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-device-check${{ env.EVIDENCE_SUFFIX }}
@@ -1286,6 +1291,8 @@ jobs:
             ${{ runner.temp }}/package-compatible-update-ios/
             ${{ runner.temp }}/template-host-screenshots
             ${{ runner.temp }}/template-host.log
+            ${{ runner.temp }}/normal-before-p1-update.log
+            ${{ runner.temp }}/NormalBeforeP1Update.xcresult
             ${{ runner.temp }}/template-launch.log
             ${{ runner.temp }}/FilesRoundTrip.xcresult
             ${{ runner.temp }}/files-screenshots

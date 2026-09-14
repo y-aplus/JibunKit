@@ -55,7 +55,10 @@ def prepare(host, lanes):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--host", required=True, type=Path)
-    parser.add_argument("--ui-test-filter", required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--ui-test-filter")
+    selection.add_argument("--all-lanes", action="store_true",
+                           help="Keep the complete device registry independent of UI test selection")
     args = parser.parse_args()
-    lanes = [lane for lane, name in PROBES.items() if name + "UITests" in args.ui_test_filter]
+    lanes = list(PROBES) if args.all_lanes else [lane for lane, name in PROBES.items() if name + "UITests" in args.ui_test_filter]
     prepare(args.host, lanes)

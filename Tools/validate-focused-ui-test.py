@@ -31,15 +31,25 @@ def main() -> None:
     class_name = match.group("class")
     method_name = match.group("method")
     class_pattern = re.compile(
-        rf"\b(?:final\s+)?class\s+{re.escape(class_name)}\s*:\s*XCTestCase\b"
+        rf"\b(?:final\s+)?class\s+{re.escape(class_name)}\s*:\s*[A-Za-z_][A-Za-z0-9_]*\b"
     )
     method_expression = re.escape(method_name) if method_name else r"test[A-Za-z0-9_]+"
     method_pattern = re.compile(rf"\bfunc\s+{method_expression}\s*\(")
     matching_sources = []
     sources = {source.resolve() for root in (args.source_root or [Path("UITests")])
                for source in root.glob("*.swift")}
-    for source in sources:
-        text = source.read_text(encoding="utf-8")
+    texts = {source: source.read_text(encoding="utf-8") for source in sources}
+    parents = {}
+    for text in texts.values():
+        for child, parent in re.findall(r"\bclass\s+(\w+)\s*:\s*(\w+)", text):
+            parents.setdefault(child, []).append(parent)
+    current, visited = class_name, set()
+    while current != "XCTestCase":
+        if current in visited or len(parents.get(current, [])) != 1:
+            fail(f"test must have an unambiguous XCTestCase base in the source roots: {args.identifier}")
+        visited.add(current)
+        current = parents[current][0]
+    for source, text in texts.items():
         if class_pattern.search(text) and method_pattern.search(text):
             matching_sources.append(source)
     if len(matching_sources) != 1:

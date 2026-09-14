@@ -1,0 +1,31 @@
+{
+  "source": "6dd95ccc1861d4609747d1f3f7227885e5d55109",
+  "run": 34881183837,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34881183837",
+  "conclusion": "success",
+  "incoming": {
+    "tests": 25,
+    "failures": 0,
+    "test_seconds": 11.688,
+    "job_seconds": 588
+  },
+  "intents": {
+    "execution_tests": 8,
+    "ui_tests": 1,
+    "failures": 0,
+    "execution_seconds": 0.544,
+    "ui_seconds": 43.201,
+    "job_seconds": 796,
+    "metadata": "independent A/B match combined actions and both App Shortcuts"
+  },
+  "new_test_pass_lines": [
+    "2026-09-14T18:42:50.7101540Z Test Case '-[IntentExecutionTests.IntentExecutionTests testDiagnosticControlsSurviveStoreReconstructionAndRemainOwnerScoped]' passed (0.055 seconds).",
+    "2026-09-14T18:39:23.9886120Z Test Case '-[IncomingNativeTests.MiniAppIncomingProviderLoaderTests testDataOnlyTextProviderDoesNotRequireNSStringConversion]' passed (0.009 seconds).",
+    "2026-09-14T18:39:34.6298170Z Test Case '-[IncomingNativeTests.MiniAppIncomingProviderLoaderTests testProviderInputsEnqueueInActualHostAppGroup]' passed (0.047 seconds)."
+  ],
+  "limits": [
+    "Host App Group success does not reproduce or fix the device Share Extension URL error.",
+    "Reconstructed stores are not an OS Shortcuts execution test.",
+    "Widget gallery and new candidate IPA are not covered by this run."
+  ]
+}

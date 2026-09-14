@@ -28,15 +28,29 @@ enum MiniAppRegistry {
             MiniAppManagement.Registration(
                 id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
                 unregister: {
+                    #if DEBUG
+                    let started = Date()
+                    print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) begin")
+                    defer { print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) returned seconds=\(Date().timeIntervalSince(started))") }
+                    #endif
                     if let destination = incomingDestination(for: definition) {
                         let store = try incomingStore.get()
                         try await Task.detached { try store.setAdmission(destination, enabled: false) }.value
                     }
                     try await definition.onUnregister?()
+                    #if DEBUG
+                    print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) feature-hook-complete")
+                    #endif
                     let context = MiniAppContext(id: definition.id)
                     await context.removeAllOwnedNotifications()
                     try context.replaceNotificationCategories(with: [])
+                    #if DEBUG
+                    print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) notifications-complete spotlight-begin")
+                    #endif
                     try await MiniAppSpotlightNamespace(context: context).deleteAll(from: .default())
+                    #if DEBUG
+                    print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) spotlight-complete")
+                    #endif
                 },
                 enable: {
                     try MiniAppContext(id: definition.id).replaceNotificationCategories(with: definition.notificationCategories)

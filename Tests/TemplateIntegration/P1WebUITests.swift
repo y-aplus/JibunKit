@@ -181,6 +181,18 @@ final class P1WebUITests: XCTestCase {
         return false
     }
 
+    // Runs after disable/auth alphabetically, so it does not prewarm Spotlight
+    // before the failing first-management scenario. Launch a fresh host process.
+    func testNativeSpotlightDeletionWithoutManagement() throws {
+        continueAfterFailure = false
+        app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
+        app.launch()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/spotlight-probe")))
+        tap("spotlight.deletion.run")
+        expectText(identifier: "spotlight.deletion.result",
+                   label: "native=passed namespaced=passed", timeout: 120)
+    }
+
     private func acceptSystemButton(_ labels: [String]) {
         let predicate = NSPredicate(format: "label IN %@", labels)
         for surface in [app, XCUIApplication(bundleIdentifier: "com.apple.springboard")] {

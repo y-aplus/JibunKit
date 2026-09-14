@@ -107,12 +107,12 @@ private final class P1HTTPOwner {
     // The lifetime owns the stopped boundary, including concurrent restart and
     // management. The external caller must not be a task drained by that lifetime.
     func stopThenLogout() {
-        guard control == nil else { status = "rejected: control busy"; return }
+        guard control == nil, let base else { status = "rejected: control busy or unavailable"; return }
         status = "stopping writers for logout"
         control = Task { [self] in
             do {
                 try await lifetime.withStoppedOperation { [self] in
-                    try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(for: id) { try await stoppedLogout() }
+                    try await MiniAppRestoreCoordinator.shared.withStoreMaintenance(for: id) { try await stoppedLogout(base: base) }
                 }
                 status = "logout completed; reopen to inspect"
             }
@@ -187,8 +187,8 @@ private final class P1HTTPOwner {
         cookie = try await echo(session, base)
         guard cookie == "account=" + stableCookie else { throw Failure.lateCookieResurrection }
     }
-    private func stoppedLogout() async throws {
-        guard let base else { throw Failure.fixtureUnavailable }; let context = MiniAppContext(id: id)
+    private func stoppedLogout(base: URL) async throws {
+        let context = MiniAppContext(id: id)
         let cookies = try MiniAppCookieStore(context: context), credentials = try MiniAppPasswordCredentialStore(context: context)
         let config = URLSessionConfiguration.default; config.httpCookieStorage = cookies.storage; config.urlCredentialStorage = credentials.storage; config.urlCache = nil
         let logout = URLSession(configuration: config); defer { logout.finishTasksAndInvalidate() }

@@ -27,6 +27,10 @@ on:
         description: Split generated-only UI into network and web-management jobs (requires explicit methods and Records reuse)
         type: boolean
         default: false
+      p1_device_validation:
+        description: Build the complete P1 device diagnostic IPA and validate its embedded HTTP fixture
+        type: boolean
+        default: false
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -80,6 +84,13 @@ permissions:
   contents: read
 
 jobs:
+  device-http-native:
+    if: inputs.p1_device_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: device-http
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   intents-native:
     if: inputs.package_intents_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml
@@ -239,6 +250,17 @@ jobs:
           test "$VALID" = true
           python3 Tools/split-generated-ui.py --filter "$FEATURE_FILTER" --shard network
           python3 Tools/split-generated-ui.py --filter "$FEATURE_FILTER" --shard web-management
+
+      - name: Validate P1 device candidate boundary
+        if: inputs.p1_device_validation
+        env:
+          VALID: ${{ inputs.generated_validation_only && inputs.split_generated_ui && inputs.simulator_tests && inputs.feature_validation && !inputs.records_validation }}
+          FEATURE_FILTER: ${{ inputs.feature_ui_test_filter }}
+        run: |
+          test "$VALID" = true
+          for suite in P1HTTPUITests P1NotificationsUITests P1WebUITests; do
+            [[ "$FEATURE_FILTER" == *"$suite/"* ]] || exit 1
+          done
 
       - name: Check publication boundary
         shell: bash
@@ -441,6 +463,7 @@ jobs:
         env:
           PACKAGE_RESOURCES_VALIDATION: ${{ inputs.package_resources_validation }}
           FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
+          P1_DEVICE_VALIDATION: ${{ inputs.p1_device_validation }}
         run: |
           set -euo pipefail
           smoke="$RUNNER_TEMP/template-check"
@@ -461,7 +484,7 @@ jobs:
           shutil.copyfile('Tests/TemplateIntegration/LifecycleProbeIntegration.swift', 'Sources/JibunKit/LifecycleProbeIntegration.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeProbe.swift', 'Sources/JibunKit/P0ALifetimeProbe.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ALifetimeUITests.swift', 'UITests/P0ALifetimeUITests.swift')
-          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', '') or os.environ['P1_DEVICE_VALIDATION'] == 'true':
               shutil.copyfile('Tests/TemplateIntegration/P1IncomingProbe.swift', 'Sources/JibunKit/P1IncomingProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P1IncomingUITests.swift', 'UITests/P1IncomingUITests.swift')
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
@@ -601,7 +624,7 @@ jobs:
                   '        ReminderMiniApp.definition,\n        PackageResourceHostProbe.definition,\n    ])',
               ))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        HostLaunchHookProbe.definitions[0],\n        HostLaunchHookProbe.definitions[1],'))
-          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', ''):
+          if 'P1IncomingUITests' in os.environ.get('FEATURE_UI_TEST_FILTER', '') or os.environ['P1_DEVICE_VALIDATION'] == 'true':
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P1IncomingProbe.definitions[0],\n        P1IncomingProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
@@ -612,10 +635,10 @@ jobs:
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BPresentationProbe.definitions[0],\n        P0BPresentationProbe.definitions[1],'))
           PY
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* ]]; then
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             python3 Tools/prepare-p1-intents-host.py --host "$smoke"
           fi
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* ]]; then
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1WidgetsUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             python3 Tools/prepare-p1-widgets-host.py --host "$smoke"
           fi
           if [[ "$FEATURE_UI_TEST_FILTER" == *P1NotificationsUITests* || "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* || "$FEATURE_UI_TEST_FILTER" == *P1WebUITests* ]]; then
@@ -634,7 +657,7 @@ jobs:
             -derivedDataPath "$RUNNER_TEMP/TemplateHostDerivedData" CODE_SIGNING_ALLOWED=NO
           host_app="$RUNNER_TEMP/TemplateHostDerivedData/Build/Products/Release-iphoneos/JibunKit_App.app"
           host_widget="$host_app/PlugIns/JibunKitWidget_Extension.appex"
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* ]]; then
+          if [[ "$FEATURE_UI_TEST_FILTER" == *P1IntentsUITests* || "$P1_DEVICE_VALIDATION" == true ]]; then
             test -f "$host_app/Metadata.appintents/extract.actionsdata"
             cp -R "$host_app/Metadata.appintents" "$RUNNER_TEMP/P1IntentsHostMetadata"
           fi
@@ -895,6 +918,7 @@ jobs:
         env:
           FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
           UI_SHARD: ${{ matrix.ui_shard }}
+          P1_DEVICE_VALIDATION: ${{ inputs.p1_device_validation }}
         shell: bash
         run: |
           set -euo pipefail
@@ -907,7 +931,9 @@ jobs:
             selection+=("-only-testing:$feature_filter")
           done
           fixture=()
-          if [[ "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* ]]; then
+          if [[ "$P1_DEVICE_VALIDATION" == true ]]; then
+            export TEST_RUNNER_JIBUNKIT_USE_DEVICE_HTTP_FIXTURE=1
+          elif [[ "$FEATURE_UI_TEST_FILTER" == *P1HTTPUITests* ]]; then
             fixture=(python3 Tests/Fixtures/network_server.py --run-command)
           fi
           "${fixture[@]}" xcodebuild test -workspace "$RUNNER_TEMP/template-check/JibunKit.xcworkspace" -scheme MigrationUITests \
@@ -1030,8 +1056,10 @@ jobs:
             -parallel-testing-enabled NO CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- \
             CODE_SIGN_STYLE=Manual 2>&1 | tee "$RUNNER_TEMP/records-ui.log"
 
-      - name: Package 0.7 candidate diagnostic IPA
-        if: (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+      - name: Package candidate diagnostic IPA
+        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard == 'network'))
+        env:
+          CANDIDATE_KIND: ${{ inputs.p1_device_validation && 'P1' || 'P0' }}
         shell: bash
         run: |
           set -euxo pipefail
@@ -1057,16 +1085,17 @@ jobs:
           package="$RUNNER_TEMP/P0CandidateIPA"
           mkdir -p "$package/Payload" artifacts
           ditto "$app" "$package/Payload/JibunKit.app"
-          (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$GITHUB_WORKSPACE/artifacts/JibunKit-P0-check.ipa")
-          unzip -t artifacts/JibunKit-P0-check.ipa
-          shasum --algorithm 256 artifacts/JibunKit-P0-check.ipa
+          ipa="$GITHUB_WORKSPACE/artifacts/JibunKit-$CANDIDATE_KIND-check.ipa"
+          (cd "$package" && ditto -c -k --sequesterRsrc --keepParent Payload "$ipa")
+          unzip -t "$ipa"
+          shasum --algorithm 256 "$ipa"
 
-      - name: Upload 0.7 candidate diagnostic IPA
-        if: (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
+      - name: Upload candidate diagnostic IPA
+        if: (inputs.feature_validation && matrix.lane != 'normal') && (contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests') || (inputs.p1_device_validation && matrix.ui_shard == 'network'))
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-P0-device-check${{ env.EVIDENCE_SUFFIX }}
-          path: artifacts/JibunKit-P0-check.ipa
+          name: JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-device-check${{ env.EVIDENCE_SUFFIX }}
+          path: artifacts/JibunKit-${{ inputs.p1_device_validation && 'P1' || 'P0' }}-check.ipa
           retention-days: 14
 
       - name: Export simulator screenshots

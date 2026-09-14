@@ -134,6 +134,59 @@ final class P1WebUITests: XCTestCase {
         closeManagement()
     }
 
+    func testEmbeddedAuthenticationReturnsToEachOwnerAndOSCancelPreservesA() throws {
+        prepare()
+        for owner in owners {
+            try open(owner)
+            tap("p1.web.auth-start")
+            let link = app.links["Return to App"]
+            XCTAssertTrue(waitForAuthenticationControl(link), app.debugDescription)
+            link.tap()
+            acceptSystemButton(["Open", "開く"])
+            expectText(identifier: "p1.web.auth-result", label: "completed " + owner, timeout: 20)
+            backToList()
+        }
+        try open("p1-web-b")
+        tap("p1.web.auth-hold")
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let predicate = NSPredicate(format: "label IN %@", ["Close", "閉じる", "Cancel", "キャンセル"])
+        let close = app.buttons.matching(predicate).firstMatch
+        let systemClose = springboard.buttons.matching(predicate).firstMatch
+        let deadline = Date().addingTimeInterval(45)
+        while !close.exists && !systemClose.exists && Date() < deadline {
+            acceptSystemButton(["Continue", "続ける"])
+            _ = close.waitForExistence(timeout: 2)
+        }
+        if close.exists { close.tap() }
+        else if systemClose.exists { systemClose.tap() }
+        else { XCTFail("OS authentication close control missing: " + app.debugDescription); return }
+        expectText(identifier: "p1.web.auth-result", label: "cancelled", timeout: 20)
+        backToList()
+        try open("p1-web-a")
+        expectText(identifier: "p1.web.auth-result", label: "completed p1-web-a", timeout: 20)
+        backToList()
+    }
+
+    private func waitForAuthenticationControl(_ control: XCUIElement) -> Bool {
+        let deadline = Date().addingTimeInterval(45)
+        while Date() < deadline {
+            if control.waitForExistence(timeout: 3) { return true }
+            acceptSystemButton(["Continue", "続ける"])
+        }
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        return false
+    }
+
+    private func acceptSystemButton(_ labels: [String]) {
+        let predicate = NSPredicate(format: "label IN %@", labels)
+        for surface in [app, XCUIApplication(bundleIdentifier: "com.apple.springboard")] {
+            let button = surface.buttons.matching(predicate).firstMatch
+            if button.waitForExistence(timeout: 1), button.isHittable { button.tap(); return }
+        }
+    }
+
     private func open(_ owner: String) throws {
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/" + owner)))
         XCTAssertTrue(app.navigationBars[owner].waitForExistence(timeout: 15), app.debugDescription)

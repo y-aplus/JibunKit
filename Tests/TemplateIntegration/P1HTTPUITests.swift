@@ -5,10 +5,11 @@ import XCTest
 final class P1HTTPUITests: XCTestCase {
     private let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
     private var port: String { ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"] ?? "" }
+    private var usesDeviceFixture: Bool { ProcessInfo.processInfo.environment["JIBUNKIT_USE_DEVICE_HTTP_FIXTURE"] == "1" }
 
     func testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention() throws {
         continueAfterFailure = false
-        XCTAssertFalse(port.isEmpty, "Runner must receive JIBUNKIT_NETWORK_TEST_PORT")
+        if !usesDeviceFixture { XCTAssertFalse(port.isEmpty, "Runner must receive JIBUNKIT_NETWORK_TEST_PORT") }
         launch()
         try normalizeEnabled("p1-http-a")
         try normalizeEnabled("p1-http-b")
@@ -105,7 +106,7 @@ final class P1HTTPUITests: XCTestCase {
 
     private func launch() {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
-        app.launchEnvironment = ["JIBUNKIT_NETWORK_TEST_PORT": port]
+        app.launchEnvironment = usesDeviceFixture ? [:] : ["JIBUNKIT_NETWORK_TEST_PORT": port]
         app.launch()
     }
     private func authorization(password: String) -> String {

@@ -3,9 +3,14 @@ import ProjectDescription
 public enum EnabledFeatureBuildRequirements {
     private static let probeTypes: Plist.Value = [[
         "CFBundleURLName": "com.jibunkit.url-route-probe",
-        "CFBundleURLSchemes": ["jkrouteprobe"],
+        "CFBundleURLSchemes": ["jkrouteprobe", "jibunkit-auth-probe"],
     ]]
     public static let app = FeatureBuildConfiguration(
-        features: [.init(owner: "url-routing-probe", infoPlist: ["CFBundleURLTypes": probeTypes])])
+        features: [.init(owner: "url-routing-probe", infoPlist: [
+            "CFBundleURLTypes": probeTypes,
+            // Diagnostic host only: its HTTP and ASWebAuthenticationSession
+            // pages are served on this device's explicit loopback interface.
+            "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
+        ])])
     public static let widget = FeatureBuildConfiguration()
 }

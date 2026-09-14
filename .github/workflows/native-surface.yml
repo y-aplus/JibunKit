@@ -31,7 +31,7 @@ jobs:
           SURFACE: ${{ inputs.surface }}
         shell: bash
         run: |
-          case "$SURFACE" in intents|widgets|incoming|web-authentication) ;; *) exit 2 ;; esac
+          case "$SURFACE" in intents|widgets|incoming|web-authentication|device-http) ;; *) exit 2 ;; esac
 
       - name: Select Xcode 26.6
         shell: bash
@@ -90,6 +90,9 @@ jobs:
         run: |
           set -euo pipefail
           case "$SURFACE" in
+            device-http)
+              python3 Tools/verify-p1-device-http.py --simulator-id "$SIMULATOR_ID"
+              ;;
             intents)
               python3 -m unittest discover -s Tools/tests -p test_app_intents_identities.py
               python3 Tools/verify-package-app-intents.py --simulator-id "$SIMULATOR_ID" \
@@ -142,6 +145,7 @@ jobs:
         with:
           name: Native-${{ inputs.surface }}-diagnostics
           path: |
+            ${{ runner.temp }}/P1DeviceHTTP
             ${{ runner.temp }}/package-app-intents.log
             ${{ runner.temp }}/PackageAppIntents
             ${{ runner.temp }}/package-widgets.log

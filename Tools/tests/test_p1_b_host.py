@@ -23,6 +23,7 @@ class P1BHostTests(unittest.TestCase):
         fixtures = self.host / "Tests/TemplateIntegration"
         fixtures.mkdir(parents=True)
         (fixtures / "P1UIVisibility.swift").write_text("// shared visibility helper\n", encoding="utf-8")
+        (fixtures / "P1DeviceHTTPFixture.swift").write_text("// loopback fixture\n", encoding="utf-8")
         for name in MODULE.PROBES.values():
             for suffix in ["Probe", "UITests"]:
                 (fixtures / f"{name}{suffix}.swift").write_text(f"// source {name}{suffix}\n", encoding="utf-8")
@@ -30,6 +31,26 @@ class P1BHostTests(unittest.TestCase):
     def snapshot(self):
         return {p.relative_to(self.host).as_posix(): p.read_bytes()
                 for p in self.host.rglob("*") if p.is_file()}
+
+    def testDeviceCandidateComposesIntentsWidgetsAndAllBProbes(self):
+        for relative in ["Sources/JibunKit/JibunKitApp.swift", "Sources/JibunKitWidget/CounterWidget.swift"]:
+            target = self.host / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / relative, target)
+        for name in ["P1IntentsProbe.swift", "P1IntentsUITests.swift", "P1WidgetsProbe.swift", "P1WidgetsUITests.swift"]:
+            shutil.copyfile(ROOT / "Tests/TemplateIntegration" / name, self.host / "Tests/TemplateIntegration" / name)
+        for lane in ["intents", "widgets"]:
+            spec = importlib.util.spec_from_file_location(lane, ROOT / f"Tools/prepare-p1-{lane}-host.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            module.prepare(self.host)
+        MODULE.prepare(self.host, ["notifications", "http", "web"])
+        project = (self.host / "Project.swift").read_text(encoding="utf-8")
+        registry = (self.host / "Sources/JibunKit/MiniAppRegistry.swift").read_text(encoding="utf-8")
+        self.assertIn('product: "IntentFeatureA"', project)
+        self.assertEqual(project.count('product: "P1WidgetFeatureB"'), 2)
+        for declaration in ["P1IntentsProbe.definitionA", "P1WidgetsProbe.definitions[1]", "P1HTTPProbe.ownerADefinition", "P1WebProbe.ownerBDefinition", "P1NotificationsProbe.ownerADefinition"]:
+            self.assertEqual(registry.count(declaration + ","), 1)
 
     def testAllPairsPreserveNormalTargetsAndCopyExactSources(self):
         original = self.snapshot()
@@ -54,6 +75,23 @@ class P1BHostTests(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             MODULE.prepare(self.host, ["http"])
         self.assertEqual(self.snapshot(), before)
+
+    def testMissingDeviceFixtureCannotPartiallyConnectHTTP(self):
+        (self.host / "Tests/TemplateIntegration/P1DeviceHTTPFixture.swift").unlink()
+        before = self.snapshot()
+        with self.assertRaises(FileNotFoundError):
+            MODULE.prepare(self.host, ["http"])
+        self.assertEqual(self.snapshot(), before)
+
+    def testDeviceFixtureIsSharedAcrossHTTPAndWebButNotRequiredForNotifications(self):
+        MODULE.prepare(self.host, ["http"])
+        target = self.host / "Sources/JibunKit/P1DeviceHTTPFixture.swift"
+        before = target.read_bytes()
+        MODULE.prepare(self.host, ["web"])
+        self.assertEqual(target.read_bytes(), before)
+        (self.host / "Tests/TemplateIntegration/P1DeviceHTTPFixture.swift").unlink()
+        MODULE.prepare(self.host, ["notifications"])
+        self.assertEqual(target.read_bytes(), before)
 
     def testChangedHelperCannotBeOverwrittenDuringComposition(self):
         MODULE.prepare(self.host, ["http"])

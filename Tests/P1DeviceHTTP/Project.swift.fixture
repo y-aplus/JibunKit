@@ -1,0 +1,21 @@
+import ProjectDescription
+
+let project = Project(name: "P1DeviceHTTP", targets: [
+    .target(
+        name: "P1DeviceHTTP", destinations: .iOS, product: .app,
+        bundleId: "com.jibunkit.p1-device-http-tests",
+        deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: [
+            "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
+            "UILaunchScreen": [:],
+        ]),
+        sources: ["App.swift"]
+    ),
+    .target(
+        name: "P1DeviceHTTPTests", destinations: .iOS, product: .unitTests,
+        bundleId: "com.jibunkit.p1-device-http-tests.unit",
+        deploymentTargets: .iOS("26.0"), infoPlist: .default,
+        sources: ["P1DeviceHTTPFixture.swift", "P1DeviceHTTPFixtureTests.swift"],
+        dependencies: [.target(name: "P1DeviceHTTP")]
+    ),
+])

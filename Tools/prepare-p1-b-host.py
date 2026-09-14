@@ -37,6 +37,13 @@ def prepare(host, lanes):
     if target.exists() and target.read_bytes() != content:
         raise ValueError(f"Refusing to overwrite changed UI helper: {target}")
     changes[target] = content
+    if set(lanes) & {"http", "web"}:
+        server = "P1DeviceHTTPFixture.swift"
+        content = (host / "Tests/TemplateIntegration" / server).read_bytes()
+        target = host / "Sources/JibunKit" / server
+        if target.exists() and target.read_bytes() != content:
+            raise ValueError(f"Refusing to overwrite changed device fixture: {target}")
+        changes[target] = content
     changes[registry] = text.replace(ANCHOR, ANCHOR + "\n" + "\n".join(definitions), 1).encode("utf-8")
     # Every selected source/anchor must exist before writing. No root package,
     # second manager, bootstrap seed or per-Feature host switch is introduced.

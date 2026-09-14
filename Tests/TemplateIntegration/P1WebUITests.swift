@@ -5,7 +5,9 @@ final class P1WebUITests: XCTestCase {
     private let app = XCUIApplication(bundleIdentifier: "com.jibunkit.app")
     private let owners = ["p1-web-a", "p1-web-b"]
 
-    override func setUp() {
+    // XCTest's synchronous setUp override is nonisolated. Keep UI preparation
+    // in the same MainActor context as each test, including management helpers.
+    private func prepare() {
         continueAfterFailure = false
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
@@ -27,6 +29,7 @@ final class P1WebUITests: XCTestCase {
     }
 
     func testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB() throws {
+        prepare()
         for owner in owners {
             try open(owner)
             tap("p1.web.write")
@@ -67,6 +70,7 @@ final class P1WebUITests: XCTestCase {
     }
 
     func testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable() throws {
+        prepare()
         try open("p1-web-a")
         tap("p1.web.write-delayed")
         expectResult("write waiting")
@@ -82,6 +86,7 @@ final class P1WebUITests: XCTestCase {
     }
 
     func testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB() throws {
+        prepare()
         try open("p1-web-b")
         tap("p1.web.write")
         expectResult("local=p1-web-b cookie=p1-web-b indexeddb=p1-web-b")
@@ -110,6 +115,7 @@ final class P1WebUITests: XCTestCase {
     }
 
     func testDisableRejectsDeepLinkWhileBRemainsUsable() throws {
+        prepare()
         openManagement()
         tapManagement("management.disable.p1-web-a")
         expectManagement("p1-web-a", "無効（データを保持）")

@@ -43,16 +43,27 @@ final class RecordsAttachmentTests: XCTestCase {
                           "Files must finish selection before checking the imported attachment.\n" + app.debugDescription)
         }
         tap(app.buttons["records.fixture.export"])
-        // A fresh Files process can open at Locations rather than the last
-        // folder. Run 34802338245's hierarchy showed that state, with no Save
-        // control until a destination is selected. Do not depend on another
-        // test having visited On My iPhone first.
+        // Files can expose Locations while still restoring its destination.
+        // Run 34805047488 changed to the local folder during Cell.tap's
+        // automatic scroll, invalidating that snapshot. Prefer the ready Save
+        // control; if a location is actually hittable, tap its visible frame
+        // without asking XCTest to scroll a transient remote Cell.
         let save = app.buttons.matching(NSPredicate(format: "label IN %@", ["保存", "Save"])).firstMatch
         let localDestination = app.cells["DOC.sidebar.item.このiPhone内"]
         let destinationReady = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in save.exists || localDestination.exists }, object: nil)
+            predicate: NSPredicate { _, _ in save.isHittable || localDestination.isHittable }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [destinationReady], timeout: 20), .completed, app.debugDescription)
-        if localDestination.exists { tap(localDestination) }
+        if !save.isHittable {
+            let frame = localDestination.frame
+            XCTAssertFalse(frame.isEmpty)
+            XCTAssertTrue(app.frame.contains(frame), app.debugDescription)
+            // The remote picker may finish restoring its folder between queries.
+            if !save.isHittable {
+                app.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: frame.midX - app.frame.minX,
+                                         dy: frame.midY - app.frame.minY)).tap()
+            }
+        }
         tap(save)
         XCTAssertTrue(app.buttons["records.fixture.saved"].waitForExistence(timeout: 15), app.debugDescription)
         tap(app.buttons["records.fixture.import"])

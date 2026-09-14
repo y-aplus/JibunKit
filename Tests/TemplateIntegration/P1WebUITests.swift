@@ -7,22 +7,24 @@ final class P1WebUITests: XCTestCase {
 
     // XCTest's synchronous setUp override is nonisolated. Keep UI preparation
     // in the same MainActor context as each test, including management helpers.
-    private func prepare() {
+    private func prepare(emptyA: Bool = false) {
         continueAfterFailure = false
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         openManagement()
-        // The cancellation case must begin with genuinely empty A storage,
-        // regardless of method ordering or a previous installed candidate.
-        let aStatus = app.staticTexts["management.status.p1-web-a"]
-        reveal(aStatus)
-        XCTAssertTrue(aStatus.exists, app.debugDescription)
-        if aStatus.label != "削除済み" {
-            tapManagement("management.delete.p1-web-a")
-            let confirmation = app.alerts.buttons["削除"]
-            XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
-            confirmation.tap()
-            expectManagement("p1-web-a", "削除済み", timeout: 60)
+        // Only the blank-storage cancellation case needs a destructive reset.
+        // Other cases write their own values or inspect enable/auth state.
+        if emptyA {
+            let aStatus = app.staticTexts["management.status.p1-web-a"]
+            reveal(aStatus)
+            XCTAssertTrue(aStatus.exists, app.debugDescription)
+            if aStatus.label != "削除済み" {
+                tapManagement("management.delete.p1-web-a")
+                let confirmation = app.alerts.buttons["削除"]
+                XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+                confirmation.tap()
+                expectManagement("p1-web-a", "削除済み")
+            }
         }
         for owner in owners { enableIfNeeded(owner) }
         closeManagement()
@@ -52,7 +54,7 @@ final class P1WebUITests: XCTestCase {
         app.alerts.buttons["キャンセル"].tap()
         tapManagement("management.delete.p1-web-a")
         app.alerts.buttons["削除"].tap()
-        expectManagement("p1-web-a", "削除済み", timeout: 20)
+        expectManagement("p1-web-a", "削除済み")
         closeManagement()
 
         try open("p1-web-b")
@@ -70,7 +72,7 @@ final class P1WebUITests: XCTestCase {
     }
 
     func testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable() throws {
-        prepare()
+        prepare(emptyA: true)
         try open("p1-web-a")
         tap("p1.web.write-delayed")
         expectResult("write waiting")
@@ -98,7 +100,7 @@ final class P1WebUITests: XCTestCase {
         openManagement()
         tapManagement("management.delete.p1-web-a")
         app.alerts.buttons["削除"].tap()
-        expectManagement("p1-web-a", "削除済み", timeout: 20)
+        expectManagement("p1-web-a", "削除済み")
         closeManagement()
         openManagement()
         enableIfNeeded("p1-web-a")
@@ -222,7 +224,10 @@ final class P1WebUITests: XCTestCase {
         P1UIVisibility.reveal(element, in: app)
     }
 
-    private func expectManagement(_ owner: String, _ value: String, timeout: TimeInterval = 15) {
+    // A cold Simulator's native unregister was still in flight after60s in
+    // run34816553410. This bounds completion waiting; it is not a fixed sleep
+    // or a retry, and only the final expected status counts as success.
+    private func expectManagement(_ owner: String, _ value: String, timeout: TimeInterval = 120) {
         expectText(identifier: "management.status." + owner, label: value, timeout: timeout)
     }
 

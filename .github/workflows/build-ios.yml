@@ -27,6 +27,14 @@ on:
         description: Split generated-only UI into network and web-management jobs (requires explicit methods and Records reuse)
         type: boolean
         default: false
+      generated_ui_shard:
+        description: Select a split UI job only when the other job has unchanged verified evidence
+        type: choice
+        options:
+          - both
+          - network
+          - web-management
+        default: both
       p1_device_validation:
         description: Build the complete P1 device diagnostic IPA and validate its embedded HTTP fixture
         type: boolean
@@ -221,7 +229,7 @@ jobs:
         # One completion boundary, independent normal and generated host jobs.
         # Focused and build-only calls retain the existing combined behavior.
         lane: ${{ fromJSON((inputs.generated_validation_only || inputs.split_generated_ui) && '["generated"]' || inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
-        ui_shard: ${{ fromJSON(inputs.split_generated_ui && '["network","web-management"]' || '["all"]') }}
+        ui_shard: ${{ fromJSON(inputs.split_generated_ui && ((inputs.generated_ui_shard == 'network' || inputs.generated_ui_shard == 'web-management') && format('["{0}"]', inputs.generated_ui_shard) || '["network","web-management"]') || '["all"]') }}
     runs-on: macos-26
     timeout-minutes: 45
     env:
@@ -234,6 +242,17 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           persist-credentials: false
+
+      - name: Validate individual generated shard
+        env:
+          SHARD: ${{ inputs.generated_ui_shard }}
+          SPLIT: ${{ inputs.split_generated_ui }}
+        run: |
+          case "$SHARD" in
+            ''|both) ;;
+            network|web-management) test "$SPLIT" = true ;;
+            *) exit 2 ;;
+          esac
 
       - name: Validate generated-only retry
         if: inputs.generated_validation_only

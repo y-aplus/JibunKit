@@ -132,17 +132,10 @@ final class P1NotificationsUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars[owner].waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertTrue(app.staticTexts["p1.notification.result"].waitForExistence(timeout: 15))
     }
-    private func reveal(_ element: XCUIElement, downFirst: Bool = false) {
-        if element.exists && element.isHittable { return }
-        for _ in 0..<12 {
-            if downFirst { app.swipeDown() } else { app.swipeUp() }
-            if element.exists && element.isHittable { return }
-        }
-        for _ in 0..<12 {
-            if downFirst { app.swipeUp() } else { app.swipeDown() }
-            if element.exists && element.isHittable { return }
-        }
+    private func reveal(_ element: XCUIElement) {
+        P1UIVisibility.reveal(element, in: app)
     }
+
     private func tap(_ id: String) {
         let button = app.buttons[id]
         reveal(button)
@@ -167,7 +160,7 @@ final class P1NotificationsUITests: XCTestCase {
             "pending=\(pending) readable=\(pending) matching=\(pending) delivered=0 original=\(original) staging=0")
     }
     private func expect(_ id: String, equals: String? = nil, begins: String? = nil, timeout: TimeInterval = 15) {
-        reveal(app.staticTexts[id], downFirst: true)
+        reveal(app.staticTexts[id])
         let predicate = equals.map { NSPredicate(format: "label == %@", $0) }
             ?? NSPredicate(format: "label BEGINSWITH %@", begins!)
         let match = XCTNSPredicateExpectation(predicate: predicate, object: app.staticTexts[id])

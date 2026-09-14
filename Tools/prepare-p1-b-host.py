@@ -31,6 +31,12 @@ def prepare(host, lanes):
                 raise ValueError(f"Refusing to overwrite existing diagnostic source: {target}")
             changes[target] = source.read_bytes()
         definitions.extend([f"        {name}Probe.ownerADefinition,", f"        {name}Probe.ownerBDefinition,"])
+    helper = "P1UIVisibility.swift"
+    content = (host / "Tests/TemplateIntegration" / helper).read_bytes()
+    target = host / "UITests" / helper
+    if target.exists() and target.read_bytes() != content:
+        raise ValueError(f"Refusing to overwrite changed UI helper: {target}")
+    changes[target] = content
     changes[registry] = text.replace(ANCHOR, ANCHOR + "\n" + "\n".join(definitions), 1).encode("utf-8")
     # Every selected source/anchor must exist before writing. No root package,
     # second manager, bootstrap seed or per-Feature host switch is introduced.

@@ -165,16 +165,8 @@ final class P1WebUITests: XCTestCase {
         return button
     }
 
-    private func reveal(_ element: XCUIElement, downFirst: Bool = false) {
-        if element.exists && element.isHittable { return }
-        for _ in 0..<12 {
-            if downFirst { app.swipeDown() } else { app.swipeUp() }
-            if element.exists && element.isHittable { return }
-        }
-        for _ in 0..<12 {
-            if downFirst { app.swipeUp() } else { app.swipeDown() }
-            if element.exists && element.isHittable { return }
-        }
+    private func reveal(_ element: XCUIElement) {
+        P1UIVisibility.reveal(element, in: app)
     }
 
     private func expectManagement(_ owner: String, _ value: String, timeout: TimeInterval = 15) {
@@ -191,14 +183,14 @@ final class P1WebUITests: XCTestCase {
     private func expectResult(_ value: String) { expectText(identifier: "p1.web.result", label: value, timeout: 15) }
 
     private func expectResultPrefix(_ value: String) {
-        reveal(app.staticTexts["p1.web.result"], downFirst: true)
+        reveal(app.staticTexts["p1.web.result"])
         let element = app.staticTexts.matching(identifier: "p1.web.result")
             .matching(NSPredicate(format: "label BEGINSWITH %@", value)).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: 15), app.debugDescription)
     }
 
     private func expectText(identifier: String, label: String, timeout: TimeInterval) {
-        reveal(app.staticTexts[identifier], downFirst: identifier.hasPrefix("p1.web."))
+        reveal(app.staticTexts[identifier])
         let element = app.staticTexts.matching(identifier: identifier)
             .matching(NSPredicate(format: "label == %@", label)).firstMatch
         XCTAssertTrue(element.waitForExistence(timeout: timeout), app.debugDescription)

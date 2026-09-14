@@ -19,6 +19,10 @@ on:
         description: Retry generated host and Records UI; reuse prior normal, requirements and standalone Notes evidence
         type: boolean
         default: false
+      records_validation:
+        description: Include Records standalone build and UI (disable only when reusing unchanged successful evidence)
+        type: boolean
+        default: true
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -405,7 +409,7 @@ jobs:
         run: python3 Tools/test-module-packages.py Modules
 
       - name: Build independent Records app
-        if: (inputs.feature_validation && matrix.lane != 'normal')
+        if: (inputs.feature_validation && matrix.lane != 'normal') && inputs.records_validation
         shell: bash
         run: |
           set -euo pipefail
@@ -995,7 +999,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee "$RUNNER_TEMP/files-round-trip.log"
 
       - name: Test Records editing and persistence
-        if: ${{ !cancelled() && inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal') && steps.feature-template.outcome == 'success' && steps.simulator-prepare.outcome == 'success' }}
+        if: ${{ !cancelled() && inputs.simulator_tests && inputs.records_validation && (inputs.feature_validation && matrix.lane != 'normal') && steps.feature-template.outcome == 'success' && steps.simulator-prepare.outcome == 'success' }}
         shell: bash
         run: |
           set -euo pipefail

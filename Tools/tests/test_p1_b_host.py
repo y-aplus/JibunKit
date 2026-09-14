@@ -22,6 +22,7 @@ class P1BHostTests(unittest.TestCase):
             shutil.copyfile(ROOT / name, target)
         fixtures = self.host / "Tests/TemplateIntegration"
         fixtures.mkdir(parents=True)
+        (fixtures / "P1UIVisibility.swift").write_text("// shared visibility helper\n", encoding="utf-8")
         for name in MODULE.PROBES.values():
             for suffix in ["Probe", "UITests"]:
                 (fixtures / f"{name}{suffix}.swift").write_text(f"// source {name}{suffix}\n", encoding="utf-8")
@@ -44,6 +45,23 @@ class P1BHostTests(unittest.TestCase):
             self.assertEqual((self.host / name).read_bytes(), original[name])
         self.assertIn("CounterMiniApp.definition", registry)
         self.assertIn("ReminderMiniApp.definition", registry)
+        self.assertEqual((self.host / "UITests/P1UIVisibility.swift").read_bytes(),
+                         (self.host / "Tests/TemplateIntegration/P1UIVisibility.swift").read_bytes())
+
+    def testMissingHelperCannotPartiallyConnectLane(self):
+        (self.host / "Tests/TemplateIntegration/P1UIVisibility.swift").unlink()
+        before = self.snapshot()
+        with self.assertRaises(FileNotFoundError):
+            MODULE.prepare(self.host, ["http"])
+        self.assertEqual(self.snapshot(), before)
+
+    def testChangedHelperCannotBeOverwrittenDuringComposition(self):
+        MODULE.prepare(self.host, ["http"])
+        (self.host / "UITests/P1UIVisibility.swift").write_text("// local edits", encoding="utf-8")
+        before = self.snapshot()
+        with self.assertRaisesRegex(ValueError, "changed UI helper"):
+            MODULE.prepare(self.host, ["web"])
+        self.assertEqual(self.snapshot(), before)
 
     def testMissingLaterPairCannotPartiallyConnectEarlierLane(self):
         (self.host / "Tests/TemplateIntegration/P1WebUITests.swift").unlink()

@@ -129,12 +129,9 @@ final class P1HTTPUITests: XCTestCase {
     private func tap(_ id: String) { tap(app.buttons[id]) }
     private func tap(_ button: XCUIElement) { reveal(button); XCTAssertTrue(button.isEnabled, app.debugDescription); button.tap() }
     private func reveal(_ element: XCUIElement) {
-        if element.exists && element.isHittable { return }
-        for _ in 0..<6 { app.swipeUp(); if element.exists && element.isHittable { return } }
-        for _ in 0..<12 { app.swipeDown(); if element.exists && element.isHittable { return } }
-        for _ in 0..<6 { app.swipeUp(); if element.exists && element.isHittable { return } }
-        XCTAssertTrue(element.exists && element.isHittable, app.debugDescription)
+        P1UIVisibility.reveal(element, in: app)
     }
+
     private func expect(_ id: String, _ value: String, timeout: TimeInterval = 15) {
         let element = app.staticTexts[id]; reveal(element)
         let match = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", value), object: element)

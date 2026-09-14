@@ -134,6 +134,9 @@ final class P0BManagementFailureUITests: XCTestCase {
         reveal(status)
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "label == %@", value), object: status)
-        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 15), .completed, app.debugDescription)
+        // Unregister includes native notification/Spotlight completion. Run4
+        // reached deleted just after the old 15s deadline. Keep the same bounded
+        // 60s completion wait as the other normal management integration tests.
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 60), .completed, app.debugDescription)
     }
 }

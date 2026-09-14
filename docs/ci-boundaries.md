@@ -133,6 +133,8 @@ fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generat
 
 通常実装を変えず、生成host/Records UIや試験準備だけを直す場合は`generated_validation_only=true`で再検証する。`feature_validation=true`、`simulator_tests=true`、通常UI filter空、focused=falseが必須。通常job、Feature build requirements、Notes単独UIを省略し、生成hostの作成/Release build、指定した生成host UI、Records build/UIは実行する。省略対象の成功run/sourceと差分の再利用理由を検証記録へ残す。未成功・変更済み対象を省略する用途には使わない。nativeオプションは独立jobとして同じrunで実行できる。
 
+`records_validation`は既定trueでRecords単独build/UIを含む。成功済みのRecords実装・試験が変更されていない再検証では、証拠のrun/sourceを記録してfalseにできる。P1-B run34806399426のRecords成功以後のUI fixture修正に使用する。通常のFeature全体検証では既定trueを維持する。
+
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
 
 P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの新しい経路の初回実動はP1-B統合CIで検証する。

@@ -14,8 +14,8 @@
   "dependencies": {
     "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
   },
-  "planned_ci_runs": 4,
-  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added.",
+  "planned_ci_runs": 5,
+  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged.",
   "jobs": [
     {
       "id": "generated",
@@ -27,8 +27,8 @@
         "P1-5.http",
         "P1-6.storage"
       ],
-      "command": "generated_validation_only: regenerate/build host and run all 10 selected P1/P0 UI methods plus Records build/UI. Reuse run2 Feature requirements and standalone Notes successes; their implementations/targets are unchanged. Native notification action/text remains unproven.",
-      "expected_minutes": 28,
+      "command": "generated_validation_only + records_validation=false: regenerate/build normal diagnostic host, compile shared UI positioning helper, execute all 10 P1/P0 selectors. Reuse unchanged Records from run4, normal/requirements/Notes from run2, native Web authentication from run3.",
+      "expected_minutes": 30,
       "timeout_minutes": 45
     },
     {
@@ -65,7 +65,7 @@
       "id": "34806399426/attempt-1",
       "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34806399426",
-      "conclusion": "queued"
+      "conclusion": "failure"
     }
   ],
   "evidence": [
@@ -238,6 +238,16 @@
       "observation": "All five actual AuthenticationServices UI methods passed: direct and JibunKit callback, both OS cancellation paths, and A/B owner-specific callbacks. Durations 21.632, 88.266, 21.114, 19.417, 36.737 seconds respectively. Device validation is not implied.",
       "review": "Downloaded native diagnostics; compared all five method pass markers with WebAuthentication-tests.json, retained xcresult. No status-only acceptance or retry-inside-test success substitution.",
       "reuse_reason": "Run4 changes only P1WebUITests setup isolation and Records attachment test navigation. Native authentication fixture, coordinator, wrappers, callback ownership and product sources are unchanged."
+    },
+    {
+      "criterion": "P0-1.integration",
+      "kind": "simulator",
+      "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34806399426/job/103859014780",
+      "observation": "Both normal-host lifetime methods pass: selection/shutdown/failure/retry with B preservation (36.230s), and startup failure/retry with the other Feature continuing (14.474s).",
+      "review": "Read both individual pass markers and suite result from the generated host full log.",
+      "reuse_reason": "Only other UI suites/fixture visibility helper and CI selection changed since this run; Core and P0A probe/test sources are unchanged. The same two methods are also kept in run5 as cheap integrated regression."
     }
   ],
   "deferred_device": {
@@ -253,7 +263,7 @@
   "metrics": {
     "review_rounds": 2,
     "parent_messages": 4,
-    "ci_job_minutes": 114.94
+    "ci_job_minutes": 143.59
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -290,7 +300,8 @@
     "focused_ui_validation": false,
     "web_authentication_validation": false,
     "feature_ui_test_filter": "MigrationUITests/P1HTTPUITests/testRealHTTPPersistenceFailuresDrainLogoutRemovalAndOtherOwnerRetention,MigrationUITests/P1WebUITests/testRealPageStorageSurvivesRestartAndRemovingAOnlyPreservesB,MigrationUITests/P1WebUITests/testExplicitHeldWriterCancelsWithoutCommittingAndBRemainsUsable,MigrationUITests/P1WebUITests/testManagementDrainsHeldWriterBeforeDeletingAAndPreservesB,MigrationUITests/P1WebUITests/testDisableRejectsDeepLinkWhileBRemainsUsable,MigrationUITests/P1NotificationsUITests/testNativeAttachmentFailureCancellationAndManagementPreserveOtherOwner,MigrationUITests/P1NotificationsUITests/testForegroundDeliveryConsultsOnlyItsNormalDefinition,MigrationUITests/P0ALifetimeUITests/testNormalHostSelectionShutdownFailureAndRetryPreserveOtherOwner,MigrationUITests/P0ALifetimeUITests/testStartupFailureShowsRetryAndKeepsOtherFeatureRunning,MigrationUITests/P0BManagementFailureUITests/testUnregisterFailurePreservesDataThenRetryRemovesAndReregistersWithoutChangingCounter",
-    "generated_validation_only": true
+    "generated_validation_only": true,
+    "records_validation": false
   },
   "pending_acceptance": [
     "Notification action/text input and delivered-other-owner preservation require actual OS evidence beyond the two automated notification tests.",
@@ -304,10 +315,11 @@
       "normal 270 shared tests (2 skipped), package tests, IPA, 13 normal UI, Files UI",
       "Feature build requirement checks",
       "Notes standalone UI",
-      "run34805047488 native Web authentication five UI methods"
+      "run34805047488 native Web authentication five UI methods",
+      "run34806399426 Records attachment import/persistence/delete105.990s and edit/persistence71.428s; its Release build also passed"
     ],
-    "invalidation_review": "No product/target/generation/Notes changes since the passed run. Records UI and native Web UI are changed and rerun. HTTP bootstrap and runner environment changed and are exercised by the generated host. UI host compile and all 10 P1/P0 integration methods rerun. Run4 only changes two UI test sources; native Web authentication from run3 is unchanged and reused. UI preparation now runs directly from MainActor test methods, like the HTTP/notification suites.",
-    "estimate": "Run3 generated lane 17.60 min, including a 2.17 min failed host compilation and Records failure. All 10 host UI methods remain unmeasured; allow about 10 added minutes, for roughly 28 min, timeout45. If actual UI exceeds the estimate, split independent jobs within the next aggregate boundary.",
+    "invalidation_review": "No product/target/generation/Notes changes since the passed run. Records UI and native Web UI are changed and rerun. HTTP bootstrap and runner environment changed and are exercised by the generated host. UI host compile and all 10 P1/P0 integration methods rerun. Run4 only changes two UI test sources; native Web authentication from run3 is unchanged and reused. UI preparation now runs directly from MainActor test methods, like the HTTP/notification suites. Run5 modifies only test UI positioning, host fixture copy tooling and CI selection. Records implementation/UI, native Web auth, normal app/Core remain unchanged. All P1 tests receive the new helper, so even the three passed Web methods rerun.",
+    "estimate": "Run4 generated lane28.65min; all10 UI took9.84min inside the host step. Reuse Records build/UI to save about5min; allow remaining HTTP/notification/Web scenarios beyond the failed taps to bring the next lane to about30min (unmeasured remaining paths), timeout45. If exceeded, revise parallel job allocation before repeating the full lane; do not silently reuse the old27min estimate.",
     "normal_actual_minutes": 33.82,
     "ipa_sha256": "15cad6ebff7d66b53fdd192f88d3b59561f61dd6fb4d72fb9fddd37a0bc7c0f2",
     "ipa_bytes": 2226509

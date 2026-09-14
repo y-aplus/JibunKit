@@ -1,4 +1,4 @@
-# 公開版とmainの現在状態
+# 公開版・main・開発branchの現在状態
 
 更新日: 2026-09-14。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
 
@@ -71,3 +71,9 @@ Control/継続表示、任意SDKや外部identity等に未実装・未検証が�
 source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3件、通常UI13件、Files復元1件、Records UI2件が成功した。run全体は45分上限によるcancelledで、成功と書き換えない。テストとartifact公開は終了しており、チェックrunの時間超過annotationと個別結果を照合して採用した。native Intents8件・Widget7件と元のP0/接続証拠はsource差分を確認して再利用する。[P1-A記録](verification/2026-09-13-p1-a.md)。
 
 通常IPAはCounter/Reminderに加えて汎用Share Extensionを埋め込む。P1の検証用A/B Feature、Records、ローカルZaikoを出荷Featureとして自動追加しない。共有を受け取る独自Featureにはincomingの登録が必要。現在の公開IPAは0.7.0のままで、ここに記載したmainの追加を公開版の保証と混同しない。
+
+## P1-B開発branch（main未統合、0.8未完成）
+
+`codex/p1-b-notifications`で通知添付の寿命管理、停止後logout、通常HTTP/Webの二Feature接続を実装・検証した。端末内HTTP/認証fixtureは実装済みで、PCサーバー不要の診断IPAを生成済み。HTTP/通知・通信fixtureはrun34816553410、Web保存/取消/drainは34819734774、無効化/認証と直接Spotlight比較は34823801940で成功。通常回帰は34802338245から影響差分を照合して再利用する。各run全体の失敗/取消と成功したmethodを分けて[P1-B記録](verification/2026-09-14-p1-b.md)へ残す。
+
+最初のSpotlight解除は今回も完了表示まで約63秒かかった。以前の120秒超過は再現しなかったが原因未確定で、実機の初回無効化を含む一括確認が必要。P1全体の実機、0.8文書/出荷gateと1.0境界判断は未完了。確認用IPAの表示0.7.0/build8は正式0.8候補への版上げではなく、source入りファイル名とdigestで識別する。

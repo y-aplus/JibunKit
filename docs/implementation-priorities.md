@@ -15,28 +15,16 @@
 | v1.0.0 | P2/P3需要調査後に対応範囲と合格条件をユーザーが決定 |
 
 patch版は機能追加・検証の進捗にも使う。commitごとの公開は不要。小さなCI成功だけでminorを進めない。
+実機確認した成果のまとまりごとに版を一つ進める（2026-09-14ユーザー指示）。到達条件に応じてminor/patchを選び、確認後の版変更・出荷検証は[公開手順](releasing.md)に従う。
 0.8.0を自動的に1.0へ改名しない。既存tag/公開assetは変更しない。P2/P3を技術的不能や永久対象外へ読み替えない。
 
-## 補完単位（すべて未完了）
+## 補完単位（P0完了、P1は実機条件等が残る）
 
 既存成果を再実装せず、下表の不足と通常利用への接続を閉じる。各合格条件の具体的な操作列・証拠種別はplan.jsonに記載。
 P0-3は既存資産を使いJSON/添付とnative SQLiteを最初の対象方式とする。製品にそのDBだけを強制する意味ではない。
 P0-5はユーザー回答により**アプリ内UIが0.7.0の必須条件**。無効化・再有効化・登録/所有データ削除を扱い、IPA内のコード除去は再ビルドで行う。
 
-| 単位 / 親D | 現在使える成果 | 残る実装・確認 | 後段へ残す範囲 |
-| --- | --- | --- | --- |
-| P0-1 寿命と所有処理の終了（D01・D02） | 通常Definitionの開始/終了/再試行、非選択との分離、終了時B保持をP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 高度な複数window/実行instance |
-| P0-2 通常の画面・提示（D04） | Feature別経路に加え、sheet/UIKit提示の所有・終了・外部遷移をP0-B CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 任意View可視状態/高度な複数window |
-| P0-3 保存・復元・移行・リセット（D06・D07） | RecordsのJSON/添付とnative SQLiteを通常操作予約・停止復帰・移行/resetへ接続しP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 全DB/別process writer |
-| P0-4 追加・ビルド・更新（D20・D29） | native依存診断6ケース、実Registry復旧、単独/host、iOSのAだけの更新/B保存・資源保持を34705653297で確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 万能生成器/任意SDK複数version |
-| P0-5 同意・無効化・削除（D19・D31） | 通常管理UIへ目的/拒否、停止、登録解除、所有データ削除、取消/失敗再試行を接続しP0-B CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | 同一processの強制隔離/コード動的除去 |
-| P0-6 基本障害緩和と局所処理（D03・D32） | 終了進捗診断と局所処理の判断基準をP0-A CIで確認 | 完了。CI/実機の証拠は[P0-C記録](verification/2026-09-12-p0-c.md)を参照 | helper/非協調処理の強制隔離 |
-| P1-1 Shortcuts実利用（D27） | metadata/Shortcut式/entity/query識別子と直接実行 | OS上の発見・候補・引数・戻り値・取消を二Featureで確認 | Control等の高度な接続 |
-| P1-2 静的Widget通常接続（D26） | Package Widget/gallery/home描画とApp Group比較 | 通常接続・出荷構成へ反映、片側更新/削除後の他方維持 | 設定可能/操作可能Widget・Control/任意extension |
-| P1-3 URL・外部ファイル・Share入口（D12・D26） | URL resolver/曖昧一致拒否/scene接続 | security-scoped URLの寿命、汎用Share Extensionの受信先選択と保存/終了契約 | 任意extension自動統合/実Universal Link一般化 |
-| P1-4 実用ローカル通知（D13） | category/action/request/foreground/限定取消 | foreground共存・添付寿命・削除/失敗を通常経路へ接続 | APNs/全通知配送条件 |
-| P1-5 資格情報とHTTP（D08・D09） | Keychain・Cookie/credential/cache・logout/Runtime | 実Featureに接続し通常ログインの保持/失敗/取消を確認 | 非パスワード資格情報/専門的認証 |
-| P1-6 WebViewとWeb認証（D10・D11） | 永続profileとnative認証取消/返却先 | 通常の保存/再起動/片側削除/認証取消を実Featureへ接続 | 全Webデータ/全SSO/複数OS scene |
+P0の6単位は0.7.0で完了、P1の6単位は通常接続・自動試験の成果があり実機条件等が残る。各単位の`existing`、`remaining`、`criteria`は[plan.json](delivery/plan.json)を正本とする。ここへ進捗表を重複掲載せず、公開版/main/開発branchの区分は[status](status.md)、D全体の残件は[台帳](coexistence-ledger.md)を参照する。
 
 ## CI境界を先に固定する
 

@@ -1,13 +1,13 @@
 {
   "schema": 1,
   "wave": "P1-B",
-  "source": "d6b6d265602b3b066a9fc8e3ad435134bc81e964",
+  "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
   "contract": {
     "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
     "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
     "ownership": "Two separate HTTP/Web Codex worktrees, initially Sol low, capacity recovery Terra low; one aggregate review per lane; parent owns Core and integration. No child CI.",
     "failure_cases": "Pending attachment failure/cancel/drain; HTTP distinct precommit candidates, native request cancellation/logout; Web precommit failure/held writer; stopped cleanup cancellation and management; B preservation.",
-    "normal_entrypoints": "Run11 complete P1 host Web disable/auth plus direct/native Spotlight comparison; Web3 from run9 and HTTP/notification3/native7/candidate IPA from run8 reused; P0 three methods from run7.",
+    "normal_entrypoints": "Completed: run11 Web disable/auth/direct comparison3, run9 Web storage/cancel/drain3, run8 HTTP/notification3/native7 and IPA, run7 P0 three methods. Physical acceptance and minor release remain open.",
     "invalidation": "Core lifetime and management changed: rerun shared unit suite, P0 lifetime2, management failure1, normal management UI; unchanged native Intent metadata/Widget and other P0 paths reused with scoped review.",
     "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI. Run1: fixed MainActor hops in test/removal and explicit Void continuation types. Native auth 4/5 passed; initial wrapper page missing, cold-page wait and late Continue handling plus failure attachments added; cause remains unproven until run2. Device worker returned one consolidated review; parent found remaining send-before-cancel, ineffective deadline, idle waiter reclamation and stopped-logout endpoint loss, fixed locally and expanded real TCP/URLSession tests before CI."
   },
@@ -98,6 +98,12 @@
       "id": "34822983863/attempt-1",
       "source": "a8c91188e2ff0f14764ff39af4b6348e92b7920e",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34822983863",
+      "conclusion": "success"
+    },
+    {
+      "id": "34823801940/attempt-1",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940",
       "conclusion": "success"
     }
   ],
@@ -265,12 +271,11 @@
     {
       "criterion": "P1-6.auth",
       "kind": "simulator",
-      "source": "02af62cd56179e1646ce655f4c16edf5c5e6d48a",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
       "result": "passed",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34805047488/job/103855183900",
-      "observation": "All five actual AuthenticationServices UI methods passed: direct and JibunKit callback, both OS cancellation paths, and A/B owner-specific callbacks. Durations 21.632, 88.266, 21.114, 19.417, 36.737 seconds respectively. Device validation is not implied.",
-      "review": "Downloaded native diagnostics; compared all five method pass markers with WebAuthentication-tests.json, retained xcresult. No status-only acceptance or retry-inside-test success substitution.",
-      "reuse_reason": "Run4 changes only P1WebUITests setup isolation and Records attachment test navigation. Native authentication fixture, coordinator, wrappers, callback ownership and product sources are unchanged."
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940/job/103911167894; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
+      "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run."
     },
     {
       "criterion": "P0-1.integration",
@@ -305,12 +310,12 @@
     {
       "criterion": "P1-6.storage",
       "kind": "simulator",
-      "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
       "result": "passed",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34808525786/job/103865067199",
-      "observation": "All four real WebKit normal-host UI methods passed707.676s total: cookie/localStorage/IndexedDB persistence across process recreation, precommit failure preservation, held writer cancellation, management drain/deletion/B preservation and disabled route rejection.",
-      "review": "Parent checked all10 method pass markers, test-suite0 failures, TEST SUCCEEDED, all10 selector validators and downloaded template-host.log/xcresult artifact10334184131. The job exceeded45m and is recorded cancelled; this is method-level evidence, not a successful run claim.",
-      "reuse_reason": "Historical baseline only for the changed device candidate: all affected integration selectors are rerun in run6; do not interpret these earlier passes as validation of the new embedded server."
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774/job/103898309278; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Actual embedded-loopback WKWebView storage/restart/removal219.107s, held-writer cancellation136.873s and management drain/removal152.546s passed. Separate disable205.202s passed on0a3fb21/run34823801940. Other owner preserved.",
+      "review": "Individual pass lines and assertions checked. The failed run9 disable is retained; run11 first disable passed without prewarming and auth succeeded. Native cleanup delay remains unexplained, physical check planned.",
+      "reuse_reason": "From b62a2e6 to current, Web app/data/lifetime/removal implementation unchanged; changes are setup recovery, extra comparison test/probe and DEBUG-only Registry tracing. This is method-specific storage evidence, not device or latency guarantee."
     }
   ],
   "deferred_device": {
@@ -326,7 +331,7 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 6,
-    "ci_job_minutes": 353.49
+    "ci_job_minutes": 374.01
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -417,7 +422,7 @@
     "seconds": 1.041,
     "review": "Downloaded tests.json/log: all seven individual methods passed, zero failures; includes exact fixed8766 default configuration.",
     "limits": "Fixture-only real TCP/URLSession evidence, not complete P1 HTTP/Web normal-host acceptance or physical-device evidence.",
-    "reuse_reason": "Run9 changes Web UI setup and CI job selection only. Fixture/Swift/tests/Project/native runner unchanged.",
+    "reuse_reason": "Fixture/Swift/tests/Project/native runner unchanged since6beb877 through0a3fb21.",
     "valid_for_current_candidate": true
   },
   "candidate_ipa": {
@@ -428,7 +433,7 @@
     "zip_entries": 67,
     "crc": "all entries passed",
     "review": "Downloaded IPA digest matches CI packaging log; deep strict ad-hoc signature check and bundle/version assertions passed. Not yet publicly distributed or physically verified.",
-    "reuse_reason": "No application/Feature/fixture/Project/packaging source change in run9; only UI tests and CI scheduling differ."
+    "reuse_reason": "6beb877 to0a3fb21: production Sources diff is DEBUG-only Registry traces; no Release functional change. P1 Web/HTTP/notifications/device fixture and Project unchanged. UI test setup/selectors and a separate Spotlight comparison probe changed; that extra probe button is absent from existing candidate. Reuse the observed functional paths, not byte identity across sources."
   },
   "planned_device_checks": [
     {
@@ -441,9 +446,9 @@
   "spotlight_diagnosis": {
     "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
     "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774/job/103898309278",
-    "result": "unresolved",
+    "result": "retest-passed-cause-unresolved",
     "observation": "08:03:19.206 pending request; .212 pending0 returned; .245 delivered0 returned; .486 installed4 categories; .490 Core Spotlight deleteSearchableItemsWithDomainIdentifiers called; .493 IndexAgent XPC connection started. At08:05:29 management remained unregistering. Web3 methods passed; disable245.850s and auth154.268s failed. Later authentication failure was missing enable action while persisted disabling; not an authentication API result.",
-    "next": "Native independent app passed. Trace actual host and compare native/namespaced calls there, preserving first-disable order. The cause remains unresolved."
+    "next": "Run11 first disable passed; native delete call08:53:15.566 and disabled accessibility state08:54:18.552 (~63s). Direct/native host comparison and auth also passed. Earlier >120s stall not explained; physical check must time first disable. Do not claim a product fix or universal Simulator-only cause."
   },
   "spotlight_native_evidence": {
     "source": "a8c91188e2ff0f14764ff39af4b6348e92b7920e",
@@ -460,5 +465,16 @@
       "native-populated-delete": 3.929011
     },
     "review": "Downloaded native tests.log/xcresult artifact. One named test passed; every callback error=nil and every bounded wait completed. This is an independent native app; not proof that complete JibunKit host management or physical devices work."
+  },
+  "host_spotlight_evidence": {
+    "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+    "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940/job/103911167894",
+    "result": "passed",
+    "methods": {
+      "testDisableRejectsDeepLinkWhileBRemainsUsable": 205.202,
+      "testEmbeddedAuthenticationReturnsToEachOwnerAndOSCancelPreservesA": 128.63,
+      "testNativeSpotlightDeletionWithoutManagement": 13.294
+    },
+    "review": "Downloaded UI artifact/template-host.log and Simulator text log. Every selected test passed. Native delete08:53:15.566 to first observed disabled label08:54:18.552=62.986s (observation interval, not precise API callback duration). Added stdout traces were not present in exported logs; no trace-based duration claimed. Direct host calls recorded08:57:45.154 and08:57:46.907. No unregister bypass, wait increase or Spotlight prewarm before first disable."
   }
 }

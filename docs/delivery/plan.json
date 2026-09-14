@@ -309,8 +309,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "実用ローカル通知",
-      "existing": "通常Definitionで添付原本/OS添付・取消・管理削除・B保持とforegroundの2 UI試験が成功（34808525786、runは全試験後timeout）",
-      "remaining": "OS通知カードのaction/文字入力、配信済みB通知の保持を0.8候補で確認",
+      "existing": "通知添付のコピー/寿命/取消/故障と通常hostのforeground・添付/解除/B保持を34802338245/34816553410で確認",
+      "remaining": "一括実機でOSカードの記録/文字入力、foreground表示と配信済みB保持を確認",
       "deferred": "APNs/全通知配送条件",
       "criteria": [
         {
@@ -340,8 +340,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "資格情報とHTTP",
-      "existing": "通常HTTPの認証/Cookie/cache・再起動・故障保持・取消・停止後logout・管理削除・B保持を実URLSessionで確認（34808525786）",
-      "remaining": "PC不要の診断用HTTP経路を用意し、0.8実機の再起動/上書き/署名更新とlogoutを一括確認",
+      "existing": "実URLSessionの認証/Cookie/cache・保持/故障/取消/停止後logout/管理削除/B保持を34816553410で確認。端末内HTTP fixtureも実通信7試験成功",
+      "remaining": "一括実機で再起動/上書き/署名更新後のCookie・資格情報保持と片側logoutを確認",
       "deferred": "非パスワード資格情報/専門的認証",
       "criteria": [
         {
@@ -371,8 +371,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "WebViewとWeb認証",
-      "existing": "通常Web保存/再起動/故障/取消/管理削除の4 UIとnative認証5 UIが成功（34808525786/34805047488）",
-      "remaining": "0.8実機候補へPC不要の診断用認証endpointを接続し、候補の確認手順/文書監査を完了",
+      "existing": "端末内fixtureへ接続済み。通常Web保存/取消/drainは34819734774、無効化/認証とhost直接比較は34823801940で成功",
+      "remaining": "一括実機で保存/認証/片側削除/B保持と初回無効化の所要時間を確認。SimulatorのSpotlight応答待ち超過は再検証成功でも原因未確定",
       "deferred": "全Webデータ/全SSO/複数OS scene",
       "criteria": [
         {

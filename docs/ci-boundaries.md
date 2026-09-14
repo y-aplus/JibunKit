@@ -90,6 +90,16 @@ P0-C/P1-BのCI確認後、minor出荷gateを通すには全条件を閉じ、延
 
 CIの完了待ちはOS側の監視とqueue通知へ任せ、モデルpollや`gh run watch --interval`を使わない。
 
+### P1の端末単体診断候補
+
+`p1_device_validation=true`はP1-A/P1-Bの診断Featureを同じRegistryへ組み込み、端末内HTTPを選び、network jobで診断IPAを生成する。`generated_validation_only=true`、`split_generated_ui=true`、`simulator_tests=true`、`feature_validation=true`、`records_validation=false`と、HTTP/通知/Webを含む明示的method一覧が必要。Recordsを省略する場合は既存成功sourceからの差分を記録する。
+
+二jobは同じ全Feature構成をbuildし、`split-generated-ui.py`が実行methodだけを分ける。HTTP+通知はnetwork、残りはweb-management。少なくとも一つの未実行/変更後の条件を検証するために起動し、run表示を緑にするだけの再実行はしない。
+
+専用端末HTTP XCTestは`p1_device_http_validation`のdefault=trueで実行する。fixture Swift・XCTest・専用Project・runnerに変更がなく、既存runの個別passとartifactを照合したときだけfalseで再利用できる。診断IPA生成を無効化する入力ではない。fixture試験成功を通常host UIや実機の成功へ拡大しない。
+
+macOS標準Bashの`set -u`では空配列の展開も失敗し得るため、optionalなコマンドprefixは非空の`env`を既定とする。引数・環境変数・終了コードの受渡しは`test_workflow_command_prefix.py`で検証する。ローカルBashでの検査とmacOS CIの結果は分けて記録する。
+
 ## マイナー版の文書・出荷gate
 
 各minorで現在状態を示す文章を全件読み直し、機能、制約、未対応、手順、公開版/main、証拠sourceを同期する。

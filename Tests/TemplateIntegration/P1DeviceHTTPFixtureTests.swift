@@ -5,6 +5,18 @@ import XCTest
 
 @MainActor
 final class P1DeviceHTTPFixtureTests: XCTestCase {
+    func testDiagnosticDefaultBindsItsFixedLoopbackPort() async throws {
+        // Exercise the exact candidate configuration, not only ephemeral ports.
+        let server = P1DeviceHTTPFixture()
+        defer { server.stop() }
+        let base = try await server.start()
+        XCTAssertEqual(base.host, "127.0.0.1")
+        XCTAssertEqual(base.port, 8766)
+        let response = try await request(base, "complete")
+        XCTAssertEqual(response.statusCode, 200)
+        XCTAssertEqual(response.value(forHTTPHeaderField: "Content-Type"), "text/html; charset=utf-8")
+    }
+
     func testConcurrentStartupAndRealCacheAndHTMLResponses() async throws {
         let server = P1DeviceHTTPFixture(port: 0)
         defer { server.stop() }

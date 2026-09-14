@@ -46,12 +46,16 @@ enum P1UIVisibility {
             return false
         }
         if position() { return }
-        for _ in 0..<10 {
-            list.swipeDown()
+        // A newly presented management sheet is at the top. Searching downward
+        // first can dismiss the sheet before SwiftUI materializes a later row.
+        for _ in 0..<24 {
+            guard list.exists else { break }
+            list.swipeUp()
             if position() { return }
         }
         for _ in 0..<24 {
-            list.swipeUp()
+            guard list.exists else { break }
+            list.swipeDown()
             if position() { return }
         }
         XCTFail("Could not fully reveal \(element.debugDescription)\n\(app.debugDescription)")

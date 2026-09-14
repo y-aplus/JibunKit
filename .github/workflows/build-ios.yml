@@ -494,7 +494,7 @@ jobs:
           if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BPresentationUITests', 'P0COnboardingUITests')):
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationProbe.swift', 'Sources/JibunKit/P0BPresentationProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0BPresentationUITests.swift', 'UITests/P0BPresentationUITests.swift')
-          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')) or os.environ['P1_DEVICE_VALIDATION'] == 'true':
               shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureProbe.swift', 'Sources/JibunKit/P0BManagementFailureProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/P0BManagementFailureUITests.swift', 'UITests/P0BManagementFailureUITests.swift')
           shutil.copyfile('Tests/TemplateIntegration/P0ARecordsProbe.swift', 'Sources/JibunKit/P0ARecordsProbe.swift')
@@ -632,7 +632,7 @@ jobs:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P1IncomingProbe.definitions[0],\n        P1IncomingProbe.definitions[1],'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingOwnershipProbe.definition,'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        NowPlayingPlayableProbe.definition,'))
-          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')):
+          if any(name in os.environ.get('FEATURE_UI_TEST_FILTER', '') for name in ('P0BManagementFailureUITests', 'P0COnboardingUITests')) or os.environ['P1_DEVICE_VALIDATION'] == 'true':
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0BManagementFailureProbe.definition,'))
           # Keep the focused presentation pair visible in both the launcher and
           # switch menu while retaining every other coexistence registration.

@@ -46,7 +46,9 @@ final class P1DeviceHTTPFixture {
         let parameters = NWParameters.tcp
         let port = NWEndpoint.Port(rawValue: port)!
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(IPv4Address("127.0.0.1")!), port: port)
-        let listener = try NWListener(using: parameters, on: port)
+        // The endpoint already specifies both address and port. Passing a fixed
+        // `on:` port as well selects the incompatible create-with-port path.
+        let listener = try NWListener(using: parameters)
         self.listener = listener
         listener.newConnectionHandler = { [weak self, weak listener] network in
             Task { @MainActor in

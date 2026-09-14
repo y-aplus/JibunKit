@@ -432,8 +432,9 @@
     "bytes": 2972156,
     "zip_entries": 67,
     "crc": "all entries passed",
-    "review": "Downloaded IPA digest matches CI packaging log; deep strict ad-hoc signature check and bundle/version assertions passed. Not yet publicly distributed or physically verified.",
-    "reuse_reason": "6beb877 to0a3fb21: production Sources diff is DEBUG-only Registry traces; no Release functional change. P1 Web/HTTP/notifications/device fixture and Project unchanged. UI test setup/selectors and a separate Spotlight comparison probe changed; that extra probe button is absent from existing candidate. Reuse the observed functional paths, not byte identity across sources."
+    "review": "CI signature/bundle assertions and downloaded IPA CRC checked. Diagnostic prerelease published; unauthenticated public IPA/ZIP byte match and GitHub digest verified. Physical acceptance pending. See2026-09-14-p1-device-assets.json.",
+    "reuse_reason": "6beb877 to0a3fb21: production Sources diff is DEBUG-only Registry traces; no Release functional change. P1 Web/HTTP/notifications/device fixture and Project unchanged. UI test setup/selectors and a separate Spotlight comparison probe changed; that extra probe button is absent from existing candidate. Reuse the observed functional paths, not byte identity across sources.",
+    "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260914/JibunKit-P1-check-6beb877.ipa"
   },
   "planned_device_checks": [
     {

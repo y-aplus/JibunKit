@@ -77,3 +77,5 @@ source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3�
 `codex/p1-b-notifications`で通知添付の寿命管理、停止後logout、通常HTTP/Webの二Feature接続を実装・検証した。端末内HTTP/認証fixtureは実装済みで、PCサーバー不要の診断IPAを生成済み。HTTP/通知・通信fixtureはrun34816553410、Web保存/取消/drainは34819734774、無効化/認証と直接Spotlight比較は34823801940で成功。通常回帰は34802338245から影響差分を照合して再利用する。各run全体の失敗/取消と成功したmethodを分けて[P1-B記録](verification/2026-09-14-p1-b.md)へ残す。
 
 最初のSpotlight解除は今回も完了表示まで約63秒かかった。以前の120秒超過は再現しなかったが原因未確定で、実機の初回無効化を含む一括確認が必要。P1全体の実機、0.8文書/出荷gateと1.0境界判断は未完了。確認用IPAの表示0.7.0/build8は正式0.8候補への版上げではなく、source入りファイル名とdigestで識別する。
+
+P1の[診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260914)を配布済み。診断6beb877/通常8b5b8b8のIPAとZIPを公開再取得で照合し、一括実機結果待ち。正式0.8公開ではない。

@@ -1,0 +1,39 @@
+{
+  "release": "https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260914",
+  "tag_source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+  "status": "diagnostic prerelease, physical checks pending; stable remains0.7.0",
+  "assets": [
+    {
+      "file": "JibunKit-P1-check-6beb877.ipa",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "bytes": 2972156,
+      "sha256": "b815cb203cb356f31943ddb98fb931180c84bc8acf6c3c9a2960be65a430ecd3",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260914/JibunKit-P1-check-6beb877.ipa",
+      "public_download": "unauthenticated byte match and ZIP CRC passed"
+    },
+    {
+      "file": "JibunKit-P1-check-6beb877.zip",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "bytes": 2932834,
+      "sha256": "18293389d0ec5f4e78652afe8dc1b808485559e75473fa8886d1e2cd9de9a908",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260914/JibunKit-P1-check-6beb877.zip",
+      "public_download": "unauthenticated byte match and ZIP CRC passed"
+    },
+    {
+      "file": "JibunKit-normal-8b5b8b8.ipa",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "bytes": 2226509,
+      "sha256": "15cad6ebff7d66b53fdd192f88d3b59561f61dd6fb4d72fb9fddd37a0bc7c0f2",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260914/JibunKit-normal-8b5b8b8.ipa",
+      "public_download": "unauthenticated byte match and ZIP CRC passed"
+    },
+    {
+      "file": "JibunKit-normal-8b5b8b8.zip",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "bytes": 2200648,
+      "sha256": "395756ce1845205f6cf7e118f5f9e07e154c3d014df7d24951cb19d1680a9612",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260914/JibunKit-normal-8b5b8b8.zip",
+      "public_download": "unauthenticated byte match and ZIP CRC passed"
+    }
+  ]
+}

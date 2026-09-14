@@ -127,9 +127,12 @@ python Tools/check-delivery.py --report .git/P0-C.json --stage release --release
 履歴・過去release notes・日付付き実験結果は現在状態へ改変せず、訂正が必要なら注記する。
 新たに別の場所へ現在文書を追加した場合は`current_docs`の探索範囲も更新する。
 
-`documents`に各path、`outcome`（updatedまたはreviewed-unchanged）、確認理由`reason`、確認済み内容の`sha256`を入れる。
-hashだけを自動入力して読了扱いにしない。追記なしでも既に正しい文章は理由付きで維持できる。
-文書編集後に古いhashの確認記録は失効する。改行を含む実ファイルのhashなので、実際の候補checkoutで確認する。
+2026-09-14のユーザー承認により、文書ごとの理由・SHA-256の重複記録を廃止する。全件の読了確認は維持する。
+`documents`に各`path`、`outcome`（updatedまたはreviewed-unchanged）を入れる。
+`document_review`には`source`（確認した40桁Git commit）、`summary`（修正内容と更新・非更新の理由をまとめた説明）、`unresolved`（未解決事項の文字列一覧、なければ空配列）を記録する。理由は関係する文書群でまとめられ、各ファイルで繰り返す必要はない。未解決事項は出荷判断で扱い、現在状態の誤記を未解決欄に移すだけで出荷可とはしない。
+文書を読み直して必要な修正をcommitした後、そのcommitを確認記録へ書く。toolは全対象の一覧・結果と、確認commitに各文書が存在し現在の内容と一致することを検査する。文書編集後は変更箇所を再確認し、確認commitと一覧・まとめを更新する。記録自体は日付付き検証資料へ置けるため、commitの自己参照は不要。
+一覧やcommitを自動入力するだけでは読了扱いにしない。構造検査は内容の更新漏れを意味的に判定しない。日常の実装・検証結果の同期と、minor出荷時の全件レビューは両方必要である。
+0.7.0の個別理由/hashを含む過去記録は変更せず保持する。当時のgate再現には当時のcommitのtoolを使い、今後の出荷で旧形式へ自動的に後退する経路は設けない。IPA等の配布物digestや証拠の`reuse_reason`はこの廃止の対象外。
 `release`にはcandidate_ipa、normal_regression、generated_host、metadata、compatibility、physical_reviewの証拠参照を入れる。
 planの対象単位をcompleteにする前に証拠をレビューし、[公開手順](releasing.md)の候補/公開後の二段階で文章を同期する。
 0.8.0ではP0も維持している証拠が必要。1.0は需要調査後のユーザー決定とgate更新まで通らない。

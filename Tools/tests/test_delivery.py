@@ -1,5 +1,4 @@
 import copy
-import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -187,9 +186,29 @@ class DeliveryTests(unittest.TestCase):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text("current prose", encoding="utf-8")
-                report["documents"].append({"path": path, "outcome": "reviewed-unchanged", "reason": "still accurate",
-                    "sha256": hashlib.sha256(target.read_bytes()).hexdigest()})
+                report["documents"].append({"path": path, "outcome": "reviewed-unchanged"})
+            def git(*args):
+                return subprocess.run(["git", "-C", str(root), *args], check=True,
+                                      capture_output=True, text=True).stdout.strip()
+            git("init")
+            git("add", ".")
+            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                "-c", "commit.gpgsign=false", "commit", "-m", "Reviewed documents")
+            report["document_review"] = {"source": git("rev-parse", "HEAD"),
+                                         "summary": "All current prose read; no changes needed", "unresolved": []}
             delivery.validate_report(self.plan, report, "release", root, "0.7.0")
+            for field, value, error in [("source", "", "full reviewed commit"),
+                                        ("source", SHA, "commit unavailable"),
+                                        ("summary", "", "summary missing"),
+                                        ("unresolved", "", "must be a list")]:
+                bad = copy.deepcopy(report)
+                bad["document_review"][field] = value
+                with self.assertRaisesRegex(ValueError, error):
+                    delivery.validate_report(self.plan, bad, "release", root, "0.7.0")
+            old = copy.deepcopy(report)
+            del old["document_review"]
+            with self.assertRaisesRegex(ValueError, "full reviewed commit"):
+                delivery.validate_report(self.plan, old, "release", root, "0.7.0")
             (root / "README.md").write_text("changed", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "stale document"):
                 delivery.validate_report(self.plan, report, "release", root, "0.7.0")
@@ -198,6 +217,15 @@ class DeliveryTests(unittest.TestCase):
             (root / "docs/guides/new.md").write_text("new guide", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "missing document review"):
                 delivery.validate_report(self.plan, report, "release", root, "0.7.0")
+            report["documents"].append({"path": "docs/guides/new.md", "outcome": "updated"})
+            with self.assertRaisesRegex(ValueError, "absent from reviewed commit"):
+                delivery.validate_report(self.plan, report, "release", root, "0.7.0")
+            git("add", ".")
+            git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                "-c", "commit.gpgsign=false", "commit", "-m", "Review added guide")
+            report["document_review"]["source"] = git("rev-parse", "HEAD")
+            report["document_review"]["summary"] = "Added guide reviewed together with existing documents"
+            delivery.validate_report(self.plan, report, "release", root, "0.7.0")
 
 
 if __name__ == "__main__":

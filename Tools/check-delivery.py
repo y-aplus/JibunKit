@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Local preflight/evidence/document gate. Does not execute CI or judge evidence truth."""
 import argparse
-import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -88,18 +88,35 @@ def current_docs(root, version):
     return sorted(fixed)
 
 
-def validate_docs(records, root, version):
+def validate_docs(records, review, root, version):
+    require(isinstance(review, dict) and source(review.get("source")),
+            "document review requires a full reviewed commit")
+    require(nonempty(review.get("summary")), "document review summary missing")
+    require(isinstance(review.get("unresolved"), list) and
+            all(nonempty(item) for item in review["unresolved"]),
+            "document review unresolved issues must be a list (empty if none)")
     unique([r["path"] for r in records], "document review")
     by_path = {r["path"]: r for r in records}
-    for path in current_docs(root, version):
+    paths = current_docs(root, version)
+    for path in paths:
         require(path in by_path, f"missing document review: {path}")
         record = by_path[path]
         file = root / path
         require(file.is_file(), f"missing current document: {path}")
-        require(record["outcome"] in {"updated", "reviewed-unchanged"} and nonempty(record["reason"]),
+        require(record["outcome"] in {"updated", "reviewed-unchanged"},
                 f"incomplete document review: {path}")
-        require(record["sha256"] == hashlib.sha256(file.read_bytes()).hexdigest(),
-                f"stale document review: {path}")
+    # Git owns the snapshot; no duplicate per-file hashes in the review record.
+    # A checklist cannot prove semantic accuracy, which still requires reading.
+    commit = review["source"] + "^{commit}"
+    tree = subprocess.run(["git", "-C", str(root), "ls-tree", "-r", "-z", "--name-only", commit],
+                          capture_output=True, text=True, encoding="utf-8")
+    require(tree.returncode == 0, "document review commit unavailable")
+    tracked = set(tree.stdout.split("\0"))
+    for path in paths:
+        require(path in tracked, f"document absent from reviewed commit: {path}")
+    diff = subprocess.run(["git", "-C", str(root), "diff", "--quiet", "--no-ext-diff",
+                           commit, "--", *paths], capture_output=True)
+    require(diff.returncode == 0, "stale document review: current documents differ from reviewed commit")
 
 
 def validate_report(plan, report, stage, root=ROOT, version=None):
@@ -183,7 +200,7 @@ def validate_report(plan, report, stage, root=ROOT, version=None):
         require(not deferred, "release cannot defer device checks")
         require(all(nonempty(report["release"][k]) for k in ("candidate_ipa", "normal_regression",
                 "generated_host", "metadata", "compatibility", "physical_review")), "release evidence missing")
-        validate_docs(report["documents"], root, version)
+        validate_docs(report["documents"], report.get("document_review"), root, version)
     return f"{wid}: {stage} structure/coverage passed; evidence truth requires human review"
 
 
@@ -198,7 +215,8 @@ def template(plan, wid, sha):
             "planned_ci_runs": wave["ci_budget"], "budget_exception": "", "jobs": [], "runs": [],
             "evidence": [], "deferred_device": {c["id"]: units[u]["milestone"]
                 for u in wave["checks"] for c in units[u]["criteria"] if set(c["kinds"]) == {"device"}},
-            "documents": [], "release": {},
+            "documents": [], "document_review": {"source": "", "summary": "", "unresolved": []},
+            "release": {},
             "metrics": {"review_rounds": 0, "parent_messages": 0, "ci_job_minutes": 0},
             "acceptance": {c["id"]: c["description"] for u in wave["checks"] for c in units[u]["criteria"]}}
 

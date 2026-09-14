@@ -93,6 +93,12 @@
       "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34808525786",
       "conclusion": "cancelled"
+    },
+    {
+      "id": "34813362141/attempt-1",
+      "source": "2e0438e76a72228c09a9a17f1eabfb7522e672d7",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34813362141",
+      "conclusion": "in_progress"
     }
   ],
   "evidence": [

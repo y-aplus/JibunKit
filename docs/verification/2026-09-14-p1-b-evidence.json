@@ -87,6 +87,12 @@
       "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34816553410",
       "conclusion": "failure"
+    },
+    {
+      "id": "34819734774/attempt-1",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774",
+      "conclusion": "in_progress"
     }
   ],
   "evidence": [
@@ -417,5 +423,13 @@
     "crc": "all entries passed",
     "review": "Downloaded IPA digest matches CI packaging log; deep strict ad-hoc signature check and bundle/version assertions passed. Not yet publicly distributed or physically verified.",
     "reuse_reason": "No application/Feature/fixture/Project/packaging source change in run9; only UI tests and CI scheduling differ."
-  }
+  },
+  "planned_device_checks": [
+    {
+      "criterion": "P1-4.os",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "checkpoint": "0.8.0",
+      "procedure": "docs/verification/2026-09-14-0.8-device-check.md section3: actual OS notification cards, mark/reply text, foreground policy and retained delivered B after A cleanup; prior simulator foreground/attachment passes do not cover these remaining actions."
+    }
+  ]
 }

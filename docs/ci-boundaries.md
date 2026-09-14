@@ -67,6 +67,7 @@ run予算とjob上限が両立しない場合は根拠を記録してrun予算�
 ```
 
 古い証拠はsourceを変更せず、`reuse_reason`に候補までの差分と依存を確認して影響がないとした理由を記録する。
+Simulatorまたはdeviceのどちらでも証明できるOS条件を実機で確認する場合、`planned_device_checks`へcriterion、候補の40桁source、checkpoint、具体的procedureを記録する。これはpreflightの実施予定にだけ算入し、ci/release gateは実測のpassed evidenceがなければ通らない。CIだけで証明すべき条件の先送りには使えない。
 主張する操作の実行ログがないbuild成功、直接performの成功だけでOS Shortcuts成功、部分filterで全回帰成功とはしない。
 `runs`には全実行を`id`（run ID/attempt）、`url`、`source`、`conclusion`で残す。失敗・取消・再実行も数える。
 過去の失敗runを残してもよいが、現在の合格条件は全て成功証拠で閉じる。

@@ -63,8 +63,10 @@ Feature. A normal resume request waits until the cleanup completes. Cancellation
 also waits for actual completion; the operation determines whether cancellation
 occurred before or after its durable commit. Do not call start/stop, restore
 lifecycle, or another stopped operation on the same lifetime from the callback.
-This addition has source/tests in the candidate and awaits Swift/iOS validation;
-it is not part of the published 0.7.0 contract.
+This candidate addition passed shared Swift tests in run34802338245 and the
+normal-host HTTP/logout/management UI flow in run34808525786. It is not part
+of the published 0.7.0 contract. See the [P1-B evidence](../verification/2026-09-14-p1-b.md)
+for the cancelled job status, completed tests and remaining device checks.
 
 Persist only after a successful response. If validation or persistence fails,
 retain the prior durable snapshot and report failure. `MiniAppCookieStore.clear`

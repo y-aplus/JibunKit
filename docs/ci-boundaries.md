@@ -135,6 +135,10 @@ fail-fast=falseで兄弟jobを取消せず、生成jobのartifactには`-generat
 
 `records_validation`は既定trueでRecords単独build/UIを含む。成功済みのRecords実装・試験が変更されていない再検証では、証拠のrun/sourceを記録してfalseにできる。P1-B run34806399426のRecords成功以後のUI fixture修正に使用する。通常のFeature全体検証では既定trueを維持する。
 
+run34808525786では10 UIが全成功したが、試験自体33.03分、host step38.28分、準備/証拠出力込み46.53分となり45分上限でcancelledになった。次のP1統合では`split_generated_ui=true`、`generated_validation_only=true`、`records_validation=false`を指定する。一つのrun内でnetwork（HTTP+通知、実測15.40分）とweb-management（Web+P0、実測17.63分）の二jobへ分け、準備/証拠出力を含め約24/27分を見込む。job上限45分は延長しない。
+
+生成するhost/Registryは両jobで同一の全入力を使い、実行するmethodだけを`split-generated-ui.py`で分配する。分配は重複/欠落/空shardを拒否し、method単位を必須にする。artifactに`-generated-network`/`-generated-web-management`を付けて衝突を避ける。これで総runner時間には準備分の追加があるが、同じ長いjobのtimeout・再試行を避ける。完了通知はrun単位の一回で、子担当のCIは増やさない。分割の初実行は次の必要な診断候補変更と合わせ、表示だけをgreenにするための再実行はしない。
+
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
 
 P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの新しい経路の初回実動はP1-B統合CIで検証する。

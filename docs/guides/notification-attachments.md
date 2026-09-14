@@ -24,9 +24,9 @@ try await coordinator.withStoreAccess(for: context.id) {
 
 すでにOSへ渡した添付の削除は、[Appleの仕様](https://developer.apple.com/documentation/usernotifications/unnotificationattachment)どおり対応するpending/delivered requestを`UNUserNotificationCenter`から削除する。Featureの管理削除はまず所有処理を止め、ownerの通知を解除し、その後に準備コピーや業務データを削除する。OS添付URLをキャッシュの掃除対象に混ぜない。取得済み添付の[URLへのアクセス](https://developer.apple.com/documentation/usernotifications/unnotificationattachment/url)にはsecurity scopeが必要。
 
-Foundation試験では原本保持、nativeのmoveに相当する移動、登録失敗・取消・途中コピー失敗の掃除、A削除中のBコピー保持、取消要求後もoperation終了まではコピーを保つことを確認する予定。通常Definitionと実UNUserNotificationCenterの登録/配信/取消、foregroundとaction/text inputはP1-Bのhost fixtureへ接続し、別の受入条件として検証する。
+Foundation試験では原本保持、nativeのmoveに相当する移動、登録失敗・取消・途中コピー失敗の掃除、A削除中のBコピー保持、取消要求後もoperation終了まではコピーを保つことをrun34802338245で確認した。通常Definitionと実UNUserNotificationCenterの登録/配信/取消、foregroundもrun34808525786の2 UI methodで成功。action/text inputは別の受入条件として残る。[P1-B記録](../verification/2026-09-14-p1-b.md)を参照。
 
-## 0.8候補の通常接続（実行待ち）
+## 0.8候補の通常接続（自動試験成功・OS操作の確認が残る）
 
 `Tests/TemplateIntegration/P1NotificationsProbe.swift`は通知A/Bを通常Definitionとして登録する診断画面。`prepare-p1-b-host.py`が指定された検証hostにだけ接続し、通常IPAへ常設しない。OSから読み返したpending添付をsecurity scope内で開き、画像原本とbyte一致を確認する。登録完了、配信時のforeground callback、通知操作callbackは別欄に表示する。Aはforeground非表示、Bはbanner/list/sound。同じローカルrequest/category/action名を両方で使う。
 

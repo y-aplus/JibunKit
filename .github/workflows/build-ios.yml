@@ -23,6 +23,10 @@ on:
         description: Include Records standalone build and UI (disable only when reusing unchanged successful evidence)
         type: boolean
         default: true
+      split_generated_ui:
+        description: Split generated-only UI into network and web-management jobs (requires explicit methods and Records reuse)
+        type: boolean
+        default: false
       simulator_runtime:
         description: iOS simulator version (empty selects latest installed iOS 26)
         type: string
@@ -195,18 +199,20 @@ jobs:
 
   build:
     if: ${{ !inputs.package_sdk_aliases_only }}
-    name: Xcode 26.6 (${{ matrix.lane }})
+    name: Xcode 26.6 (${{ matrix.lane }}${{ matrix.ui_shard != 'all' && format('-{0}', matrix.ui_shard) || '' }})
     strategy:
       fail-fast: false
       matrix:
         # One completion boundary, independent normal and generated host jobs.
         # Focused and build-only calls retain the existing combined behavior.
-        lane: ${{ fromJSON(inputs.generated_validation_only && '["generated"]' || inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
+        lane: ${{ fromJSON((inputs.generated_validation_only || inputs.split_generated_ui) && '["generated"]' || inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && inputs.ui_test_filter == '' && '["normal","generated"]' || '["combined"]') }}
+        ui_shard: ${{ fromJSON(inputs.split_generated_ui && '["network","web-management"]' || '["all"]') }}
     runs-on: macos-26
     timeout-minutes: 45
     env:
       TUIST_VERSION: "4.207.0"
       TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
+      EVIDENCE_SUFFIX: ${{ matrix.lane == 'generated' && '-generated' || '' }}${{ matrix.ui_shard != 'all' && format('-{0}', matrix.ui_shard) || '' }}
 
     steps:
       - name: Check out source
@@ -223,6 +229,16 @@ jobs:
             echo "generated_validation_only requires feature_validation + simulator_tests, no focused/normal UI filter" >&2
             exit 1
           fi
+
+      - name: Validate split generated boundary
+        if: inputs.split_generated_ui
+        env:
+          VALID: ${{ inputs.generated_validation_only && inputs.feature_validation && inputs.simulator_tests && !inputs.focused_ui_validation && !inputs.records_validation && inputs.ui_test_filter == '' }}
+          FEATURE_FILTER: ${{ inputs.feature_ui_test_filter }}
+        run: |
+          test "$VALID" = true
+          python3 Tools/split-generated-ui.py --filter "$FEATURE_FILTER" --shard network
+          python3 Tools/split-generated-ui.py --filter "$FEATURE_FILTER" --shard web-management
 
       - name: Check publication boundary
         shell: bash
@@ -765,7 +781,7 @@ jobs:
         if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-ad-hoc${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: JibunKit-ad-hoc${{ env.EVIDENCE_SUFFIX }}
           path: artifacts/JibunKit.ipa
           if-no-files-found: error
           retention-days: 7
@@ -878,9 +894,13 @@ jobs:
         if: inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
         env:
           FEATURE_UI_TEST_FILTER: ${{ inputs.feature_ui_test_filter }}
+          UI_SHARD: ${{ matrix.ui_shard }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$UI_SHARD" != all ]]; then
+            FEATURE_UI_TEST_FILTER="$(python3 Tools/split-generated-ui.py --filter "$FEATURE_UI_TEST_FILTER" --shard "$UI_SHARD")"
+          fi
           IFS=',' read -r -a feature_filters <<< "${FEATURE_UI_TEST_FILTER:-MigrationUITests/GeneratedFeatureUITests}"
           selection=()
           for feature_filter in "${feature_filters[@]}"; do
@@ -1045,7 +1065,7 @@ jobs:
         if: (inputs.feature_validation && matrix.lane != 'normal') && contains(inputs.feature_ui_test_filter, 'P0COnboardingUITests')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-P0-device-check${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: JibunKit-P0-device-check${{ env.EVIDENCE_SUFFIX }}
           path: artifacts/JibunKit-P0-check.ipa
           retention-days: 14
 
@@ -1097,7 +1117,7 @@ jobs:
         if: always() && inputs.simulator_tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Simulator-text-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: Simulator-text-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/simulator-tests.log
             ${{ runner.temp }}/simulator-app.log
@@ -1107,7 +1127,7 @@ jobs:
         if: always() && !inputs.focused_ui_validation
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Feature-build-requirement-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: Feature-build-requirement-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/feature-build-requirements.log
             ${{ runner.temp }}/feature-connection/
@@ -1126,7 +1146,7 @@ jobs:
         if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.background_urlsession_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Background-URLSession-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: Background-URLSession-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/background-urlsession-native.log
             ${{ runner.temp }}/BackgroundURLSessionNative.xcresult
@@ -1137,7 +1157,7 @@ jobs:
         if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests && inputs.backgroundtasks_validation) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: BackgroundTasks-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: BackgroundTasks-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/backgroundtasks-native.log
             ${{ runner.temp }}/BackgroundTasksNative.xcresult
@@ -1150,7 +1170,7 @@ jobs:
         if: ${{ matrix.lane != 'generated' && (always() && inputs.simulator_tests) }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Backup-picker-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: Backup-picker-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/simulator-screenshots/*.png
             ${{ runner.temp }}/simulator-screenshots/*.txt
@@ -1164,7 +1184,7 @@ jobs:
         if: always() && inputs.simulator_tests && (inputs.feature_validation && matrix.lane != 'normal')
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: Records-focused-diagnostics${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: Records-focused-diagnostics${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/records-ui.log
             ${{ runner.temp }}/records-test-index.json
@@ -1176,7 +1196,7 @@ jobs:
         if: always() && inputs.simulator_tests
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: JibunKit-simulator-evidence${{ matrix.lane == 'generated' && '-generated' || '' }}
+          name: JibunKit-simulator-evidence${{ env.EVIDENCE_SUFFIX }}
           path: |
             ${{ runner.temp }}/records-screenshots
             ${{ runner.temp }}/records-diagnostics

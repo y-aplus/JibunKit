@@ -65,3 +65,9 @@ as present.
 This isolates WebKit website data, not server accounts or tracking performed
 outside the store. Cookie rules such as `Secure`, `SameSite`, domain, and path
 remain WebKit behavior.
+
+The candidate's four normal-host Web storage/management UI methods passed in
+run34808525786, including process recreation, failed precommit, cancellation,
+A removal and B preservation. Its job was cancelled at the 45-minute limit
+after all ten integration methods and artifact upload completed; it is not a
+green-run claim. See [P1-B verification](../verification/2026-09-14-p1-b.md).

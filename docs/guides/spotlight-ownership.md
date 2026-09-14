@@ -1,6 +1,6 @@
 # Core SpotlightのFeature所有権
 
-更新日: 2026-09-10
+更新日: 2026-09-14。公開0.7.0と0.8開発中の通常host接続を区別して記載する。
 
 `MiniAppSpotlightNamespace`は、同じhost indexを使うFeatureへ異なる`uniqueIdentifier`と`domainIdentifier`を割り当てる。local item IDが同じでもFeature IDを含むnamespaceにより衝突せず、Feature全削除は`deleteSearchableItems(withDomainIdentifiers:)`だけを使う。`deleteAllSearchableItems`は他Featureを巻き込むため使わない。
 
@@ -19,7 +19,13 @@ try await spotlight.delete(localIdentifier: note.id, from: hostSpotlightIndex)
 try await spotlight.deleteAll(from: hostSpotlightIndex)
 ```
 
-属性をJibunKit独自型へ写さず、native `CSSearchableItemAttributeSet`をそのまま受け取る。item作成時にはnative object全体をcopyし、同じ属性実体をA/Bが再利用しても`CSSearchableItem`によるidentifier/domain設定が別Featureのitemへ波及しない。Featureはcontent type、title、keywords、thumbnail、content URL、ranking等、OSが提供する属性を必要に応じて設定できる。hostはproduction用のcustom `CSSearchableIndex`を一つ用意し、Appleの制約どおり同一indexへの更新を単一taskで直列化する。
+属性をJibunKit独自型へ写さず、native `CSSearchableItemAttributeSet`をそのまま受け取る。item作成時にはnative object全体をcopyし、同じ属性実体をA/Bが再利用しても`CSSearchableItem`によるidentifier/domain設定が別Featureのitemへ波及しない。Featureはcontent type、title、keywords、thumbnail、content URL、ranking等、OSが提供する属性を必要に応じて設定できる。上例の`hostSpotlightIndex`には実際に登録と削除で共有するindexを渡す。通常hostが自動で解除する対象は`CSSearchableIndex.default()`であり、custom indexを自動生成する実装ではない。
+
+## 無効化・削除との接続
+
+通常hostはFeatureの新規受付を閉じ、Runtimeを終了してから、default index内のそのFeatureのdomainを削除する。独自の`CSSearchableIndex`を使う場合も禁止しないが、そのindexの所有項目の解除を`MiniAppDefinition.onUnregister`へ接続する必要がある。namespaceが同じだけでは別indexの項目をhostが自動で削除することにはならない。停止対象の書込みはlifetimeへ登録し、解除後に古いwriterが再登録しないようにする。
+
+domain削除のnative完了を待ってから管理状態を確定する。APIが返らない場合に期限超過を成功として扱う仕組みはない。0.8候補のSimulator試験で初回domain削除後に管理が登録解除中のまま120秒を超える事象があり、native直接操作との比較中。実機でも起きると確定したものではないが、未解決のまま0.8受入を完了しない。[P1-B検証記録](../verification/2026-09-14-p1-b.md)。
 
 この境界は同一process内の協調的な所有権であり、Feature間のセキュリティ境界ではない。
 

@@ -1,6 +1,6 @@
 # 操作Widget／ControlとFeatureの共有状態
 
-P2-W開発版向け（2026-09-16更新）。公開0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。native Widget/Controlのbuildはactor隔離エラーを修正して再検証する段階で、一括実機確認も未実施。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
+P2-W開発版向け（2026-09-16更新）。公開0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。一括実機でのOS Widget/Control操作・設定保持は未実施。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
 
 ## 標準APIと責任
 

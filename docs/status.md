@@ -39,4 +39,6 @@ P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳]
 
 1.0範囲の採用に伴い、plan.json/schema2へP2の13追跡単位と7つのCI境界を追加した。P2のうち10単位は必須機能、3単位は低負荷候補/P2-Cの採否と採用範囲を扱う。単なる台帳件数を完成機能数とはしない。ローカルdelivery検査19件が成功し、通常機能の省略・条件付き未検証・長すぎるrun見積りを拒否する。
 
-P2-WのCI34979381516（source4eb784d）は通常jobが成功。共通290件（skip2、失敗0、管理接続8件を含む）、Records11件、別process probe、通常IPA、通常UI13件とFiles JSON往復1件を確認した。独立native/診断hostは同じWidget/Control kindのactor隔離エラーで失敗。四つの定数をsource53e990eで修正した後、CI35022622331はnativeのSwiftUI import不足、診断hostのOS登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、追加のサービスログ付きCI35027469173で一括再検証中。新Widget/Controlと実機確認は未完で、公開0.8.0には含めない。[検証記録](verification/2026-09-15-p2-widget-control.md)と[接続ガイド](guides/interactive-widgets.md)を参照する。
+P2-WはCI35027469173（e984d44）で独立A/B/統合build、metadata10定義比較、native4件、通常管理UI1件、診断IPAが成功。通常job34979381516の共有290件（skip2）、Records11件、別process probe、通常IPA/UI13件/Files往復1件は差分を確認して再利用した。初回無効化はSimulatorで約88秒、通知終了後のSpotlight接続中断も記録されており、遅延の解消とは扱わない。
+
+[実機確認版](https://github.com/y-aplus/JibunKit/releases/tag/p2-w-device-check-20260916)を公開し、診断/通常IPA・ZIPを無認証再取得して完全一致/CRCを確認した。残るP2-W gateは[一括実機確認](verification/2026-09-15-p2-widget-control-device.md)。P2-7はpartial、正式版0.8.0とmainは未更新で、新機能の実OS成功や1.0完成はまだ主張しない。[検証記録](verification/2026-09-15-p2-widget-control.md)・[接続ガイド](guides/interactive-widgets.md)。

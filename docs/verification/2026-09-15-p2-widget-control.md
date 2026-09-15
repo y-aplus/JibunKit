@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: 通常job34979381516は成功を再利用。35022622331はnativeのSwiftUI import不足と診断hostの登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、4回目の一括CI35027469173で再検証中。P2-7のnative/OS合格はまだない。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
+現在: CI35027469173（e984d44）はnative/診断hostの両jobが成功。通常job34979381516は差分確認して再利用。確認用prereleaseを公開し、全4assetの無認証再取得・完全一致/CRCを確認。残るP2-W gateは一括実機確認で、P2-7/1.0は未完。以下の待機記述は履歴。
 
 ## 基盤実装
 
@@ -83,3 +83,13 @@ hostは最初の無効化で「無効化が未完了。新しい起動は停止�
 修正sourceはe984d44fbae1946720f2d43f3ee776e2f25c20f1。Tools全77件、workflow YAML parse、diff checkが成功。WindowsではSwift/Xcodeは未実行。初回2run予算に対する4run目の例外を事前reportへ記録し、native-surface interactive-widgets/iOS26のnative4件/hostUI1件/診断IPAをまとめて実行する。見込み25分、各job上限30分。通常製品pathは4eb784dと同じなので成功済み通常job/IPAは再利用する。さらに解除が失敗した場合は採取したOSログで切り分け、上限だけを再び延ばさない。
 
 [CI35027469173](https://github.com/y-aplus/JibunKit/actions/runs/35027469173)を凍結ref `codex/p2-native-management-repair`で投入し、headSha e984d44との完全一致と両job開始を確認した。OS完了監視を登録済み。現時点の待機対象はこのrunで、ユーザー承認・実機操作はまだ求めない。
+
+## 35027469173成功と実機配布（2026-09-16）
+
+source e984d44、全体14分05秒（見込み25分）、native11分58秒・host13分53秒。Xcode26.6（17F113）、macOS26.6.2、iOS Simulator SDK26.5。独立A/B/CombinedのRelease build、app/extensionのactions/entity/query10定義と識別子/参照の比較、native4件（0.746秒）が成功。通常hostでは管理UI1件（202.283秒）が成功し、無効化・無効状態の再起動保持・有効化・項目保持・削除/再登録とB保持を確認した。直接performを実OSのWidget/Control操作成功とは扱わない。
+
+初回無効化のUI期待値待ちは88.348秒、削除は14.485秒。OSログでは21:55:54.748 UTCにpending通知取得を開始、.760にdelivered取得完了、.763に0件削除、.771にSpotlight domain削除へ入った。21:56:03.051にIndexAgent接続中断が記録され、searchdはPID2677から14368へ変わり21:56:04.919に同じappの削除要求を受けている。通知後のSpotlightサービス処理に遅延があることを支持するが、88秒全体がcallback時間だとは断定しない。OS内部の原因/実機でも発生するかは未確定。P1同様に虚偽の解除完了や処理省略をせず、実機の初回待ち時間を確認する。
+
+診断IPAは2,598,654 bytes、SHA-256 `456e2ca666b0d709b527d8fa9cb1aa19d038191b7ebf818c3787c71d3534608c`。CIの署名/metadata/CRC検査に加え、取得後の全entry CRC、既存本体/Widget/Shareの3ID・0.8.0/build10、Counter kindとA/B各Widget/Control kindを照合した。通常IPAは4eb784dの2,351,018 bytes/SHA e61991a1…を再利用し、診断kind非混入と通常source差分なしを確認した。
+
+[実機確認用prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p2-w-device-check-20260916)のtagはe984d44。診断/通常それぞれのIPAと単一IPA入りZIPを公開し、4ファイルすべてHTTP200で無認証再取得・元byte完全一致・CRCを確認した。ZIP64なし。既存release/tag/assetは変更していない。正式版とmainは未更新。実機手順は[こちら](2026-09-15-p2-widget-control-device.md)。実機確認後に版を進める。

@@ -9,7 +9,7 @@
     "failure_cases": "Eight SharedState management tests plus original nine store tests and true multiprocess probe; stop/apply/resume failure, close/open cleanup failure, interruption, deletion/reregistration generation, concurrent management vs restore, B retained. Four native tests and one normal-host UI follow the same contracts.",
     "normal_entrypoints": "Normal Registry externalAccess and effectiveRestoreLifecycle; unchanged Counter/Reminder plus isolated diagnostic pair. Native A/B/combined metadata and hosted tests; real Widget/Control taps/config persistence planned as grouped device checks after non-device CI.",
     "invalidation": "Core Management enable now reserves and cleans up failures; rerun complete shared suite plus normal UI/backup/management. Old Feature stores, lifetime, incoming, static Widget and Intent packages are unchanged. Reuse source-specific P0/P1 surface evidence only; repeat ordinary device management/static Widget/Shortcuts at grouped checkpoint.",
-    "review": "Parent reviewed admission order, persistent interruption, restoration not reopening disabled owners, rollback of partial enable, full entity lifetime identity, native host/extension registration, targeted failures/cancellation and stable existing bundle/widget IDs. Tools74 passed. New Swift/Xcode remains unexecuted; no native/OS success inferred from source or Python. Run2 compiler logs isolated four kind constants inheriting Widget/Control MainActor; mark immutable Strings nonisolated without moving perform to MainActor or changing IDs. All related A/B accesses inspected. Local host-preparation3 and delivery19 tests passed after repair. Native execution still pending. Run3: actor repair compiled in host. Native entrypoints lacked SwiftUI; all A/B/Combined imports corrected by worker and reviewed together. Host was still unregistering at20s, not a missing status element; existing P1 cold native cleanup took about63s. Use existing P1 120s bound without warmup/retry, preserve disabled state across relaunch, export OS service logs and timed assertions. Current stall subservice remains unproven. Local Tools77 passed; no new Swift execution claim."
+    "review": "Parent reviewed admission order, persistent interruption, restoration not reopening disabled owners, rollback of partial enable, full entity lifetime identity, native host/extension registration, targeted failures/cancellation and stable existing bundle/widget IDs. Tools74 passed. New Swift/Xcode remains unexecuted; no native/OS success inferred from source or Python. Run2 compiler logs isolated four kind constants inheriting Widget/Control MainActor; mark immutable Strings nonisolated without moving perform to MainActor or changing IDs. All related A/B accesses inspected. Local host-preparation3 and delivery19 tests passed after repair. Native execution still pending. Run3: actor repair compiled in host. Native entrypoints lacked SwiftUI; all A/B/Combined imports corrected by worker and reviewed together. Host was still unregistering at20s, not a missing status element; existing P1 cold native cleanup took about63s. Use existing P1 120s bound without warmup/retry, preserve disabled state across relaunch, export OS service logs and timed assertions. Current stall subservice remains unproven. Local Tools77 passed; no new Swift execution claim. Run4 succeeded: all A/B/Combined builds, complete actions/entity/query comparisons (10 definitions), native4, normal-host managementUI1 (202.283s), diagnostic IPA/signatures. Exact artifact result.json sources checked. Initial disable observed after88.348s, notifications finish in milliseconds; Spotlight connection interruption and service PID change seen. No claim OS taps passed or slowdown eliminated."
   },
   "dependencies": {
     "P1-B": "Published0.8.0; docs/verification/2026-09-15-0.8-release.md and immutable source-specific 0.8-evidence.json. All P0/P1 adopted scope passed at that release."
@@ -105,7 +105,20 @@
       "id": "35027469173",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35027469173",
       "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
-      "conclusion": "pending; both native and host jobs started; exact head verified and OS completion monitor registered"
+      "conclusion": "success",
+      "elapsed_seconds": 845,
+      "jobs": [
+        {
+          "name": "interactive-native",
+          "conclusion": "success",
+          "seconds": 718
+        },
+        {
+          "name": "interactive-host",
+          "conclusion": "success",
+          "seconds": 833
+        }
+      ]
     }
   ],
   "evidence": [
@@ -338,6 +351,15 @@
       "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
       "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
       "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable. Through e984d44, additional changes are native fixtures/checker, isolated diagnostic management UI, workflow evidence export and docs only; ordinary Sources/Package/Project/Tuist/UITests remain identical."
+    },
+    {
+      "criterion": "P2-7.ownership",
+      "kind": "unit",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35027469173; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Four native contract tests pass: selected owner/item query and update, Widget/Control configuration/deleted item rejection, actual Definition disable/enable/restore/remove and stale generations, failed/cancelled intent preservation. Builds and metadata10 compare independent A/B vs combined and host/extension. SharedState17 and real multiprocess300-update/interruption evidence reused from unchanged Core at4eb784d. Real OS taps remain a separate integration/device gate.",
+      "review": "Inspected all test method pass lines, logs, result.json source, metadata comparisons and archive. Normal Core paths have no changes since successful34979381516."
     }
   ],
   "deferred_device": {
@@ -359,8 +381,8 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 1,
-    "ci_job_minutes": 70.867,
-    "accounting": "Completed job seconds4252 include failed jobs. One CLI sol/low native repair assignment and one submitted implementation, parent reviewed and integrated without another worker CI/review round. Parent repairs host and records evidence. No measured model-cost claim."
+    "ci_job_minutes": 96.717,
+    "accounting": "Completed job seconds4252 include failed jobs. One CLI sol/low native repair assignment and one submitted implementation, parent reviewed and integrated without another worker CI/review round. Parent repairs host and records evidence. No measured model-cost claim. Run4 jobs1551s added: total5803s (96.717 job-minutes). Actual run14m05 vs planned25m; no model-cost inference."
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -426,14 +448,19 @@
       "criterion": "P2-7.integration",
       "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
       "checkpoint": "1.0.0",
-      "procedure": "docs/verification/2026-09-15-p2-widget-control-device.md: six grouped phases; still a draft, do not request before non-device CI/artifact verification. Covers actual A/B Widget/Control configuration/taps, retained selection, unavailable/deleted/stale behavior, management/selected restore/B and normal IPA return. Scheduled for next0.8.x checkpoint, not postponed until1.0."
+      "procedure": "docs/verification/2026-09-15-p2-widget-control-device.md: six grouped phases ready at public diagnostic e984d44; actual OS Widget/Control selection/taps, retained configuration and restart/overwrite/Refresh, deletion/stale rejection, management/selected restore/B retention and normal IPA return. First disable duration explicitly observed. Next0.8.x checkpoint; no OS success inferred from direct perform."
     }
   ],
   "supporting_checks": [
     {
       "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516",
-      "observation": "SharedState9, SharedStateManagement8 and actual process probe passed. These are partial P2-7 ownership evidence only; native fixture actions/metadata and OS integration remain unexecuted."
+      "observation": "SharedState9, SharedStateManagement8 and actual process probe passed. These are partial P2-7 ownership evidence only; native fixture actions/metadata were still unexecuted at that source; the later35027469173 supporting check records their completion. OS taps remain pending."
+    },
+    {
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35027469173",
+      "observation": "StandaloneA/B/Combined Release and app/extension metadata10 definitions preserved; native4 passed; hostUI1 passed202.283s, disabled relaunch, enable, remove/reregister and B retained. This proves native/normal-host portion, not real OS Widget/Control taps/config persistence."
     }
   ],
   "normal_ipa": {
@@ -464,5 +491,78 @@
       }
     ],
     "interactive_diagnostic_kind": "absent from three executables"
+  },
+  "diagnostic_ipa": {
+    "kind": "diagnostic",
+    "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+    "ipa": "JibunKit-P2-W-e984d44.ipa",
+    "size": 2598654,
+    "sha256": "456e2ca666b0d709b527d8fa9cb1aa19d038191b7ebf818c3787c71d3534608c",
+    "bundles": [
+      {
+        "id": "com.jibunkit.app.Share",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "id": "com.jibunkit.app.Widget",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "id": "com.jibunkit.app",
+        "version": "0.8.0",
+        "build": "10"
+      }
+    ],
+    "zip": "JibunKit-P2-W-e984d44.zip",
+    "zip_sha256": "382333c0da27586b3de2dfb003be7ffc5f017029ba4fd042c310b829837bcee3",
+    "zip_size": 2568804,
+    "crc": "all inner and outer entries passed",
+    "outer_zip": "one IPA, ZIP64 disabled, exact inner bytes"
+  },
+  "distribution": {
+    "release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-w-device-check-20260916",
+    "tag_source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+    "prerelease": true,
+    "formal_version": "unchanged0.8.0/build10; advance after grouped device confirmation",
+    "assets": [
+      {
+        "name": "JibunKit-P2-W-e984d44.ipa",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-P2-W-e984d44.ipa",
+        "http": 200,
+        "size": 2598654,
+        "sha256": "456e2ca666b0d709b527d8fa9cb1aa19d038191b7ebf818c3787c71d3534608c",
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      },
+      {
+        "name": "JibunKit-P2-W-e984d44.zip",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-P2-W-e984d44.zip",
+        "http": 200,
+        "size": 2568804,
+        "sha256": "382333c0da27586b3de2dfb003be7ffc5f017029ba4fd042c310b829837bcee3",
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      },
+      {
+        "name": "JibunKit-normal-4eb784d.ipa",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-normal-4eb784d.ipa",
+        "http": 200,
+        "size": 2351018,
+        "sha256": "e61991a1f15fb275b030ffc1923f6ea1c541bdff9362a8f6c56f134a681de756",
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      },
+      {
+        "name": "JibunKit-normal-4eb784d.zip",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-normal-4eb784d.zip",
+        "http": 200,
+        "size": 2324440,
+        "sha256": "e9b0c25fa38f0c57cda3e726f78ff2d570718828770951ed8ddef31c737dd43e",
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      }
+    ]
   }
 }

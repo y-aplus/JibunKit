@@ -1,8 +1,11 @@
-# P2-W 一括実機確認（準備中・まだ実行しない）
+# P2-W 一括実機確認（実施待ち）
 
-診断候補コードはe984d44fbae1946720f2d43f3ee776e2f25c20f1。通常IPAは製品差分のない4eb784d（CI34979381516通常job成功）を再利用する。診断版CIと配布物の再取得検査は未完。診断IPA/通常IPAのリンクとSHAを確定し、この冒頭を更新してから依頼する。以下は0.8.xで一括確認する予定で、1.0まで延期する意味ではない。1操作ごとのcommit/pushはしない。
+診断source e984d44、通常source4eb784d。CI35027469173のnative/管理UIは成功。通常回帰は差分を確認してCI34979381516の成功jobを再利用する。配布物は公開先から再取得して一致/展開検査済み。両方0.8.0/build10で、実機確認後に版を進める。
 
-画面名と期待値を一つずつ会話にも書く。モバイル1画面でGitHubの横長表を行き来させない。異常があればその工程・表示・操作の前後だけを報告できるようにする。
+- [診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-P2-W-e984d44.ipa) ／ [診断ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-P2-W-e984d44.zip)
+- [戻す通常IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-normal-4eb784d.ipa) ／ [通常ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-w-device-check-20260916/JibunKit-normal-4eb784d.zip)
+
+画面名と期待値は会話でも一工程ずつ案内する。GitHubの横長表は使わない。1操作ごとのcommit/pushはせず、異常は工程・表示・前後の操作をまとめて記録する。アプリを削除せず、診断版・通常版のどちらも上書きインストールする。
 
 ## 1. 初期状態と配置
 
@@ -24,13 +27,13 @@ BのControlを1回押す。Bのsame-idだけが開始値+1。
 
 ## 3. 選択変更と再起動後の保持
 
-AのWidgetをsecond-idへ、AのControlをsame-idへ変更する。本体を終了して再起動し、設定が戻らないことを確認する。その後に端末を通常再起動して同じ選択を確認する。各A入口を1回押すと対象だけ+1。Bの選択と値は維持する。
+AのWidgetをsecond-idへ、AのControlをsame-idへ変更する。本体を終了して再起動し、設定が戻らないことを確認する。その後に端末を通常再起動して同じ選択を確認する。各A入口を1回押すと対象だけ+1。Bの選択と値は維持する。同じ診断IPAを上書きし、SideStoreのRefresh後にもアプリを開き、値と4つの選択が保持されることを確認する。
 
 ## 4. 項目削除と管理
 
 A本体で「same-idを削除」。same-idを選んでいたAのControlは利用不可となり、古いControlから別項目を変更しない。second-idを選んだAのWidgetは残った項目を操作できる。Bは変更されない。
 
-管理画面でAを無効化。AのWidget/Controlから更新できず、Bの入口は動く。Aを再有効化するとsecond-idの値を保持し、same-idは復活しない。
+管理画面でAを無効化。初回にほぼ即時か、数秒か、長く待つかも記録する。Simulatorでは約88秒かかったため、待つ場合は表示も教えてほしい。AのWidget/Controlから更新できず、Bの入口は動く。Aを再有効化するとsecond-idの値を保持し、same-idは復活しない。
 
 管理画面でAを削除して明示的に再登録。Aは初期二項目へ戻る。削除前のA設定/ボタンは新データを操作できず、対象を選び直すと操作できる。Bの値・設定は維持する。
 

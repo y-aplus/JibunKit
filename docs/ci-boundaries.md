@@ -181,3 +181,6 @@ P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の�
 診断IPAの収録範囲をUI filterから切り離した。`p1_device_validation=true`はP1-A/IncomingとP1-B全ペアを必ず接続する（Bは`--all-lanes`）。既存B-onlyの生成はfilter選択を維持する。候補はexplicit method selectorを必須とし、通常/生成の二jobでも実行可能。長い全P1 UIを回す場合は既存splitを使い、成功済み範囲の再利用はrun/sourceと差分理由を境界記録へ書く。splitなしはgenerated job、split時はnetwork jobが診断IPAを出力する。filterを減らすことで配布物からFeatureが消える状態を防ぐ。
 
 共有入力/Intent/Widgetの4件に絞った境界ではsplitを使わず、通常回帰+IPAと並行する。通常hostの実UI成立を確認してから同じID/versionの診断hostへ削除なしで置換し、galleryを確認する。IPA inventoryのkind/resource収録成功だけでgallery成功を代替しない。詳細な入力・再利用範囲は[実機後の記録](verification/2026-09-15-p1-device-followup.md)に固定する。
+
+
+`native-surface.yml surface=incoming-os`はP1実機後の共有エラー切り分け用。tracked sourceから通常host+受信A/Bだけを構成し、OS共有の文字列/URL/ファイルを独立methodで観測する。未実行の他形式を最初の失敗で隠さない。通常版/完全P1 candidate/実機受入の代替にはしない。typeと工程のみのDebug診断をxcresult/logへ保存する。詳細は[実機後記録](verification/2026-09-15-p1-device-followup.md)。

@@ -60,3 +60,13 @@ source `8c54d6e1f1525cf3764dcc12f1a8fd7f30f0151a`。normal32分50秒で成功、
 失敗は2件。OS共有はextension開始前、テストがButtonを探したが実階層では`activityCollectionView`内の`shareCell`、label `JibunKit`が表示されていた。観測したセルを選ぶよう修正する。Intent管理は`management.list`が正常に開き、上部の通知/HTTP行だけがmaterializeされていた。画面外のA操作を待つだけだったため、既存P1UIVisibilityを同試験へ共用し、状態確認も対象行を表示してから行う。native解除の状態待ちは既存完全host Web管理と同じ120秒上限、通常値読出しは15秒を維持する。製品の受付やcleanupを迂回しない。
 
 次は追加3run予算の3回目。`generated_validation_only=true`へ変更し、完全Registryのまま失敗したOS共有とIntent管理の2methodだけを実行、診断IPA inventory/packagingを行う（計画25分、上限45分）。通常IPA・回帰、Widget gallery、永続inbox再試行、Notes単独/requirementsは本runの成功を再利用。修正はUITestとテスト補助の接続だけで、通常/診断製品コード・保存形式・識別子に差分なし。元の4件境界を縮小して未検証を消すのではなく、2成功+2再試行をsource付きで合成する。結果次第で原因を再評価し、予算だけを根拠に同じ再試行を続けない。
+
+## 34887580504: Intent成功、OS共有の実エラーへ到達
+
+source `340e131902a21fd6eea98a91b2e040004ba41244`、generated23分50秒。Intent管理207.791秒で成功。共有先セルの操作は成功し、文字列のShare Extensionで受信先表示前に`invalidInput`が出た。以前のNSString変換エラーから表示は変わったが、共有文字列の実動作は未解決。最初の文字列失敗で同methodのURL/ファイルへ進めず、これらの実動作は未観測。診断IPAはまだ生成していない。
+
+追加3runを消費したため、同じ大きなbuildの4回目には進まない。次は例外として1runだけの`native-surface.yml surface=incoming-os`（計画15分、上限30分）。通常hostのtracked sourceに受信A/Bだけを接続し、実ShareLink→OS共有先→同じShare Extension→inboxを文字列/URL/ファイルの独立3methodで試す。生成Feature・独立Notes・Widget・HTTP/Web・normal Release IPAは作らない。失敗を成功と扱わず、3件の観測を次の修正判断に使う。2つのローカル構成試験、3methodのsource存在、YAML/diff checkは成功。
+
+Debug限定でproviderの登録type、選択したdecode分岐・byte数/BOM有無、provider-load/open-inbox/read-catalogの失敗工程を出す。共有文字列・URL本文・ファイル内容は診断に出さない。Releaseのエラー形式と受入判定は維持し、文字コードの無条件fallbackや保存先安全検査の迂回は加えない。この小hostで現象が出なければ完全hostとの差を比較する。これだけを完全P1の成功証拠にしない。
+
+この診断はP1-3.os（実機必須）の合格証拠ではないため、preflightのdevice条件は保留したまま。診断jobは別欄で入力/時間/目的を記録し、Simulatorをdeviceの代替としてgateへ登録しない。正常版とgallery、Intent管理の各成功sourceは保持する。

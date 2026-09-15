@@ -68,18 +68,28 @@ private struct ShareInputScreen: View {
         started = true
         job = Task { @MainActor in
             defer { job = nil }
+            var phase = "provider-load"
             do {
                 let result = try await MiniAppIncomingProviderLoader.load(providers)
                 var retained = false
                 defer { if !retained { try? result.removeTemporaryFiles() } }
+                phase = "open-inbox"
                 let inbox = try MiniAppIncomingStore.shared()
+                phase = "read-catalog"
                 let catalog = try await Task.detached { try inbox.destinations() }.value
                 try Task.checkCancellation()
                 destinations = catalog.filter { destination in result.inputs.allSatisfy { destination.accepts($0.typeIdentifier) } }
                 prepared = result
                 retained = true
             } catch is CancellationError { }
-            catch { errorMessage = error.localizedDescription }
+            catch {
+                #if DEBUG
+                let types = providers.map { $0.registeredTypeIdentifiers.joined(separator: ",") }.joined(separator: " | ")
+                errorMessage = "phase=\(phase) providers=\(providers.count) types=\(types) \(error.localizedDescription)"
+                #else
+                errorMessage = error.localizedDescription
+                #endif
+            }
         }
     }
 

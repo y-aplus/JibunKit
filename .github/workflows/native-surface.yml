@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start, p1-input-repair]
+        options: [spotlight-cold-start, p1-input-repair, incoming-os]
       simulator_runtime:
         default: ''
         type: string
@@ -46,7 +46,7 @@ jobs:
           SURFACE: ${{ matrix.surface }}
         shell: bash
         run: |
-          case "$SURFACE" in intents|widgets|incoming|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
+          case "$SURFACE" in intents|widgets|incoming|incoming-os|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
 
       - name: Select Xcode 26.6
         shell: bash
@@ -105,6 +105,9 @@ jobs:
         run: |
           set -euo pipefail
           case "$SURFACE" in
+            incoming-os)
+              python3 Tools/verify-incoming-os.py --simulator-id "$SIMULATOR_ID"
+              ;;
             spotlight-cold-start)
               python3 Tools/verify-spotlight-cold-start.py --simulator-id "$SIMULATOR_ID"
               ;;
@@ -180,6 +183,8 @@ jobs:
             ${{ runner.temp }}/PackageWidgets
             ${{ runner.temp }}/IncomingNative.xcresult
             ${{ runner.temp }}/incoming-native.log
+            ${{ runner.temp }}/IncomingOS/tests.log
+            ${{ runner.temp }}/IncomingOS/Tests.xcresult
             ${{ runner.temp }}/web-authentication-native.log
             ${{ runner.temp }}/WebAuthentication.xcresult
             ${{ runner.temp }}/WebAuthentication-tests.json

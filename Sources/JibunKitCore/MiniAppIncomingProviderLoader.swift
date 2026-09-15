@@ -38,6 +38,7 @@ public enum MiniAppIncomingProviderLoader {
     }
 
     private static func load(_ provider: NSItemProvider, to destination: URL) async throws -> MiniAppIncomingStore.Input {
+        let types = provider.registeredTypeIdentifiers
         let gate = ProviderContinuation()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
@@ -47,7 +48,7 @@ public enum MiniAppIncomingProviderLoader {
                     progress = provider.loadObject(ofClass: NSURL.self) { item, error in
                         gate.run {
                             if let error { throw error }
-                            guard let url = item as? URL, url.isFileURL else { throw MiniAppIncomingError.invalidInput }
+                            guard let url = item as? URL, url.isFileURL else { throw invalidProvider("file-url-object", types: types) }
                             try MiniAppIncomingFileAccess.copy(from: url, to: destination)
                             let type = UTType(filenameExtension: url.pathExtension)?.identifier ?? UTType.data.identifier
                             return .file(destination, typeIdentifier: type, displayName: url.lastPathComponent)
@@ -57,7 +58,7 @@ public enum MiniAppIncomingProviderLoader {
                     progress = provider.loadObject(ofClass: NSURL.self) { item, error in
                         gate.run {
                             if let error { throw error }
-                            guard let url = item as? URL, !url.isFileURL, url.scheme != nil else { throw MiniAppIncomingError.invalidInput }
+                            guard let url = item as? URL, !url.isFileURL, url.scheme != nil else { throw invalidProvider("url-object", types: types) }
                             return .url(url)
                         }
                     }
@@ -71,7 +72,7 @@ public enum MiniAppIncomingProviderLoader {
                             if let error { throw error }
                             let encoding: String.Encoding = type == .utf16PlainText ? .utf16 : .utf8
                             guard let data, let text = String(data: data, encoding: encoding) else {
-                                throw MiniAppIncomingError.invalidInput
+                                throw invalidProvider("text-decode", types: types, detail: "selected=\(type.identifier) bytes=\(data?.count ?? -1) utf16BOM=\(data?.starts(with: [0xff, 0xfe]) == true || data?.starts(with: [0xfe, 0xff]) == true)")
                             }
                             return .text(text)
                         }
@@ -81,7 +82,7 @@ public enum MiniAppIncomingProviderLoader {
                     progress = provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
                         gate.run {
                             if let error { throw error }
-                            guard let url else { throw MiniAppIncomingError.invalidInput }
+                            guard let url else { throw invalidProvider("file-representation", types: types) }
                             // Source access ends at callback return. Cancellation
                             // drains this copy before the caller removes its folder.
                             try MiniAppIncomingFileAccess.copy(from: url, to: destination)
@@ -89,12 +90,22 @@ public enum MiniAppIncomingProviderLoader {
                         }
                     }
                 } else {
-                    gate.run { throw MiniAppIncomingError.invalidInput }
+                    gate.run { throw invalidProvider("unsupported-types", types: types) }
                     return
                 }
                 gate.setProgress(progress)
             }
         } onCancel: { gate.cancel() }
+    }
+    /// Debug diagnostics expose format/stage only, never shared text, URLs or bytes.
+    nonisolated private static func invalidProvider(_ stage: String, types: [String], detail: String = "") -> Error {
+        #if DEBUG
+        return NSError(domain: "MiniAppIncomingProvider", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "provider stage=\(stage) types=\(types.joined(separator: ",")) \(detail)"
+        ])
+        #else
+        return MiniAppIncomingError.invalidInput
+        #endif
     }
 }
 

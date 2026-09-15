@@ -1,0 +1,672 @@
+{
+  "schema": 1,
+  "wave": "P1-B",
+  "contract": {
+    "baseline": "e4aec306c23f214f009522d1892cc78041816a9d",
+    "interfaces": "P1-B-contract.md; normal Definition/lifetime/management; owner-scoped notification copies; stopped cleanup joins restart/removal.",
+    "ownership": "Two separate HTTP/Web Codex worktrees, initially Sol low, capacity recovery Terra low; one aggregate review per lane; parent owns Core and integration. No child CI.",
+    "failure_cases": "Pending attachment failure/cancel/drain; HTTP distinct precommit candidates, native request cancellation/logout; Web precommit failure/held writer; stopped cleanup cancellation and management; B preservation.",
+    "normal_entrypoints": "P0/P1 normal and full diagnostic entrypoints verified through recorded CI and source-specific device followup; final normal candidate0.8.0/build10 verified in34967147135.",
+    "invalidation": "Compared 4e6a3f4 to71ef1ff: no Sources/Modules/Package.swift/Tuist product behavior changes, only Project3bundle versions and workflow version assertions. Optional iOS27 runner preparation unused. Earlier incoming provider/store changes covered by native32/full OS share and physical tests.",
+    "review": "Both submissions reviewed and integrated. Parent fixed stopped cleanup gap, Observation declarations, URLSession reconstruction, cache assumptions, test data independence and scrolling. No Swift/iOS execution claimed before CI. Run1: fixed MainActor hops in test/removal and explicit Void continuation types. Native auth 4/5 passed; initial wrapper page missing, cold-page wait and late Continue handling plus failure attachments added; cause remains unproven until run2. Device worker returned one consolidated review; parent found remaining send-before-cancel, ineffective deadline, idle waiter reclamation and stopped-logout endpoint loss, fixed locally and expanded real TCP/URLSession tests before CI. Final parent review matched version-only product diff, native8+1 metadata on6dd95cc unchanged through candidate, actual normalIPA CRC/IDs/versions/kinds/resources and all scoped device reports. Documentation gate pending."
+  },
+  "dependencies": {
+    "P1-A": "docs/verification/2026-09-13-p1-a.md and p1-a-evidence.json: accepted non-device evidence; OS checks remain at 0.8."
+  },
+  "budget_exception": "A fourth aggregate run is required: run3 reached generated UI compilation for the first time, where a nonisolated XCTest setup called MainActor helpers. Records UI also acted on a transient Files location. Fix both together; retain all 10 unexecuted P1/P0 selectors and Records. Reuse run2 normal/requirements/Notes and run3 native Web authentication instead of rebuilding successful unchanged paths. No child CI or review round added. Run4 executed all 10 UI methods (5 passed), exposing a common partially clipped button interaction problem in HTTP/notification/Web tests, plus a too-short native unregister completion wait. Run5 fixes the shared UI positioning for all three suites and reruns the full 10-method integration boundary. Records passed in run4 and is now reused unchanged. Product implementations remain unchanged. Run5 completed all ten methods but exceeded the job deadline. Run6 verifies new self-contained device HTTP/Web endpoints and packages the combined P1-A/P1-B candidate; it is not a status-only rerun. Split UI across two identical hosts and add one small dedicated real-network XCTest job. No child CI. Run6 built both complete diagnostic Release hosts and passed all six embedded HTTP XCTest methods, but Bash 3.2 nounset rejected expansion of an empty optional command prefix before either UI suite started. Run7 uses a nonempty env prefix, runs both previously unexecuted UI shards and packages IPA. Reuse the exact unchanged dedicated fixture sources/tests from run6 rather than spending another native job. Run7 executed all eleven methods: five passed, six failed. Device fixed-port listener used requiredLocalEndpoint plus an explicit on port, rejected by Network (confirmed in simulator-app.log). Six previous fixture tests used only ephemeral ports and missed this. A Web management search also dismissed its sheet by swiping down at the top. Run8 fixes both, adds exact-default fixed-port XCTest, reruns all eight affected P1 UI methods and seven fixture tests. Three unchanged P0 methods are reused; preserve their probe in both Registries without selecting their tests. Run8 passed all seven native fixture methods, HTTP/notification UI3 and Web4, and packaged the diagnostic IPA. Only Web disable test failed in its pre-test unconditional deletion: native unregister still in progress after60s. Run9 limits blank-data reset to the test that needs it, bounds native management completion at120s, and reruns Web5 only. Reuse completed network job/IPA and native7 unchanged. Same full Registry and original filter feed host generation; generated_ui_shard selects only execution job. Run9 failed: Web3 passed, disable stalled in Core Spotlight domain deletion despite120s, auth failed preparing inherited disabling state. Notification pending/delivered/category cleanup completed before Spotlight call. Run10 is a small independent native first-request comparison (five bounded operations in one test), not another full generated UI rerun. No production bypass or larger timeout. UI setup now retries persisted interrupted management through normal buttons; that change is not yet iOS-verified. Run10 independent native comparison passed all5 operations (11.689s): first empty delete1.108s, repeat2.075s, async4.565s, index0.006s, populated delete3.929s; job3.90min. A universal cold-native stall is not reproduced. Run11 uses complete validation host and only Web disable/auth plus same-host native/namespaced comparison. The comparison runs last, not before the failing first disable. Debug-only Registry traces identify native completion versus host continuation; no cleanup bypass. Reuse Web3 from run9, HTTP/notification3 and fixture7/IPA from run8, P0 from run7. No additional native job. Device 2026-09-15 found input failures and ineffective diagnostic controls. Reserve up to three additional runs: one combined native isolation boundary; one corrected normal/diagnostic candidate boundary including gallery; third only if corrections require it. Do not rerun unrelated passed HTTP/Web for this isolation. Native isolation34881183837 succeeded,25 incoming+8 Intent+1 UI and metadata. Second added run combines normal/generated jobs without split: four targeted generated methods fit a smaller boundary; all diagnostic pairs remain registered via --all-lanes. Third run remains reserved for corrections. Candidate run348836 passed normal and two generated methods; UI hierarchy identifies both remaining failures. Third added run retries only two methods plus diagnostic packaging; no normal/gallery/persistent rerun. Retry348875 passed Intent management; OS text reached real extension invalidInput before target selection. Add one bounded small incoming-os diagnostic run to separate provider formats/stages across three independent methods. No fourth full candidate build; do not count this as physical acceptance. Small OS diagnosis349176 took8m01: URL/file reached inbox, text isolated to generic UTF8 decode. Add one combined native27/OS3 repair validation run; no full host or normal IPA. Full candidate remains pending. Repair349313 failed: native UTF16 odd byte accepted and OS Transferable unsupported; URL/file content passed. Third consecutive text failure reviewed: narrow to binary NSString archive hypothesis with safe allowed-class negative tests, no added fallback callback. One additional native29/OS3 run, not a full candidate retry. Repair349337 passed native29/OS3 in10m35. Add two concurrent runs at the same source for normal IPA rebuild and full diagnostic share/retry plus IPA. This replaces the pending full candidate boundary; unchanged normal UI/gallery/Intent results are reused after diff review. No new product changes. Device09927a6 fails enqueue after target selection and from internal A/B seed. Add two same-source runs: normal common/release, diagnostic full OS share/IPA plus parallel native32. Existing parent canonicalization and owner-directory rejection tests; 9/20min expected. No further user steps needed until results. User reports iOS27.0, URL/file and internal seed also fail; add one native32/small OS3 comparison on preview Xcode27 after the two4e6a3f4 runs are inspected. SDK/OS differences are not isolated; do not rebuild all lanes. Final version-only candidate adds one normal build run34967147135 after device acceptance; 22 actual runs total. Prepared optional iOS27 run was not dispatched.",
+  "evidence": [
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which are recorded separately below. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Historical0.7 P0 device confirmation on its recorded source; user confirmed normal Counter/Reminder preservation. P1 changes do not change those Feature store schemas; normal flows are rerun in current CI. This is not physical acceptance of new P1 surfaces, which are recorded separately below. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P1-1.metadata",
+      "kind": "unit",
+      "source": "6dd95ccc1861d4609747d1f3f7227885e5d55109",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34881183837; docs/verification/2026-09-15-p1-input-native-evidence.json",
+      "observation": "8 native execution tests including reconstructed diagnostic controls and1 managed UI pass. IndependentA/B metadata matches combined actions and both App Shortcuts.",
+      "review": "Dedicated source/run evidence records8+1 zero failures and native identities. git diff6dd95cc..71ef1ff shows no PackageAppIntents/CounterIntent source changes. Device OS results separate.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-2.presentation",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests both owned presentation/external route and generation replacement/B preservation passed.",
+      "review": "Read two XCTest pass markers; new inbox button interaction remains separately unverified until run4.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-2.uikit",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests owned SwiftUI/UIKit presentation paths passed.",
+      "review": "Tests exercise presentation probe native UIViewController and ownership teardown, not OS share-sheet handoff.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-3.integration",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0ARecordsUITests and P0ASQLiteUITests actual host maintenance passed.",
+      "review": "Records attachment restore/B preservation and native DB close/reopen/rollback/B preservation checked via actual probe assertions.",
+      "reuse_reason": "Since tested7906bd9, only inbox row button style/accessibility/cancel action and UI test launcher helpers changed. Core, stores, Intents/Widgets, ownership/lifetime and presentation implementations remain unchanged. The inbox and host navigation changes receive run4 regression; this record does not claim that new run passed. Run5 adds an explicit inbox discard alert and test/CI scheduling changes; no additional changes in these native ownership implementations. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-4.onboarding",
+      "kind": "simulator",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed diff through77b5f5d: template, validator, compatible-update A/B/Records resources and local pure-transform contracts unchanged. New optional incoming defaults nil; generated Notes standalone/coexistence/root navigation and real normal/Widget/Intent Definition paths rebuilt and passed current P1 runs. Prior A-only installed update/resource and Registry omission/recovery proof remains scoped to its original source; no new full update experiment claimed. P1-B source review: underlying storage formats, native Intent/Widget definitions, navigation/presentation and onboarding implementations for this criterion are unchanged. New stopped-operation state is nil on these old paths; changed lifetime/management paths are separately rerun. Historical device evidence is limited to its original 0.7 Counter/Reminder operations, not new P1 device claims. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Shared 273 tests, 2 known skips, 0 failures. Both StoppedOperation tests pass: real drain before cleanup, restart waiting, cancellation retaining management exclusion and B continuity. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Shared maintenance/backup failure, cancellation, reservation and preservation tests pass in the 273-test suite; normal selective backup UI also passes. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Management tests with actual owned store access pass after drain/reservation ordering change; normal disable/restart/delete/reregister UI preserves Reminder. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Shared runtime shutdown diagnostics tests pass; stopped-operation cleanup retains its lifetime boundary until actual completion. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Shared incoming routing/ambiguity/cancellation/security-scope lifetime tests pass; native external share/file OS evidence remains separately scoped to P1-A. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "observation": "Five notification attachment staging tests pass, including original preservation, OS-style move, failure/cancellation and B staging retention. Real notification delivery/action is not implied by these unit results. Final candidate shared273(skip2)/Records11 passed; source retained.",
+      "review": "Matched candidate headSha, suite totals with zero failures and existing test scope; this is common/native-free unit coverage, not physical OS evidence."
+    },
+    {
+      "criterion": "P1-6.auth",
+      "kind": "simulator",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940/job/103911167894; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
+      "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
+      "reuse_reason": " Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-1.integration",
+      "kind": "simulator",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424/job/103881819596",
+      "observation": "Two normal lifetime UI methods passed33.151/15.376s.",
+      "review": "Parent matched individual method pass markers in full failed-step log. Run7 failed in HTTP/Web; these P0 methods completed successfully.",
+      "reuse_reason": "Run8 does not change P0 sources/helpers/Core or Registry composition. P1-only helper and diagnostic listener changes do not affect these methods. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P0-5.ui",
+      "kind": "simulator",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424/job/103881819596",
+      "observation": "Normal management failure/retry/removal/reregistration and Counter preservation passed193.062s.",
+      "review": "Parent matched individual method pass markers in full failed-step log. Run7 failed in HTTP/Web; these P0 methods completed successfully.",
+      "reuse_reason": "Run8 does not change P0 sources/helpers/Core or Registry composition. P1-only helper and diagnostic listener changes do not affect these methods. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "simulator",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34816553410/job/103888319522",
+      "observation": "Real embedded HTTP normal-host method passed334.018s: A/B credentials/cookies/cache, restart, failure preservation, cancellation/no late cookie, stopped logout, removal/reregistration and B retention.",
+      "review": "Individual pass marker, network suite zero failures and successful focused selector validator checked; separate native7 logs and packaged IPA also checked.",
+      "reuse_reason": "No HTTP/core/helper/fixture change in run9; only Web UI setup and job scheduling changed. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P1-6.storage",
+      "kind": "simulator",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774/job/103898309278; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Actual embedded-loopback WKWebView storage/restart/removal219.107s, held-writer cancellation136.873s and management drain/removal152.546s passed. Separate disable205.202s passed on0a3fb21/run34823801940. Other owner preserved.",
+      "review": "Individual pass lines and assertions checked. The failed run9 disable is retained; run11 first disable passed without prewarming and auth succeeded. Native cleanup delay remains unexplained, physical check planned.",
+      "reuse_reason": "From b62a2e6 to current, Web app/data/lifetime/removal implementation unchanged; changes are setup recovery, extra comparison test/probe and DEBUG-only Registry tracing. This is method-specific storage evidence, not device or latency guarantee. Final source review: 0a3fb21..71ef1ff production changes limited to incoming provider/store and Share controller, plus three bundle version fields. Old storage/lifetime/presentation/resource/onboarding proof retains original source. Normal UI13/Files and P0 management are covered by later scoped followup evidence. P1 incoming and diagnostic Intents changes receive separate current proof. 4e6a3f4..71ef1ff is version-only in product."
+    },
+    {
+      "criterion": "P1-1.os",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Earlier6beb877 OS discovery/positive-negative add/owner entity candidates/saved workflow/relaunch/management were successful.4e6a3f4 adds real20sec-delay cancellation old A/B retention, injected save error old values and next identical run A-only Amount increment.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    },
+    {
+      "criterion": "P1-2.widget",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Both Widget kinds added and match app values, A/B changes render; A disable hides/re-enable retains, removal/reregister empty with B retained. No precise latency measurement. App update/Refresh reopens preserve A-empty/B values.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    },
+    {
+      "criterion": "P1-2.device",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Same diagnosticIPA overwrite and Refresh retain Widget A-empty/B; return to normal retains CounterWidget matching/tap and CounterShortcut. Diagnostic home widgets retain old display and tap top; binary normal has no diagnostic kind/resource, cache cause unproven.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    },
+    {
+      "criterion": "P1-3.os",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Text/URL/file share saved then imported A1->3, B imported; destination-before-selection cancel no extra pending; after injected post-save failure/retry A4/B unchanged and no pending; force relaunch and overwrite/Refresh retained. Files direct-open cancel no extra, direct import A5/B unchanged. Intermediate failed pending row not explicitly observed separately; full-host CI34958712557 covers failure/retry assertions.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    },
+    {
+      "criterion": "P1-4.os",
+      "kind": "device",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Delivered attachment, mark/reply actions, A unregister preserves B pending card, A/B foreground silent/banner policies. Source-specific initial device table accepted.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    },
+    {
+      "criterion": "P1-5.device",
+      "kind": "device",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Real local HTTP login/cache, relaunch Cookie/password retention, failure/cancel/logout/B preservation, same diagnosticIPA overwrite and Refresh credentials retention. URLCache persistence across relaunch is not required.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Version-only product diff4e6a3f4..71ef1ff. For6beb877 HTTP/Web/notification, relevant implementations and diagnostic fixture unchanged through4e6a3f4; initial app/extension input failures separately fixed and retested. This is source-scoped physical evidence, not a claim that the new0.8IPA itself was installed."
+    }
+  ],
+  "acceptance": {
+    "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+    "P0-1.integration": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+    "P0-2.presentation": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+    "P0-2.uikit": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+    "P0-3.failure": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+    "P0-3.integration": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+    "P0-3.device": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+    "P0-4.diagnostics": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+    "P0-4.onboarding": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+    "P0-4.docs": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+    "P0-5.ownership": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+    "P0-5.ui": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+    "P0-5.device": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+    "P0-6.diagnostics": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+    "P0-6.local": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す",
+    "P1-1.os": "OS Shortcutsの発見/候補/引数/実行/戻り値と他owner保持。直接performのみ不可",
+    "P1-1.metadata": "独立A/Bと統合の識別子・参照・削除後保持",
+    "P1-2.widget": "二静的Widgetの追加・描画・A更新/削除後B保持、出荷構成の接続",
+    "P1-2.device": "候補IPAでWidgetの通常追加/更新/他方保持",
+    "P1-3.routing": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
+    "P1-3.os": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持",
+    "P1-4.ownership": "foreground方針/添付削除寿命/予約と取消の交差でB保持",
+    "P1-4.os": "通知action/文字入力/foreground表示/添付・他方通知と画面の保持",
+    "P1-5.http": "実HTTPの認証/Cookie/cache、終了後logout、取消/失敗とB保持",
+    "P1-5.device": "候補IPAの再起動・上書き更新/署名更新で資格情報/状態保持とlogout",
+    "P1-6.storage": "通常Webデータの再起動保持と片側削除、書込中・取消・失敗時B保持",
+    "P1-6.auth": "OS Web認証の開始/取消/返却先と他ownerの要求・状態保持"
+  },
+  "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+  "planned_ci_runs": 22,
+  "runs": [
+    {
+      "id": "34801232847/attempt-1",
+      "source": "5538dd96087093f57801b44b4fffae57e933dd4a",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34801232847",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34802338245/attempt-1",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34802338245",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34805047488/attempt-1",
+      "source": "02af62cd56179e1646ce655f4c16edf5c5e6d48a",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34805047488",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34806399426/attempt-1",
+      "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34806399426",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34808525786/attempt-1",
+      "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34808525786",
+      "conclusion": "cancelled"
+    },
+    {
+      "id": "34813362141/attempt-1",
+      "source": "2e0438e76a72228c09a9a17f1eabfb7522e672d7",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34813362141",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34814352424/attempt-1",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34816553410/attempt-1",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34816553410",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34819734774/attempt-1",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34822983863/attempt-1",
+      "source": "a8c91188e2ff0f14764ff39af4b6348e92b7920e",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34822983863",
+      "conclusion": "success"
+    },
+    {
+      "id": "34823801940/attempt-1",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940",
+      "conclusion": "success"
+    },
+    {
+      "id": "34881183837/attempt-1",
+      "source": "6dd95ccc1861d4609747d1f3f7227885e5d55109",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34881183837",
+      "conclusion": "success"
+    },
+    {
+      "id": "34883605285/attempt-1",
+      "source": "8c54d6e1f1525cf3764dcc12f1a8fd7f30f0151a",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34883605285",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34887580504/attempt-1",
+      "source": "340e131902a21fd6eea98a91b2e040004ba41244",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34887580504",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34917691331/attempt-1",
+      "source": "193c4b26ff5c454a0d9d807958bb0b1a65e35215",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34917691331",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34931319103/attempt-1",
+      "source": "ad3ada974c548af18357878eedeab5578fc9b730",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34931319103",
+      "conclusion": "failure"
+    },
+    {
+      "id": "34933726496/attempt-1",
+      "source": "cad667ba7a9efdc38499accbc4297ff926bfcfb0",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34933726496",
+      "conclusion": "success"
+    },
+    {
+      "id": "34942834824/attempt-1",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34942834824",
+      "conclusion": "success"
+    },
+    {
+      "id": "34942837167/attempt-1",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34942837167",
+      "conclusion": "success"
+    },
+    {
+      "id": "34958710691/attempt-1",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34958710691",
+      "conclusion": "success"
+    },
+    {
+      "id": "34958712557/attempt-1",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34958712557",
+      "conclusion": "success"
+    },
+    {
+      "id": "34967147135/attempt-1",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34967147135",
+      "conclusion": "success"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "release-normal",
+      "kind": "unit",
+      "command": "build-ios.yml simulator_tests=false feature_validation=false records_validation=false simulator_runtime=empty; shared/Records, normal Release/metadata/IPA",
+      "criteria": [
+        "P0-1.lifetime",
+        "P0-3.failure",
+        "P0-5.ownership",
+        "P0-6.diagnostics",
+        "P1-3.routing",
+        "P1-4.ownership"
+      ],
+      "expected_minutes": 10,
+      "timeout_minutes": 45
+    },
+    {
+      "id": "docs",
+      "kind": "inspection",
+      "command": "Read current docs, reconcile candidate/source evidence and run Tools/check-delivery.py release gate",
+      "criteria": [
+        "P0-4.docs"
+      ],
+      "expected_minutes": 25,
+      "timeout_minutes": 45
+    }
+  ],
+  "deferred_device": {},
+  "documents": [],
+  "document_review": {
+    "source": "",
+    "summary": "Pending full review and integrated commit",
+    "unresolved": []
+  },
+  "metrics": {
+    "review_rounds": 3,
+    "parent_messages": 7,
+    "ci_job_minutes": 590.47,
+    "documentation_worker_assignments": 1,
+    "documentation_review_rounds": 0,
+    "accounting": "CI job durations recomputed for all22 runs; implementation review rounds inherited3, plus one Sol low document audit assignment. No inference of model cost savings."
+  },
+  "release": {
+    "candidate_ipa": "34967147135 at71ef1ff;0.8.0/build10;2243242bytes;SHA25650626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6d1faf2f3fbd80cf6ff6; local CRC/bundle inventory passed. Public re-download pending.",
+    "normal_regression": "34883605285/8c54d6e normalUI13 and FilesJSON1; changed incoming covered by4e6a3f4 native32/full OS share and device; candidate34967147135 shared273(skip2)/Records11.",
+    "generated_host": "P0/P1-A/B original source-scoped evidence retained; followup348836 normal-to-diagnostic gallery and persistent inbox;34958712557 full-host OS share/retry182.857s.",
+    "metadata": "Candidate34967147135 normal native metadata/IDs/signature and3bundle version/CRC; native Package identities in34881183837 unchanged through candidate.",
+    "compatibility": "Candidate product version-only vs4e6a3f4; same old key/ID/entitlements/storage; earlier0.7 P0 update/resource proof and current diagnostic overwrite/Refresh/normal return device evidence.",
+    "physical_review": "Canonical2026-09-14-0.8-device-check.md records all followup through final normal return; intermediate row/restart scope limits and stale home widget display explicitly separated."
+  },
+  "candidate_ipa": {
+    "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+    "run": 34967147135,
+    "version": "0.8.0",
+    "build": "10",
+    "bytes": 2243242,
+    "sha256": "50626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6d1faf2f3fbd80cf6ff6",
+    "crc": "passed",
+    "bundles": [
+      {
+        "id": "com.jibunkit.app.Share",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "id": "com.jibunkit.app.Widget",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "id": "com.jibunkit.app",
+        "version": "0.8.0",
+        "build": "10"
+      }
+    ],
+    "diagnostic_widget_kinds": "absent",
+    "diagnostic_resources": "absent"
+  },
+  "ci_metrics": [
+    {
+      "id": "34801232847",
+      "source": "5538dd96087093f57801b44b4fffae57e933dd4a",
+      "conclusion": "failure",
+      "job_seconds": 1002.0,
+      "run_seconds": 533.0
+    },
+    {
+      "id": "34802338245",
+      "source": "8b5b8b8bf41d9973f0f3733d1e2f1ba7fbaf21ee",
+      "conclusion": "failure",
+      "job_seconds": 3880.0,
+      "run_seconds": 2040.0
+    },
+    {
+      "id": "34805047488",
+      "source": "02af62cd56179e1646ce655f4c16edf5c5e6d48a",
+      "conclusion": "failure",
+      "job_seconds": 2014.0,
+      "run_seconds": 1066.0
+    },
+    {
+      "id": "34806399426",
+      "source": "e15dec98cc8622e52e3395ecbd72e57d5027aa15",
+      "conclusion": "failure",
+      "job_seconds": 1719.0,
+      "run_seconds": 1730.0
+    },
+    {
+      "id": "34808525786",
+      "source": "f6e82dfa7e1007062b1e79f4f66576a87f30bfb1",
+      "conclusion": "cancelled",
+      "job_seconds": 2792.0,
+      "run_seconds": 2803.0
+    },
+    {
+      "id": "34813362141",
+      "source": "2e0438e76a72228c09a9a17f1eabfb7522e672d7",
+      "conclusion": "failure",
+      "job_seconds": 1102.0,
+      "run_seconds": 522.0
+    },
+    {
+      "id": "34814352424",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "conclusion": "failure",
+      "job_seconds": 2616.0,
+      "run_seconds": 1531.0
+    },
+    {
+      "id": "34816553410",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "conclusion": "failure",
+      "job_seconds": 4164.0,
+      "run_seconds": 2098.0
+    },
+    {
+      "id": "34819734774",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+      "conclusion": "failure",
+      "job_seconds": 1686.0,
+      "run_seconds": 1701.0
+    },
+    {
+      "id": "34822983863",
+      "source": "a8c91188e2ff0f14764ff39af4b6348e92b7920e",
+      "conclusion": "success",
+      "job_seconds": 234.0,
+      "run_seconds": 242.0
+    },
+    {
+      "id": "34823801940",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+      "conclusion": "success",
+      "job_seconds": 1231.0,
+      "run_seconds": 1242.0
+    },
+    {
+      "id": "34881183837",
+      "source": "6dd95ccc1861d4609747d1f3f7227885e5d55109",
+      "conclusion": "success",
+      "job_seconds": 1384.0,
+      "run_seconds": 804.0
+    },
+    {
+      "id": "34883605285",
+      "source": "8c54d6e1f1525cf3764dcc12f1a8fd7f30f0151a",
+      "conclusion": "failure",
+      "job_seconds": 3704.0,
+      "run_seconds": 1981.0
+    },
+    {
+      "id": "34887580504",
+      "source": "340e131902a21fd6eea98a91b2e040004ba41244",
+      "conclusion": "failure",
+      "job_seconds": 1430.0,
+      "run_seconds": 1445.0
+    },
+    {
+      "id": "34917691331",
+      "source": "193c4b26ff5c454a0d9d807958bb0b1a65e35215",
+      "conclusion": "failure",
+      "job_seconds": 481.0,
+      "run_seconds": 489.0
+    },
+    {
+      "id": "34931319103",
+      "source": "ad3ada974c548af18357878eedeab5578fc9b730",
+      "conclusion": "failure",
+      "job_seconds": 1331.0,
+      "run_seconds": 818.0
+    },
+    {
+      "id": "34933726496",
+      "source": "cad667ba7a9efdc38499accbc4297ff926bfcfb0",
+      "conclusion": "success",
+      "job_seconds": 1160.0,
+      "run_seconds": 635.0
+    },
+    {
+      "id": "34942834824",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "conclusion": "success",
+      "job_seconds": 379.0,
+      "run_seconds": 391.0
+    },
+    {
+      "id": "34942837167",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "conclusion": "success",
+      "job_seconds": 968.0,
+      "run_seconds": 1019.0
+    },
+    {
+      "id": "34958710691",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "conclusion": "success",
+      "job_seconds": 326.0,
+      "run_seconds": 339.0
+    },
+    {
+      "id": "34958712557",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "conclusion": "success",
+      "job_seconds": 1521.0,
+      "run_seconds": 1096.0
+    },
+    {
+      "id": "34967147135",
+      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "conclusion": "success",
+      "job_seconds": 304.0,
+      "run_seconds": 316.0
+    }
+  ]
+}

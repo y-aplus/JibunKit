@@ -1,12 +1,12 @@
 # 公開版・main・開発branchの現在状態
 
-2026-09-15現在、開発branch `codex/p1-device-gallery-followup` で0.8.0/build10出荷候補を準備中（未公開。実機確認sourceは4e6a3f4、0.7.1/build9）。前候補の実機ではHTTP/Web/通常状態の通知と通常IPA復帰が成功。09927a6の再確認では文字列/URL/ファイルの共有保存と本体内部投入がinvalidInputで失敗し、今回の実機OSは27.0と判明した。追加件数/B状態は未確認。
+2026-09-15現在、開発branch `codex/p1-device-gallery-followup` の0.8.0/build10候補 `71ef1ff` は[CI34967147135](https://github.com/y-aplus/JibunKit/actions/runs/34967147135)で成功（5分16秒）。共通273件(skip2)/Records11件、通常IPAのCRC・3bundle版/ID・診断fixture非混入を確認。実機確認sourceは4e6a3f4（0.7.1/build9）。製品差分は版のみで、正式0.8.0は文書・出荷確認中。最新安定版は0.7.0。
 
 保存先判定を修正した`4e6a3f4`は通常34958710691・診断/native34958712557が成功。共通273件(skip2)、native32件、完全hostのOS共有/再試行/再起動保持/B保持を確認。旧パス判定の誤拒否をmacOSで再現したが、iOS26 Simulatorでは再現しておらず、iOS27.0実機でも修正後の文字列共有保存・本体取込みが成功し、A件数1を確認。URL/ファイルも取込み成功し、A件数3・内容3行を確認。B取込みと共有取消後のA/B件数保持も実機成功。保存後失敗/再試行の手順後も未取込みなし・A4件/B不変を実機確認。再起動後も受信A4件/B件数・内容を保持し、Widget一覧の機能A/B表示も実機成功。ホームのWidget A/B描画・本体値一致・各値更新も実機成功（指定加算回数は逆、体感では即時）。機能Aの無効化/再有効化/削除/初期状態で再登録と各段階のB保持も実機成功。OS Shortcutsの20秒遅延中の取消、保存失敗時のA/B旧値保持、次回正常実行でAだけ指定量増加も実機成功。同IPA上書き/Refresh後のWidget A空値/B保持と受信A4件/B保持、Files直接開く取消/取込み後A5件/B保持、通常IPA復帰とCounter/Reminder・通常Widget/Shortcutも実機成功。通常復帰後の診断Widget旧表示残存は別観測として記録し、通常IPAに診断kind/resourceがないことを検査した。実機手順は受領済みで、最終source照合・文書/出荷gateを進める。[保存先修正版prerelease r2](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)の通常/診断IPAは0.7.1/build9。iOS27固有差分はchat調査へ委ね、追加preview CIは準備のみで未投入。
 
 [検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md)を参照。実機手順は受領済み。最終source照合・文書/出荷gateが残るため、0.8.0は未公開・最終判定前。
 
-更新日: 2026-09-15。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
+更新日: 2026-09-15。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1実機を受領し、0.8.0/build10候補のCI/IPA検査も成功。文書と最終出荷gateを確認中。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
 
 ## 公開版0.7.0
 
@@ -72,7 +72,7 @@ Control/継続表示、任意SDKや外部identity等に未実装・未検証が�
 
 ## mainのP1-A追加（公開0.7.0には含まれない）
 
-共有入力の持続する受信・取消・冪等再試行、通常保存/管理へ接続した二Package Intents、二静的Widgetの通常接続を追加した。P1-Aの実機以外の受入条件は確認済み。P1-1/2/3全体は実機条件が残るためpartialを維持し、P1-Bの通知/HTTP/Webと合わせて0.8.0候補で確認する。1.0の正式境界はユーザー判断により0.8.0完了時に確定する。
+共有入力の持続する受信・取消・冪等再試行、通常保存/管理へ接続した二Package Intents、二静的Widgetの通常接続を追加した。P1-Aの実機以外の受入条件は確認済み。P1-1/2/3の実機再確認は4e6a3f4で受領済み。P1-Bの通知/HTTP/Webと合わせて0.8.0の最終文書/出荷gateを確認する。1.0の正式境界はユーザー判断により0.8.0完了時に確定する。
 
 source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3件、通常UI13件、Files復元1件、Records UI2件が成功した。run全体は45分上限によるcancelledで、成功と書き換えない。テストとartifact公開は終了しており、チェックrunの時間超過annotationと個別結果を照合して採用した。native Intents8件・Widget7件と元のP0/接続証拠はsource差分を確認して再利用する。[P1-A記録](verification/2026-09-13-p1-a.md)。
 
@@ -82,8 +82,8 @@ source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3�
 
 `codex/p1-b-notifications`で通知添付の寿命管理、停止後logout、通常HTTP/Webの二Feature接続を実装・検証した。端末内HTTP/認証fixtureは実装済みで、PCサーバー不要の診断IPAを生成済み。HTTP/通知・通信fixtureはrun34816553410、Web保存/取消/drainは34819734774、無効化/認証と直接Spotlight比較は34823801940で成功。通常回帰は34802338245から影響差分を照合して再利用する。各run全体の失敗/取消と成功したmethodを分けて[P1-B記録](verification/2026-09-14-p1-b.md)へ残す。
 
-Simulatorの初回Spotlight解除は完了表示まで約63秒かかり、以前の120秒超過の原因は未確定。2026-09-15の実機結果は受領済みで、現在の残件は先頭と実機記録に集約する。0.8文書/出荷gateと1.0境界判断は未完了。前候補の表示0.7.0/build8と、準備中の0.7.1/build9を区別する。
+Simulatorの初回Spotlight解除は完了表示まで約63秒かかり、以前の120秒超過の原因は未確定。2026-09-15の実機結果は受領済みで、現在の残件は先頭と実機記録に集約する。0.8文書/出荷gateと1.0境界判断は未完了。旧候補0.7.0/build8、実機再確認済み4e6a3f4の0.7.1/build9、現在の出荷候補71ef1ffの0.8.0/build10を区別する。
 
 P1の[診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260914)を配布済み。診断6beb877/通常8b5b8b8のIPAとZIPを公開再取得で照合し、2026-09-15に一括実機結果を受領済み。これらは前候補であり、共有入力修正後の再確認用IPAではない。正式0.8公開でもない。
 
-旧修正候補09927a6の[CI・配布証拠](verification/2026-09-15-p1-refreshed-candidate-evidence.json)は履歴として保持する。実機で保存失敗を確認したため、新しい確認には先頭の4e6a3f4候補を使う。
+旧修正候補09927a6の[CI・配布証拠](verification/2026-09-15-p1-refreshed-candidate-evidence.json)は履歴として保持する。実機で保存失敗を確認したため、修正後4e6a3f4の再確認は受領済み。新しい実機操作は現在依頼していない。

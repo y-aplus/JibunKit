@@ -114,6 +114,8 @@ macOS標準Bashの`set -u`では空配列の展開も失敗し得るため、opt
 
 ### 実機NG後のnative入力切り分け
 
+実機OSのmajorが既存Simulatorと異なるときは、同じOSだと扱わない。native workflowの`ios_major`は既定26、明示27でXcode27 previewとiOS27を使用する。実行環境のartifactを確認し、Xcode/SDKも変わる比較をOS単独の原因証明にしない。previewの利用は通常IPAのtoolchain移行を意味しない。
+
 `native-surface.yml`の`surface=p1-input-repair`は、既存incoming/intents runnerを独立jobとして一runで実行する。通常IPAやgalleryを検証したとは扱わない。目的・再利用・次の候補境界は[2026-09-15記録](verification/2026-09-15-p1-device-followup.md)を参照する。
 
 ## マイナー版の文書・出荷gate

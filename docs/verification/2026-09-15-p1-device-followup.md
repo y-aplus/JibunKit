@@ -153,3 +153,14 @@ CI外のqueue遅延は別途、Codex更新後のidleスレッド保持の短縮�
 通常の前回実績6分31秒、診断16分59秒、追加nativeの前回実績8分54秒。新規3試験は短いfilesystem操作で、通常見込み9分、診断/nativeの並列run見込み20分、runner/setup/upload込み25分以内・完了目標30分以内とする。通常共通、nativeの新旧全件、完全host OS共有と失敗再試行、両Release IPAを同じ境界で確認する。修正はIncomingStoreのowner pathとエラー分類のみであり、前節の通常UI/Files/gallery/Intent等の差分再利用範囲は変わらない。
 
 予算を19から21runへ追加。これは実機の新しい保存失敗に対する共通修正の一括検証であり、同じ仮説を変えない全CI再試行ではない。3失敗を待たず本体/拡張機能の比較で範囲を絞った。今回のCIが通る前に新候補をユーザーへ渡さない。
+
+
+### iOS27.0の実機報告と追加比較の準備
+
+ユーザーの追記で今回の実機はiOS27.0と判明。URL/ファイル共有も同じ保存エラー。メモへの出力は成功していそうとの補助観測であり、厳密な全形式検証とは扱わない。iOS26固定のSimulator成功を実機OS一致の証拠にしていたわけではないが、このmajor差を従来の比較では検証できていなかった。
+
+[GitHubの2026-09-10発表](https://github.blog/changelog/2026-09-10-xcode-27-runner-image-now-runs-on-macos-27/)と[runner一覧](https://github.com/actions/runner-images/blob/main/images/macos/xcode-27-arm64-Readme.md)を確認。`xcode-27`はarm64/macOS27のpreviewで、確認時の一覧はXcode27 beta6、iOS27.0 Simulator。同じ27.0でも実機buildと同一と推定しない。
+
+既存native workflowへ`ios_major=27`の明示選択を追加準備。既定26/通常IPAのXcode26.6は維持し、27ではXcode27.0とiOS27 runtimeを必須にする。OS選択に失敗して26へfallbackしない。実行したXcode/SDK/OSとsimulator一覧・選択IDをartifactへ残す。selectorの3ローカル試験でmajor分離・完全一致指定・不存在/利用不能拒否を確認した。これはiOS27上で試験した結果ではない。
+
+4e6a3f4の進行中の二runを先に確認し、必要な修正をまとめた後で`native-surface.yml surface=incoming-repair, ios_major=27, simulator_runtime=27.0`の一runを予定する。native32件と小host OS共有3件を並列実行し、見込み各12分・run全体15分、余裕込み25分以内とする。製品の全SDK移行や全CI再実行は行わず、この比較を追加予算1run（累計22）として管理する。Xcode/SDKも変わる比較なので、差が出てもOS単独の原因とは断定しない。既存4e6a3f4のCI待ちにtokenを使ってpollせず、通知後にまとめて判断する。

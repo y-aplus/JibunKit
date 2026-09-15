@@ -1,5 +1,6 @@
 #if os(iOS)
 import XCTest
+import CoreTransferable
 import UniformTypeIdentifiers
 @testable import JibunKitCore
 
@@ -30,7 +31,7 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase, @unchecked Sendable 
 
     @MainActor
     func testDataOnlyTextProviderDoesNotRequireNSStringConversion() async throws {
-        for (type, encoding) in [(UTType.utf8PlainText, String.Encoding.utf8), (.utf16PlainText, .utf16)] {
+        for (type, encoding) in [(UTType.utf8PlainText, String.Encoding.utf8), (.utf16PlainText, .utf16), (.plainText, .utf8)] {
             let provider = NSItemProvider()
             let bytes = try XCTUnwrap("共有テキスト 📝".data(using: encoding))
             provider.registerDataRepresentation(forTypeIdentifier: type.identifier, visibility: .all) { callback in
@@ -41,6 +42,33 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase, @unchecked Sendable 
             defer { try? result.removeTemporaryFiles() }
             guard case .text(let value)? = result.inputs.first else { return XCTFail("Missing text") }
             XCTAssertEqual(value, "共有テキスト 📝")
+        }
+    }
+
+    @MainActor
+    func testTransferableStringProviderKeepsExactValue() async throws {
+        let expected = "共有テキスト 📝\nSecond line"
+        let provider = NSItemProvider()
+        provider.register(expected)
+        let result = try await MiniAppIncomingProviderLoader.load([provider])
+        defer { try? result.removeTemporaryFiles() }
+        guard case .text(let text)? = result.inputs.first else { return XCTFail("Missing typed text") }
+        XCTAssertEqual(text, expected)
+    }
+
+    @MainActor
+    func testInvalidExplicitAndGenericTextAreRejected() async {
+        for type in [UTType.utf8PlainText, .utf16PlainText, .plainText] {
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(forTypeIdentifier: type.identifier, visibility: .all) { callback in
+                callback(Data([0xff]), nil)
+                return nil
+            }
+            do {
+                let result = try await MiniAppIncomingProviderLoader.load([provider])
+                try? result.removeTemporaryFiles()
+                XCTFail("Malformed text was accepted: \(type.identifier)")
+            } catch { /* Failed decoding must not publish a replacement string. */ }
         }
     }
 

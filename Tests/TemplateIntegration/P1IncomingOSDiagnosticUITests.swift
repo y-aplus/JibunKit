@@ -47,6 +47,14 @@ final class P1IncomingOSDiagnosticUITests: XCTestCase {
         XCTAssertTrue(inbox.waitForExistence(timeout: 10), app.debugDescription)
         inbox.tap()
         XCTAssertTrue(app.buttons["incoming.apply.incoming-a"].waitForExistence(timeout: 10), app.debugDescription)
-        print("OS_SHARE \(kind) reached durable inbox through extension")
+        app.buttons["incoming.apply.incoming-a"].tap()
+        XCTAssertTrue(app.staticTexts["未取込みの共有データはありません。"].waitForExistence(timeout: 10), app.debugDescription)
+        app.buttons["閉じる"].tap()
+        XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/incoming-a")))
+        let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == 'loaded'"), object: app.staticTexts["p1.incoming.status"])
+        XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 15), .completed, app.debugDescription)
+        let expected = kind == "text" ? "Shared text from incoming-a" : kind == "url" ? "https://example.com/incoming-a" : "Shared file from incoming-a"
+        XCTAssertTrue(app.staticTexts["p1.incoming.contents"].label.contains(expected), app.debugDescription)
+        print("OS_SHARE \(kind) reached Feature store with expected contents")
     }
 }

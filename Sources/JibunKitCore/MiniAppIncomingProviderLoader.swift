@@ -1,5 +1,6 @@
 #if os(iOS)
 import Foundation
+import CoreTransferable
 import UniformTypeIdentifiers
 
 /// Native provider URLs expire when their callback returns. This owns copies
@@ -37,65 +38,81 @@ public enum MiniAppIncomingProviderLoader {
         return MiniAppPreparedIncoming(inputs: inputs, directoryURL: directory)
     }
 
-    private static func load(_ provider: NSItemProvider, to destination: URL) async throws -> MiniAppIncomingStore.Input {
+    private enum TextDecoding: Error { case needsTransferable }
+
+    private static func load(_ provider: NSItemProvider, to destination: URL, transferableText: Bool = false) async throws -> MiniAppIncomingStore.Input {
         let types = provider.registeredTypeIdentifiers
         let gate = ProviderContinuation()
-        return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { continuation in
-                guard gate.install(continuation) else { return }
-                let progress: Progress
-                if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
-                    progress = provider.loadObject(ofClass: NSURL.self) { item, error in
-                        gate.run {
-                            if let error { throw error }
-                            guard let url = item as? URL, url.isFileURL else { throw invalidProvider("file-url-object", types: types) }
-                            try MiniAppIncomingFileAccess.copy(from: url, to: destination)
-                            let type = UTType(filenameExtension: url.pathExtension)?.identifier ?? UTType.data.identifier
-                            return .file(destination, typeIdentifier: type, displayName: url.lastPathComponent)
-                        }
-                    }
-                } else if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                    progress = provider.loadObject(ofClass: NSURL.self) { item, error in
-                        gate.run {
-                            if let error { throw error }
-                            guard let url = item as? URL, !url.isFileURL, url.scheme != nil else { throw invalidProvider("url-object", types: types) }
-                            return .url(url)
-                        }
-                    }
-                } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
-                    // ShareLink/Transferable may vend a data representation only.
-                    // Conforming to plain text does not promise NSString loading.
-                    let type = [UTType.utf8PlainText, .utf16PlainText, .plainText]
-                        .first { provider.hasItemConformingToTypeIdentifier($0.identifier) }!
-                    progress = provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, error in
-                        gate.run {
-                            if let error { throw error }
-                            let encoding: String.Encoding = type == .utf16PlainText ? .utf16 : .utf8
-                            guard let data, let text = String(data: data, encoding: encoding) else {
-                                throw invalidProvider("text-decode", types: types, detail: "selected=\(type.identifier) bytes=\(data?.count ?? -1) utf16BOM=\(data?.starts(with: [0xff, 0xfe]) == true || data?.starts(with: [0xfe, 0xff]) == true)")
+        do {
+            return try await withTaskCancellationHandler {
+                try await withCheckedThrowingContinuation { continuation in
+                    guard gate.install(continuation) else { return }
+                    let progress: Progress
+                    if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                        progress = provider.loadObject(ofClass: NSURL.self) { item, error in
+                            gate.run {
+                                if let error { throw error }
+                                guard let url = item as? URL, url.isFileURL else { throw invalidProvider("file-url-object", types: types) }
+                                try MiniAppIncomingFileAccess.copy(from: url, to: destination)
+                                let type = UTType(filenameExtension: url.pathExtension)?.identifier ?? UTType.data.identifier
+                                return .file(destination, typeIdentifier: type, displayName: url.lastPathComponent)
                             }
-                            return .text(text)
                         }
-                    }
-                } else if let type = provider.registeredTypeIdentifiers.first(where: { UTType($0)?.conforms(to: .data) == true }) {
-                    let name = provider.suggestedName ?? "Shared file"
-                    progress = provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
-                        gate.run {
-                            if let error { throw error }
-                            guard let url else { throw invalidProvider("file-representation", types: types) }
-                            // Source access ends at callback return. Cancellation
-                            // drains this copy before the caller removes its folder.
-                            try MiniAppIncomingFileAccess.copy(from: url, to: destination)
-                            return .file(destination, typeIdentifier: type, displayName: name)
+                    } else if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
+                        progress = provider.loadObject(ofClass: NSURL.self) { item, error in
+                            gate.run {
+                                if let error { throw error }
+                                guard let url = item as? URL, !url.isFileURL, url.scheme != nil else { throw invalidProvider("url-object", types: types) }
+                                return .url(url)
+                            }
                         }
+                    } else if transferableText {
+                        progress = provider.loadTransferable(type: String.self) { result in
+                            gate.run { .text(try result.get()) }
+                        }
+                    } else if provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
+                        // ShareLink/Transferable may vend a data representation only.
+                        // Conforming to plain text does not promise NSString loading.
+                        let type = [UTType.utf8PlainText, .utf16PlainText, .plainText]
+                            .first { provider.hasItemConformingToTypeIdentifier($0.identifier) }!
+                        progress = provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, error in
+                            gate.run {
+                                if let error { throw error }
+                                let encoding: String.Encoding = type == .utf16PlainText ? .utf16 : .utf8
+                                guard let data, let text = String(data: data, encoding: encoding) else {
+                                    // Generic plain-text can carry Transferable's typed representation.
+                                    // Explicit UTF encodings remain strict; no arbitrary unarchiving.
+                                    if type == .plainText { throw TextDecoding.needsTransferable }
+                                    throw invalidProvider("text-decode", types: types, detail: "selected=\(type.identifier) bytes=\(data?.count ?? -1) utf16BOM=\(data?.starts(with: [0xff, 0xfe]) == true || data?.starts(with: [0xfe, 0xff]) == true)")
+                                }
+                                return .text(text)
+                            }
+                        }
+                    } else if let type = provider.registeredTypeIdentifiers.first(where: { UTType($0)?.conforms(to: .data) == true }) {
+                        let name = provider.suggestedName ?? "Shared file"
+                        progress = provider.loadFileRepresentation(forTypeIdentifier: type) { url, error in
+                            gate.run {
+                                if let error { throw error }
+                                guard let url else { throw invalidProvider("file-representation", types: types) }
+                                // Source access ends at callback return. Cancellation
+                                // drains this copy before the caller removes its folder.
+                                try MiniAppIncomingFileAccess.copy(from: url, to: destination)
+                                return .file(destination, typeIdentifier: type, displayName: name)
+                            }
+                        }
+                    } else {
+                        gate.run { throw invalidProvider("unsupported-types", types: types) }
+                        return
                     }
-                } else {
-                    gate.run { throw invalidProvider("unsupported-types", types: types) }
-                    return
+                    gate.setProgress(progress)
                 }
-                gate.setProgress(progress)
-            }
-        } onCancel: { gate.cancel() }
+            } onCancel: { gate.cancel() }
+        } catch TextDecoding.needsTransferable {
+            // The first callback has settled before installing the second gate.
+            // Cancellation between requests must not start another provider load.
+            try Task.checkCancellation()
+            return try await load(provider, to: destination, transferableText: true)
+        }
     }
     /// Debug diagnostics expose format/stage only, never shared text, URLs or bytes.
     nonisolated private static func invalidProvider(_ stage: String, types: [String], detail: String = "") -> Error {

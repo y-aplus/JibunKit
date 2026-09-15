@@ -1,0 +1,36 @@
+{
+  "source": "193c4b26ff5c454a0d9d807958bb0b1a65e35215",
+  "run": 34917691331,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34917691331",
+  "conclusion": "failure",
+  "job_seconds": 481,
+  "tests": {
+    "file": {
+      "result": "passed",
+      "seconds": 31.242,
+      "scope": "OS Share -> extension -> inbox row"
+    },
+    "text": {
+      "result": "failure",
+      "seconds": 20.721,
+      "phase": "provider-load",
+      "types": [
+        "public.plain-text"
+      ],
+      "selected": "public.plain-text",
+      "bytes": 167,
+      "utf16_bom": false,
+      "failure": "UTF-8 decoding failed; no destination displayed"
+    },
+    "url": {
+      "result": "passed",
+      "seconds": 24.223,
+      "scope": "OS Share -> extension -> inbox row"
+    }
+  },
+  "limits": [
+    "No physical-device conclusion.",
+    "URL/file cases did not apply receipts to Feature storage in this run.",
+    "The internal format of the167 bytes was not captured or inferred as fact."
+  ]
+}

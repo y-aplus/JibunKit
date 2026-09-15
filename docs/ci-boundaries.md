@@ -184,3 +184,6 @@ P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の�
 
 
 `native-surface.yml surface=incoming-os`はP1実機後の共有エラー切り分け用。tracked sourceから通常host+受信A/Bだけを構成し、OS共有の文字列/URL/ファイルを独立methodで観測する。未実行の他形式を最初の失敗で隠さない。通常版/完全P1 candidate/実機受入の代替にはしない。typeと工程のみのDebug診断をxcresult/logへ保存する。詳細は[実機後記録](verification/2026-09-15-p1-device-followup.md)。
+
+
+`surface=incoming-repair`はincoming native回帰とincoming-osを独立jobで一runへまとめる。plain-text受信の修正確認用で、Intent/Widget/通常IPAは再実行しない。OS3件はFeature取込み内容まで照合する。最終の完全host/実機確認は別の未完条件として保持する。

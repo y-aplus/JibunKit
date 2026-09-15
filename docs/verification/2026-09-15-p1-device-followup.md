@@ -70,3 +70,13 @@ source `340e131902a21fd6eea98a91b2e040004ba41244`、generated23分50秒。Intent
 Debug限定でproviderの登録type、選択したdecode分岐・byte数/BOM有無、provider-load/open-inbox/read-catalogの失敗工程を出す。共有文字列・URL本文・ファイル内容は診断に出さない。Releaseのエラー形式と受入判定は維持し、文字コードの無条件fallbackや保存先安全検査の迂回は加えない。この小hostで現象が出なければ完全hostとの差を比較する。これだけを完全P1の成功証拠にしない。
 
 この診断はP1-3.os（実機必須）の合格証拠ではないため、preflightのdevice条件は保留したまま。診断jobは別欄で入力/時間/目的を記録し、Simulatorをdeviceの代替としてgateへ登録しない。正常版とgallery、Intent管理の各成功sourceは保持する。
+
+## 34917691331: 文字列decodeに限定、標準Transferableで修正を検証
+
+source `193c4b26ff5c454a0d9d807958bb0b1a65e35215`、job8分01秒。文字列は`public.plain-text`1 provider、167 byte、UTF-16 BOMなしでUTF-8 decode失敗。provider-loadの段階であり、保存先やcatalogの失敗ではなかった。内部形式をアーカイブ等と断定する証拠は取得していない。URL24.223秒/ファイル31.242秒はOS共有→extension→inboxの行表示まで成功。[個別観測](2026-09-15-p1-incoming-os-evidence.json)。実機URLの以前の失敗原因は、この小host成功だけでは解決扱いにしない。
+
+generic plain-textをUTF-8で読めない場合は、[Apple標準loadTransferable](https://developer.apple.com/documentation/foundation/nsitemprovider/loadtransferable(type:completionhandler:))でStringとして読む。型に基づく受信を標準APIへ委ね、独自のアーカイブ復号や任意型の許可は行わない。明示UTF-8/UTF-16とgenericの生UTF-8は既存data読出しを維持する。最初のcallbackが終了してから別の取消gateを作り、間の取消を確認する。データ公開やファイル寿命・owner管理は変えない。
+
+次の必要CIは`surface=incoming-repair`、一runのincomingとincoming-osを並行実行する。incomingは既存25件+Transferable文字列/不正textの2件。従来data-only試験へgeneric生UTF-8も追加し、Apple標準register(String)で作ったproviderは日本語/改行/絵文字の完全一致を確認する。OS側の独立3件は、今回はFeatureへ取り込み後の内容一致まで検査する。前回の単なるinbox行表示と同じ成功範囲にしない。
+
+計画はnative10分/OS10分、各上限30分。累計予算を16runへ変更する理由は、8分の診断で切り分けたdecode修正のnative/OS同時検証であり、完全P1 hostの再試行ではない。これが通った後に完全hostの未完了経路と通常/診断IPAの出荷検証をまとめる。現在は新修正のSwift/iOS実行待ちで、0.8未達・0.7.1未公開。

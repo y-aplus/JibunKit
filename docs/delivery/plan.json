@@ -281,7 +281,7 @@
       "state": "partial",
       "title": "URL・外部ファイル・Share入口",
       "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功",
-      "remaining": "34887580504でOS共有先セルを通過したが、文字列は拡張内invalidInputで失敗。小hostの独立3試験で入力形式/失敗工程とURL/ファイルを切り分ける。OS成功/取消/失敗再試行・更新保持の実機条件は未完。",
+      "remaining": "小host34917691331でURL/ファイルはOS共有→inbox成功。文字列はgeneric plain-textのUTF-8 decodeで失敗し、標準Transferableで読む修正をnative/OS検証中。完全hostと実機のOS成功/取消/失敗再試行・更新保持は未完。",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {

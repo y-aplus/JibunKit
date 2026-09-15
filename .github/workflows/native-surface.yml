@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start, p1-input-repair, incoming-os]
+        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair]
       simulator_runtime:
         default: ''
         type: string
@@ -29,7 +29,7 @@ jobs:
       fail-fast: false
       matrix:
         # One device-followup boundary; independent builds finish/report once.
-        surface: ${{ fromJSON(inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || format('["{0}"]', inputs.surface)) }}
+        surface: ${{ fromJSON(inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || inputs.surface == 'incoming-repair' && '["incoming","incoming-os"]' || format('["{0}"]', inputs.surface)) }}
     runs-on: macos-26
     timeout-minutes: 30
     env:

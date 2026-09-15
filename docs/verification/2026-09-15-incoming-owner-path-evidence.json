@@ -33,8 +33,7 @@
     "published": true
   },
   "pending": [
-    "User iOS27.0 device confirmation of the existing-parent fix.",
-    "Research is handled in chat; optional iOS27 preview CI is prepared, not dispatched."
+    "Final source and documentation/release review. Optional iOS27 comparison is prepared but not dispatched; no additional device retest requested."
   ],
   "diagnostic": {
     "run": 34958712557,
@@ -77,6 +76,55 @@
         "sha256": "d3a4971ae3d85ac40644b1c28945fd507ec5226d974e1a573f59b7abcbf50974",
         "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915-r2/JibunKit-P1-4e6a3f4.zip",
         "public_download_verified": true
+      }
+    }
+  },
+  "physical_review": {
+    "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+    "os": "iOS 27.0 (user reported)",
+    "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+    "result": "User confirmed the listed followup procedures and return to normal IPA. Intermediate failed inbox row was not independently reported.",
+    "normal_widget_inventory": {
+      "normal": {
+        "kinds": {
+          "JibunKitCounterWidget": true,
+          "com.jibunkit.fixture.feature-a.widget": false,
+          "com.jibunkit.fixture.feature-b.widget": false
+        },
+        "diagnostic_resources": []
+      },
+      "diagnostic": {
+        "kinds": {
+          "JibunKitCounterWidget": true,
+          "com.jibunkit.fixture.feature-a.widget": true,
+          "com.jibunkit.fixture.feature-b.widget": true
+        },
+        "diagnostic_resources": [
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/ja.lproj/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/ja.lproj/Localizable.strings",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/en.lproj/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/en.lproj/Localizable.strings",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureA.bundle/Info.plist",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/ja.lproj/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/ja.lproj/Localizable.strings",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/en.lproj/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/en.lproj/Localizable.strings",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureA.bundle/Info.plist",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/ja.lproj/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/ja.lproj/Localizable.strings",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/en.lproj/",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/en.lproj/Localizable.strings",
+          "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/JibunKit_P1WidgetFeatureB.bundle/Info.plist",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/ja.lproj/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/ja.lproj/Localizable.strings",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/en.lproj/",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/en.lproj/Localizable.strings",
+          "Payload/JibunKit.app/JibunKit_P1WidgetFeatureB.bundle/Info.plist"
+        ]
       }
     }
   }

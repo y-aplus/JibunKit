@@ -780,10 +780,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.7.1"
+            "0.8.0"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "9"
+            "10"
           require_equal "widget short version" \
             "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"
@@ -1112,8 +1112,8 @@ jobs:
           app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
           widget="$app/PlugIns/JibunKitWidget_Extension.appex"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.7.1
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 9
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.8.0
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 10
           entitlements_root="$RUNNER_TEMP/template-check/Derived"
           app_entitlements="$(find "$entitlements_root" -type f -name 'JibunKit-App.entitlements')"
           widget_entitlements="$(find "$entitlements_root" -type f -name 'JibunKitWidget-Extension.entitlements')"
@@ -1135,7 +1135,7 @@ jobs:
           unzip -t "$ipa"
           shasum --algorithm 256 "$ipa"
           if [[ "$CANDIDATE_KIND" == P1 ]]; then
-            python3 Tools/verify-p1-device-ipa.py "$ipa" --version 0.7.1 --build 9 \
+            python3 Tools/verify-p1-device-ipa.py "$ipa" --version 0.8.0 --build 10 \
               --output artifacts/P1-device-inventory.json
           fi
 

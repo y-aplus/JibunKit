@@ -1,11 +1,7 @@
-# JibunKit 0.7.1 — 公開前の下書き
+# JibunKit 0.7.1 — 診断候補の履歴（正式版未公開）
 
-未公開。現在の安定版は0.7.0。2026-09-15のP1実機確認を区切りに、本体/Widget/Shareの0.7.1/build9候補を準備中。0.8の到達条件は未達のため、P1全体を完成と扱わない。
+0.7.1/build9はP1実機修正の確認用候補に使用した版。正式0.7.1は公開せず、実機確認が揃った成果を0.8.0候補へ進める。過去のprereleaseとassetは変更しない。
 
-共有文字列の読込みを修正し、native29件と小hostのOS共有3件で文字列/URL/ファイルの取込み・内容一致を確認した。Shortcuts診断制御は永続化し、native実行・metadata比較と通常host管理を確認済み。完全P1 hostの共有・失敗再試行と修正後の通常/診断IPAもCIで成功し、実機用prereleaseの公開再取得・CRC・byte一致を確認済み。正式版の出荷承認とは区別する。
+source4e6a3f4の通常34958710691・診断/native34958712557は成功。共有文字列の変換と初回owner保存先の誤拒否を修正し、実機で共有/Files直接入口、取消/再試行/B保持、Shortcuts取消/失敗/回復、Widget追加/更新/管理、同IPA上書き/Refresh、通常版復帰を確認した。通常版復帰後のホームの診断Widget旧表示残存は別観測として保持する。
 
-前候補ではHTTP/Web/通常状態の通知、通常版への復帰と既存Counter/Reminder・Widget/Shortcutの実機確認が成功。共有入力の再確認、OS Shortcutsでの取消/失敗診断、実機Widget A/Bの表示・管理・更新保持が残る。SimulatorでのWidget gallery成功を実機成功へ拡張しない。
-
-[実機結果](docs/verification/2026-09-14-0.8-device-check.md)と[検証結果・再利用範囲](docs/verification/2026-09-15-p1-device-followup.md)を参照。必要実機、配布整合性、文書と出荷範囲を確認して公開内容を確定する。未取得の配布URL・digestや成功結果は記載しない。
-
-09927a6の実機再確認で、受信先選択後と本体内部投入の両方で保存がinvalidInputになった。初回owner保存先の検査修正は4e6a3f4の通常/診断/native CIで成功。実機での解消は再確認待ち。公開済みの修正確認用IPAを実機合格とは扱わない。
+[公開した診断候補](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)、[実機結果](docs/verification/2026-09-14-0.8-device-check.md)、[0.8.0の出荷前下書き](release-notes-0.8.0.md)を参照。0.8.0の公開済みを意味しない。

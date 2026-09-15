@@ -1,0 +1,40 @@
+{
+  "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+  "run": 34958710691,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34958710691",
+  "conclusion": "success",
+  "elapsed_seconds": 339,
+  "tests": {
+    "shared": 273,
+    "skipped": 2,
+    "failures": 0,
+    "new_methods": {
+      "testContainerAliasSupportsFirstWriteReopenAndOwnerRecreation": 0.052,
+      "testPrivateContainerSpellingSupportsMissingAndExistingOwner": 0.022,
+      "testDanglingOwnerAliasAndRegularFileAreRejectedWithoutChangingB": 0.027
+    },
+    "existing_external_alias_rejection_seconds": 0.011
+  },
+  "legacy_comparison": "INCOMING_PATH missing-owner legacy-contained=false private-spelling=true",
+  "interpretation": "On the macOS runner, the old independent parent/child prefix comparison rejects the nonexistent owner under a private spelling. Fixed first write/reopen/removal/recreation and rejection tests pass. This demonstrates the path-validation defect, not the exact physical-device failure branch.",
+  "normal_ipa": {
+    "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+    "run": 34958710691,
+    "version": "0.7.1",
+    "build": "9",
+    "sha256": "935c1b865e753c1514e39a0d105182eb9be7d7dd97f7843ee9a6fae25e700a75",
+    "bytes": 2243231,
+    "bundles": [
+      "com.jibunkit.app.Share",
+      "com.jibunkit.app.Widget",
+      "com.jibunkit.app"
+    ],
+    "crc": "passed",
+    "published": false
+  },
+  "pending": [
+    "Same-source generated diagnostic and iOS26 native32 run34958712557.",
+    "Prepared iOS27 comparison after current CI evidence is inspected.",
+    "No new physical success or published candidate."
+  ]
+}

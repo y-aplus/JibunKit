@@ -164,3 +164,12 @@ CI外のqueue遅延は別途、Codex更新後のidleスレッド保持の短縮�
 既存native workflowへ`ios_major=27`の明示選択を追加準備。既定26/通常IPAのXcode26.6は維持し、27ではXcode27.0とiOS27 runtimeを必須にする。OS選択に失敗して26へfallbackしない。実行したXcode/SDK/OSとsimulator一覧・選択IDをartifactへ残す。selectorの3ローカル試験でmajor分離・完全一致指定・不存在/利用不能拒否を確認した。これはiOS27上で試験した結果ではない。
 
 4e6a3f4の進行中の二runを先に確認し、必要な修正をまとめた後で`native-surface.yml surface=incoming-repair, ios_major=27, simulator_runtime=27.0`の一runを予定する。native32件と小host OS共有3件を並列実行し、見込み各12分・run全体15分、余裕込み25分以内とする。製品の全SDK移行や全CI再実行は行わず、この比較を追加予算1run（累計22）として管理する。Xcode/SDKも変わる比較なので、差が出てもOS単独の原因とは断定しない。既存4e6a3f4のCI待ちにtokenを使ってpollせず、通知後にまとめて判断する。
+
+
+### 34958710691: 通常版成功、旧保存先判定の不具合を再現
+
+source `4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac`。[通常run34958710691](https://github.com/y-aplus/JibunKit/actions/runs/34958710691)は5分39秒で成功。共通273件（skip2、失敗0）、独立Package試験、通常Release本体/Widget/Shareの署名・metadata検査を完了。取得した通常IPAのCRCと0.7.1/build9・3bundle識別子も確認した。[個別証拠](2026-09-15-incoming-owner-path-evidence.json)。未公開であり、ユーザーへ渡す新候補はまだ揃っていない。
+
+新規3試験と既存の外向きsymlink拒否はすべて成功。macOSの`/private`表記を使った未作成ownerでは、旧prefix比較が`legacy-contained=false`と記録された。旧検査が初回の正規保存先を拒否する不具合をrunnerで再現し、修正後の保存・再openが同じfixtureで通った。実機の失敗分岐を直接観測したわけではないため、実機原因の確定や解消とはまだ言わない。
+
+同sourceの診断/native run34958712557はこの記録時点で進行中。結果を確認してから準備済みiOS27比較へ進む。通常IPAを再ビルドする理由は現時点でない。

@@ -2,7 +2,7 @@
 
 2026-09-15現在、開発branch `codex/p1-device-gallery-followup` で0.7.1/build9候補を準備中（正式版は未公開）。前候補の実機ではHTTP/Web/通常状態の通知と通常IPA復帰が成功。09927a6の再確認では文字列/URL/ファイルの共有保存と本体内部投入がinvalidInputで失敗し、今回の実機OSは27.0と判明した。追加件数/B状態は未確認。
 
-保存先判定を修正した`4e6a3f4`は通常34958710691・診断/native34958712557が成功。共通273件(skip2)、native32件、完全hostのOS共有/再試行/再起動保持/B保持を確認。旧パス判定の誤拒否をmacOSで再現したが、iOS26 Simulatorでは再現しておらず、iOS27.0実機でも修正後の文字列共有保存・本体取込みが成功し、A件数1を確認。URL/ファイルも取込み成功し、A件数3・内容3行を確認。B取込みと共有取消後のA/B件数保持も実機成功。保存後失敗/再試行の手順後も未取込みなし・A4件/B不変を実機確認。再起動後も受信A4件/B件数・内容を保持し、Widget一覧の機能A/B表示も実機成功。Widget描画/更新/管理、上書き/Refresh保持は未確認。[保存先修正版prerelease r2](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)の通常/診断IPAは0.7.1/build9。iOS27固有差分はchat調査へ委ね、追加preview CIは準備のみで未投入。
+保存先判定を修正した`4e6a3f4`は通常34958710691・診断/native34958712557が成功。共通273件(skip2)、native32件、完全hostのOS共有/再試行/再起動保持/B保持を確認。旧パス判定の誤拒否をmacOSで再現したが、iOS26 Simulatorでは再現しておらず、iOS27.0実機でも修正後の文字列共有保存・本体取込みが成功し、A件数1を確認。URL/ファイルも取込み成功し、A件数3・内容3行を確認。B取込みと共有取消後のA/B件数保持も実機成功。保存後失敗/再試行の手順後も未取込みなし・A4件/B不変を実機確認。再起動後も受信A4件/B件数・内容を保持し、Widget一覧の機能A/B表示も実機成功。ホームのWidget A/B描画・本体値一致・各値更新も実機成功（指定加算回数は逆、体感では即時）。片側管理、上書き/Refresh保持は未確認。[保存先修正版prerelease r2](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)の通常/診断IPAは0.7.1/build9。iOS27固有差分はchat調査へ委ね、追加preview CIは準備のみで未投入。
 
 [検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md)を参照。共有、Shortcut取消/失敗、Widget表示/管理/更新保持と出荷確認が残り、0.8.0未達。
 

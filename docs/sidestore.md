@@ -57,9 +57,9 @@ SideStoreがApp Groupを個人Team向けに書き換える場合、アプリの`
 
 JibunKitはSideStoreの`My Apps`上では1つのアプリであり、無料Appleアカウントのactive app枠を1つ使う。SideStore自身もactive app枠を使う。公式FAQでは無料アカウントはSideStoreを含め同時に3アプリ、7日間に10個の異なるアプリ（App IDs）までと説明されている。[SideStore FAQ](https://docs.sidestore.io/docs/faq)
 
-公開版0.7.0のIPAには本体1つとWidget extension 1つが入る。mainのP1-A追加とP1診断IPAにはShare Extensionも含み、本体/Widget/Shareの3つのbundle IDを持つ（Shareは`com.jibunkit.app.Share`）。通常IPAでの追加構成は[P1-A記録](verification/2026-09-13-p1-a.md)、配布済み診断IPAと実機未確認の範囲は[P1実機手順](verification/2026-09-14-0.8-device-check.md)を参照する。
+公開版0.7.0のIPAには本体1つとWidget extension 1つが入る。mainのP1-A追加とP1診断IPAにはShare Extensionも含み、本体/Widget/Shareの3つのbundle IDを持つ（Shareは`com.jibunkit.app.Share`）。通常IPAでの追加構成は[P1-A記録](verification/2026-09-13-p1-a.md)、配布済み診断IPAとsource別の実機結果は[P1実機手順](verification/2026-09-14-0.8-device-check.md)を参照する。
 
-WidgetやShare Extensionは別のホーム画面アプリではなく、App Groupもアプリ枠ではない。署名処理では本体とextensionのbundle ID・profileを扱うため、app枠・bundle ID数・extension数・App Group数を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。P1の上書き・署名更新実績は今回の確認結果を待ち、旧構成の実績から推定しない。
+WidgetやShare Extensionは別のホーム画面アプリではなく、App Groupもアプリ枠ではない。署名処理では本体とextensionのbundle ID・profileを扱うため、app枠・bundle ID数・extension数・App Group数を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。4e6a3f4（0.7.1/build9）のiOS27.0実機でP1診断版の同IPA上書き・Refresh後のWidget/受信保持と、通常版復帰後のCounter/Reminder・通常Widget/Shortcutを確認済み。0.8.0/build10候補の新IPAは出荷検証中であり、同じIPAそのものを実機試験済みとは記載しない。
 
 ## 保証しない境界
 
@@ -71,3 +71,7 @@ WidgetやShare Extensionは別のホーム画面アプリではなく、App Grou
 - 端末交換、iOS更新、pairing file再作成後の維持。
 
 SideStore公式手順も、iOS更新や端末リセット等でpairing fileが無効になる場合があるとしている。問題時はアプリを削除する前に、[SideStoreのトラブルシューティング](https://docs.sidestore.io/docs/troubleshooting)と検証記録を確認する。
+
+## 診断版から通常版へ戻した場合
+
+同じbundle IDのまま通常IPAへ上書きすると、診断Featureは本体一覧からなくなる。ホームに既に置いた診断Widgetは以前の表示のまま残る場合がある（4e6a3f4実機で観測）。通常IPAに診断kind/resourceがないことは検査済みで、残った表示を診断Featureが引き続き動いている証拠とはしない。不要な配置はホームから取り除ける。コード除去と所有データの削除は別で、詳しくは[静的Widgetの接続](guides/package-static-widgets.md#widget型を出荷構成から除いた後)を参照する。

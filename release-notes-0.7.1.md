@@ -1,9 +1,9 @@
 # JibunKit 0.7.1 — 公開前の下書き
 
-未公開。現在の安定版は0.7.0。2026-09-15のP1実機確認を区切りに、次の候補は本体/Widget/Shareの0.7.1/build9を準備する。0.8の到達条件は未達のため、P1全体を完成と扱わない。
+未公開。現在の安定版は0.7.0。2026-09-15のP1実機確認を区切りに、本体/Widget/Shareの0.7.1/build9候補を準備中。0.8の到達条件は未達のため、P1全体を完成と扱わない。
 
-HTTP/Web/通常状態の通知、通常版への復帰と既存Counter/Reminder・Widget/Shortcutは[前候補の実機結果](docs/verification/2026-09-14-0.8-device-check.md)を得た。これを新sourceの未確認部分へ自動的に引き継がない。
+共有文字列の読込みを修正し、native29件と小hostのOS共有3件で文字列/URL/ファイルの取込み・内容一致を確認した。Shortcuts診断制御は永続化し、native実行・metadata比較と通常host管理を確認済み。完全P1 hostの共有・失敗再試行、修正後の通常/診断IPAは現在検証中。
 
-共有入力の文字列変換とShortcuts診断制御の永続化を修正し、native共有25件、Intent実行8件とUI1件、単独/統合metadata比較をCI34881183837で確認済み。別OS文脈でのShortcuts実行やShare Extensionの実動作を、この成功だけで検証済みとはしない。共有URL保存とWidget galleryでのA/B非表示は切り分け中。通常IPA/主要回帰、候補inventory、必要な再実機、互換性・出荷範囲を確認してから公開内容を確定する。配布URL・digest・成功結果はまだ記載しない。
+前候補ではHTTP/Web/通常状態の通知、通常版への復帰と既存Counter/Reminder・Widget/Shortcutの実機確認が成功。共有入力の再確認、OS Shortcutsでの取消/失敗診断、実機Widget A/Bの表示・管理・更新保持が残る。SimulatorでのWidget gallery成功を実機成功へ拡張しない。
 
-共有文字列の追加修正は34933726496でnative29件と小hostのOS共有3件が成功。URL/ファイルもFeature内容一致まで確認した。完全P1 hostの共有・失敗再試行と最新の通常/診断IPA、必要実機は未確認。前候補の通常回帰・Widget gallery・Intent管理はsourceと影響差分を付けて再利用し、詳細は[実機後の検証記録](docs/verification/2026-09-15-p1-device-followup.md)へ集約する。
+[実機結果](docs/verification/2026-09-14-0.8-device-check.md)と[検証結果・再利用範囲](docs/verification/2026-09-15-p1-device-followup.md)を参照。必要実機、配布整合性、文書と出荷範囲を確認して公開内容を確定する。未取得の配布URL・digestや成功結果は記載しない。

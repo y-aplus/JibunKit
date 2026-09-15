@@ -17,6 +17,10 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 
 ローカルでP1 host構成18件・Intent identity tool4件が成功。workflow YAMLの解析とdiff check成功。WindowsではSwift/Xcodeを実行しておらず、下記native CIまで成功。確認済みHTTP/Web/通知とP0実機は元sourceを保持し、今後の候補への適用は差分レビューする。0.8には昇格しない。実機確認を区切りに版を進める指示に従い、P1全条件が閉じなければ次の公開は0.7.1として版変更・通常出荷検証を行う。
 
+## 現在の到達点（34933726496確認後）
+
+共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは次の境界で検証する。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の投入計画。
+
 ## 残件
 
 Widget gallery/上書き、新しい候補でOS Shareの成功/取消/再試行とShortcuts制御の確認、必要回帰・配布整合性・文書再確認。今は追加実機操作を依頼しない。過去の58件レビューはそのcommitの記録であり、本変更後の出荷確認にそのまま転用しない。
@@ -92,3 +96,27 @@ source `ad3ada974c548af18357878eedeab5578fc9b730`、[run34931319103](https://git
 ### CI待ちとqueue遅延の区別
 
 34917691331の時刻（2026-09-15 JST）は、投入10:32:45、完了10:40:54、ローカルqueue登録成功10:41:11、会話への受信13:59:10。CI8分09秒、完了から登録17秒、登録から受信3時間17分59秒。直前ターンは10:33:41に終了しており、長い実装中のために保留されたとの証拠はない。登録後のCodex側処理が遅れた理由は未確定。これをCI実行時間や監視ポーリング時間に含めない。監視設定の変更や再送は行っていない。
+
+
+## 34933726496成功: 修正確認と通常/完全診断候補への復帰
+
+source `cad667ba7a9efdc38499accbc4297ff926bfcfb0`。[run34933726496](https://github.com/y-aplus/JibunKit/actions/runs/34933726496)は全体10分35秒、native8分54秒/OS10分26秒（並列）で成功。[個別証拠](2026-09-15-p1-incoming-success-evidence.json)。native29件はNSString限定secure復号・不正archive拒否・明示UTFの厳格性・取消/drain/owner保持を含む。OS3件は文字列39.973秒、URL44.882秒、ファイル54.201秒で、実Share ExtensionからFeatureの内容一致まで成功した。完全P1 hostと実機へは成功を拡張しない。
+
+次の実装追加は行わず、修正済みの同一sourceから通常/診断候補を作る。一つの候補レビューの下で、既存workflowを二run並行実行する。source固定後は両runが完了するまでそのbranchを動かさない。正確な入力はローカルpreflightの`execution_inputs`に保持する。
+
+- 通常: `build-ios.yml`、`simulator_tests=false, feature_validation=false, records_validation=false, simulator_runtime=''`。共有Swift試験、独立Package試験、build requirements、通常Release build、0.7.1/build9のIPA署名/metadata/extension検査を実行する。Simulatorを実行したとは扱わない。
+- 診断: `build-ios.yml`、`simulator_tests=true, feature_validation=true, generated_validation_only=true, records_validation=false, p1_device_validation=true, p1_device_http_validation=false, simulator_runtime=''`。`feature_ui_test_filter=MigrationUITests/P1IncomingUITests/testOSShareTextURLAndFileReachInboxAndRetryWithoutDuplicateCommit`、他の任意検証は既定false。全P1ペアを登録したhostで文字列/URL/ファイルの共有、保存後失敗/再試行の重複なし、再起動後保持とB保持を確認し、同じjobで診断IPAとinventoryを作る。
+
+### 30分以内の見込み
+
+通常runの以前の32分50秒は、準備2分28秒、Standalone Counter3分22秒、backup harness2分30秒、通常UI12分23秒、Files復元4分26秒等の直列実行を含む。今回の通常側はbuild/試験/要件/署名に約6分、upload/setupを含め8分と見積もる。診断側は生成retry348875の23分50秒を基準に、成功済みIntent管理207.791秒を再利用し、失敗位置より先の共有/再試行を約3分追加、全体23分を見込む。準備/Release build/Simulator build/UI/IPA/uploadを含む見積りで、二runに依存関係はない。通常は25分以内、runner待ち・通知を含め30分以内を目標とする。timeout短縮では達成扱いにしない。
+
+### 再利用の差分確認
+
+通常成功source `8c54d6e` から候補までの製品差分は`MiniAppIncomingProviderLoader`とShare画面のDebugエラー診断。保存/復元、Counter/Reminder、Widget、Intent、HTTP/Web/通知の製品source、Registry、Project、版/識別子に変更はない。providerの変更部分は349337のnative/小host OSで実行済み、完全hostの経路とRelease buildは今回実行する。
+
+348836の通常共通270件(skip2)・Records11件・通常UI13件・Files JSON復元1件、normal→diagnostic更新のWidget gallery/描画、永続inbox失敗再試行は範囲限定で保持する。共通試験は今回も通常buildで実行するが、通常UI/Filesは上記差分に影響されないため再利用する。348875のIntent管理成功は、同run以降にIntent製品/fixture/管理試験/host準備の差分がないことを確認して再利用する。HTTP/Web/通知/metadata/独立Featureの旧証拠も前節のsourceを保持する。新しいIPAは旧IPAのdigestや実機合格を流用しない。
+
+この二runで累計予算を17から19へ変更する。小hostの原因切り分けは終わり、未完だった候補境界へ戻るためである。完全host共有に失敗した場合は新しい最初の失敗工程と小hostの差を調べ、成功済み通常runを自動的に再実行しない。追加実機は候補の内容・CRC・公開取得を検証してから短い手順で依頼する。
+
+CI外のqueue遅延は別途、Codex更新後のidleスレッド保持の短縮と、未loadスレッドのqueueがresumeを待つ挙動によるものと確認した。上の時刻記録は当時の観測を保持し、CI実行時間とは区別する。

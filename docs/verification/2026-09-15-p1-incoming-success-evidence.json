@@ -1,0 +1,33 @@
+{
+  "source": "cad667ba7a9efdc38499accbc4297ff926bfcfb0",
+  "run": 34933726496,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34933726496",
+  "conclusion": "success",
+  "elapsed_seconds": 635,
+  "jobs": {
+    "incoming": {
+      "job_seconds": 534,
+      "tests": 29,
+      "failures": 0,
+      "test_seconds": 2.391,
+      "scope": "NSString-only secure archive decode, Japanese/newline/emoji equality, raw text retention, non-string/corrupt rejection, odd UTF16 rejection, cancellation/drain and owner isolation"
+    },
+    "incoming-os": {
+      "job_seconds": 626,
+      "tests": 3,
+      "failures": 0,
+      "test_seconds": 139.062,
+      "methods": {
+        "testTextShare": 39.973,
+        "testURLShare": 44.882,
+        "testFileShare": 54.201
+      },
+      "scope": "Small normal host: actual OS ShareLink -> Share Extension -> inbox -> Feature content matches"
+    }
+  },
+  "review": "Compared successful named XCTest lines with native and OS test source. Actual job logs confirm all 29 and all 3 cases executed; success is not inferred from build alone.",
+  "limits": [
+    "Full P1 host OS share/failure/retry path remains to be checked.",
+    "No physical-device acceptance or new distributable IPA from this run."
+  ]
+}

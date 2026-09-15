@@ -281,7 +281,7 @@
       "state": "partial",
       "title": "URL・外部ファイル・Share入口",
       "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功",
-      "remaining": "34931319103でURL/ファイルのOS共有→Feature内容一致が成功。文字列のTransferable読込みは失敗し、NSString限定secure archive復号とUTF-16端数拒否をnative/OS再検証する。完全hostと実機のOS成功/取消/失敗再試行・更新保持は未完。",
+      "remaining": "34933726496でnative29件と小hostの文字列/URL/ファイルOS共有→Feature内容一致3件が成功。完全P1 hostの共有・失敗再試行と最新通常/診断IPAを次の境界で検証する。実機のOS成功/取消/失敗再試行・更新保持は未完。",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {

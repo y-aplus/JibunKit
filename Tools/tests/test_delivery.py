@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import subprocess
 import sys
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("delivery", Path(__file__).resolve().parents[1] / "check-delivery.py")
 delivery = importlib.util.module_from_spec(SPEC)
@@ -26,7 +27,7 @@ class DeliveryTests(unittest.TestCase):
         for u in self.plan["units"]:
             if u["id"] not in selected:
                 continue
-            for c in u["criteria"]:
+            for c in delivery.active_criteria(u):
                 if c["kinds"] == ["device"] and not with_device:
                     continue
                 result["evidence"].append({"criterion": c["id"], "kind": c["kinds"][0],
@@ -35,6 +36,10 @@ class DeliveryTests(unittest.TestCase):
         if with_device:
             result["deferred_device"] = {}
         result["runs"] = [{"id": "run-1/attempt-1", "url": "test-fixture://run-1", "source": SHA, "conclusion": "success"}]
+        if wave.startswith("P2-"):
+            result["ci_execution"] = [{"id": f"run-{i}", "inputs_and_filters": "test fixture exact workflow inputs/filter",
+                "estimate_basis": "test fixture estimate including prepare/build/test/upload", "expected_elapsed_minutes": 20}
+                for i in range(result["planned_ci_runs"])]
         return result
 
     def test_real_plan_and_incomplete_template(self):
@@ -67,7 +72,8 @@ class DeliveryTests(unittest.TestCase):
         delivery.validate_report(self.plan, report, "preflight")
         ready_plan = copy.deepcopy(self.plan)
         for unit in ready_plan["units"]:
-            unit["state"] = "complete"
+            if unit["priority"] in {"P0", "P1"}:
+                unit["state"] = "complete"
         for stage in ["ci", "release"]:
             with self.assertRaisesRegex(ValueError, "missing passed evidence: P1-4.os"):
                 delivery.validate_report(ready_plan, report, stage, version="0.8.0")
@@ -142,8 +148,103 @@ class DeliveryTests(unittest.TestCase):
         report = self.report("P0-C", with_device=True)
         with self.assertRaisesRegex(ValueError, "still partial"):
             delivery.validate_report(self.plan, report, "release", version="0.7.0")
-        with self.assertRaisesRegex(ValueError, "boundary not decided"):
+        with self.assertRaisesRegex(ValueError, "wave does not cover release"):
             delivery.validate_report(self.plan, report, "release", version="1.0.0")
+
+    def test_legacy_plan_and_reports_keep_original_boundaries(self):
+        legacy = copy.deepcopy(self.plan)
+        legacy["schema"] = 1
+        legacy["units"] = [u for u in legacy["units"] if u["priority"] != "P2"]
+        legacy["waves"] = [w for w in legacy["waves"] if not w["id"].startswith("P2-")]
+        del legacy["milestones"]["1.0.0"]
+        legacy["v1_decision"] = "deferred-until-0.8.0-completion"
+        delivery.validate_plan(legacy)
+        delivery.validate_report(legacy, self.report("P1-B", with_device=True), "ci")
+        with self.assertRaisesRegex(ValueError, "boundary not decided"):
+            delivery.validate_report(legacy, self.report("P1-B", with_device=True), "release", version="1.0.0")
+
+    def test_adopted_scope_cannot_drop_units_milestone_or_os_criteria(self):
+        for uid in ["P0-1", "P1-1", "P2-7", "P2-8", "P2-13"]:
+            invalid = copy.deepcopy(self.plan)
+            invalid["units"] = [u for u in invalid["units"] if u["id"] != uid]
+            with self.assertRaisesRegex(ValueError, "missing/extra units"):
+                delivery.validate_plan(invalid)
+        invalid = copy.deepcopy(self.plan)
+        invalid["milestones"]["1.0.0"].remove("P2-8")
+        with self.assertRaisesRegex(ValueError, "milestone units"):
+            delivery.validate_plan(invalid)
+        invalid = copy.deepcopy(self.plan)
+        unit = next(u for u in invalid["units"] if u["id"] == "P2-7")
+        unit["criteria"] = [c for c in unit["criteria"] if c["id"] != "P2-7.integration"]
+        with self.assertRaisesRegex(ValueError, "criteria missing"):
+            delivery.validate_plan(invalid)
+
+    def test_p2_ci_requires_actual_execution_plan_and_elapsed_budget(self):
+        report = self.report("P2-W", with_device=True)
+        delivery.validate_report(self.plan, report, "ci")
+        invalid = copy.deepcopy(report)
+        invalid["ci_execution"] = []
+        with self.assertRaisesRegex(ValueError, "one execution plan"):
+            delivery.validate_report(self.plan, invalid, "preflight")
+        for field, value, error in [("inputs_and_filters", "", "inputs/filter"),
+                                    ("estimate_basis", "", "elapsed-time basis"),
+                                    ("expected_elapsed_minutes", 31, "25 minutes")]:
+            invalid = copy.deepcopy(report)
+            invalid["ci_execution"][0][field] = value
+            with self.assertRaisesRegex(ValueError, error):
+                delivery.validate_report(self.plan, invalid, "preflight")
+
+    def ready_v1(self):
+        for unit in self.plan["units"]:
+            unit["state"] = "complete"
+            if unit["id"] in delivery.CONDITIONAL_UNITS:
+                unit["scope_decision"] = {"status": "adopted", "reason": "verified reuse makes this ordinary scope low burden",
+                                           "adopted_scope": "specified ordinary scope including interruption/ownership"}
+        report = self.report("P2-F", with_device=True)
+        report["release"] = {k: "reviewed test fixture" for k in ("candidate_ipa", "normal_regression",
+            "generated_host", "metadata", "compatibility", "physical_review")}
+        return report
+
+    def test_v1_requires_all_units_and_execution_evidence_not_just_scope_review(self):
+        report = self.ready_v1()
+        with patch.object(delivery, "validate_docs"):
+            delivery.validate_report(self.plan, report, "release", version="1.0.0")
+        incomplete = copy.deepcopy(self.plan)
+        next(u for u in incomplete["units"] if u["id"] == "P2-8")["state"] = "partial"
+        with self.assertRaisesRegex(ValueError, "still partial"):
+            delivery.validate_report(incomplete, report, "release", version="1.0.0")
+        for cid in ["P2-7.integration", "P2-8.device", "P2-12.integration"]:
+            missing = copy.deepcopy(report)
+            missing["evidence"] = [e for e in missing["evidence"] if e["criterion"] != cid]
+            with self.assertRaisesRegex(ValueError, "missing passed evidence"):
+                delivery.validate_report(self.plan, missing, "release", version="1.0.0")
+
+    def test_conditional_exclusion_needs_reason_and_review_and_cannot_exclude_mandatory(self):
+        self.ready_v1()
+        unit = next(u for u in self.plan["units"] if u["id"] == "P2-12")
+        unit["scope_decision"] = {"status": "excluded", "reason": "comparison found substantial additional work beyond camera reuse"}
+        report = self.report("P2-F", with_device=True)
+        self.assertFalse(any(e["criterion"] == "P2-12.integration" for e in report["evidence"]))
+        delivery.validate_report(self.plan, report, "ci")
+        report["evidence"] = [e for e in report["evidence"] if e["criterion"] != "P2-12.scope"]
+        with self.assertRaisesRegex(ValueError, "missing passed evidence"):
+            delivery.validate_report(self.plan, report, "ci")
+        unit["scope_decision"]["reason"] = ""
+        with self.assertRaisesRegex(ValueError, "reason missing"):
+            delivery.validate_plan(self.plan)
+        unit["scope_decision"]["reason"] = "reviewed reason"
+        mandatory = next(u for u in self.plan["units"] if u["id"] == "P2-8")
+        mandatory["criteria"][0]["adopted_only"] = True
+        with self.assertRaisesRegex(ValueError, "mandatory functionality"):
+            delivery.validate_plan(self.plan)
+
+    def test_pending_conditional_scope_cannot_be_complete_or_enter_final_ci(self):
+        report = self.report("P2-F", with_device=True)
+        with self.assertRaisesRegex(ValueError, "scope decision pending"):
+            delivery.validate_report(self.plan, report, "ci")
+        next(u for u in self.plan["units"] if u["id"] == "P2-12")["state"] = "complete"
+        with self.assertRaisesRegex(ValueError, "undecided scope"):
+            delivery.validate_plan(self.plan)
 
     def test_p1_release_requires_p0_and_missing_dependency(self):
         self.plan["units"][0]["state"] = "partial"

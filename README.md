@@ -1,4 +1,4 @@
-> [0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)を公開済み。P0/P1全12単位の合意範囲をCI・対象別実機・文書・配布物の検査で確認しました。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に決定する。
+> [0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)を公開済み。P0/P1全12単位の合意範囲をCI・対象別実機・文書・配布物の検査で確認しました。2026-09-15にIssue #6の推奨境界を1.0の正式範囲として採用しました。
 
 # JibunKit
 
@@ -60,7 +60,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成です。Issue #5のP0/P1を確認し、0.8.0を公開済みです。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0の正式境界はユーザー判断により0.8.0完了時に確定します。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
+目標はJibunKit v1.0の完成です。Issue #5のP0/P1を確認し、0.8.0を公開済みです。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0の正式境界は2026-09-15にIssue #6の推奨で確定しました。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
 
 ## 現在の開発基盤
 

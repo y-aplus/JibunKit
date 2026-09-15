@@ -29,8 +29,14 @@
 
 ## 1.0の決定と文書
 
-1.0は未達。受領済み[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)のP2-A全体/P2-B通常範囲/P2-Cの再利用可能な範囲という提案を踏まえ、0.8.0完了時にユーザーが正式境界を決める。
+1.0は未達。2026-09-15にユーザーが[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の推奨境界を採用した。P2-A全体とP2-B通常範囲、採用したP2-Cを実装/接続/検証/説明まで閉じる。次は操作Widget/Control。
 
 P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳](coexistence-ledger.md)、責任は[共存原則](coexistence-boundaries.md)、版境界は[優先実装](implementation-priorities.md)が正本。過去のCI待ちや公開状態は、日付付き検証記録・履歴・過去release notesの当時の記録として読む。
 
 0.7.0はP0全6単位を[CI/実機/公開取得で確認](verification/2026-09-13-0.7-release.md)した版。0.6.0の範囲と証拠は[当時の公開記録](verification/2026-09-12-0.6-release.md)へ保持し、新候補の結果へ読み替えない。
+
+## 0.8.0後の開発
+
+1.0範囲の採用に伴い、plan.json/schema2へP2の13追跡単位と7つのCI境界を追加した。P2のうち10単位は必須機能、3単位は低負荷候補/P2-Cの採否と採用範囲を扱う。単なる台帳件数を完成機能数とはしない。ローカルdelivery検査19件が成功し、通常機能の省略・条件付き未検証・長すぎるrun見積りを拒否する。
+
+P2-Wでは別process共有状態の実装・試験を開発中。通常host/Widget/Controlへの接続とSwift/OS検証は未完で、0.8.0の提供機能へは含めない。[開始契約](delivery/P2-widget-control-contract.md)でCI前の境界を固定した。

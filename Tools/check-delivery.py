@@ -9,6 +9,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 KINDS = {"unit", "simulator", "device", "inspection"}
+BASE_UNITS = {f"{p}-{i}" for p in ("P0", "P1") for i in range(1, 7)}
+P2_UNITS = {f"P2-{i}" for i in range(1, 14)}
+CONDITIONAL_UNITS = {"P2-6", "P2-12", "P2-13"}
 
 
 def require(ok, message):
@@ -29,34 +32,62 @@ def source(value):
 
 
 def validate_plan(plan):
-    require(plan["schema"] == 1, "unsupported plan schema")
+    require(plan["schema"] in {1, 2}, "unsupported plan schema")
+    v1 = plan["schema"] == 2
     units = {u["id"]: u for u in plan["units"]}
     waves = {w["id"]: w for w in plan["waves"]}
     unique([u["id"] for u in plan["units"]], "unit")
     unique([w["id"] for w in plan["waves"]], "wave")
-    require(set(units) == {f"{p}-{i}" for p in ("P0", "P1") for i in range(1, 7)},
-            "Issue #5 requires all six P0 and all six P1 units")
+    require(set(units) == BASE_UNITS | (P2_UNITS if v1 else set()),
+            "missing/extra units: Issue #5 P0/P1 and adopted Issue #6 P2 scope must be preserved")
+    if v1:
+        require(plan.get("v1_decision") == "adopted-issue6-2026-09-15", "v1 boundary not decided")
     criteria = []
     for uid, unit in units.items():
-        require(unit["priority"] in {"P0", "P1"}, f"{uid}: invalid priority")
+        require(unit["priority"] in ({"P0", "P1", "P2"} if v1 else {"P0", "P1"}), f"{uid}: invalid priority")
         require(uid.startswith(unit["priority"] + "-"), f"{uid}: priority differs from Issue #5")
         require(unit["state"] in {"partial", "complete"}, f"{uid}: invalid state")
-        milestone = "0.7.0" if unit["priority"] == "P0" else "0.8.0"
+        milestone = {"P0": "0.7.0", "P1": "0.8.0", "P2": "1.0.0"}[unit["priority"]]
         require(unit["milestone"] == milestone, f"{uid}: incorrect milestone")
         require(unit["parents"] and all(re.fullmatch(r"D(0[1-9]|[12][0-9]|3[0-2])", d)
                 for d in unit["parents"]), f"{uid}: invalid parent")
         require(unit["criteria"], f"{uid}: no acceptance criteria")
+        if unit["priority"] == "P2":
+            by_suffix = {c["id"].removeprefix(uid + "."): c for c in unit["criteria"]}
+            require({"ownership", "integration", "device", "docs"} <= by_suffix.keys(),
+                    f"{uid}: P2 normal execution/device/docs criteria missing")
+            require(by_suffix["ownership"]["kinds"] == ["unit"] and
+                    set(by_suffix["integration"]["kinds"]) == {"simulator", "device"} and
+                    by_suffix["device"]["kinds"] == ["device"] and
+                    by_suffix["docs"]["kinds"] == ["inspection"], f"{uid}: P2 evidence types weakened")
+        if uid in CONDITIONAL_UNITS:
+            decision = unit.get("scope_decision", {})
+            require(decision.get("status") in {"pending", "adopted", "excluded"}, f"{uid}: invalid scope decision")
+            if decision["status"] == "pending":
+                require(unit["state"] == "partial", f"{uid}: undecided scope cannot be complete")
+            else:
+                require(nonempty(decision.get("reason")), f"{uid}: scope decision reason missing")
+                if decision["status"] == "adopted":
+                    require(nonempty(decision.get("adopted_scope")), f"{uid}: adopted scope missing")
+            require(any(c.get("adopted_only") and set(c["kinds"]) <= {"unit", "simulator", "device"}
+                        for c in unit["criteria"]), f"{uid}: adopted scope needs execution evidence")
+            require(any(not c.get("adopted_only") and c["kinds"] == ["inspection"]
+                        for c in unit["criteria"]), f"{uid}: scope review evidence missing")
         for criterion in unit["criteria"]:
             require(criterion["id"].startswith(uid + "."), f"{uid}: foreign criterion")
             require(nonempty(criterion["description"]), f"{uid}: empty criterion")
             require(criterion["kinds"] and set(criterion["kinds"]) <= KINDS,
                     f"{uid}: invalid evidence kinds")
+            require(not criterion.get("adopted_only") or uid in CONDITIONAL_UNITS,
+                    f"{uid}: mandatory functionality cannot be conditional")
             criteria.append(criterion["id"])
     unique(criteria, "criterion")
-    require(set(plan["milestones"]) == {"0.7.0", "0.8.0"}, "unexpected milestones")
+    require(set(plan["milestones"]) == ({"0.7.0", "0.8.0", "1.0.0"} if v1 else {"0.7.0", "0.8.0"}), "unexpected milestones")
     for version, members in plan["milestones"].items():
         unique(members, "milestone member")
-        expected = {uid for uid, u in units.items() if version == "0.8.0" or u["priority"] == "P0"}
+        expected = {uid for uid, u in units.items() if
+                    version == "1.0.0" or u["priority"] == "P0" or
+                    (version == "0.8.0" and u["priority"] == "P1")}
         require(set(members) == expected, f"{version}: missing or extra milestone units")
     assigned = []
     for wid, wave in waves.items():
@@ -76,6 +107,12 @@ def validate_plan(plan):
     for wid in waves:
         visit(wid, set())
     return units, waves
+
+
+def active_criteria(unit):
+    """Only an explicitly excluded optional scope can omit its execution checks."""
+    excluded = unit.get("scope_decision", {}).get("status") == "excluded"
+    return [c for c in unit["criteria"] if not (excluded and c.get("adopted_only"))]
 
 
 def current_docs(root, version):
@@ -132,7 +169,9 @@ def validate_report(plan, report, stage, root=ROOT, version=None):
         require(all(units[u]["state"] == "complete" for u in members), "release units still partial")
     else:
         members = wave["checks"]
-    criteria = {c["id"]: c for u in members for c in units[u]["criteria"]}
+    criteria = {c["id"]: c for u in members for c in active_criteria(units[u])}
+    for uid in set(members) & CONDITIONAL_UNITS:
+        require(units[uid]["scope_decision"]["status"] != "pending", f"{uid}: scope decision pending")
     contract = report["contract"]
     require(all(nonempty(contract[k]) for k in ("baseline", "interfaces", "ownership", "failure_cases",
             "normal_entrypoints", "invalidation", "review")), "contract/review not ready")
@@ -151,6 +190,15 @@ def validate_report(plan, report, stage, root=ROOT, version=None):
             require(cid in criteria and job["kind"] in criteria[cid]["kinds"], f"invalid job coverage: {cid}")
             scheduled.add(cid)
     require(type(report["planned_ci_runs"]) is int and report["planned_ci_runs"] > 0, "missing CI run plan")
+    if any(units[uid]["priority"] == "P2" for uid in wave["units"]):
+        execution = report.get("ci_execution", [])
+        require(len(execution) == report["planned_ci_runs"], "P2 needs one execution plan per planned run")
+        unique([r["id"] for r in execution], "execution plan")
+        for run in execution:
+            require(nonempty(run.get("inputs_and_filters")) and nonempty(run.get("estimate_basis")),
+                    "P2 execution inputs/filter or elapsed-time basis missing")
+            require(0 < run.get("expected_elapsed_minutes", 0) <= 25,
+                    "P2 expected elapsed time must include dependencies and fit 25 minutes")
     runs = report["runs"]
     unique([r["id"] for r in runs], "run/attempt")
     if max(report["planned_ci_runs"], len(runs)) > wave["ci_budget"]:
@@ -214,11 +262,11 @@ def template(plan, wid, sha):
             "dependencies": {d: "" for d in wave["requires"]},
             "planned_ci_runs": wave["ci_budget"], "budget_exception": "", "jobs": [], "runs": [],
             "evidence": [], "deferred_device": {c["id"]: units[u]["milestone"]
-                for u in wave["checks"] for c in units[u]["criteria"] if set(c["kinds"]) == {"device"}},
+                for u in wave["checks"] for c in active_criteria(units[u]) if set(c["kinds"]) == {"device"}},
             "documents": [], "document_review": {"source": "", "summary": "", "unresolved": []},
             "release": {},
             "metrics": {"review_rounds": 0, "parent_messages": 0, "ci_job_minutes": 0},
-            "acceptance": {c["id"]: c["description"] for u in wave["checks"] for c in units[u]["criteria"]}}
+            "acceptance": {c["id"]: c["description"] for u in wave["checks"] for c in active_criteria(units[u])}}
 
 
 def main():

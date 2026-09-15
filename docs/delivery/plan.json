@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "issue": "https://github.com/y-aplus/JibunKit/issues/5",
   "units": [
     {
@@ -392,6 +392,640 @@
           ]
         }
       ]
+    },
+    {
+      "id": "P2-1",
+      "parents": [
+        "D21",
+        "D22"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "音声・Now Playing",
+      "existing": "既存lease/owner APIと背景処理の部分成果。台帳D21/D22を参照",
+      "remaining": "録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続",
+      "deferred": "特殊多経路/機器・任意engineの一般共存",
+      "criteria": [
+        {
+          "id": "P2-1.ownership",
+          "description": "録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-1.integration",
+          "description": "通常Featureと実OS入口で録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-1.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-1.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-2",
+      "parents": [
+        "D23",
+        "D19",
+        "D20"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "撮影・スキャン",
+      "existing": "既存提示/権限説明/寿命を再利用",
+      "remaining": "権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持",
+      "deferred": "高度同時capture・AR world state",
+      "criteria": [
+        {
+          "id": "P2-2.ownership",
+          "description": "権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-2.integration",
+          "description": "通常Featureと実OS入口で権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-2.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-2.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-3",
+      "parents": [
+        "D25"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "位置・背景更新・監視",
+      "existing": "活動/寿命/権限境界を再利用。実OSの位置所有を検証する",
+      "remaining": "前景/背景位置と通常geofence/iBeacon、権限変更/復帰、owner別登録/解除、枠不足の説明とB保持",
+      "deferred": "大量監視枠の透過仮想化/予測最適化",
+      "criteria": [
+        {
+          "id": "P2-3.ownership",
+          "description": "前景/背景位置と通常geofence/iBeacon、権限変更/復帰、owner別登録/解除、枠不足の説明とB保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-3.integration",
+          "description": "通常Featureと実OS入口で前景/背景位置と通常geofence/iBeacon、権限変更/復帰、owner別登録/解除、枠不足の説明とB保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-3.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-3.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-4",
+      "parents": [
+        "D15",
+        "D16",
+        "D17"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "背景起動・転送再接続・継続処理",
+      "existing": "既存BGTask API/shared refresh journal/background URLSession registryを再利用",
+      "remaining": "実OS受付/launch/期限/取消/completion、cold launchと転送再接続、重複配送・再起動の他owner保持",
+      "deferred": "特殊GPU/複雑scheduler・全OS不具合回避",
+      "criteria": [
+        {
+          "id": "P2-4.ownership",
+          "description": "実OS受付/launch/期限/取消/completion、cold launchと転送再接続、重複配送・再起動の他owner保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-4.integration",
+          "description": "通常Featureと実OS入口で実OS受付/launch/期限/取消/completion、cold launchと転送再接続、重複配送・再起動の他owner保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-4.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-4.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-5",
+      "parents": [
+        "D28"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "Live Activities・AlarmKit",
+      "existing": "既存所有ID/寿命/Intents/管理境界を再利用",
+      "remaining": "開始/更新/停止、再起動照合、所有Featureへの操作配送、片側取消/削除とB保持",
+      "deferred": "大量同時要求の高度最適化/特殊表示面",
+      "criteria": [
+        {
+          "id": "P2-5.ownership",
+          "description": "開始/更新/停止、再起動照合、所有Featureへの操作配送、片側取消/削除とB保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-5.integration",
+          "description": "通常Featureと実OS入口で開始/更新/停止、再起動照合、所有Featureへの操作配送、片側取消/削除とB保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-5.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-5.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-6",
+      "parents": [
+        "D05",
+        "D18",
+        "D20",
+        "D29"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "低負荷残件の採否と採用範囲",
+      "existing": "idle timer/scene接続、Spotlight、翻訳・説明合成の既存成果",
+      "remaining": "idle実機/外観分離/Spotlight/Widget翻訳/権限dialogを関連P2と評価し採用範囲を検証",
+      "deferred": "採用しない残件も台帳へ根拠を維持",
+      "criteria": [
+        {
+          "id": "P2-6.scope",
+          "description": "既存成果・残負荷・主機能への影響から採否と採用範囲を明記。除外は低需要だけで決めず、他P2の必要部分を除外しない",
+          "kinds": [
+            "inspection"
+          ]
+        },
+        {
+          "id": "P2-6.ownership",
+          "description": "idle実機/外観分離/Spotlight/Widget翻訳/権限dialogを関連P2と評価し採用範囲を検証。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-6.integration",
+          "description": "通常Featureと実OS入口でidle実機/外観分離/Spotlight/Widget翻訳/権限dialogを関連P2と評価し採用範囲を検証",
+          "kinds": [
+            "simulator",
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-6.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-6.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ],
+          "adopted_only": true
+        }
+      ],
+      "scope_decision": {
+        "status": "pending",
+        "reason": "",
+        "adopted_scope": ""
+      }
+    },
+    {
+      "id": "P2-7",
+      "parents": [
+        "D26",
+        "D27",
+        "D06",
+        "D31"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "設定可能Widget・操作Widget・Control",
+      "existing": "P1静的Widget・App Intents/entity/metadataと管理/保存の接続",
+      "remaining": "設定対象保持、OS Widget/Control操作、本体/extensionの更新/削除競合・世代・B保持、通常接続とmetadata比較",
+      "deferred": "任意extension/storageの透過一般化",
+      "criteria": [
+        {
+          "id": "P2-7.ownership",
+          "description": "設定対象保持、OS Widget/Control操作、本体/extensionの更新/削除競合・世代・B保持、通常接続とmetadata比較。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-7.integration",
+          "description": "通常Featureと実OS入口で設定対象保持、OS Widget/Control操作、本体/extensionの更新/削除競合・世代・B保持、通常接続とmetadata比較",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-7.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-7.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-8",
+      "parents": [
+        "D30"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "外部データidentity・同期共存",
+      "existing": "既存保存/復旧・宣言合成とFeatureの外部同期を再利用",
+      "remaining": "利用可能な署名構成でcontainer/account/data所有、同期中の削除/復帰・B保持。条件の根拠を明示",
+      "deferred": "任意既存container/schemaの自動移行・汎用同期サービス",
+      "criteria": [
+        {
+          "id": "P2-8.ownership",
+          "description": "利用可能な署名構成でcontainer/account/data所有、同期中の削除/復帰・B保持。条件の根拠を明示。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-8.integration",
+          "description": "通常Featureと実OS入口で利用可能な署名構成でcontainer/account/data所有、同期中の削除/復帰・B保持。条件の根拠を明示",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-8.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-8.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-9",
+      "parents": [
+        "D24"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "BLE通常接続・背景再接続",
+      "existing": "既存寿命/権限/状態配送を再利用",
+      "remaining": "scan/connect/disconnect、ON/OFF、read/write/subscribe、宣言した背景利用のstate restorationとB維持",
+      "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
+      "criteria": [
+        {
+          "id": "P2-9.ownership",
+          "description": "scan/connect/disconnect、ON/OFF、read/write/subscribe、宣言した背景利用のstate restorationとB維持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-9.integration",
+          "description": "通常Featureと実OS入口でscan/connect/disconnect、ON/OFF、read/write/subscribe、宣言した背景利用のstate restorationとB維持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-9.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-9.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-10",
+      "parents": [
+        "D14",
+        "D26"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "APNs・必要な通知extension",
+      "existing": "通知のowner配送/宣言合成を再利用",
+      "remaining": "app tokenとFeature/server identity、正しい配送・必要extension、失敗/取消/再登録のB維持、署名/server条件説明",
+      "deferred": "複数backendを横断する汎用push基盤",
+      "criteria": [
+        {
+          "id": "P2-10.ownership",
+          "description": "app tokenとFeature/server identity、正しい配送・必要extension、失敗/取消/再登録のB維持、署名/server条件説明。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-10.integration",
+          "description": "通常Featureと実OS入口でapp tokenとFeature/server identity、正しい配送・必要extension、失敗/取消/再登録のB維持、署名/server条件説明",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-10.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-10.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-11",
+      "parents": [
+        "D01",
+        "D04"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "通常複数window・scene",
+      "existing": "既存window別navigationとscene routerを再利用",
+      "remaining": "実OSの二window独立状態、生成/破棄/復帰、指定sceneへの配送と他window/Feature保持",
+      "deferred": "任意View/実行instanceの自動理解・一般化",
+      "criteria": [
+        {
+          "id": "P2-11.ownership",
+          "description": "実OSの二window独立状態、生成/破棄/復帰、指定sceneへの配送と他window/Feature保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ]
+        },
+        {
+          "id": "P2-11.integration",
+          "description": "通常Featureと実OS入口で実OSの二window独立状態、生成/破棄/復帰、指定sceneへの配送と他window/Feature保持",
+          "kinds": [
+            "simulator",
+            "device"
+          ]
+        },
+        {
+          "id": "P2-11.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ]
+        },
+        {
+          "id": "P2-11.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "P2-12",
+      "parents": [
+        "D23"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "通常ARの採否と採用範囲",
+      "existing": "P2撮影/captureの成果を再利用して評価",
+      "remaining": "単一前景sessionの開始/停止/中断復帰が比較的低負荷に成立する範囲を採用・検証",
+      "deferred": "高度world state/長期再位置合わせ",
+      "criteria": [
+        {
+          "id": "P2-12.scope",
+          "description": "既存成果・残負荷・主機能への影響から採否と採用範囲を明記。除外は低需要だけで決めず、他P2の必要部分を除外しない",
+          "kinds": [
+            "inspection"
+          ]
+        },
+        {
+          "id": "P2-12.ownership",
+          "description": "単一前景sessionの開始/停止/中断復帰が比較的低負荷に成立する範囲を採用・検証。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-12.integration",
+          "description": "通常Featureと実OS入口で単一前景sessionの開始/停止/中断復帰が比較的低負荷に成立する範囲を採用・検証",
+          "kinds": [
+            "simulator",
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-12.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-12.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ],
+          "adopted_only": true
+        }
+      ],
+      "scope_decision": {
+        "status": "pending",
+        "reason": "",
+        "adopted_scope": ""
+      }
+    },
+    {
+      "id": "P2-13",
+      "parents": [
+        "D20",
+        "D26"
+      ],
+      "priority": "P2",
+      "milestone": "1.0.0",
+      "state": "partial",
+      "title": "追加extensionの採否と採用範囲",
+      "existing": "P1共有/Widget、P2通知等の種類別成果を再利用",
+      "remaining": "種類別に採否評価して通常接続/所有/終了/他owner維持を検証。P2主機能の必要extensionは除外不可",
+      "deferred": "任意既存extensionの自動統合",
+      "criteria": [
+        {
+          "id": "P2-13.scope",
+          "description": "既存成果・残負荷・主機能への影響から採否と採用範囲を明記。除外は低需要だけで決めず、他P2の必要部分を除外しない",
+          "kinds": [
+            "inspection"
+          ]
+        },
+        {
+          "id": "P2-13.ownership",
+          "description": "種類別に採否評価して通常接続/所有/終了/他owner維持を検証。P2主機能の必要extensionは除外不可。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+          "kinds": [
+            "unit"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-13.integration",
+          "description": "通常Featureと実OS入口で種類別に採否評価して通常接続/所有/終了/他owner維持を検証。P2主機能の必要extensionは除外不可",
+          "kinds": [
+            "simulator",
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-13.device",
+          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "kinds": [
+            "device"
+          ],
+          "adopted_only": true
+        },
+        {
+          "id": "P2-13.docs",
+          "description": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+          "kinds": [
+            "inspection"
+          ],
+          "adopted_only": true
+        }
+      ],
+      "scope_decision": {
+        "status": "pending",
+        "reason": "",
+        "adopted_scope": ""
+      }
     }
   ],
   "waves": [
@@ -499,6 +1133,217 @@
         "P1-6"
       ],
       "ci_budget": 3
+    },
+    {
+      "id": "P2-W",
+      "title": "Widget/Control・共有書込み・管理・OS接続",
+      "units": [
+        "P2-7"
+      ],
+      "requires": [
+        "P1-B"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-7"
+      ],
+      "ci_budget": 2,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-L",
+      "title": "継続表示・操作配送・再起動照合",
+      "units": [
+        "P2-5"
+      ],
+      "requires": [
+        "P2-W"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-5"
+      ],
+      "ci_budget": 2,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-C",
+      "title": "撮影/音声の所有・提示・中断/復帰",
+      "units": [
+        "P2-2",
+        "P2-1"
+      ],
+      "requires": [
+        "P2-L"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-2",
+        "P2-1"
+      ],
+      "ci_budget": 3,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-B",
+      "title": "背景実行と位置のOS起動・復帰・他owner保持",
+      "units": [
+        "P2-4",
+        "P2-3"
+      ],
+      "requires": [
+        "P2-C"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-4",
+        "P2-3"
+      ],
+      "ci_budget": 3,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-I",
+      "title": "外部identity・APNsと署名/extension接続",
+      "units": [
+        "P2-8",
+        "P2-10"
+      ],
+      "requires": [
+        "P2-B"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-8",
+        "P2-10"
+      ],
+      "ci_budget": 3,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-S",
+      "title": "BLE・通常windowのOS寿命接続",
+      "units": [
+        "P2-9",
+        "P2-11"
+      ],
+      "requires": [
+        "P2-I"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-9",
+        "P2-11"
+      ],
+      "ci_budget": 3,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
+    },
+    {
+      "id": "P2-F",
+      "title": "条件付き採否・採用範囲と1.0全体の出荷",
+      "units": [
+        "P2-6",
+        "P2-12",
+        "P2-13"
+      ],
+      "requires": [
+        "P2-S"
+      ],
+      "checks": [
+        "P0-1",
+        "P0-2",
+        "P0-3",
+        "P0-4",
+        "P0-5",
+        "P0-6",
+        "P1-1",
+        "P1-2",
+        "P1-3",
+        "P1-4",
+        "P1-5",
+        "P1-6",
+        "P2-1",
+        "P2-2",
+        "P2-3",
+        "P2-4",
+        "P2-5",
+        "P2-6",
+        "P2-7",
+        "P2-8",
+        "P2-9",
+        "P2-10",
+        "P2-11",
+        "P2-12",
+        "P2-13"
+      ],
+      "ci_budget": 3,
+      "execution_note": "通常25分見込み/30分目標。独立jobを同一SHAで並列化。詳細workflow入力/filter・再利用source・準備/upload込み見積りを投入前reportで固定。"
     }
   ],
   "milestones": {
@@ -523,7 +1368,35 @@
       "P1-4",
       "P1-5",
       "P1-6"
+    ],
+    "1.0.0": [
+      "P0-1",
+      "P0-2",
+      "P0-3",
+      "P0-4",
+      "P0-5",
+      "P0-6",
+      "P1-1",
+      "P1-2",
+      "P1-3",
+      "P1-4",
+      "P1-5",
+      "P1-6",
+      "P2-1",
+      "P2-2",
+      "P2-3",
+      "P2-4",
+      "P2-5",
+      "P2-6",
+      "P2-7",
+      "P2-8",
+      "P2-9",
+      "P2-10",
+      "P2-11",
+      "P2-12",
+      "P2-13"
     ]
   },
-  "v1_decision": "deferred-until-0.8.0-completion; Issue6 proposal received2026-09-13"
+  "v1_decision": "adopted-issue6-2026-09-15",
+  "scope_issue": "https://github.com/y-aplus/JibunKit/issues/6"
 }

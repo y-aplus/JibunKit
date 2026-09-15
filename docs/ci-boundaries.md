@@ -1,6 +1,6 @@
 # 大きなCI単位の準備・検証
 
-更新日: 2026-09-15。対象は[5つのCI境界](implementation-priorities.md)。計画の正本は[plan.json](delivery/plan.json)。
+更新日: 2026-09-15。対象は[版ごとのCI境界](implementation-priorities.md)。P0/P1の5境界は完了し、承認済みP2は同じ運用で境界を先に固定する。計画の正本は[plan.json](delivery/plan.json)。
 この手順は小変更ごとのCI・親子レビューを置き換える。試験を一つの巨大な直列jobへ詰め込む指示ではない。
 
 ## 境界を開始する前
@@ -23,7 +23,7 @@ python Tools/check-delivery.py --report .git/P0-A.json --stage preflight
 
 ## CIの分割と実行
 
-初回予算はP0各境界2 run、P1各境界3 run。通常host/IPA/主要UIと生成host/独立Feature/対象native比較を分ける想定で、必要のないrunを消化しない。
+初回予算はP0各境界2 run、P1各境界3 run。P2はplan.jsonの各境界予算（Widget/Controlと継続表示は各2、後続の大きなまとまりは各3）を使う。通常host/IPA/主要UIと生成host/独立Feature/対象native比較を分ける想定で、必要のないrunを消化しない。
 既存workflow inputとtest filterを利用する。着手時に使用する正確な入力組合せと対象testを記録し、`full`相当の指定で全native試験が動くと推定しない。
 現workflowは主に`workflow_dispatch`で、チェックポイントpush自体はCI境界にならない。
 
@@ -51,7 +51,7 @@ run予算とjob上限が両立しない場合は根拠を記録してrun予算�
 ```
 
 `kind`はunit/simulator/inspection。deviceはCI jobへ割り当てない。planの`kinds`は許容する証拠種別の選択肢で、記載種別を全部実行する意味ではない。
-`planned_ci_runs`へ予定run数を入れ、超過は`budget_exception`へ理由を入れる。
+`planned_ci_runs`へ予定run数を入れ、超過は`budget_exception`へ理由を入れる。P2では予定runごとの`ci_execution`（一意なid、inputs_and_filters、estimate_basis、expected_elapsed_minutes）を必須とし、準備・依存・uploadを含む通常25分以下の見積りを検査する。入力/filterや見積り根拠を空欄のまま投入しない。
 全体をレビュー後、CI用branchのHEADを固定し、同じ40桁sourceでdispatchする。各runのheadShaを照合する。
 実行中に同branchを動かさず、独立作業は別branchで進める。
 
@@ -81,7 +81,7 @@ Simulatorまたはdeviceのどちらでも証明できるOS条件を実機で確
 python Tools/check-delivery.py --report .git/P0-A.json --stage ci
 ```
 
-途中のwaveではdevice専用条件だけを`deferred_device`で対応minorへ予約できる。
+途中のwaveではdevice専用条件だけを`deferred_device`で対象の完成版へ予約できる。P2の最終義務は1.0.0だが、実機を1.0直前へ一括延期せず、まとまりごとの0.8.x候補で確認する。
 P0-A/Bでは0.7.0、P1-Aでは0.8.0の候補にまとめる。CI合格でもそのP単位は実機未確認のままcompleteにしない。
 P0-C/P1-BのCI確認後、minor出荷gateを通すには全条件を閉じ、延期欄を空にする。
 過去の実機証拠を再利用する場合もsource/差分レビューを必須にする。実機でしか決められない設計上の疑問が全体を止める場合は中間確認をまとめて依頼できる。
@@ -194,3 +194,9 @@ P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の�
 
 
 `surface=incoming-repair`はincoming native回帰とincoming-osを独立jobで一runへまとめる。plain-text受信の修正確認用で、Intent/Widget/通常IPAは再実行しない。OS3件はFeature取込み内容まで照合する。この切り分けrunとは別に、4e6a3f4の完全host CI/実機と71ef1ffの通常出荷候補CIを確認済み。[出荷記録](verification/2026-09-15-0.8-release.md)でsourceを区別する。
+
+## 1.0の条件付き範囲
+
+schema2は承認済みP2を追加する。旧schema1のP0/P1 report契約も保持する。P2-6（低負荷残件）・P2-12（通常AR）・P2-13（追加extension）の`scope_decision`をpending/adopted/excludedで管理し、採否理由と採用範囲を明記する。pendingをcompleteにせず、最終境界へ持ち込まない。excludedだけが`adopted_only`の実行条件を外せるが、採否の検討証拠は必要である。adoptedは通常のunit/OS/実機/文書を他の必須P2と同様に閉じる。意味のある成立範囲かは文章と実証をレビューする。
+
+P0/P1やP2-A/Bの通常機能を条件付きへ変更して検証を回避できない。既存minorの出荷記録はその確認commitのsnapshotで読む。新しい開発文書が追加された現在treeに過去の出荷gateを通すため、旧evidenceを追従改変しない。

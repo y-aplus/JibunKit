@@ -272,11 +272,12 @@
     {
       "criterion": "P0-4.docs",
       "kind": "inspection",
-      "source": "71ef1ffb4f84442bf8853c0c2e286c2bedd81d22",
+      "source": "a98dea8ddb7b256fda0800b9ce1b33e8a1a04f93",
       "result": "passed",
       "reference": "docs/verification/2026-09-15-0.8-release.md; document_review snapshot below",
       "observation": "All58 current documents read; README routes to add/build/update/recovery/conflict resolution. Corrected stale device waits, actual IPA sources, Shortcuts20sec diagnostic and source-specific scope limits. No product changes.",
-      "review": "Parent reconciled current manuals with Project/Registry, recorded tests and device reports. Exact prose commit recorded after commit; no fresh Swift/Xcode execution claimed."
+      "review": "Parent reconciled current manuals with Project/Registry, recorded tests and device reports. Exact prose commit recorded after commit; no fresh Swift/Xcode execution claimed.",
+      "reuse_reason": "製品source71ef1ff以後は文書・検証記録のみ。確認commitの58件全文レビュー、Git snapshotとrelease gateで手順・現在状態を検査。"
     }
   ],
   "acceptance": {
@@ -472,11 +473,248 @@
     }
   ],
   "deferred_device": {},
-  "documents": [],
+  "documents": [
+    {
+      "path": "CHANGELOG.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "Modules/Records/README.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "README.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "SECURITY.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/background-refresh-coordination.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/build.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/ci-boundaries.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/coexistence-boundaries.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/coexistence-ledger.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P0-A-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P0-B-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P0-C-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P1-A-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P1-B-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/background-execution-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/background-urlsession-reconnect.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/database-files.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-app-shortcuts.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-build-requirements.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-consent.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-data-removal.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-http.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-incoming.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-lifetime.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-management.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-owned-presentations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-privacy-manifests.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-url-routing.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/keychain-access-control.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/management-removal-failure-fixture.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/notification-attachments.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/notification-request-snapshots.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/owned-notification-observations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-app-intents.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/package-sdk-module-aliases.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-static-widgets.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/runtime-shutdown-progress.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/scene-feature-activity.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/scene-idle-timer.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/spotlight-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/store-access-coordination.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/web-authentication-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/web-storage-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/implementation-priorities.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/mini-apps.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/network-integration.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/parallel-implementation.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/releasing.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/runtime-restore-integration.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/scene-navigation.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/sidestore.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/status.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/updating.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "release-notes-0.8.0.md",
+      "outcome": "updated"
+    }
+  ],
   "document_review": {
-    "source": "",
-    "summary": "Pending full review and integrated commit",
-    "unresolved": []
+    "source": "a98dea8ddb7b256fda0800b9ce1b33e8a1a04f93",
+    "summary": "現況文書58件を全文確認。前回文書確認commit 795157839f9528afe5a0083828ecd59d59d61befとの比較で28件更新、30件非更新。P1の通常接続・CI/実機のsourceと観測限界をガイド/台帳/状態/計画へ同期し、旧契約は開始時点の履歴と明記。公開候補0.8.0/build10と公開操作前0.7.0を区別。手順・API・互換性・OSS/セキュリティ等で現実と一致する文章は非更新。個別path一覧を本documentsへ記録し、重複した個別理由/ハッシュ台帳は作らない。",
+    "unresolved": [
+      "1.0正式範囲は0.8.0完了時のユーザー判断待ち。P2/P3の残件をP1完了に含めない。",
+      "新0.8.0 IPAの実機試験は未実施。製品版のみの差分と6beb877/4e6a3f4の対象別実績を区別。",
+      "公開後に公開状態を同期し、その文書確認commitを追加記録する。"
+    ]
   },
   "metrics": {
     "review_rounds": 3,

@@ -7,3 +7,5 @@
 前候補ではHTTP/Web/通常状態の通知、通常版への復帰と既存Counter/Reminder・Widget/Shortcutの実機確認が成功。共有入力の再確認、OS Shortcutsでの取消/失敗診断、実機Widget A/Bの表示・管理・更新保持が残る。SimulatorでのWidget gallery成功を実機成功へ拡張しない。
 
 [実機結果](docs/verification/2026-09-14-0.8-device-check.md)と[検証結果・再利用範囲](docs/verification/2026-09-15-p1-device-followup.md)を参照。必要実機、配布整合性、文書と出荷範囲を確認して公開内容を確定する。未取得の配布URL・digestや成功結果は記載しない。
+
+09927a6の実機再確認で、受信先選択後と本体内部投入の両方で保存がinvalidInputになった。初回owner保存先の検査を修正・検証中。公開済みの修正確認用IPAを実機合格とは扱わない。

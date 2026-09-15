@@ -129,9 +129,74 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         let (_, store) = try fixture()
         try store.setAdmission(.init(id: a, title: "A", typeIdentifiers: ["public.plain-text"]), enabled: true)
         let saved = try store.enqueue(for: b, inputs: [.text("B")])
-        XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.text("first"), .url(URL(string: "https://example.com")!)]))
+        XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.text("first"), .url(URL(string: "https://example.com")!)])) {
+            XCTAssertEqual($0 as? MiniAppIncomingError, .unsupportedInputType)
+        }
         XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
         XCTAssertEqual(try store.pending(for: b).receipts, [saved])
+    }
+
+    func testContainerAliasSupportsFirstWriteReopenAndOwnerRecreation() throws {
+        let (directory, store) = try fixture()
+        let savedB = try store.enqueue(for: b, inputs: [.text("keep B")])
+        let alias = directory.appendingPathComponent("container-alias")
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: directory)
+        let aliasStore = try MiniAppIncomingStore(containerURL: alias)
+        XCTAssertTrue(try aliasStore.pending(for: a).receipts.isEmpty)
+        let first = try aliasStore.enqueue(for: a, inputs: [.text("first A")])
+        XCTAssertEqual(try store.pending(for: a).receipts, [first])
+        try aliasStore.setAdmission(.init(id: a, title: "A", typeIdentifiers: ["public.data"]), enabled: false)
+        try aliasStore.removeOwnedData(for: a)
+        try store.setAdmission(.init(id: a, title: "A", typeIdentifiers: ["public.data"]), enabled: true)
+        let second = try aliasStore.enqueue(for: a, inputs: [.text("second A")])
+        XCTAssertEqual(try store.pending(for: a).receipts, [second])
+        XCTAssertEqual(try aliasStore.pending(for: b).receipts, [savedB])
+    }
+
+    func testPrivateContainerSpellingSupportsMissingAndExistingOwner() throws {
+        let (directory, store) = try fixture()
+        let resolved = directory.resolvingSymlinksInPath().standardizedFileURL
+        let privateURL = resolved.path.hasPrefix("/var/")
+            ? URL(fileURLWithPath: "/private" + resolved.path, isDirectory: true) : resolved
+        XCTAssertTrue(FileManager.default.fileExists(atPath: privateURL.path))
+        let reopened = try MiniAppIncomingStore(containerURL: privateURL)
+        let parent = privateURL.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners", isDirectory: true)
+        let child = parent.appendingPathComponent(a.storageNamespace, isDirectory: true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: child.path))
+        let legacyContained = child.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(
+            parent.resolvingSymlinksInPath().standardizedFileURL.path + "/")
+        // Record whether this runner reproduces the device's suspected spelling
+        // mismatch, without logging the app container or assuming every OS does.
+        print("INCOMING_PATH missing-owner legacy-contained=\(legacyContained) private-spelling=\(privateURL.path.hasPrefix("/private/"))")
+        XCTAssertTrue(try reopened.pending(for: a).receipts.isEmpty)
+        let receipt = try reopened.enqueue(for: a, inputs: [.text("private alias")])
+        XCTAssertEqual(try store.pending(for: a).receipts, [receipt])
+        XCTAssertEqual(try reopened.pending(for: a).receipts, [receipt])
+        try reopened.acknowledge(id: receipt.id, owner: a)
+        XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
+    }
+
+    func testDanglingOwnerAliasAndRegularFileAreRejectedWithoutChangingB() throws {
+        let (directory, store) = try fixture()
+        let savedB = try store.enqueue(for: b, inputs: [.text("keep B")])
+        let owner = directory.appendingPathComponent("Library/Application Support/JibunKit/Incoming/owners/" + a.storageNamespace)
+        let missing = directory.appendingPathComponent("outside-missing")
+        try FileManager.default.createSymbolicLink(at: owner, withDestinationURL: missing)
+        for phase in ["dangling-link", "regular-file"] {
+            if phase == "regular-file" {
+                try FileManager.default.removeItem(at: owner)
+                try Data("keep file".utf8).write(to: owner)
+            }
+            XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.text("reject")])) {
+                XCTAssertEqual($0 as? MiniAppIncomingError, .unsafeOwnerDirectory)
+            }
+            XCTAssertThrowsError(try store.pending(for: a)) {
+                XCTAssertEqual($0 as? MiniAppIncomingError, .unsafeOwnerDirectory)
+            }
+            XCTAssertFalse(FileManager.default.fileExists(atPath: missing.path))
+            XCTAssertEqual(try store.pending(for: b).receipts, [savedB])
+        }
+        XCTAssertEqual(try Data(contentsOf: owner), Data("keep file".utf8))
     }
 
     func testReusingDestinationValueStillChangesAdmissionAfterDisableAndRepublish() throws {

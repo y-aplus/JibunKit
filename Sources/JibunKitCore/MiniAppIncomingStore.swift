@@ -50,6 +50,8 @@ public struct MiniAppIncomingDestination: Codable, Equatable, Identifiable, Send
 
 public enum MiniAppIncomingError: Error, Equatable, Sendable, LocalizedError {
     case invalidInput
+    case unsafeOwnerDirectory
+    case unsupportedInputType
     case unavailableOwner(String)
     case invalidReceipt(UUID)
     case invalidCatalog
@@ -59,6 +61,8 @@ public enum MiniAppIncomingError: Error, Equatable, Sendable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidInput: "受信データの形式または保存先を確認できませんでした（invalidInput）。"
+        case .unsafeOwnerDirectory: "受信先の保存フォルダーを安全に使用できませんでした（unsafeOwnerDirectory）。"
+        case .unsupportedInputType: "この種類の共有データは受信先で受け取れません（unsupportedInputType）。"
         case .unavailableOwner: "受信先が無効または変更されたため保存できませんでした（unavailableOwner）。"
         case .invalidReceipt: "保存済みの受信データを確認できませんでした（invalidReceipt）。"
         case .invalidCatalog: "受信先一覧を確認できませんでした（invalidCatalog）。"
@@ -173,7 +177,7 @@ public struct MiniAppIncomingStore: Sendable {
                 }
             }
             guard items.allSatisfy({ destination.accepts($0.typeIdentifier) }) else {
-                throw MiniAppIncomingError.invalidInput
+                throw MiniAppIncomingError.unsupportedInputType
             }
             let receipt = MiniAppIncomingReceipt(id: id, owner: owner.rawValue, createdAt: .now, items: items)
             try JSONEncoder().encode(receipt).write(to: staging.appendingPathComponent("receipt.json"), options: .atomic)
@@ -267,14 +271,20 @@ public struct MiniAppIncomingStore: Sendable {
 
     private func ownerDirectory(_ owner: MiniAppID) throws -> URL {
         guard owner.isValid else { throw MiniAppIncomingError.invalidInput }
-        let directory = ownersRoot.appendingPathComponent(owner.storageNamespace, isDirectory: true)
-        let resolvedRoot = ownersRoot.resolvingSymlinksInPath().standardizedFileURL.path + "/"
-        guard directory.resolvingSymlinksInPath().standardizedFileURL.path.hasPrefix(resolvedRoot) else {
-            throw MiniAppIncomingError.invalidInput
-        }
-        if FileManager.default.fileExists(atPath: directory.path),
-           try directory.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == true {
-            throw MiniAppIncomingError.invalidInput
+        // Resolve the existing parent once. Resolving a missing child separately
+        // can retain /private while its existing parent loses that prefix.
+        // Valid IDs encode to exactly one path component, so a missing child is
+        // contained by construction; existing entries must be real directories.
+        let parent = ownersRoot.resolvingSymlinksInPath().standardizedFileURL
+        let directory = parent.appendingPathComponent(owner.storageNamespace, isDirectory: true)
+        do {
+            // Unlike fileExists, attributesOfItem observes a dangling symlink.
+            let attributes = try FileManager.default.attributesOfItem(atPath: directory.path)
+            guard attributes[.type] as? FileAttributeType == .typeDirectory else {
+                throw MiniAppIncomingError.unsafeOwnerDirectory
+            }
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile {
+            // Normal first use. Enqueue creates this directory under the owner lock.
         }
         return directory
     }

@@ -19,7 +19,7 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 
 ## 現在の到達点（34933726496確認後）
 
-共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは34942834824/34942837167で成功し、公開再取得で整合性を確認済み。必要実機は未完。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の結果と待機対象。
+共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは34942834824/34942837167で成功し、公開再取得で整合性を確認済み。09927a6の実機で受信先選択後のinvalidInputが再現し、保存先検査を再調査中。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の結果と待機対象。
 
 ## 残件
 
@@ -131,3 +131,25 @@ CI外のqueue遅延は別途、Codex更新後のidleスレッド保持の短縮�
 [修正確認用prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915)へ通常/診断IPAと各ZIPを公開。4 assetすべて認証なしで再取得し、CIから取り出したIPAとのbyte一致、全ZIPのCRC、外側ZIP内のIPA一致を確認。ZIPは単一IPAを格納した標準ZIP（ZIP64不使用）。本体/Widget/Shareは0.7.1/build9。診断WidgetのCounter/A/B kindとA/B翻訳resourceもローカルで再検査した。実機展開成功やSideStore署名更新後のgalleryはこれからの確認である。
 
 同時準備した文書branchを統合し、前候補の「実機結果待ち」を受領済みへ訂正。旧run/実機結果は履歴のまま保持する。今回の候補成立に必要な非実機検証は完了。Share、Shortcut取消/失敗、Widget一覧/管理/上書き・Refreshの残件を元の実機手順書で確認する。安定版0.7.0、正式0.7.1/0.8は未公開のまま。
+
+
+## 実機09927a6: provider通過後の保存失敗
+
+ユーザーは追加準備なしで修正診断版を起動し、受信検証Aの文字列共有から受信先Aを選択した。保存が`invalidInput`で失敗。追加件数/B状態は未確認。[原文と操作結果](2026-09-14-0.8-device-check.md#09927a6のユーザー再確認2026-09-15)を正本とする。上の「非実機検証完了」はこの追加情報を得る前の到達点であり、実機の保存成功ではない。
+
+受信先一覧の表示はprovider decodeとcatalog読込みを通過した証拠。文字列入力ならenqueueで残る主なinvalidInput分岐は、owner保存先検査と受信type不一致。ownerはcatalogで検証済み、同じ入力typeで一覧もfilter済みなので、保存先検査を有力仮説とする。まだ実機原因を確定しない。
+
+既存`ownerDirectory`は実在するownersRootと、未作成のowner子パスをそれぞれresolveしてprefix比較する。[AppleのNSURL仕様](https://developer.apple.com/documentation/foundation/nsurl/resolvingsymlinksinpath)では既存パスについてだけ`/private`が除去され得るため、初回保存時に同一保存先を範囲外と誤認する可能性がある。修正は実在親を一度解決し、検証済みIDの単一path componentから子を構成する。既存子はlstat相当の属性読出しで実directoryのみ許可し、dangling symlink/通常fileも拒否。不存在だけを初回保存として扱い、権限等のその他エラーを握り潰さない。安全検査や管理/削除の所有境界を無効化しない。
+
+追加3試験はcontainer aliasからの初回enqueue・再open・A削除後の再作成/B保持、`/private`表記での未作成/既存owner、dangling owner link/通常file拒否/B保持。既存の外向きowner link拒否も維持。旧prefix比較がrunner上で失敗するかをpath非公開のbooleanで観測し、再現しなければ実機原因の実証とは扱わない。保存先拒否と受信type不一致のエラー名を分け、次の結果で仮説を区別可能にする。
+
+この保存先修正はSwift/iOS未検証。本体の内部投入でも `failed: invalidInput` をユーザー確認。provider/Share Extensionを経由しない共通enqueueで再現するため、保存先検査の仮説を優先する。09927a6を実機合格候補として再案内しない。
+
+
+### 次の固定検証境界
+
+本体内部投入での再現を受け、同一sourceの通常runと診断runを並行実行する。前候補と同じ入力を用い、診断runに`incoming_validation=true`を追加してnative32件を並列jobへ含める。通常側のmacOS共通試験でも新規3件を実行し、macOSの`/private`表記とiOS側の結果を別々に観測する。旧比較の再現booleanがfalseなら、この環境では旧実装が初回ownerを拒否することを確認できる。修正後の成功だけで実機原因確定とはしない。
+
+通常の前回実績6分31秒、診断16分59秒、追加nativeの前回実績8分54秒。新規3試験は短いfilesystem操作で、通常見込み9分、診断/nativeの並列run見込み20分、runner/setup/upload込み25分以内・完了目標30分以内とする。通常共通、nativeの新旧全件、完全host OS共有と失敗再試行、両Release IPAを同じ境界で確認する。修正はIncomingStoreのowner pathとエラー分類のみであり、前節の通常UI/Files/gallery/Intent等の差分再利用範囲は変わらない。
+
+予算を19から21runへ追加。これは実機の新しい保存失敗に対する共通修正の一括検証であり、同じ仮説を変えない全CI再試行ではない。3失敗を待たず本体/拡張機能の比較で範囲を絞った。今回のCIが通る前に新候補をユーザーへ渡さない。

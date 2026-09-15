@@ -219,8 +219,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "Shortcuts実利用",
-      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認。34881183837で永続診断制御を含む実行8+UI1/metadata成功。34887580504で完全hostの画面外管理行を含むIntent管理UIが成功",
-      "remaining": "実機の正負加算/候補/保存/再起動/A管理/B保持は成功。永続化した取消/失敗診断はOS Shortcutsで再確認が必要。",
+      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認。34881183837で永続診断制御を含む実行8+UI1/metadata成功。34887580504で完全hostの画面外管理行を含むIntent管理UIが成功。4e6a3f4実機でOS Shortcutsの遅延中取消/保存失敗時のA/B旧値保持・次回正常実行でAのみ指定量増加を確認",
+      "remaining": "実機の正負加算/候補/保存/再起動/A管理/B保持は成功。永続化した取消/失敗診断も4e6a3f4のOS Shortcutsで実機成功。最終sourceの差分照合・出荷確認が残る。",
       "deferred": "Control等の高度な接続",
       "criteria": [
         {

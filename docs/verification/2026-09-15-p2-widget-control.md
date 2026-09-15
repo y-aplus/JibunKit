@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: 初期probe34975495965はsuccess。接続CI34979381516は通常job成功、native二jobが同じactor隔離エラーで失敗。識別子定数の修正をsource53e990eへ固定し、CI35022622331でnative二jobだけを再検証中。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
+現在: 通常job34979381516は成功を再利用。35022622331はnativeのSwiftUI import不足と診断hostの登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、4回目の一括CIを準備。P2-7のnative/OS合格はまだない。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
 
 ## 基盤実装
 
@@ -73,3 +73,11 @@ nativeは6分59秒、診断hostは8分57秒で失敗。両方の原因はFeature
 [CI35022622331](https://github.com/y-aplus/JibunKit/actions/runs/35022622331)のheadShaは`53e990e18854e8cf42c5abd239bc07448b6b4059`。branch `codex/p2-widget-actor-repair`を同SHAに固定し、native-surface.ymlのsurface=interactive-widgets/ios_major=26を投入した。二jobともin_progressを確認し、OS完了監視taskを登録した。モデルによる結果pollはしない。関連local試験はhost準備3件・delivery19件、preflight構造/網羅検査が成功。実行中source以後は文書のみを更新する。
 
 成功済み34979381516の通常IPAを取得し、2,351,018 bytes、SHA-256 `e61991a1f15fb275b030ffc1923f6ea1c541bdff9362a8f6c56f134a681de756`を確認。全entry CRC、本体/Widget/Shareの既存3IDと0.8.0/build10、3実行ファイルに新診断Widget/Control kindが含まれないことを検査した。通常コードには修正差分がないため、次の実機ではこの通常IPAへ戻す。まだ公開資産の再取得ではなくActions artifactの取得証拠である。
+
+## 35022622331の結果と次の一括修正（2026-09-16）
+
+run全体17分28秒、native6分46秒、診断host17分16秒で失敗。前回のactor隔離エラーはhostのRelease/Simulator buildで解消。nativeはStandaloneAWidgetのWidget/WidgetBundleが見つからず、SwiftUI importが欠けていた。同じ構成のA/B/Combined全3箇所を修正した。CLI sol/low workerの提出0c97412を親がレビューし27c77d3へ統合。owner別actions/entity/queryのmetadata確認と各native試験の1回成功条件も確認した。worker自身のCIはなく、親への追加レビュー往復も行っていない。
+
+hostは最初の無効化で「無効化が未完了。新しい起動は停止しています。」「通知・検索などの登録解除」を表示し、20秒の期待値待ちで失敗した。SharedStateの受付停止より後まで進んだ証拠であり、ラベルの綴り違いではない。今runにOS service logはなく、通知とSpotlightのどちらで待ったかは未確定。過去P1の解除約63秒成功/120秒超過失敗の両記録を照合した。既存P1と同じ120秒を無効化・削除だけへ適用し、native操作のwarmup/retry/省略は行わない。無効状態のまま再起動して保持/B有効を確認する。XCTest側の開始/経過時刻と、通知/SpotlightのOSログ・添付exportを追加した。待機延長だけで製品の遅延原因が直ったとはしない。
+
+修正sourceはe984d44fbae1946720f2d43f3ee776e2f25c20f1。Tools全77件、workflow YAML parse、diff checkが成功。WindowsではSwift/Xcodeは未実行。初回2run予算に対する4run目の例外を事前reportへ記録し、native-surface interactive-widgets/iOS26のnative4件/hostUI1件/診断IPAをまとめて実行する。見込み25分、各job上限30分。通常製品pathは4eb784dと同じなので成功済み通常job/IPAは再利用する。さらに解除が失敗した場合は採取したOSログで切り分け、上限だけを再び延ばさない。

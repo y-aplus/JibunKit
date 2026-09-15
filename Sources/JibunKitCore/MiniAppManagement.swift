@@ -16,7 +16,7 @@ public final class MiniAppManagement {
     }
 
     public enum Stage: String, Sendable {
-        case reservation, stopping, unregistering, deletingData, clearingConsent, enabling
+        case reservation, externalAccess, stopping, unregistering, deletingData, clearingConsent, enabling
     }
 
     public struct Failure: Error, Sendable {
@@ -34,6 +34,7 @@ public final class MiniAppManagement {
         public let id: MiniAppID
         public let lifetime: MiniAppFeatureLifetime?
         public let removal: MiniAppRemovalProvider?
+        public let externalAccess: MiniAppExternalAccess?
         public let unregister: @MainActor @Sendable () async throws -> Void
         public let enable: @MainActor @Sendable () async throws -> Void
 
@@ -41,11 +42,14 @@ public final class MiniAppManagement {
             id: MiniAppID,
             lifetime: MiniAppFeatureLifetime? = nil,
             removal: MiniAppRemovalProvider? = nil,
+            externalAccess: MiniAppExternalAccess? = nil,
             unregister: @escaping @MainActor @Sendable () async throws -> Void = {},
             enable: @escaping @MainActor @Sendable () async throws -> Void = {}
         ) {
             precondition(id.isValid && (lifetime == nil || lifetime?.id == id))
             precondition(removal == nil || removal?.id == id)
+            precondition(externalAccess == nil || externalAccess?.id == id)
+            self.externalAccess = externalAccess
             self.id = id
             self.lifetime = lifetime
             self.removal = removal
@@ -79,7 +83,15 @@ public final class MiniAppManagement {
         self.storageKey = storageKey
         self.onStatusChange = onStatusChange
         for registration in registrations {
-            let status = Self.savedStatus(for: registration.id, defaults: defaults, storageKey: storageKey)
+            var status = Self.savedStatus(for: registration.id, defaults: defaults, storageKey: storageKey)
+            do { try registration.externalAccess?.prepare(status == .enabled) }
+            catch {
+                // One broken owner must not prevent all other registrations.
+                // Preserve removing/removed intent; never revive partial data.
+                if status == .enabled { status = .disabling }
+                defaults.set(status.rawValue, forKey: storageKey + "." + registration.id.rawValue)
+                failures[registration.id] = Failure(stage: .externalAccess, message: String(describing: error))
+            }
             statuses[registration.id] = status
             registration.lifetime?.setStartAllowed(status == .enabled)
             coordinator.setAccessAllowed(status == .enabled, for: registration.id)
@@ -127,7 +139,9 @@ public final class MiniAppManagement {
         defer { stages[id] = nil }
         do {
             try Task.checkCancellation()
-            try await registration.enable()
+            try await coordinator.withOwnerDeactivation(for: id) { [self] in
+                try await performEnable(registration)
+            }
             // Re-enabling permits normal entry, but never starts business work.
             persist(.enabled, for: id)
             coordinator.setAccessAllowed(true, for: id)
@@ -136,6 +150,22 @@ public final class MiniAppManagement {
             let failure = Failure(stage: .enabling, message: String(describing: error))
             failures[id] = failure
             throw failure
+        }
+    }
+
+    private func performEnable(_ registration: Registration) async throws {
+        do {
+            try await registration.enable()
+            try await registration.externalAccess?.open()
+        } catch {
+            var message = String(describing: error)
+            // A partially opened extension or native registration must not
+            // remain usable while the management screen reports disabled.
+            do { try await registration.externalAccess?.close() }
+            catch { message += "; external close failed: \(error)" }
+            do { try await registration.unregister() }
+            catch { message += "; enable cleanup failed: \(error)" }
+            throw Failure(stage: .enabling, message: message)
         }
     }
 
@@ -152,6 +182,8 @@ public final class MiniAppManagement {
         failures[id] = nil
         defer { stages[id] = nil }
         do {
+            stages[id] = .externalAccess
+            try await registration.externalAccess?.close()
             // Owned work may hold ordinary store access until cancellation has
             // actually finished. Drain it before requesting exclusive access;
             // admission is already closed, so no new ordinary work can enter.

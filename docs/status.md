@@ -39,4 +39,4 @@ P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳]
 
 1.0範囲の採用に伴い、plan.json/schema2へP2の13追跡単位と7つのCI境界を追加した。P2のうち10単位は必須機能、3単位は低負荷候補/P2-Cの採否と採用範囲を扱う。単なる台帳件数を完成機能数とはしない。ローカルdelivery検査19件が成功し、通常機能の省略・条件付き未検証・長すぎるrun見積りを拒否する。
 
-P2-Wでは別process共有状態の実装・試験を開発中。通常host/Widget/Controlへの接続とSwift/OS検証は未完で、0.8.0の提供機能へは含めない。[開始契約](delivery/P2-widget-control-contract.md)でCI前の境界を固定した。
+P2-Wでは別process共有状態の初期CI34975495965が成功（共通282件、skip2、失敗0／Records11件／300回の別process更新とwriter終了probe／通常IPA）。通常管理・復元への外部受付接続と、独立A/Bの設定/操作Widget・Controlを開発branchへ追加し、次のまとめたCIを準備している。新接続のSwift/native/OS検証は未完で、0.8.0の提供機能へは含めない。[検証記録](verification/2026-09-15-p2-widget-control.md)と[接続ガイド](guides/interactive-widgets.md)を参照する。

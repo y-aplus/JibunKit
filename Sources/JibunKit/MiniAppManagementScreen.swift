@@ -133,6 +133,7 @@ struct MiniAppManagementScreen: View {
     private func stageText(_ stage: MiniAppManagement.Stage) -> String {
         switch stage {
         case .reservation: "保存領域の利用確認"
+        case .externalAccess: "Widget・拡張からの操作受付"
         case .stopping: "所有処理の終了"
         case .unregistering: "通知・検索などの登録解除"
         case .deletingData: "所有データの削除"

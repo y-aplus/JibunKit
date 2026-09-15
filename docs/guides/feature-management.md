@@ -1,5 +1,7 @@
 # Feature管理への接続
 
+P2-W開発branchの別process writerは、optionalのDefinition.externalAccessを使う。[操作Widget/Controlのガイド](interactive-widgets.md)に起動・停止・削除・復元との契約を記す。公開0.8.0には未収録で、新接続のnative/実機確認は未完。
+
 P0-Bで通常hostへ接続し、通常・生成CIの非実機条件を確認済み。対象sourceと試験範囲は[検証記録](../verification/2026-09-12-p0-b.md)を参照する。0.7.0候補の実機確認も2026-09-13に完了（[結果](../verification/2026-09-13-0.7-device-check.md)）。
 
 MiniAppDefinitionにFeatureと同じidのlifetimeとremovalを渡す。removalは削除するデータを説明し、owner予約済み・Runtime終了済みの状態で所有データだけを削除する。読み取り専用で所有データがない場合は、その説明と何もしないcallbackを明示する。providerの省略を「データがない」と解釈しない。

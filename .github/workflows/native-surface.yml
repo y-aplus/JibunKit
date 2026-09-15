@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         # One device-followup boundary; independent builds finish/report once.
-        surface: ${{ fromJSON(inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || inputs.surface == 'incoming-repair' && '["incoming","incoming-os"]' || format('["{0}"]', inputs.surface)) }}
+        surface: ${{ fromJSON(inputs.surface == 'interactive-widgets' && '["interactive-native","interactive-host"]' || inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || inputs.surface == 'incoming-repair' && '["incoming","incoming-os"]' || format('["{0}"]', inputs.surface)) }}
     runs-on: ${{ inputs.ios_major == '27' && 'xcode-27' || 'macos-26' }}
     timeout-minutes: 30
     env:
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           case "$IOS_MAJOR" in 26|27) ;; *) echo "Unsupported iOS major" >&2; exit 2 ;; esac
-          case "$SURFACE" in intents|widgets|incoming|incoming-os|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
+          case "$SURFACE" in interactive-native|interactive-host|intents|widgets|incoming|incoming-os|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
 
       - name: Select matching Xcode
         env:
@@ -128,6 +128,9 @@ jobs:
         run: |
           set -euo pipefail
           case "$SURFACE" in
+            interactive-native|interactive-host)
+              python3 Tools/verify-interactive-widgets.py --mode "${SURFACE#interactive-}" --simulator-id "$SIMULATOR_ID"
+              ;;
             incoming-os)
               python3 Tools/verify-incoming-os.py --simulator-id "$SIMULATOR_ID"
               ;;
@@ -198,6 +201,8 @@ jobs:
         with:
           name: Native-${{ matrix.surface }}-diagnostics
           path: |
+            ${{ runner.temp }}/Interactive-native
+            ${{ runner.temp }}/Interactive-host
             ${{ runner.temp }}/platform.txt
             ${{ runner.temp }}/simulators.json
             ${{ runner.temp }}/SpotlightColdStart

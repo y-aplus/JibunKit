@@ -2,6 +2,8 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
+現在: 初期probe34975495965はsuccess。続く管理/復元/Widget/Control接続を実装し、2回目の一括CIを準備中。以下の「投入」「CI待ち」は開始時点の履歴であり、最新結果は末尾を参照する。
+
 ## 基盤実装
 
 MiniAppSharedStateは小さなFeature所有Codable状態を選択的にapp/extensionへ共有する。owner別NSFileCoordinatorと原子的保存で、読込みから更新・受付停止・削除までを同じ調停先へ接続する。削除のtombstoneと置換世代で、古い操作の復活を拒否する。破損・未初期化を初期値で上書きしない。既存のUserDefaults/DBをこの方式へ強制せず、業務モデルはFeatureへ残す。
@@ -27,3 +29,25 @@ workflow build-ios.ymlをこのbranchのimmutable SHAからdispatchする。入�
 [CI34975495965](https://github.com/y-aplus/JibunKit/actions/runs/34975495965)を投入し、headSha=`b6244de6635d56969e1eceb94f35282d0dca096b`、in_progressを確認した。run数は1（初回2run予算）。GitHubのdispatch APIはSHAをrefとして拒否したため、同じSHAへ固定したbranch `codex/p2-widget-control`をrefとして使った。拒否された要求はrunを生成していない。作業継続用branchは`codex/p2-widget-integration`に分け、実行中refを動かさない。
 
 既存のOS完了監視を登録し、一回だけqueueへ結果を送る。モデルによる定期確認やgh run watch --intervalは使わない。結果待ちの対象は上記run。製品コードはmainへ未統合で、次はこのOS調停結果を確認して通常管理/復元とWidget/Controlへ接続する。
+
+## probe結果と通常接続
+
+34975495965のheadShaはb6244de6635d56969e1eceb94f35282d0dca096b。runは13:31:01Z〜13:35:34Zの4分33秒、combined jobは4分24秒。共通282件（skip2、失敗0）、Records11件、SharedState9件それぞれのpassed markerを確認した。別process probeの最終出力は`passed: 300 process updates; close/write ordering; interrupted writer; tombstone/generation; B retained`。通常Release/native metadata/署名/IPAも成功。Simulator UIとWidget/Control OS操作はこのrunで実行していない。初回2run予算の1回を消費。
+
+続く実装はoptional MiniAppExternalAccessをDefinition→通常Managementへ接続する。bootstrap、外部writeのclose/drain、無効化/削除、排他予約下の再有効化、部分的なenable失敗の登録解除を含む。SharedStateは管理受付と復元用leaseを別々に保持し、復元終了が管理の無効化を打ち消さない。復元resume失敗/プロセス終了のleaseは自動的に開かず、明示管理回復へ送る。8件の統合試験で実store、失敗/再試行、B保持、古い世代を照合する。
+
+独立InteractiveFeatureA/Bは同じlocal IDの二項目、entity/query、Widget/Control configuration、背景実行するIncrement intentを所有する。native試験4件はquery/片側操作、設定値の共通解決/削除拒否、実Definitionの管理/選択復元/世代、保存失敗/取消を検証する。通常hostの別UI試験は管理画面で保持/削除/再登録/B保持を検証する。AppIntentsPackage/WidgetBundleによる標準登録で、既存Counter WidgetとShareは残す。
+
+ローカルTools74件は10.983秒で成功。新規prepareの正しい接続、anchor不一致時の無変更、二重prepare拒否を含む。新Swiftはこの環境では未実行。意味のあるSwift実行結果は次のCIで記録する。
+
+## 2回目の一括CIと実機境界
+
+build-ios.ymlへ`simulator_tests=true interactive_widgets_validation=true feature_validation=false records_validation=false`、ui_test_filterは空、その他default。新native-surfaceの二job（interactive-native/interactive-host）と通常combinedを同一runで並列実行する。Recordsの製品/fixtureは変更しておらず独立build/UIは0.8証拠と初回probeを再利用するが、共通macOS Records試験は通常jobで再実行される。
+
+- interactive-native: 独立A/Bと統合Release、本体/extension metadata・kind比較、hosted iOS XCTest4件。準備2分＋共通build/差分build約6分＋Simulator test4分＋証拠upload2分を見込み、14分。
+- interactive-host: tracked fileだけで通常Registry/WidgetBundleへA/Bを追加。診断Release、通常管理UI1件、native metadata、Share含む署名/IPA/CRC。準備2分＋host build4分＋Simulator build/UI6分＋署名/upload2分、14分。既往のSpotlight遅延分に約2分の余裕を見込み最大18分で計画する。
+- 通常combined: 共通/Records/別process試験、通常IPA/native metadata、通常UI全件（Counter/Reminder/バックアップ/管理）。buildのみ初回4分33秒にSimulator準備/全UI約8〜12分とuploadを足し18分見込み。
+
+job間依存はなく、run全体の見込み20分（各native job上限30分、既存通常jobのtimeout45分を性能目標とは扱わない）。新fixtureなので見込みは未実測であり、CI後は実測に更新する。初回と2回目はsourceが異なり、初回probeの成功を新接続へ読み替えず共有全試験/probeも再実行する。投入sourceとpreflightは別JSONへ固定する。
+
+実機の必須列: A/B双方のWidget/Control追加と二項目選択、選択変更とOS再起動後保持、アプリ非前景から各surfaceを操作して選択対象のみ+1、削除済み項目拒否、A無効化/再有効化・削除/再登録・片側JSON復元とB保持、世代変更後の古い設定拒否/再選択、通常IPAへの復帰とCounter/Reminder/既存Widget/Shortcut/共有の保持。端末での実タップと設定保持は直接perform試験では合格にしない。非実機結果を確認後、診断/通常IPAの同一sourceと配布ZIPを確認して手順を会話へ分割提示する。現時点ではまだ実機を依頼しない。

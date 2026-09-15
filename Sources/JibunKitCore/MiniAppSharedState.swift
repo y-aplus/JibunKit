@@ -23,6 +23,7 @@ public struct MiniAppSharedState<Value: Codable & Sendable>: Sendable {
         let owner: String
         var generation: UUID
         var enabled: Bool
+        var maintenance: UUID?
         var value: Payload?
     }
 
@@ -72,7 +73,7 @@ public struct MiniAppSharedState<Value: Codable & Sendable>: Sendable {
     public func read() throws -> Snapshot {
         try coordinated {
             let envelope = try load()
-            guard envelope.enabled, let value = envelope.value else { throw MiniAppSharedStateError.unavailable }
+            guard envelope.enabled, envelope.maintenance == nil, let value = envelope.value else { throw MiniAppSharedStateError.unavailable }
             return Snapshot(generation: envelope.generation, value: value.value)
         }
     }
@@ -89,7 +90,7 @@ public struct MiniAppSharedState<Value: Codable & Sendable>: Sendable {
         try coordinated {
             try Task.checkCancellation()
             var envelope = try load()
-            guard envelope.enabled, var value = envelope.value else { throw MiniAppSharedStateError.unavailable }
+            guard envelope.enabled, envelope.maintenance == nil, var value = envelope.value else { throw MiniAppSharedStateError.unavailable }
             guard envelope.generation == generation else { throw MiniAppSharedStateError.staleGeneration }
             let result = try operation(&value.value)
             try Task.checkCancellation()
@@ -136,6 +137,77 @@ public struct MiniAppSharedState<Value: Codable & Sendable>: Sendable {
         }
     }
 
+    /// The normal backup adapter applies already validated data while the
+    /// Definition's external restore lifecycle holds admission closed.
+    public func replaceForRestore(_ value: Value) throws {
+        try coordinated {
+            var envelope = try load()
+            guard envelope.maintenance != nil else { throw MiniAppSharedStateError.unavailable }
+            envelope.value = Payload(value: value)
+            envelope.generation = UUID()
+            try save(envelope)
+        }
+    }
+
+    /// Connect to MiniAppDefinition.externalAccess. Only the host registers
+    /// initial data and explicitly recovers/re-registers through management.
+    /// Extension queries and actions must use read/update, never this adapter.
+    public func externalAccess(initialValue: Value) -> MiniAppExternalAccess {
+        MiniAppExternalAccess(id: owner, prepare: { enabled in
+            try initialize(initialValue, enabled: enabled)
+            if enabled { _ = try read() }
+            else { try setEnabled(false) }
+        }, close: {
+            try await Task.detached { try setEnabled(false) }.value
+        }, open: {
+            try await Task.detached { try activate(initialValue: initialValue) }.value
+        }, restoreLifecycle: { inner in
+            let session = SharedStateRestoreSession(store: self, inner: inner)
+            return MiniAppRestoreLifecycle(stop: { try await session.stop() },
+                resume: { try await session.resume() },
+                recoverAfterFailedStop: { try await session.recover() })
+        })
+    }
+
+    private func activate(initialValue: Value) throws {
+        try coordinated {
+            var envelope = try load()
+            // Management reserves the host before this explicit recovery.
+            // It cannot run concurrently with a live host restore session.
+            guard !envelope.enabled else { throw MiniAppSharedStateError.unavailable }
+            if envelope.value == nil {
+                envelope.value = Payload(value: initialValue)
+                envelope.generation = UUID()
+            }
+            envelope.maintenance = nil
+            envelope.enabled = true
+            try save(envelope)
+        }
+    }
+
+    fileprivate func beginMaintenance() throws -> UUID {
+        try coordinated {
+            var envelope = try load()
+            guard envelope.enabled, envelope.value != nil, envelope.maintenance == nil else {
+                throw MiniAppSharedStateError.unavailable
+            }
+            let token = UUID()
+            envelope.maintenance = token
+            try save(envelope)
+            return token
+        }
+    }
+
+    fileprivate func endMaintenance(_ token: UUID) throws {
+        try coordinated {
+            var envelope = try load()
+            guard envelope.maintenance == token else { throw MiniAppSharedStateError.staleGeneration }
+            envelope.maintenance = nil
+            // Never change enabled: management may have closed it meanwhile.
+            try save(envelope)
+        }
+    }
+
     private func load() throws -> Envelope {
         guard FileManager.default.fileExists(atPath: stateURL.path) else { throw MiniAppSharedStateError.unavailable }
         let values = try stateURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
@@ -166,6 +238,44 @@ public struct MiniAppSharedState<Value: Codable & Sendable>: Sendable {
         }
         if let result { return try result.get() }
         throw coordinationError ?? MiniAppSharedStateError.coordinationFailed as NSError
+    }
+}
+
+private actor SharedStateRestoreSession<Value: Codable & Sendable> {
+    let store: MiniAppSharedState<Value>
+    let inner: MiniAppRestoreLifecycle?
+    var token: UUID?
+    var innerAttempted = false
+
+    init(store: MiniAppSharedState<Value>, inner: MiniAppRestoreLifecycle?) {
+        self.store = store
+        self.inner = inner
+    }
+
+    func stop() async throws {
+        guard token == nil else { throw MiniAppSharedStateError.unavailable }
+        token = try store.beginMaintenance()
+        innerAttempted = true
+        try await inner?.stop()
+    }
+
+    func resume() async throws {
+        try await inner?.resume()
+        try release()
+    }
+
+    func recover() async throws {
+        // A failed acquisition owns no lease and must not reopen another one.
+        guard token != nil else { return }
+        if innerAttempted { try await inner?.recoverAfterFailedStop?() }
+        try release()
+    }
+
+    private func release() throws {
+        guard let token else { return }
+        try store.endMaintenance(token)
+        self.token = nil
+        innerAttempted = false
     }
 }
 #endif

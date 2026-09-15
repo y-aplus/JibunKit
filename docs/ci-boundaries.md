@@ -197,6 +197,8 @@ P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の�
 
 ## 1.0の条件付き範囲
 
+P2-Wは`interactive_widgets_validation=true`を追加し、`simulator_tests=true`の通常jobと、独立native比較/診断hostの二jobを並列にする。子ごとのrunは作らない。初期の別process事前probe1回と新接続の一括1回が初回予算で、正確な入力・filter・見込み/実測・再利用理由は[境界記録](verification/2026-09-15-p2-widget-control.md)へ残す。OS Widget/Controlのタップは一括実機へ予定し、直接performやmetadataを実タップ成功と扱わない。
+
 schema2は承認済みP2を追加する。旧schema1のP0/P1 report契約も保持する。P2-6（低負荷残件）・P2-12（通常AR）・P2-13（追加extension）の`scope_decision`をpending/adopted/excludedで管理し、採否理由と採用範囲を明記する。pendingをcompleteにせず、最終境界へ持ち込まない。excludedだけが`adopted_only`の実行条件を外せるが、採否の検討証拠は必要である。adoptedは通常のunit/OS/実機/文書を他の必須P2と同様に閉じる。意味のある成立範囲かは文章と実証をレビューする。
 
 P0/P1やP2-A/Bの通常機能を条件付きへ変更して検証を回避できない。既存minorの出荷記録はその確認commitのsnapshotで読む。新しい開発文書が追加された現在treeに過去の出荷gateを通すため、旧evidenceを追従改変しない。

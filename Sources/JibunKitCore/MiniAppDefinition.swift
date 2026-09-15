@@ -16,6 +16,7 @@ public struct MiniAppDefinition: Identifiable {
     public let lifetime: MiniAppFeatureLifetime?
     public let presentations: MiniAppPresentationOwner?
     public let removal: MiniAppRemovalProvider?
+    public let externalAccess: MiniAppExternalAccess?
     public let permissions: [MiniAppPermissionDeclaration]
     /// Idempotent cleanup for owned registrations beyond host notifications/search.
     public let onUnregister: (@MainActor @Sendable () async throws -> Void)?
@@ -43,6 +44,7 @@ public struct MiniAppDefinition: Identifiable {
         lifetime: MiniAppFeatureLifetime? = nil,
         presentations: MiniAppPresentationOwner? = nil,
         removal: MiniAppRemovalProvider? = nil,
+        externalAccess: MiniAppExternalAccess? = nil,
         permissions: [MiniAppPermissionDeclaration] = [],
         onUnregister: (@MainActor @Sendable () async throws -> Void)? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
@@ -75,6 +77,8 @@ public struct MiniAppDefinition: Identifiable {
         precondition(Set(permissions.map(\.id)).count == permissions.count && permissions.allSatisfy { !$0.id.isEmpty },
                      "Permission IDs must be nonempty and unique within a Feature.")
         self.removal = removal
+        precondition(externalAccess == nil || externalAccess?.id == id)
+        self.externalAccess = externalAccess
         self.permissions = permissions
         self.onUnregister = onUnregister
         self.restoreLifecycle = restoreLifecycle
@@ -103,7 +107,8 @@ public struct MiniAppDefinition: Identifiable {
 
     @MainActor
     public var effectiveRestoreLifecycle: MiniAppRestoreLifecycle? {
-        restoreLifecycle ?? lifetime?.restoreLifecycle
+        let inner = restoreLifecycle ?? lifetime?.restoreLifecycle
+        return externalAccess?.restoreLifecycle(inner) ?? inner
     }
 
     /// Integration appends its Feature's native navigation values to an empty

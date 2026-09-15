@@ -27,6 +27,7 @@ enum MiniAppRegistry {
         let registrations: [MiniAppManagement.Registration] = all.map { definition in
             MiniAppManagement.Registration(
                 id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
+                externalAccess: definition.externalAccess,
                 unregister: {
                     #if DEBUG
                     let started = Date()
@@ -65,7 +66,10 @@ enum MiniAppRegistry {
             registrations: registrations, defaults: managementDefaults, consents: consents,
             coordinator: MiniAppRestoreCoordinator.shared,
             storageKey: MiniAppManagement.defaultStorageKey,
-            onStatusChange: { _, _ in WidgetCenter.shared.reloadAllTimelines() }
+            onStatusChange: { _, _ in
+                WidgetCenter.shared.reloadAllTimelines()
+                ControlCenter.shared.reloadAllControls()
+            }
         )
         do {
             try incomingStore.get().publish(all.filter { result.isEnabled($0.id) }.compactMap(incomingDestination))

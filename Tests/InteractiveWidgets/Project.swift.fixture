@@ -1,0 +1,33 @@
+import ProjectDescription
+
+let owners: [(String, [String])] = [("StandaloneA", ["A"]), ("StandaloneB", ["B"]), ("Combined", ["A", "B"])]
+var targets: [Target] = []
+for (name, letters) in owners {
+    let bundleID = "com.jibunkit.interactive.\(name.lowercased())"
+    let group = "group.\(bundleID)"
+    let dependencies: [TargetDependency] = letters.map { .package(product: "InteractiveFeature\($0)") }
+    targets.append(.target(name: "\(name)Widget", destinations: .iOS, product: .appExtension,
+        bundleId: "\(bundleID).Widget", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["JibunKitAppGroup": .string(group),
+            "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"]]),
+        sources: [.glob("\(name)Widget.swift")],
+        entitlements: .dictionary(["com.apple.security.application-groups": .array([.string(group)])]),
+        dependencies: dependencies))
+    targets.append(.target(name: name, destinations: .iOS, product: .app,
+        bundleId: bundleID, deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: ["CFBundleDisplayName": .string("Interactive \(name)"),
+            "JibunKitAppGroup": .string(group), "UILaunchScreen": [:]]),
+        sources: [.glob("\(name)Host.swift")],
+        entitlements: .dictionary(["com.apple.security.application-groups": .array([.string(group)])]),
+        dependencies: [.target(name: "\(name)Widget"), .package(product: "JibunKitCore")] + dependencies))
+}
+targets.append(.target(name: "InteractiveNativeTests", destinations: .iOS, product: .unitTests,
+    bundleId: "com.jibunkit.interactive.tests", deploymentTargets: .iOS("26.0"), infoPlist: .default,
+    sources: ["NativeTests.swift"], dependencies: [.target(name: "Combined"), .package(product: "JibunKitCore"),
+        .package(product: "InteractiveFeatureA"), .package(product: "InteractiveFeatureB")]))
+let project = Project(name: "InteractiveWidgets",
+    packages: [.package(path: "FeatureA"), .package(path: "FeatureB"), .package(path: "__JIBUNKIT_PATH__")],
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]), targets: targets,
+    schemes: [.scheme(name: "InteractiveNativeTests", shared: true,
+        buildAction: .buildAction(targets: ["Combined"]),
+        testAction: .targets(["InteractiveNativeTests"], configuration: .debug))])

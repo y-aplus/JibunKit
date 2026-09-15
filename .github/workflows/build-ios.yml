@@ -55,6 +55,10 @@ on:
         description: Compare independent and combined package Widgets (requires simulator_tests)
         type: boolean
         default: false
+      interactive_widgets_validation:
+        description: P2-W independent/combined native contracts and normal host diagnostic in parallel (requires simulator_tests)
+        type: boolean
+        default: false
       incoming_validation:
         description: Native incoming provider/ownership tests in a parallel iOS job (requires simulator_tests)
         type: boolean
@@ -96,6 +100,13 @@ permissions:
   contents: read
 
 jobs:
+  interactive-widgets:
+    if: inputs.interactive_widgets_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: interactive-widgets
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   device-http-native:
     if: inputs.p1_device_validation && inputs.p1_device_http_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml

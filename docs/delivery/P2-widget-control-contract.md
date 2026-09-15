@@ -25,6 +25,8 @@ hostの管理・起動時同期・復元/移行には、Feature所有の外部�
 
 親が製品API/通常host・fixture/CI統合を所有する。計画gateレーンはplan.json、check-delivery.pyとそのtestsだけを所有し、製品/CIに触れない。製品担当を追加する場合はこの共有契約に担当pathを追記してから開始する。担当別のCIは行わない。
 
+2026-09-16、35022622331の修正境界では親が管理UI試験・通常host接続・証拠/CI統合を担当する。CLI nativeレーンはTests/InteractiveWidgetsのStandaloneAWidget.swift、StandaloneBWidget.swift、CombinedWidget.swift、Project.swift.fixture、NativeTests.swiftとTools/verify-interactive-widgets.pyのnative側、および必要なTools/testsのnative検証だけを所有する。共有Core、FeatureA/Bの契約、host側helper、管理UI試験は変更せず、必要な共有修正は提案として一括提出する。共通baselineはこの分担を記録したcommitとし、子はCI/pushを行わない。
+
 初回予算は2run。同じimmutable sourceで、(1)共有/別process試験・通常IPA/回帰、(2)独立/統合Widget/Controlのnative build/metadata/対象OS試験をまとめる。初回投入前に正確なworkflow入力・test filterと再利用sourceを証拠reportへ固定する。各runは通常25分見込み/30分目標、準備とupload込み。native/UIが収まらない場合は同一run内の並列jobを使い、予算増が必要なら根拠を記す。巨大な直列jobや各小修正ごとのCIは行わない。
 
 実機は設定・操作・管理・更新/Refreshをまとめて0.8.x候補で確認し、そのまとまりで版を進める。1.0まで全実機を延期する意味ではない。3失敗までに切り分け、待機はOS監視と一回queue通知とする。

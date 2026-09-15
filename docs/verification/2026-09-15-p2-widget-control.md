@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: 初期probe34975495965はsuccess。続く管理/復元/Widget/Control接続を実装し、2回目の一括CIを準備中。以下の「投入」「CI待ち」は開始時点の履歴であり、最新結果は末尾を参照する。
+現在: 初期probe34975495965はsuccess。続く管理/復元/Widget/Control接続を実装し、2回目の一括CI34979381516を投入済み。以下の「投入」「CI待ち」は開始時点の履歴であり、最新結果は末尾を参照する。
 
 ## 基盤実装
 
@@ -51,3 +51,9 @@ build-ios.ymlへ`simulator_tests=true interactive_widgets_validation=true featur
 job間依存はなく、run全体の見込み20分（各native job上限30分、既存通常jobのtimeout45分を性能目標とは扱わない）。新fixtureなので見込みは未実測であり、CI後は実測に更新する。初回と2回目はsourceが異なり、初回probeの成功を新接続へ読み替えず共有全試験/probeも再実行する。投入sourceとpreflightは別JSONへ固定する。
 
 実機の必須列: A/B双方のWidget/Control追加と二項目選択、選択変更とOS再起動後保持、アプリ非前景から各surfaceを操作して選択対象のみ+1、削除済み項目拒否、A無効化/再有効化・削除/再登録・片側JSON復元とB保持、世代変更後の古い設定拒否/再選択、通常IPAへの復帰とCounter/Reminder/既存Widget/Shortcut/共有の保持。端末での実タップと設定保持は直接perform試験では合格にしない。非実機結果を確認後、診断/通常IPAの同一sourceと配布ZIPを確認して手順を会話へ分割提示する。現時点ではまだ実機を依頼しない。
+
+## 接続境界の投入
+
+[CI34979381516](https://github.com/y-aplus/JibunKit/actions/runs/34979381516)を投入した。headShaは`4eb784d3f8f313eef9c6566f5729006e655af164`と照合済み。refは同SHAで固定した`codex/p2-widget-native`。通常combinedとinteractive-nativeの開始、interactive-hostのqueueを確認し、既存のOS監視taskを登録した。モデルの定期確認やinterval付きwatchは使わない。
+
+[事前report](2026-09-15-p2-widget-control-evidence.json)はpreflight structure/coverageを通過。sourceと異なる旧P0/P1証拠は再利用理由を明示し、変更された管理/共通試験は次のCIを待つ。source以後のcommitはこのreportと投入記録・[実機手順の下書き](2026-09-15-p2-widget-control-device.md)のみで、実行中の製品sourceは動かさない。main・公開0.8.0は未変更。待機対象は上記CIで、実機確認を今の段階でユーザーへ依頼しない。

@@ -84,6 +84,12 @@
       "conclusion": "success",
       "elapsed_seconds": 273,
       "job_seconds": 264
+    },
+    {
+      "id": "34979381516",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "conclusion": "pending; immutable head verified, OS completion monitor registered"
     }
   ],
   "evidence": [
@@ -322,7 +328,7 @@
       "criterion": "P2-7.integration",
       "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
       "checkpoint": "1.0.0",
-      "procedure": "docs/verification/2026-09-15-p2-widget-control.md mandatory grouped operations: A/B widget/control configuration, background native taps, retained selection, deleted/stale rejection, normal management/selected restore/B preservation and normal IPA return. Execute at next0.8.x checkpoint after this CI, not postponed until1.0. Native XCTest alone is partial integration evidence."
+      "procedure": "docs/verification/2026-09-15-p2-widget-control-device.md: six grouped phases; still a draft, do not request before non-device CI/artifact verification. Covers actual A/B Widget/Control configuration/taps, retained selection, unavailable/deleted/stale behavior, management/selected restore/B and normal IPA return. Scheduled for next0.8.x checkpoint, not postponed until1.0."
     }
   ]
 }

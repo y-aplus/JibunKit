@@ -186,6 +186,19 @@ jobs:
             --predicate 'subsystem CONTAINS[c] "spotlight" OR process CONTAINS[c] "spotlight" OR eventMessage CONTAINS "IndexAgent"' \
             > "$RUNNER_TEMP/SpotlightColdStart/simulator-service.log" 2>&1
 
+      - name: Export interactive management service diagnostics
+        if: always() && matrix.surface == 'interactive-host'
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/Interactive-host"
+          xcrun simctl spawn "$SIMULATOR_ID" log show --info --style compact --last 25m \
+            --predicate 'process == "JibunKit_App" OR process == "usernotificationsd" OR subsystem CONTAINS[c] "spotlight" OR process CONTAINS[c] "spotlight" OR eventMessage CONTAINS "IndexAgent"' \
+            > "$RUNNER_TEMP/Interactive-host/simulator-service.log" 2>&1
+          if [[ -d "$RUNNER_TEMP/Interactive-host/host-tests.xcresult" ]]; then
+            xcrun xcresulttool export attachments --path "$RUNNER_TEMP/Interactive-host/host-tests.xcresult" \
+              --output-path "$RUNNER_TEMP/Interactive-host/attachments"
+          fi
+
       - name: Export native web screenshots and accessibility evidence
         if: always() && matrix.surface == 'web-authentication'
         shell: bash

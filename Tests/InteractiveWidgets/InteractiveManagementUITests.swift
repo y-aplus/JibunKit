@@ -16,7 +16,15 @@ final class InteractiveManagementUITests: XCTestCase {
         tap("miniapp.back-to-list")
         tap("management.open")
         tap("management.disable.interactive-a")
+        // The normal unregister path includes native Spotlight cleanup. P1
+        // measured a cold Simulator completion after ~63s; keep its 120s
+        // bound, without warming the service or retrying the operation.
+        expect("management.status.interactive-a", "無効（データを保持）", timeout: 120)
+        app.terminate()
+        app.launch()
+        tap("management.open")
         expect("management.status.interactive-a", "無効（データを保持）")
+        expect("management.status.interactive-b", "有効")
         tap("management.enable.interactive-a")
         expect("management.status.interactive-a", "有効")
         app.terminate()
@@ -29,7 +37,7 @@ final class InteractiveManagementUITests: XCTestCase {
         let confirm = app.alerts.buttons["削除"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         confirm.tap()
-        expect("management.status.interactive-a", "削除済み", timeout: 60)
+        expect("management.status.interactive-a", "削除済み", timeout: 120)
         tap("management.enable.interactive-a")
         expect("management.status.interactive-a", "有効")
         app.terminate()
@@ -53,7 +61,11 @@ final class InteractiveManagementUITests: XCTestCase {
         element.tap()
     }
     private func expect(_ id: String, _ label: String, timeout: TimeInterval = 20) {
+        let start = Date()
+        print("INTERACTIVE_EXPECT start=\(start.timeIntervalSince1970) id=\(id) expected=\(label) limit=\(timeout)")
         let match = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", label), object: app.staticTexts[id])
-        XCTAssertEqual(XCTWaiter.wait(for: [match], timeout: timeout), .completed, app.debugDescription)
+        let result = XCTWaiter.wait(for: [match], timeout: timeout)
+        print("INTERACTIVE_EXPECT elapsed=\(Date().timeIntervalSince(start)) id=\(id) result=\(result.rawValue)")
+        XCTAssertEqual(result, .completed, app.debugDescription)
     }
 }

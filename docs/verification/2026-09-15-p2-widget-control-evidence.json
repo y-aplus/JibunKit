@@ -81,6 +81,12 @@
           "seconds": 537
         }
       ]
+    },
+    {
+      "id": "35022622331",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35022622331",
+      "source": "53e990e18854e8cf42c5abd239bc07448b6b4059",
+      "conclusion": "pending; both native jobs started, head verified and OS monitor registered"
     }
   ],
   "evidence": [
@@ -404,5 +410,34 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516",
       "observation": "SharedState9, SharedStateManagement8 and actual process probe passed. These are partial P2-7 ownership evidence only; native fixture actions/metadata and OS integration remain unexecuted."
     }
-  ]
+  ],
+  "normal_ipa": {
+    "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+    "run": "34979381516",
+    "file": "JibunKit.ipa",
+    "size": 2351018,
+    "sha256": "e61991a1f15fb275b030ffc1923f6ea1c541bdff9362a8f6c56f134a681de756",
+    "crc": "all entries passed",
+    "bundles": [
+      {
+        "path": "Payload/JibunKit.app/PlugIns/JibunKitShare_Extension.appex/Info.plist",
+        "id": "com.jibunkit.app.Share",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "path": "Payload/JibunKit.app/PlugIns/JibunKitWidget_Extension.appex/Info.plist",
+        "id": "com.jibunkit.app.Widget",
+        "version": "0.8.0",
+        "build": "10"
+      },
+      {
+        "path": "Payload/JibunKit.app/Info.plist",
+        "id": "com.jibunkit.app",
+        "version": "0.8.0",
+        "build": "10"
+      }
+    ],
+    "interactive_diagnostic_kind": "absent from three executables"
+  }
 }

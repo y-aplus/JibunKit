@@ -17,9 +17,9 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 
 ローカルでP1 host構成18件・Intent identity tool4件が成功。workflow YAMLの解析とdiff check成功。WindowsではSwift/Xcodeを実行しておらず、下記native CIまで成功。確認済みHTTP/Web/通知とP0実機は元sourceを保持し、今後の候補への適用は差分レビューする。0.8には昇格しない。実機確認を区切りに版を進める指示に従い、P1全条件が閉じなければ次の公開は0.7.1として版変更・通常出荷検証を行う。
 
-## 現在の到達点（34933726496確認後）
+## 現在の到達点（34958712557確認後）
 
-共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは34942834824/34942837167で成功し、公開再取得で整合性を確認済み。09927a6の実機で受信先選択後のinvalidInputが再現し、保存先検査を再調査中。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の結果と待機対象。
+09927a6の実機で共有保存と本体内部投入がinvalidInputになった。初回owner保存先の判定修正4e6a3f4は通常273件(skip2)/native32件/完全host共有・再試行を通過し、通常/診断IPAを公開再取得で確認済み。旧判定の誤拒否はmacOSで再現、iOS26 Simulatorでは未再現。実機での解消をこれから確認する。以下のrun節は当時の結果・計画を残す履歴であり、最後の節が最新の結果と待機対象。
 
 ## 残件
 
@@ -173,3 +173,14 @@ source `4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac`。[通常run34958710691](https
 新規3試験と既存の外向きsymlink拒否はすべて成功。macOSの`/private`表記を使った未作成ownerでは、旧prefix比較が`legacy-contained=false`と記録された。旧検査が初回の正規保存先を拒否する不具合をrunnerで再現し、修正後の保存・再openが同じfixtureで通った。実機の失敗分岐を直接観測したわけではないため、実機原因の確定や解消とはまだ言わない。
 
 同sourceの診断/native run34958712557はこの記録時点で進行中。結果を確認してから準備済みiOS27比較へ進む。通常IPAを再ビルドする理由は現時点でない。
+
+
+### 34958712557: 診断/native成功、保存先修正版を再確認へ
+
+source `4e6a3f4` の診断/native runは全体18分16秒で成功。native32件は失敗0、完全P1 hostのOS文字列/URL/ファイル共有・保存後失敗再試行の重複なし・再起動保持/B保持は182.857秒で成功。iOS26 Simulatorの旧判定観測は`legacy-contained=true private-spelling=false`で、macOSの`false/true`と区別する。保存先検査の不具合はmacOSで再現・修正確認済みだが、ユーザーのiOS27実機で原因確定・解消とはまだ言わない。
+
+[保存先修正の証拠](2026-09-15-incoming-owner-path-evidence.json)。通常run34958710691と合わせ、両Release IPA、native安全検査、完全host受信経路が揃った。準備済みiOS27選択を含むbranchを統合したが、製品sourceは4e6a3f4から変更なし。ユーザーの方針に従い27固有説へ偏らず、chatの調査と修正後実機観測を優先する。27比較は未投入で、現段階の新候補配布の必須待機条件にしない。通常toolchainはXcode26.6のまま。
+
+[再確認用prerelease r2](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)を公開。通常/診断IPAはともに0.7.1/build9、ファイル名にsource4e6a3f4を含む。旧09927a6の失敗記録は残し、再確認用と取り違えない。初回フォルダー作成を試すため、内部A/B投入を前提にせず、OS文字列共有→受信先Aを先に依頼する。追加件数やB保持は観測された範囲だけ記録する。正式0.7.1/0.8は未公開。
+
+公開APIはHTTP500を返したが、同じrelease IDの状態を照合して重複作成せず復旧した。最終的に公開状態・source tag・4assetを確認し、認証なしの4ファイル再取得で元IPA/ZIPとの全byte一致とCRCを検証済み。外側ZIPは単一IPA、ZIP64なし。[配布証拠](2026-09-15-incoming-owner-path-evidence.json)。

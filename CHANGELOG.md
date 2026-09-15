@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-- P1実機で判明した共有文字列の明示UTF読出しとgeneric plain-textのNSString限定secure archive復号、Shortcuts診断制御の永続化を追加（文字列修正はnative29件・小host OS共有3件で成功。完全hostの共有/再試行は成功したが、実機で受信先選択後の保存失敗が再現。初回保存先のパス検査を修正・検証中）。共有URL保存とWidget gallery未表示は切り分け中。実機結果は成功・失敗・未実施を区別して記録。
+- P1実機で判明した共有文字列の明示UTF読出しとgeneric plain-textのNSString限定secure archive復号、Shortcuts診断制御の永続化を追加（文字列修正はnative29件・小host OS共有3件で成功。完全hostの共有/再試行は成功したが、実機で受信先選択後の保存失敗が再現。初回保存先のパス検査修正は共通273(skip2)/native32/完全host共有で成功。実機再確認待ち）。共有URL保存とWidget gallery未表示は切り分け中。実機結果は成功・失敗・未実施を区別して記録。
 
 - 0.8実機確認前に現況文書58件をレビュー。P0/P1の実装・検証範囲と残件を同期し、隔離台帳の過大な確認済み表現と実機手順の記載漏れを訂正。公開前の結果反映・再確認は別途必要。
 

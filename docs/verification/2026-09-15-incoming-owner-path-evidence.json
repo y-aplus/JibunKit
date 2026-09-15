@@ -30,11 +30,54 @@
       "com.jibunkit.app"
     ],
     "crc": "passed",
-    "published": false
+    "published": true
   },
   "pending": [
-    "Same-source generated diagnostic and iOS26 native32 run34958712557.",
-    "Prepared iOS27 comparison after current CI evidence is inspected.",
-    "No new physical success or published candidate."
-  ]
+    "User iOS27.0 device confirmation of the existing-parent fix.",
+    "Research is handled in chat; optional iOS27 preview CI is prepared, not dispatched."
+  ],
+  "diagnostic": {
+    "run": 34958712557,
+    "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+    "url": "https://github.com/y-aplus/JibunKit/actions/runs/34958712557",
+    "conclusion": "success",
+    "elapsed_seconds": 1096,
+    "generated_job_seconds": 1088,
+    "native_job_seconds": 433,
+    "native_tests": 32,
+    "native_failures": 0,
+    "full_host_os_share_test_seconds": 182.857,
+    "legacy_observation": "INCOMING_PATH missing-owner legacy-contained=true private-spelling=false",
+    "interpretation": "iOS26 Simulator does not reproduce the private-prefix mismatch; all new safety/first-use tests pass. Full P1 host shares text/URL/file and preserves idempotent retry, relaunch and B."
+  },
+  "publication": {
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2",
+    "prerelease": true,
+    "assets": {
+      "JibunKit-normal-4e6a3f4.ipa": {
+        "bytes": 2243231,
+        "sha256": "935c1b865e753c1514e39a0d105182eb9be7d7dd97f7843ee9a6fae25e700a75",
+        "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915-r2/JibunKit-normal-4e6a3f4.ipa",
+        "public_download_verified": true
+      },
+      "JibunKit-normal-4e6a3f4.zip": {
+        "bytes": 2243383,
+        "sha256": "a7e1e5ee69209532712380ae4d062bfeab772c5d899186627d80464b5f54b01b",
+        "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915-r2/JibunKit-normal-4e6a3f4.zip",
+        "public_download_verified": true
+      },
+      "JibunKit-P1-4e6a3f4.ipa": {
+        "bytes": 2991638,
+        "sha256": "035287682a0f605539f63610916187eb3b3f7e4b45b21b11d9891a5243e9eb5e",
+        "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915-r2/JibunKit-P1-4e6a3f4.ipa",
+        "public_download_verified": true
+      },
+      "JibunKit-P1-4e6a3f4.zip": {
+        "bytes": 2991782,
+        "sha256": "d3a4971ae3d85ac40644b1c28945fd507ec5226d974e1a573f59b7abcbf50974",
+        "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915-r2/JibunKit-P1-4e6a3f4.zip",
+        "public_download_verified": true
+      }
+    }
+  }
 }

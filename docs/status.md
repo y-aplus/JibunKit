@@ -1,8 +1,10 @@
 # 公開版・main・開発branchの現在状態
 
-2026-09-15現在、開発branch `codex/p1-device-gallery-followup` で0.7.1/build9候補を準備中（未公開）。前候補の実機確認は受領済みで、HTTP/Web/通常状態の通知と通常IPA復帰は成功。共有文字列/URL、Shortcuts取消/失敗診断、Widget A/B表示に残件がある。
+2026-09-15現在、開発branch `codex/p1-device-gallery-followup` で0.7.1/build9候補を準備中（正式版は未公開）。前候補の実機ではHTTP/Web/通常状態の通知と通常IPA復帰が成功。09927a6の再確認では文字列/URL/ファイルの共有保存と本体内部投入がinvalidInputで失敗し、今回の実機OSは27.0と判明した。追加件数/B状態は未確認。
 
-共有入力の修正は34933726496でnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）が成功。前候補では通常回帰・IPA、SimulatorのWidget gallery/描画、Intent管理も成功している。同一source `09927a6` の通常IPA再ビルド34942834824と、完全P1 hostの共有・再試行/診断IPA生成34942837167が成功。修正確認用prereleaseを公開し、通常/診断IPA・ZIPの公開再取得で全byte一致とCRCを確認済み。09927a6の実機再確認では文字列の受信先選択後に保存がinvalidInputで失敗。追加件数/B状態は未確認。保存先検査の修正・検証を進めており、必要実機と出荷確認は未完で、0.8.0の到達条件を満たしたとは扱わない。[検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md#ユーザー実機結果2026-09-15)を参照。
+保存先判定を修正した`4e6a3f4`は通常34958710691・診断/native34958712557が成功。共通273件(skip2)、native32件、完全hostのOS共有/再試行/再起動保持/B保持を確認。旧パス判定の誤拒否をmacOSで再現したが、iOS26 Simulatorでは再現しておらず、実機での解消はこれから確認する。[保存先修正版prerelease r2](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)の通常/診断IPAは0.7.1/build9。iOS27固有差分はchat調査へ委ね、追加preview CIは準備のみで未投入。
+
+[検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md)を参照。共有、Shortcut取消/失敗、Widget表示/管理/更新保持と出荷確認が残り、0.8.0未達。
 
 更新日: 2026-09-15。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
 
@@ -84,4 +86,4 @@ Simulatorの初回Spotlight解除は完了表示まで約63秒かかり、以前
 
 P1の[診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260914)を配布済み。診断6beb877/通常8b5b8b8のIPAとZIPを公開再取得で照合し、2026-09-15に一括実機結果を受領済み。これらは前候補であり、共有入力修正後の再確認用IPAではない。正式0.8公開でもない。
 
-修正確認用の配布先: [2026-09-15診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915)。両IPAは0.7.1/build9、source09927a6。正式0.7.1公開ではなく、実機の残件確認用。[今回のCI・配布証拠](verification/2026-09-15-p1-refreshed-candidate-evidence.json)。
+旧修正候補09927a6の[CI・配布証拠](verification/2026-09-15-p1-refreshed-candidate-evidence.json)は履歴として保持する。実機で保存失敗を確認したため、新しい確認には先頭の4e6a3f4候補を使う。

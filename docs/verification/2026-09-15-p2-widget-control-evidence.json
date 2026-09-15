@@ -100,6 +100,12 @@
           "seconds": 1036
         }
       ]
+    },
+    {
+      "id": "35027469173",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35027469173",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "conclusion": "pending; both native and host jobs started; exact head verified and OS completion monitor registered"
     }
   ],
   "evidence": [

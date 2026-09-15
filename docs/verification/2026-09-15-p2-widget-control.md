@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: 通常job34979381516は成功を再利用。35022622331はnativeのSwiftUI import不足と診断hostの登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、4回目の一括CIを準備。P2-7のnative/OS合格はまだない。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
+現在: 通常job34979381516は成功を再利用。35022622331はnativeのSwiftUI import不足と診断hostの登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、4回目の一括CI35027469173で再検証中。P2-7のnative/OS合格はまだない。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
 
 ## 基盤実装
 
@@ -81,3 +81,5 @@ run全体17分28秒、native6分46秒、診断host17分16秒で失敗。前回�
 hostは最初の無効化で「無効化が未完了。新しい起動は停止しています。」「通知・検索などの登録解除」を表示し、20秒の期待値待ちで失敗した。SharedStateの受付停止より後まで進んだ証拠であり、ラベルの綴り違いではない。今runにOS service logはなく、通知とSpotlightのどちらで待ったかは未確定。過去P1の解除約63秒成功/120秒超過失敗の両記録を照合した。既存P1と同じ120秒を無効化・削除だけへ適用し、native操作のwarmup/retry/省略は行わない。無効状態のまま再起動して保持/B有効を確認する。XCTest側の開始/経過時刻と、通知/SpotlightのOSログ・添付exportを追加した。待機延長だけで製品の遅延原因が直ったとはしない。
 
 修正sourceはe984d44fbae1946720f2d43f3ee776e2f25c20f1。Tools全77件、workflow YAML parse、diff checkが成功。WindowsではSwift/Xcodeは未実行。初回2run予算に対する4run目の例外を事前reportへ記録し、native-surface interactive-widgets/iOS26のnative4件/hostUI1件/診断IPAをまとめて実行する。見込み25分、各job上限30分。通常製品pathは4eb784dと同じなので成功済み通常job/IPAは再利用する。さらに解除が失敗した場合は採取したOSログで切り分け、上限だけを再び延ばさない。
+
+[CI35027469173](https://github.com/y-aplus/JibunKit/actions/runs/35027469173)を凍結ref `codex/p2-native-management-repair`で投入し、headSha e984d44との完全一致と両job開始を確認した。OS完了監視を登録済み。現時点の待機対象はこのrunで、ユーザー承認・実機操作はまだ求めない。

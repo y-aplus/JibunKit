@@ -39,4 +39,4 @@ P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳]
 
 1.0範囲の採用に伴い、plan.json/schema2へP2の13追跡単位と7つのCI境界を追加した。P2のうち10単位は必須機能、3単位は低負荷候補/P2-Cの採否と採用範囲を扱う。単なる台帳件数を完成機能数とはしない。ローカルdelivery検査19件が成功し、通常機能の省略・条件付き未検証・長すぎるrun見積りを拒否する。
 
-P2-WのCI34979381516（source4eb784d）は通常jobが成功。共通290件（skip2、失敗0、管理接続8件を含む）、Records11件、別process probe、通常IPA、通常UI13件とFiles JSON往復1件を確認した。独立native/診断hostは同じWidget/Control kindのactor隔離エラーで失敗。四つの定数をsource53e990eで修正した後、CI35022622331はnativeのSwiftUI import不足、診断hostのOS登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、追加のサービスログ付き一括再検証を準備中。新Widget/Controlと実機確認は未完で、公開0.8.0には含めない。[検証記録](verification/2026-09-15-p2-widget-control.md)と[接続ガイド](guides/interactive-widgets.md)を参照する。
+P2-WのCI34979381516（source4eb784d）は通常jobが成功。共通290件（skip2、失敗0、管理接続8件を含む）、Records11件、別process probe、通常IPA、通常UI13件とFiles JSON往復1件を確認した。独立native/診断hostは同じWidget/Control kindのactor隔離エラーで失敗。四つの定数をsource53e990eで修正した後、CI35022622331はnativeのSwiftUI import不足、診断hostのOS登録解除待機20秒超過で失敗。両方をsource e984d44で修正し、追加のサービスログ付きCI35027469173で一括再検証中。新Widget/Controlと実機確認は未完で、公開0.8.0には含めない。[検証記録](verification/2026-09-15-p2-widget-control.md)と[接続ガイド](guides/interactive-widgets.md)を参照する。

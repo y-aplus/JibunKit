@@ -1,4 +1,4 @@
-> [0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1の実機再確認は受領済みで、0.8.0/build10のCI・文書・証拠照合を完了（公開前）。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に決定する。
+> [0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)を公開済み。P0/P1全12単位の合意範囲をCI・対象別実機・文書・配布物の検査で確認しました。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に決定する。
 
 # JibunKit
 
@@ -8,15 +8,15 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.7.0の変更と検証範囲](release-notes-0.7.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.0の変更と検証範囲](release-notes-0.8.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。現在の出荷検証は[0.7.0公開記録](docs/verification/2026-09-13-0.7-release.md)を参照してください。P0は0.7.0で完了し、次のP1完了は0.8.0とします。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。現在の出荷検証は[0.8.0公開記録](docs/verification/2026-09-15-0.8-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
-## 公開版0.7.0とmain
+## 公開版0.8.0とmain
 
-通常IPAはCounterとReminderを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
+通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
 Package翻訳のmixed localizationを提供します。静的Package Widgetのgallery・描画・他owner保持も検証済みです。
 
@@ -26,13 +26,13 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 0.7.0候補は[CI34705653297](https://github.com/y-aplus/JibunKit/actions/runs/34705653297)と[実機の一括確認](docs/verification/2026-09-13-0.7-device-check.md)を完了しました。[出荷記録](docs/verification/2026-09-13-0.7-release.md)で配布状態を区別します。
 
-mainにはP1-Aの共有受信、Package Intentsと静的Widgetの通常管理への接続を追加しています。P1-Bの通知添付・HTTP/Web接続は開発branchで実機再確認まで受領済みです。[確認に使った診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)は4e6a3f4（0.7.1/build9）。[0.8.0候補の版更新・文書/出荷照合](docs/verification/2026-09-15-0.8-release.md)を完了し、公開操作へ進みます。診断版は0.8.0の正式公開ではありません。
+0.8.0ではP1-Aの共有受信・Package Intents/静的Widgetの通常管理への接続と、P1-Bの通知添付・HTTP/Web接続をmainへ統合しました。実機確認は6beb877と[診断prerelease4e6a3f4](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)で対象別に行い、版のみを更新した71ef1ffのIPAを公開しています。[出荷照合と公開取得](docs/verification/2026-09-15-0.8-release.md)を完了しました。
 
 ## 文書
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.7.0の出荷範囲、開発状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.8.0の出荷範囲、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |
@@ -60,7 +60,7 @@ mainにはP1-Aの共有受信、Package Intentsと静的Widgetの通常管理へ
 
 ## 1.0に向けた作業
 
-目標はJibunKit v1.0の完成です。Issue #5のP0はCI・実機確認を完了し、0.7.0を公開済み。次はP1の通常OS入口・通知・HTTP/Webを0.8.0へ進めます。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0の正式境界はユーザー判断により0.8.0完了時に確定します。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
+目標はJibunKit v1.0の完成です。Issue #5のP0/P1を確認し、0.8.0を公開済みです。需要調査[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を受領し、1.0の正式境界はユーザー判断により0.8.0完了時に確定します。[完成基準](docs/coexistence-boundaries.md)と[台帳](docs/coexistence-ledger.md)を維持し、0.7/0.8の公開を1.0完成と扱いません。
 
 ## 現在の開発基盤
 

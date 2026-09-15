@@ -280,7 +280,7 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 
 識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
 
-所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持は通常hostで検証済みで、6beb877の実機でも保存・再起動・認証取消・片側削除・B保持と上書き/Refresh保持を確認しました（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。公開安定版0.7.0と未公開の0.8.0候補を区別してください。
+所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持は通常hostで検証済みで、6beb877の実機でも保存・再起動・認証取消・片側削除・B保持と上書き/Refresh保持を確認しました（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。この通常接続は0.8.0で公開しました。0.7.0へ追加したという意味ではありません。
 
 
 ### 自動ロック抑止の共存
@@ -343,8 +343,8 @@ background連携は[短時間の処理継続](guides/background-execution-owners
 登録API・注入試験の成功を、実OSの起動や期限配送の保証に置き換えません。
 
 
-## 共有入力と静的Widget（mainのP1-A追加）
+## 共有入力と静的Widget（0.8.0のP1-A追加）
 
-公開0.7.0に含まれない追加。外部ファイルとShare Extensionからの受信は、通常Definitionのoptional `incoming`へ接続する。[共有入力ガイド](guides/feature-incoming.md)に受信先選択、receipt IDでの冪等保存、取消・再試行とファイル寿命を示す。業務モデルをCoreへ移す必要はない。
+0.8.0で公開した追加（0.7.0には含まれない）。外部ファイルとShare Extensionからの受信は、通常Definitionのoptional `incoming`へ接続する。[共有入力ガイド](guides/feature-incoming.md)に受信先選択、receipt IDでの冪等保存、取消・再試行とファイル寿命を示す。業務モデルをCoreへ移す必要はない。
 
-静的Widgetは既存Widget extensionへ標準のWidgetBundle登録を追加する。[二Packageの静的Widget接続](guides/package-static-widgets.md)に所有store、管理状態、kind、翻訳と他owner保持を示す。App Intentsは[Package接続](guides/package-app-intents.md)と[App Shortcuts寄与](guides/feature-app-shortcuts.md)を参照。P1-AのCI証拠、6beb877/4e6a3f4の対象別実機結果、最終0.8候補の出荷照合を[実機追補](verification/2026-09-15-p1-device-followup.md)と[出荷候補記録](verification/2026-09-15-0.8-release.md)で区別する。
+静的Widgetは既存Widget extensionへ標準のWidgetBundle登録を追加する。[二Packageの静的Widget接続](guides/package-static-widgets.md)に所有store、管理状態、kind、翻訳と他owner保持を示す。App Intentsは[Package接続](guides/package-app-intents.md)と[App Shortcuts寄与](guides/feature-app-shortcuts.md)を参照。P1-AのCI証拠、6beb877/4e6a3f4の対象別実機結果、公開0.8.0の出荷照合を[実機追補](verification/2026-09-15-p1-device-followup.md)と[出荷記録](verification/2026-09-15-0.8-release.md)で区別する。

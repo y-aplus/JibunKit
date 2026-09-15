@@ -1,6 +1,6 @@
 # 通知添付の原本と一時コピー
 
-0.8.0公開候補のP1-B接続。公開安定版0.7.0には含まれない。Foundation試験と通常hostのnative通知/添付/foreground UI試験に加え、2026-09-15の6beb877実機確認で通知カードの添付、記録、文字入力返信、owner別解除と通常前景方針を確認済み。集中モード下の配信は通常状態の成功へ含めない。
+0.8.0で公開したP1-B接続。0.7.0には含まれない。Foundation試験と通常hostのnative通知/添付/foreground UI試験に加え、2026-09-15の6beb877実機確認で通知カードの添付、記録、文字入力返信、owner別解除と通常前景方針を確認済み。集中モード下の配信は通常状態の成功へ含めない。
 
 Appleの[UNNotificationAttachment](https://developer.apple.com/documentation/usernotifications/unnotificationattachment)は、検証した添付をOSの管理領域へ移す。Featureの文書や写真の原本をそのまま渡すと、通常画面が読むファイルを失い得る。`MiniAppNotificationAttachments`は任意の通常ファイルからowner別の一時コピーを作り、そのコピーで標準のnative requestを組み立てるための補助である。独自の添付型や通知機能を制限するwrapperではない。
 

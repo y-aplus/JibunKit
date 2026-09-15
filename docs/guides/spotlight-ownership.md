@@ -1,6 +1,6 @@
 # Core SpotlightのFeature所有権
 
-更新日: 2026-09-14。公開0.7.0と0.8開発中の通常host接続を区別して記載する。
+更新日: 2026-09-15。公開版0.8.0の通常host接続と、0.7.0当時の実績を区別して記載する。
 
 `MiniAppSpotlightNamespace`は、同じhost indexを使うFeatureへ異なる`uniqueIdentifier`と`domainIdentifier`を割り当てる。local item IDが同じでもFeature IDを含むnamespaceにより衝突せず、Feature全削除は`deleteSearchableItems(withDomainIdentifiers:)`だけを使う。`deleteAllSearchableItems`は他Featureを巻き込むため使わない。
 

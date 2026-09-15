@@ -1,6 +1,6 @@
 # Swift Package所有の静的Widget接続
 
-このガイドは、通常の`MiniAppDefinition`と共有storeを持つFeatureが、静的Widgetを既存hostへ出荷するためのP1接続候補を示す。2026-09-14時点でCI 34746211458のTimeline4件・独立/統合gallery3件と通常host管理UIが成功した（[source別の証拠](../verification/2026-09-13-p1-a.md)）。4e6a3f4（0.7.1/build9候補）の実機で追加/描画/更新、A管理/B保持、上書き/Refresh保持を確認済み（[実機記録](../verification/2026-09-14-0.8-device-check.md)）。正式出荷は最終確認前であり、公開済み0.7.0の保証には含めない。設定可能・操作可能WidgetとControlはP2であり、この手順の対象外とする。
+このガイドは、通常の`MiniAppDefinition`と共有storeを持つFeatureが、静的Widgetを既存hostへ出荷するための0.8.0のP1接続を示す。2026-09-14時点でCI 34746211458のTimeline4件・独立/統合gallery3件と通常host管理UIが成功した（[source別の証拠](../verification/2026-09-13-p1-a.md)）。4e6a3f4（0.7.1/build9候補）の実機で追加/描画/更新、A管理/B保持、上書き/Refresh保持を確認済み（[実機記録](../verification/2026-09-14-0.8-device-check.md)）。0.8.0で正式公開した。0.7.0の実績へは追加しない。設定可能・操作可能WidgetとControlはP2であり、この手順の対象外とする。
 
 ## Feature package
 

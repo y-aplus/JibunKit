@@ -725,7 +725,7 @@
     "accounting": "CI job durations recomputed for all22 runs; implementation review rounds inherited3, plus one Sol low document audit assignment. No inference of model cost savings. Document worker stopped after partial submission; parent completed audit. No child CI. These are coordination counts, not token/cost measurements; no cost-saving percentage is claimed."
   },
   "release": {
-    "candidate_ipa": "34967147135 at71ef1ff;0.8.0/build10;2243242bytes;SHA25650626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6d1faf2f3fbd80cf6ff6; local CRC/bundle inventory passed. Public re-download pending.",
+    "candidate_ipa": "34967147135 at71ef1ff;0.8.0/build10;2243242bytes;SHA25650626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6d1faf2f3fbd80cf6ff6; local CRC/bundle inventory passed. Public 0.8.0 re-download unauthenticated: exact bytes/CRC/digest passed; outer ZIP inner IPA identical. Tag f5c74e631b71cf59b6665ab447a9c0bd6593031e.",
     "normal_regression": "34883605285/8c54d6e normalUI13 and FilesJSON1; changed incoming covered by4e6a3f4 native32/full OS share and device; candidate34967147135 shared273(skip2)/Records11.",
     "generated_host": "P0/P1-A/B original source-scoped evidence retained; followup348836 normal-to-diagnostic gallery and persistent inbox;34958712557 full-host OS share/retry182.857s.",
     "metadata": "Candidate34967147135 normal native metadata/IDs/signature and3bundle version/CRC; native Package identities in34881183837 unchanged through candidate.",

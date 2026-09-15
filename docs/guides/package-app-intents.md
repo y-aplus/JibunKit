@@ -67,7 +67,7 @@ Intent用に別の保存先を作らず、通常画面と同じFeature storeを�
 
 保存は新しい値を確定してから一度だけ置換し、throw/cancellationを成功結果へ変換しない。失敗後も以前の値を残し、別ownerの保存には触れない。管理削除のcallbackは既にownerの排他予約内なので、そこで`withStoreAccess`を再入せずstoreの予約済み削除操作を呼ぶ。画面の非表示は無効化ではない。
 
-`Tests/PackageAppIntents`はP1-A実装中のfixtureとしてこの接続を二ownerで検証する。Combined系appは`App`初期化時、UI構築前に保存済み管理状態をcoordinatorへ反映してから境界を注入する。これは有効Featureだけに呼ばれる`onHostLaunch`へ置かない。既存のIntent/entity/query/parameter/result/phrase識別子比較に加え、直接`perform()`の引数と戻り値、候補検索、取消、保存失敗、再試行、管理再構築後の保持、A無効化・削除時の拒否とB保持を確認する。直接実行試験は保存ロジックの証拠であり、OS Shortcutsの発見や保存済みworkflowの証拠ではない。2026-09-14時点でCI 34746211458の7 unit＋1 managed host UI、通常host UIが成功し、生成hostと独立A/Bのnative定義8件も一致した（[証拠](../verification/2026-09-13-p1-a.md)）。公開0.7.0にはこのP1変更を含めていない。
+`Tests/PackageAppIntents`はP1-Aの検証fixtureとしてこの接続を二ownerで検証する。Combined系appは`App`初期化時、UI構築前に保存済み管理状態をcoordinatorへ反映してから境界を注入する。これは有効Featureだけに呼ばれる`onHostLaunch`へ置かない。既存のIntent/entity/query/parameter/result/phrase識別子比較に加え、直接`perform()`の引数と戻り値、候補検索、取消、保存失敗、再試行、管理再構築後の保持、A無効化・削除時の拒否とB保持を確認する。直接実行試験は保存ロジックの証拠であり、OS Shortcutsの発見や保存済みworkflowの証拠ではない。2026-09-14時点でCI 34746211458の7 unit＋1 managed host UI、通常host UIが成功し、生成hostと独立A/Bのnative定義8件も一致した（[証拠](../verification/2026-09-13-p1-a.md)）。公開0.7.0にはこのP1変更を含めていない。
 
 ## 0.8.0のOS確認
 

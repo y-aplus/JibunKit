@@ -1,8 +1,8 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-15。公開安定版は[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)。出荷候補は0.8.0/build10で、P0/P1全12単位の合意範囲を実装・接続・検証・文書まで確認済み。公開操作はこれから行う。[出荷記録](verification/2026-09-15-0.8-release.md)を参照する。
+更新日: 2026-09-15。公開安定版は[0.8.0/build10](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)（直前の正式版0.7.0）。P0/P1全12単位の合意範囲を実装・接続・検証・文書まで確認済み。mainへの統合と公開IPA/ZIPの無認証再取得・完全一致/CRC検査も完了。[出荷記録](verification/2026-09-15-0.8-release.md)を参照する。
 
-## 0.8.0候補
+## 0.8.0公開版
 
 製品source `71ef1ffb4f84442bf8853c0c2e286c2bedd81d22`、[CI34967147135](https://github.com/y-aplus/JibunKit/actions/runs/34967147135)は5分16秒で成功。共通273件（skip2、失敗0）、Records11件、通常Release/metadata/署名/IPA検査が成功した。取得IPAの全entry CRC、本体・Widget・Shareの0.8.0/build10と既存ID、診断Widget kind/resource非混入も確認済み。
 

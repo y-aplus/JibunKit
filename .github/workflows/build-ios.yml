@@ -453,6 +453,7 @@ jobs:
           check_native python3 Tools/verify-feature-connection.py --output "$RUNNER_TEMP/feature-connection"
           check_native python3 Tools/verify-package-compatible-update.py --output "$RUNNER_TEMP/package-compatible-update"
           check_native python3 Tools/verify-incoming-processes.py
+          check_native python3 Tools/verify-shared-state-processes.py
           check_native python3 -m unittest discover -s Tests/PackageCompatibleUpdate -p 'test_*.py'
           if [[ "${{ (inputs.feature_validation && matrix.lane != 'normal') }}" == "true" && -f Tools/verify-privacy-manifest-ownership.py ]]; then
             check_native python3 Tools/verify-privacy-manifest-ownership.py

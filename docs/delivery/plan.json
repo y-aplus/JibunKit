@@ -249,8 +249,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "静的Widget通常接続",
-      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認。34883605285で通常hostから診断hostへの削除なし更新後、gallery A/Bとホームの実描画/OCRが成功。4e6a3f4のiOS27.0実機でWidget追加一覧の機能A/B表示、ホーム描画・本体値一致・各値更新を確認（加算回数は指定と逆、反映は体感即時）",
-      "remaining": "4e6a3f4で実機gallery/ホーム描画・本体値一致・各値更新は成功。片側管理・上書き/Refresh保持は未確認。旧候補がCounterだけだった原因は未確定で、今回の表示成功を原因特定と混同しない。",
+      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認。34883605285で通常hostから診断hostへの削除なし更新後、gallery A/Bとホームの実描画/OCRが成功。4e6a3f4のiOS27.0実機でWidget追加一覧の機能A/B表示、ホーム描画・本体値一致・各値更新を確認（加算回数は指定と逆、反映は体感即時）。機能Aの無効化/再有効化/削除/初期状態で再登録と各段階のB保持も実機成功",
+      "remaining": "4e6a3f4で実機gallery/ホーム描画・本体値一致・各値更新は成功。片側管理は実機成功。再登録後の再起動・上書き/Refresh保持は未確認。旧候補がCounterだけだった原因は未確定で、今回の表示成功を原因特定と混同しない。",
       "deferred": "設定可能/操作可能Widget・Control/任意extension",
       "criteria": [
         {

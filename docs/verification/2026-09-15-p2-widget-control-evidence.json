@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-W",
-  "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+  "source": "53e990e18854e8cf42c5abd239bc07448b6b4059",
   "contract": {
     "baseline": "df43dac94c70a3c2a401daec6d892b6e214d9c21",
     "interfaces": "docs/delivery/P2-widget-control-contract.md; MiniAppExternalAccess optional Definition/Management; separate persistent management admission and restore lease; standard native AppIntentsPackage/WidgetBundle.",
@@ -9,48 +9,22 @@
     "failure_cases": "Eight SharedState management tests plus original nine store tests and true multiprocess probe; stop/apply/resume failure, close/open cleanup failure, interruption, deletion/reregistration generation, concurrent management vs restore, B retained. Four native tests and one normal-host UI follow the same contracts.",
     "normal_entrypoints": "Normal Registry externalAccess and effectiveRestoreLifecycle; unchanged Counter/Reminder plus isolated diagnostic pair. Native A/B/combined metadata and hosted tests; real Widget/Control taps/config persistence planned as grouped device checks after non-device CI.",
     "invalidation": "Core Management enable now reserves and cleans up failures; rerun complete shared suite plus normal UI/backup/management. Old Feature stores, lifetime, incoming, static Widget and Intent packages are unchanged. Reuse source-specific P0/P1 surface evidence only; repeat ordinary device management/static Widget/Shortcuts at grouped checkpoint.",
-    "review": "Parent reviewed admission order, persistent interruption, restoration not reopening disabled owners, rollback of partial enable, full entity lifetime identity, native host/extension registration, targeted failures/cancellation and stable existing bundle/widget IDs. Tools74 passed. New Swift/Xcode remains unexecuted; no native/OS success inferred from source or Python."
+    "review": "Parent reviewed admission order, persistent interruption, restoration not reopening disabled owners, rollback of partial enable, full entity lifetime identity, native host/extension registration, targeted failures/cancellation and stable existing bundle/widget IDs. Tools74 passed. New Swift/Xcode remains unexecuted; no native/OS success inferred from source or Python. Run2 compiler logs isolated four kind constants inheriting Widget/Control MainActor; mark immutable Strings nonisolated without moving perform to MainActor or changing IDs. All related A/B accesses inspected. Local host-preparation3 and delivery19 tests passed after repair. Native execution still pending."
   },
   "dependencies": {
     "P1-B": "Published0.8.0; docs/verification/2026-09-15-0.8-release.md and immutable source-specific 0.8-evidence.json. All P0/P1 adopted scope passed at that release."
   },
-  "planned_ci_runs": 2,
-  "budget_exception": "",
+  "planned_ci_runs": 3,
+  "budget_exception": "Add run3 after run2: normal full job passed, both interactive jobs failed their first Release compilation on the same actor-isolated kind access. Fix all four immutable String identifiers with nonisolated; rerun both interactive jobs together, including all previously unexecuted metadata/native4/hostUI1/diagnosticIPA checks. Reuse unchanged normal Sources/Package/Project/Tuist/UITests and its26m30 job. One failed run, root cause isolated immediately; no child or per-symbol CI.",
   "jobs": [
     {
-      "id": "normal-shared",
-      "kind": "unit",
-      "command": "build-ios.yml combined: full shared and Records tests, both independent-process probes, normal Release/metadata/IPA; same job as normal-ui below",
-      "criteria": [
-        "P0-1.lifetime",
-        "P0-3.failure",
-        "P0-5.ownership",
-        "P0-6.diagnostics",
-        "P1-3.routing",
-        "P1-4.ownership",
-        "P2-7.ownership"
-      ],
-      "expected_minutes": 18,
-      "timeout_minutes": 45
-    },
-    {
-      "id": "normal-ui",
-      "kind": "simulator",
-      "command": "build-ios.yml simulator_tests=true, ui_test_filter empty: all normal Migration/BackupRestore/MiniAppManagement tests; same combined job as normal-shared",
-      "criteria": [
-        "P0-5.ui"
-      ],
-      "expected_minutes": 18,
-      "timeout_minutes": 45
-    },
-    {
       "id": "interactive-native",
-      "kind": "simulator",
+      "kind": "unit",
       "command": "native-surface interactive-native: Tools/verify-interactive-widgets.py --mode native; A/B/combined Release+metadata, InteractiveNativeTests all4. Native integration portion only; Widget/Control OS taps separately planned.",
       "criteria": [
-        "P2-7.integration"
+        "P2-7.ownership"
       ],
-      "expected_minutes": 14,
+      "expected_minutes": 20,
       "timeout_minutes": 30
     },
     {
@@ -58,10 +32,9 @@
       "kind": "simulator",
       "command": "native-surface interactive-host: --mode host; isolated normal Registry Release + InteractiveManagementUITests all1 + metadata/signatures/diagnosticIPA",
       "criteria": [
-        "P0-5.ui",
         "P2-7.integration"
       ],
-      "expected_minutes": 18,
+      "expected_minutes": 20,
       "timeout_minutes": 30
     },
     {
@@ -89,7 +62,25 @@
       "id": "34979381516",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516",
       "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
-      "conclusion": "pending; immutable head verified, OS completion monitor registered"
+      "conclusion": "failure; normal job success, both interactive jobs failed actor-isolated kind access",
+      "elapsed_seconds": 1599,
+      "jobs": [
+        {
+          "name": "normal combined",
+          "conclusion": "success",
+          "seconds": 1590
+        },
+        {
+          "name": "interactive-native",
+          "conclusion": "failure",
+          "seconds": 419
+        },
+        {
+          "name": "interactive-host",
+          "conclusion": "failure",
+          "seconds": 537
+        }
+      ]
     }
   ],
   "evidence": [
@@ -252,6 +243,76 @@
       "observation": "At6beb877: local HTTP login/cache, relaunch Cookie/password retention, cancellation/logout/B preservation, same diagnosticIPA overwrite and Refresh credentials retention. Precommit fault injection is CI evidence; no independent device failure-injection claim. URLCache durability across relaunch is not required.",
       "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
       "reuse_reason": "Reviewed0.8.0 source-specific evidence, not re-execution: underlying P0/P1 Feature stores/fixtures, native packages, HTTP/Web/incoming/lifetime/presentation implementations are unchanged through4eb784d. This patch adds optional external admission to Management/Definition, with nil defaults for these existing Features. Its shared and normal management/backup regression is scheduled separately; grouped device management/static Widget/Shortcut checks are repeated. Original source retained. See final criterion/source comparison in docs/verification/2026-09-15-0.8-release.md: P0 stores/navigation/presentations/onboarding remain unchanged; lifetime/management changes have later scoped regression. Incoming provider/store and diagnostic Intent controls are covered by current native/full-host/device evidence. 4e6a3f4..71ef1ff changes product version only. This is evidence reuse, not re-execution at the candidate."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
+    },
+    {
+      "criterion": "P0-5.ui",
+      "kind": "simulator",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Diff4eb784d..53e990e18854e8cf42c5abd239bc07448b6b4059 changes four immutable kind declarations only in new InteractiveWidgets fixtures, workflow dispatch choice and docs. Normal Sources,Package.swift,Project.swift,Tuist and existing UITests have no changes; exact normal artifacts/evidence from4eb784d are reusable."
     }
   ],
   "deferred_device": {
@@ -271,10 +332,10 @@
   },
   "release": {},
   "metrics": {
-    "review_rounds": 1,
+    "review_rounds": 2,
     "parent_messages": 0,
-    "ci_job_minutes": 4.4,
-    "accounting": "Parent-only implementation/review; no worker CI or review exchange. One completed CI job264s; next job total to be recorded. No model-cost claim."
+    "ci_job_minutes": 46.833,
+    "accounting": "Parent-only review. Completed job seconds264+1590+419+537=2810, including failed jobs. No worker messaging/CI. First repair root-cause review after one failed run. No model-cost claim."
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -321,14 +382,27 @@
       "inputs_and_filters": "build-ios.yml immutable4eb784d; simulator_tests=true interactive_widgets_validation=true feature_validation=false records_validation=false ui_test_filter empty; all other flags default. Native matrix interactive-native/interactive-host parallel with combined normal job.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "No job dependencies. Normal baseline4m33 plus simulator setup/full normal UI8-12m and upload. Native2m setup+6m cached A/B/combined builds+4m hosted tests+2m upload ~14m. Diagnostic host2+4+6+2m, extra margin for Spotlight =>18m. New fixture estimates are unmeasured; actuals to be recorded."
+    },
+    {
+      "id": "interactive-actor-repair",
+      "inputs_and_filters": "native-surface.yml surface=interactive-widgets ios_major=26 simulator_runtime empty; frozen source 53e990e18854e8cf42c5abd239bc07448b6b4059. Runs interactive-native and interactive-host in parallel; no normal job. Same complete native4 and normal-hostUI1 filters, diagnosticIPA.",
+      "expected_elapsed_minutes": 22,
+      "estimate_basis": "Measured run2 setup about3m and first Release compile about4m per interactive job. Allow incremental standaloneB/combined builds, Simulator compile/tests and upload14-18m total; parallel run22m with margin, jobs30m maximum. Normal26m30 is reused, not included or estimated as18m again."
     }
   ],
   "planned_device_checks": [
     {
       "criterion": "P2-7.integration",
-      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "source": "53e990e18854e8cf42c5abd239bc07448b6b4059",
       "checkpoint": "1.0.0",
       "procedure": "docs/verification/2026-09-15-p2-widget-control-device.md: six grouped phases; still a draft, do not request before non-device CI/artifact verification. Covers actual A/B Widget/Control configuration/taps, retained selection, unavailable/deleted/stale behavior, management/selected restore/B and normal IPA return. Scheduled for next0.8.x checkpoint, not postponed until1.0."
+    }
+  ],
+  "supporting_checks": [
+    {
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516",
+      "observation": "SharedState9, SharedStateManagement8 and actual process probe passed. These are partial P2-7 ownership evidence only; native fixture actions/metadata and OS integration remain unexecuted."
     }
   ]
 }

@@ -21,3 +21,9 @@ workflow build-ios.ymlをこのbranchのimmutable SHAからdispatchする。入�
 後続の候補runは通常接続・native metadata/独立/統合・設定/操作OS試験を一括する。具体的filterと25分以内の並列job設計をその投入前に固定し、P2全体のpreflight/evidence gateを通す。初期probeの成功だけでP2-7をcompleteにしない。probeと後続sourceが異なること、再利用する試験と差分を明記する。
 
 ローカルではdelivery 19件を含むTools全71件が成功した（11.232秒）。このWindows環境にSwift/Xcodeはなく、新Swiftの実行はCI待ち。
+
+## 事前probe投入
+
+[CI34975495965](https://github.com/y-aplus/JibunKit/actions/runs/34975495965)を投入し、headSha=`b6244de6635d56969e1eceb94f35282d0dca096b`、in_progressを確認した。run数は1（初回2run予算）。GitHubのdispatch APIはSHAをrefとして拒否したため、同じSHAへ固定したbranch `codex/p2-widget-control`をrefとして使った。拒否された要求はrunを生成していない。作業継続用branchは`codex/p2-widget-integration`に分け、実行中refを動かさない。
+
+既存のOS完了監視を登録し、一回だけqueueへ結果を送る。モデルによる定期確認やgh run watch --intervalは使わない。結果待ちの対象は上記run。製品コードはmainへ未統合で、次はこのOS調停結果を確認して通常管理/復元とWidget/Controlへ接続する。

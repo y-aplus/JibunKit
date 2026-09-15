@@ -1,4 +1,5 @@
 import AppIntents
+import SwiftUI
 import WidgetKit
 import InteractiveFeatureB
 struct FixtureIntents: AppIntentsPackage {

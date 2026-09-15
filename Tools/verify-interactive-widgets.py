@@ -14,6 +14,28 @@ import subprocess
 import tempfile
 
 
+def assert_owner_metadata(metadata, owners, label):
+    """Require each fixture owner's complete native surface, without cross-owner leakage."""
+    expected = {
+        "actions": ["Increment", "WidgetConfiguration", "ControlConfiguration"],
+        "entities": ["Item"],
+        "queries": ["Query"],
+    }
+    fields = {
+        "actions": "fullyQualifiedTypeName",
+        "entities": "fullyQualifiedTypeName",
+        "queries": "fullyQualifiedIdentifier",
+    }
+    for section, suffixes in expected.items():
+        definitions = metadata.get(section)
+        assert isinstance(definitions, dict), (label, section, type(definitions).__name__)
+        identities = {value.get(fields[section]) for value in definitions.values() if isinstance(value, dict)}
+        for owner in "AB":
+            for suffix in suffixes:
+                identity = f"InteractiveFeature{owner}.Feature{owner}{suffix}"
+                assert (identity in identities) == (owner in owners), (label, section, identity)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=["native", "host"], required=True)
@@ -45,8 +67,10 @@ def main():
                    "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, label)
         methods = re.findall(r"\bfunc\s+(test\w+)\s*\(", source.read_text(encoding="utf-8"))
         assert methods, "No declared test cases"
+        assert len(methods) == len(set(methods)), f"Duplicate test declarations: {methods}"
         for method in methods:
-            assert re.search(rf"Test Case '-\[[^\]]+ {re.escape(method)}\]' passed", log), method
+            passes = re.findall(rf"Test Case '-\[[^\]]+ {re.escape(method)}\]' passed", log)
+            assert len(passes) == 1, (method, len(passes))
         assert "** TEST SUCCEEDED **" in log
         (evidence / f"{label}-passed.json").write_text(json.dumps(methods, indent=2) + "\n")
 
@@ -86,13 +110,8 @@ def main():
                         assert (kind in strings) == (owner in owners), (scheme, kind)
                 apps[scheme] = app / "Metadata.appintents/extract.actionsdata"
                 extensions[scheme] = extension / "Metadata.appintents/extract.actionsdata"
-                data = json.loads(apps[scheme].read_bytes())
-                for owner in owners:
-                    for name in ["Increment", "WidgetConfiguration", "ControlConfiguration"]:
-                        assert any(value.get("fullyQualifiedTypeName") == f"InteractiveFeature{owner}.Feature{owner}{name}"
-                                   for value in data["actions"].values()), (scheme, owner, name)
-                    assert any(value.get("fullyQualifiedTypeName") == f"InteractiveFeature{owner}.Feature{owner}Item"
-                               for value in data["entities"].values()), (scheme, owner, "entity")
+                assert_owner_metadata(json.loads(apps[scheme].read_bytes()), owners, f"{scheme} app")
+                assert_owner_metadata(json.loads(extensions[scheme].read_bytes()), owners, f"{scheme} extension")
             for label, paths in [("app", apps), ("extension", extensions)]:
                 compare([paths["StandaloneA"], paths["StandaloneB"]], paths["Combined"], f"compare-{label}")
             compare([apps["Combined"]], extensions["Combined"], "app-extension")

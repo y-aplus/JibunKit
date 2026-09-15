@@ -1,4 +1,5 @@
 import AppIntents
+import SwiftUI
 import WidgetKit
 import InteractiveFeatureA
 import InteractiveFeatureB

@@ -512,7 +512,7 @@
     },
     {
       "path": "docs/coexistence-boundaries.md",
-      "outcome": "reviewed-unchanged"
+      "outcome": "updated"
     },
     {
       "path": "docs/coexistence-ledger.md",
@@ -700,7 +700,7 @@
     },
     {
       "path": "docs/updating.md",
-      "outcome": "reviewed-unchanged"
+      "outcome": "updated"
     },
     {
       "path": "release-notes-0.8.0.md",
@@ -708,12 +708,11 @@
     }
   ],
   "document_review": {
-    "source": "a98dea8ddb7b256fda0800b9ce1b33e8a1a04f93",
-    "summary": "現況文書58件を全文確認。前回文書確認commit 795157839f9528afe5a0083828ecd59d59d61befとの比較で28件更新、30件非更新。P1の通常接続・CI/実機のsourceと観測限界をガイド/台帳/状態/計画へ同期し、旧契約は開始時点の履歴と明記。公開候補0.8.0/build10と公開操作前0.7.0を区別。手順・API・互換性・OSS/セキュリティ等で現実と一致する文章は非更新。個別path一覧を本documentsへ記録し、重複した個別理由/ハッシュ台帳は作らない。",
+    "source": "0e1e13d2c0d1c38c21a1f733041aee06e92a20d1",
+    "summary": "現況文書58件の全文レビューa98dea8を基に、公開後差分を再確認した。前回minorの全文確認commit 795157839f9528afe5a0083828ecd59d59d61befから30件更新・28件確認非更新。P1の対象別source/観測限界、現在のAPI/接続・利用手順、P0/P1完了と親D残件を照合。公開後はREADME/CHANGELOG/状態/台帳/計画/導入更新/互換性/ガイドを0.8.0公開済みへ同期し、取得URLとbundle構成を修正した。技術内容に変化のないAPI・手順・OSS/セキュリティ等は非更新。個別path一覧をdocumentsへ記録。旧tag/過去release notes・source別の履歴は改変しない。",
     "unresolved": [
       "1.0正式範囲は0.8.0完了時のユーザー判断待ち。P2/P3の残件をP1完了に含めない。",
-      "新0.8.0 IPAの実機試験は未実施。製品版のみの差分と6beb877/4e6a3f4の対象別実績を区別。",
-      "公開後に公開状態を同期し、その文書確認commitを追加記録する。"
+      "新0.8.0 IPAの実機試験は未実施。製品版のみの差分と6beb877/4e6a3f4の対象別実績を区別。"
     ]
   },
   "metrics": {
@@ -916,5 +915,14 @@
       "run_seconds": 316.0
     }
   ],
-  "planned_device_checks": []
+  "planned_device_checks": [],
+  "publication": {
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/0.8.0",
+    "published_at": "2026-09-15T12:53:45Z",
+    "tag_commit": "f5c74e631b71cf59b6665ab447a9c0bd6593031e",
+    "document_review_before_publication": "a98dea8ddb7b256fda0800b9ce1b33e8a1a04f93",
+    "document_review_after_publication": "0e1e13d2c0d1c38c21a1f733041aee06e92a20d1",
+    "unauthenticated_download": "IPA/ZIP exact bytes; CRC passed; inner IPA identical; GitHub digests matched",
+    "issue5": "P1 six units and 0.8 release checked; 1.0 scope decision remains open"
+  }
 }

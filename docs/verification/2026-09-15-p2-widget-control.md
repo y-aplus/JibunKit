@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: 初期probe34975495965はsuccess。続く管理/復元/Widget/Control接続を実装し、2回目の一括CI34979381516を投入済み。以下の「投入」「CI待ち」は開始時点の履歴であり、最新結果は末尾を参照する。
+現在: 初期probe34975495965はsuccess。接続CI34979381516は通常job成功、native二jobが同じactor隔離エラーで失敗。識別子定数の修正後、native二jobだけを再検証する。以下の投入/待機記述は履歴で、最新結果は末尾を参照する。
 
 ## 基盤実装
 
@@ -57,3 +57,13 @@ job間依存はなく、run全体の見込み20分（各native job上限30分、
 [CI34979381516](https://github.com/y-aplus/JibunKit/actions/runs/34979381516)を投入した。headShaは`4eb784d3f8f313eef9c6566f5729006e655af164`と照合済み。refは同SHAで固定した`codex/p2-widget-native`。通常combinedとinteractive-nativeの開始、interactive-hostのqueueを確認し、既存のOS監視taskを登録した。モデルの定期確認やinterval付きwatchは使わない。
 
 [事前report](2026-09-15-p2-widget-control-evidence.json)はpreflight structure/coverageを通過。sourceと異なる旧P0/P1証拠は再利用理由を明示し、変更された管理/共通試験は次のCIを待つ。source以後のcommitはこのreportと投入記録・[実機手順の下書き](2026-09-15-p2-widget-control-device.md)のみで、実行中の製品sourceは動かさない。main・公開0.8.0は未変更。待機対象は上記CIで、実機確認を今の段階でユーザーへ依頼しない。
+
+## 接続CIの結果と切り分け（2026-09-16 JST）
+
+34979381516のsourceは4eb784d。通常combinedは26分30秒で成功。共通290件（skip2、失敗0）、Records11件、別processの300更新/終了/世代probe、通常Release/metadata/署名/IPA、通常UI13件、別実行のFiles JSON往復1件の成功を確認した。追加したSharedState管理8件もすべてpassed。これは通常管理/復元の共有状態接続の証拠であり、未buildのWidget/Controlの成功ではない。
+
+nativeは6分59秒、診断hostは8分57秒で失敗。両方の原因はFeatureA/BのIncrement.performが、Widget/ControlのMainActorを継承したstatic kindをactor外から読んだこと。四つのkindを`public nonisolated static let`とし、文字列値・永続ID・Intentの実行方式・Coreの保存/管理実装は変更しない。関連するA/B全参照を確認し、片方だけ直して再投入することを避けた。新たな失敗runは1回で、3回を待たず型/actor境界まで切り分けた。
+
+初回2run予算を消費したため、追加1runを明示する。`native-surface.yml surface=interactive-widgets ios_major=26 simulator_runtime=空`を直接dispatchできる選択肢を追加し、独立native/診断hostの二jobだけを同一runで再実行する。全metadata比較・native4件・通常管理UI1件・診断IPAまで対象を維持する。成功した通常jobは、通常Sources/Package.swift/Project.swift/Tuist/UITestsに差分がないことを確認して再利用し、26分半の通常CIを繰り返さない。
+
+初回20分見込みに対しrun全体は約26分40秒だった。過小見積りは通常jobのstandalone Counter/backup harness/Simulator buildとFiles別試験・証拠export/uploadの直列時間を十分に足していなかったため。30分目標内だが、今後の同じ通常全範囲を18分とは見積もらない。今回の再試験は通常jobを含まず、nativeの実績準備約3分/最初のcompile約4分に、残る差分build・Simulator試験・uploadを足して並列run22分を見込む（job上限30分）。

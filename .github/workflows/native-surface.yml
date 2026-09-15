@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair]
+        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair, interactive-widgets]
       ios_major:
         description: Target OS major for native comparison; 27 uses the preview Xcode image
         type: choice

@@ -142,7 +142,7 @@ public struct FeatureAProvider: AppIntentTimelineProvider {
 }
 
 public struct FeatureAWidget: Widget {
-    public static let kind = "com.jibunkit.fixture.interactive-a.widget"
+    public nonisolated static let kind = "com.jibunkit.fixture.interactive-a.widget"
     public init() {}
     public var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: Self.kind, intent: FeatureAWidgetConfiguration.self, provider: FeatureAProvider()) { entry in
@@ -172,7 +172,7 @@ public struct FeatureAControlProvider: AppIntentControlValueProvider {
 }
 
 public struct FeatureAControl: ControlWidget {
-    public static let kind = "com.jibunkit.fixture.interactive-a.control"
+    public nonisolated static let kind = "com.jibunkit.fixture.interactive-a.control"
     public init() {}
     public var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(kind: Self.kind, provider: FeatureAControlProvider()) { entry in

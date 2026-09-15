@@ -1,6 +1,6 @@
 # 操作Widget／ControlとFeatureの共有状態
 
-2026-09-15のP2-W開発版向け。公開0.8.0には未収録。共有状態の初期9試験とmacOS別process probeは成功済みだが、通常管理への新接続とnative Widget/ControlはCI・一括実機確認前である。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
+P2-W開発版向け（2026-09-16更新）。公開0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。native Widget/Controlのbuildはactor隔離エラーを修正して再検証する段階で、一括実機確認も未実施。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
 
 ## 標準APIと責任
 
@@ -9,6 +9,8 @@ FeatureのSwift PackageがAppEntity/EntityQuery、WidgetConfigurationIntent、Co
 `Tests/InteractiveWidgets/FeatureA`と`FeatureB`は独立した接続例である。二ownerがそれぞれ`same-id`と`second-id`を持つ。候補はそのownerの現在の項目だけを返す。選択entityのIDで対象を決め、削除済み設定を先頭項目へ自動置換しない。entity IDには保存世代と項目の生存期間を含め、削除・復元後に同じlocal IDを作っても古いボタンが新データを変更しない。復元後には対象の再選択が必要になる。
 
 操作Intentは本体を開かず共有領域を更新できる。WidgetはAppIntentConfiguration/AppIntentTimelineProviderとButton(intent:)、ControlはAppIntentControlConfiguration/ControlWidgetButtonを使う。既存Counter/静的WidgetのIDは変更しない。OSがIntentをどのprocessで動かすか調停するため、本体のシングルトンだけを前提にしない。
+
+Widget/Control型のkindは背景Intentからも参照する不変のStringなので、`nonisolated static let`で宣言する。表示型のMainActor隔離を更新処理へ持ち込むために、Intent全体をMainActorへ移す必要はない。
 
 ## 小さなCodable状態を共有する場合
 

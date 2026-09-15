@@ -1,0 +1,132 @@
+{
+  "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+  "version": "0.7.1",
+  "build": "9",
+  "release_kind": "diagnostic prerelease; stable remains0.7.0",
+  "runs": {
+    "34942834824": {
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34942834824",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "conclusion": "success",
+      "created_at": "2026-09-15T07:39:41Z",
+      "completed_at": "2026-09-15T07:46:12Z",
+      "elapsed_seconds": 391,
+      "jobs": [
+        {
+          "name": "Xcode 26.6 (combined)",
+          "seconds": 379
+        }
+      ],
+      "tests": {
+        "shared": 270,
+        "skipped": 2,
+        "failures": 0,
+        "independent_records": 11
+      },
+      "scope": "Shared tests, package tests, requirements, normal Release app/Widget/Share build, signing/metadata and IPA. Normal UI/Files reused from348836 with reviewed diff."
+    },
+    "34942837167": {
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/34942837167",
+      "source": "09927a6151883a3fce3e30a9c35291fe918f49af",
+      "conclusion": "success",
+      "created_at": "2026-09-15T07:39:43Z",
+      "completed_at": "2026-09-15T07:56:42Z",
+      "elapsed_seconds": 1019,
+      "jobs": [
+        {
+          "name": "Xcode 26.6 (generated)",
+          "seconds": 968
+        }
+      ],
+      "tests": {
+        "full_host_os_share": 1,
+        "seconds": 149.973,
+        "failures": 0
+      },
+      "scope": "All P1 pairs registered: text/URL/file OS share, exact expected content present, fail-after-commit retry without duplicate, relaunch preservation and B unchanged. Diagnostic Release IPA and inventory."
+    }
+  },
+  "artifacts": {
+    "JibunKit-normal-09927a6.ipa": {
+      "bytes": 2235638,
+      "sha256": "cf6e2902ecf94df0c9fdbfeac60c9283b1f75cd8529edbde3891bf63e9c4beee",
+      "bundles": [
+        {
+          "identifier": "com.jibunkit.app.Share",
+          "version": "0.7.1",
+          "build": "9"
+        },
+        {
+          "identifier": "com.jibunkit.app.Widget",
+          "version": "0.7.1",
+          "build": "9"
+        },
+        {
+          "identifier": "com.jibunkit.app",
+          "version": "0.7.1",
+          "build": "9"
+        }
+      ],
+      "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915/JibunKit-normal-09927a6.ipa",
+      "public_download_verified": true,
+      "content_type": "application/octet-stream"
+    },
+    "JibunKit-normal-09927a6.zip": {
+      "bytes": 2235790,
+      "sha256": "19e23bf6a9f2b390685957854278a7c7081e1479c6df61414d27ea1809bf5654",
+      "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915/JibunKit-normal-09927a6.zip",
+      "public_download_verified": true,
+      "content_type": "application/octet-stream"
+    },
+    "JibunKit-P1-09927a6.ipa": {
+      "bytes": 2985661,
+      "sha256": "000823e4f0e73c8c80adc63270447a4b5ef81aa9edb53312320800a6ed210f27",
+      "bundles": [
+        {
+          "identifier": "com.jibunkit.app.Share",
+          "version": "0.7.1",
+          "build": "9"
+        },
+        {
+          "identifier": "com.jibunkit.app.Widget",
+          "version": "0.7.1",
+          "build": "9"
+        },
+        {
+          "identifier": "com.jibunkit.app",
+          "version": "0.7.1",
+          "build": "9"
+        }
+      ],
+      "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915/JibunKit-P1-09927a6.ipa",
+      "public_download_verified": true,
+      "content_type": "application/octet-stream"
+    },
+    "JibunKit-P1-09927a6.zip": {
+      "bytes": 2985805,
+      "sha256": "f2c4904074a40abf8553113b6b92851b457eed4997585194093c47e37c70e26d",
+      "public_url": "https://github.com/y-aplus/JibunKit/releases/download/p1-device-check-20260915/JibunKit-P1-09927a6.zip",
+      "public_download_verified": true,
+      "content_type": "application/octet-stream"
+    }
+  },
+  "diagnostic_inventory": {
+    "ipa": "JibunKit-P1-check.ipa",
+    "sha256": "000823e4f0e73c8c80adc63270447a4b5ef81aa9edb53312320800a6ed210f27",
+    "version": "0.7.1",
+    "build": "9",
+    "bundle_ids": [
+      "com.jibunkit.app",
+      "com.jibunkit.app.Widget",
+      "com.jibunkit.app.Share"
+    ],
+    "widget_kinds": [
+      "JibunKitCounterWidget",
+      "com.jibunkit.fixture.feature-a.widget",
+      "com.jibunkit.fixture.feature-b.widget"
+    ],
+    "scope": "Archive CRC, identity/version, executable kind strings and localized resources only; OS gallery/rendering requires separate evidence."
+  },
+  "reuse_review": "See 2026-09-15-p1-device-followup.md: normal UI/Files/gallery/persistent inbox from348836, Intent management from348875, native incoming/OS small host from349337; their product paths/fixtures unchanged except incoming provider now verified in both small and full hosts.",
+  "remaining": "Physical followup per2026-09-14-0.8-device-check.md; no final0.7.1/0.8 release acceptance."
+}

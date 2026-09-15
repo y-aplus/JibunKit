@@ -2,7 +2,7 @@
 
 2026-09-15現在、開発branch `codex/p1-device-gallery-followup` で0.7.1/build9候補を準備中（未公開）。前候補の実機確認は受領済みで、HTTP/Web/通常状態の通知と通常IPA復帰は成功。共有文字列/URL、Shortcuts取消/失敗診断、Widget A/B表示に残件がある。
 
-共有入力の修正は34933726496でnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）が成功。前候補では通常回帰・IPA、SimulatorのWidget gallery/描画、Intent管理も成功している。現在は同一source `09927a6` の通常IPA再ビルド34942834824と、完全P1 hostの共有・再試行/診断IPA生成34942837167を実行中。必要実機と出荷確認は未完で、0.8.0の到達条件を満たしたとは扱わない。[検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md#ユーザー実機結果2026-09-15)を参照。
+共有入力の修正は34933726496でnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）が成功。前候補では通常回帰・IPA、SimulatorのWidget gallery/描画、Intent管理も成功している。同一source `09927a6` の通常IPA再ビルド34942834824と、完全P1 hostの共有・再試行/診断IPA生成34942837167が成功。修正確認用prereleaseを公開し、通常/診断IPA・ZIPの公開再取得で全byte一致とCRCを確認済み。必要実機と出荷確認は未完で、0.8.0の到達条件を満たしたとは扱わない。[検証結果と再利用範囲](verification/2026-09-15-p1-device-followup.md)、[実機結果と残件](verification/2026-09-14-0.8-device-check.md#ユーザー実機結果2026-09-15)を参照。
 
 更新日: 2026-09-15。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
 
@@ -83,3 +83,5 @@ source `77b5f5d` のrun34794545131で共有262件（skip2）、P1通常host UI3�
 Simulatorの初回Spotlight解除は完了表示まで約63秒かかり、以前の120秒超過の原因は未確定。2026-09-15の実機結果は受領済みで、現在の残件は先頭と実機記録に集約する。0.8文書/出荷gateと1.0境界判断は未完了。前候補の表示0.7.0/build8と、準備中の0.7.1/build9を区別する。
 
 P1の[診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260914)を配布済み。診断6beb877/通常8b5b8b8のIPAとZIPを公開再取得で照合し、2026-09-15に一括実機結果を受領済み。これらは前候補であり、共有入力修正後の再確認用IPAではない。正式0.8公開でもない。
+
+修正確認用の配布先: [2026-09-15診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915)。両IPAは0.7.1/build9、source09927a6。正式0.7.1公開ではなく、実機の残件確認用。[今回のCI・配布証拠](verification/2026-09-15-p1-refreshed-candidate-evidence.json)。

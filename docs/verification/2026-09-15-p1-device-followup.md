@@ -19,7 +19,7 @@ URL enqueueは現エラー番号だけでは原因未確定。Coreのエラー�
 
 ## 現在の到達点（34933726496確認後）
 
-共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは次の境界で検証する。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の投入計画。
+共有文字列の修正はnative29件と小host OS共有3件で成功。完全P1 hostでの共有/再試行と最新の通常/診断IPAは34942834824/34942837167で成功し、公開再取得で整合性を確認済み。必要実機は未完。以下の各run節は当時の結果・計画を残す履歴であり、最後の節が現在の結果と待機対象。
 
 ## 残件
 
@@ -120,3 +120,14 @@ source `cad667ba7a9efdc38499accbc4297ff926bfcfb0`。[run34933726496](https://git
 この二runで累計予算を17から19へ変更する。小hostの原因切り分けは終わり、未完だった候補境界へ戻るためである。完全host共有に失敗した場合は新しい最初の失敗工程と小hostの差を調べ、成功済み通常runを自動的に再実行しない。追加実機は候補の内容・CRC・公開取得を検証してから短い手順で依頼する。
 
 CI外のqueue遅延は別途、Codex更新後のidleスレッド保持の短縮と、未loadスレッドのqueueがresumeを待つ挙動によるものと確認した。上の時刻記録は当時の観測を保持し、CI実行時間とは区別する。
+
+
+## 09927a6候補: CI・配布検証完了、実機残件待ち
+
+[通常34942834824](https://github.com/y-aplus/JibunKit/actions/runs/34942834824)と[診断34942837167](https://github.com/y-aplus/JibunKit/actions/runs/34942837167)は同じsource `09927a6151883a3fce3e30a9c35291fe918f49af` で成功。[試験・時間・IPA digestの証拠](2026-09-15-p1-refreshed-candidate-evidence.json)。両runともdispatchから完了まで30分以内だった。
+
+通常は共通270件(skip2、失敗0)、独立Records11件、build requirements、通常Release本体/Widget/Shareの署名/metadata/版とIPA検査が成功。完全診断hostはOS共有の文字列/URL/ファイル、保存後失敗の再試行で重複なし、再起動後保持・B保持の1methodが149.973秒で成功。小host成功だけから完全host合格を推定していない。前節で範囲を定めた通常UI/Files/gallery/Intent等の再利用も維持する。
+
+[修正確認用prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915)へ通常/診断IPAと各ZIPを公開。4 assetすべて認証なしで再取得し、CIから取り出したIPAとのbyte一致、全ZIPのCRC、外側ZIP内のIPA一致を確認。ZIPは単一IPAを格納した標準ZIP（ZIP64不使用）。本体/Widget/Shareは0.7.1/build9。診断WidgetのCounter/A/B kindとA/B翻訳resourceもローカルで再検査した。実機展開成功やSideStore署名更新後のgalleryはこれからの確認である。
+
+同時準備した文書branchを統合し、前候補の「実機結果待ち」を受領済みへ訂正。旧run/実機結果は履歴のまま保持する。今回の候補成立に必要な非実機検証は完了。Share、Shortcut取消/失敗、Widget一覧/管理/上書き・Refreshの残件を元の実機手順書で確認する。安定版0.7.0、正式0.7.1/0.8は未公開のまま。

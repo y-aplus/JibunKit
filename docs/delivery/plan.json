@@ -280,8 +280,8 @@
       "milestone": "0.8.0",
       "state": "partial",
       "title": "URL・外部ファイル・Share入口",
-      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功。34933726496で共有文字列の追加修正をnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）で確認",
-      "remaining": "完全P1 hostの共有・失敗再試行と最新通常/診断IPAを09927a6の34942834824/34942837167で検証中。実機のOS成功/取消/失敗再試行・更新保持は未完。",
+      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功。34933726496で共有文字列の追加修正をnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）で確認。34942837167で完全P1 hostのOS文字列/URL/ファイル共有・保存後失敗の再試行・再起動後保持/B保持が成功",
+      "remaining": "通常/診断IPA09927a6（0.7.1/build9）をCI・公開再取得で検証済み。実機のOS成功/取消/失敗再試行・更新保持が残る。",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {

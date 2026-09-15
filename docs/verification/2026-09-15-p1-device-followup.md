@@ -80,3 +80,15 @@ generic plain-textをUTF-8で読めない場合は、[Apple標準loadTransferabl
 次の必要CIは`surface=incoming-repair`、一runのincomingとincoming-osを並行実行する。incomingは既存25件+Transferable文字列/不正textの2件。従来data-only試験へgeneric生UTF-8も追加し、Apple標準register(String)で作ったproviderは日本語/改行/絵文字の完全一致を確認する。OS側の独立3件は、今回はFeatureへ取り込み後の内容一致まで検査する。前回の単なるinbox行表示と同じ成功範囲にしない。
 
 計画はnative10分/OS10分、各上限30分。累計予算を16runへ変更する理由は、8分の診断で切り分けたdecode修正のnative/OS同時検証であり、完全P1 hostの再試行ではない。これが通った後に完全hostの未完了経路と通常/診断IPAの出荷検証をまとめる。現在は新修正のSwift/iOS実行待ちで、0.8未達・0.7.1未公開。
+
+## 34931319103: Transferable仮説を棄却し、形式と不正入力を切り分け
+
+source `ad3ada974c548af18357878eedeab5578fc9b730`、[run34931319103](https://github.com/y-aplus/JibunKit/actions/runs/34931319103)。[個別証拠](2026-09-15-p1-incoming-repair-evidence.json)。native27件中1件失敗（UTF-16の1バイトが空文字として受理）、OS3件中1件失敗（文字列の標準Transferableが`TransferableSupportError 0`）。URL35.019秒とファイル114.814秒はFeatureへの取込みと内容一致まで成功。nativeのregister(String)成功だけでは実Share Extensionの形式を再現できなかった。
+
+共有文字列は348875→349176→349313で失敗が続いた。最初に小hostへ分離し、今回も全体候補の再試行は行わない。167バイトは同じ診断文字列のFoundation keyed archive fixtureのサイズと一致するが、実データの形式を断定する証拠ではない。標準Transferableへの再要求を削除し、generic plain-textの生UTF-8解釈が失敗しbinary plist headerを持つ場合だけ、Appleの`NSKeyedUnarchiver.unarchivedObject(ofClass:from:)`でNSStringに限定したsecure decodingを検証する。許可クラスの拡大、文字列への強制変換、失敗後の任意形式fallbackは行わない。UTF-16の奇数バイトは明示的に拒否する。取消gateやコピー所有権は変更しない。
+
+追加native2件は、アーカイブした日本語/絵文字/改行の完全一致、同じheaderで始まる普通のUTF-8文字列保持、数値/配列/辞書/破損archive/非keyed plist拒否を含む。既存の明示UTF、生generic UTF-8、register(String)、取消/drain/owner試験を維持する。次の境界はnative29件と既存小host OS3件の`incoming-repair`。文字列がOSからFeature内容一致まで成功するか確認し、その後で通常/完全診断候補の必要検証を行う。現時点は修正未検証で、実機追加操作は依頼しない。
+
+### CI待ちとqueue遅延の区別
+
+34917691331の時刻（2026-09-15 JST）は、投入10:32:45、完了10:40:54、ローカルqueue登録成功10:41:11、会話への受信13:59:10。CI8分09秒、完了から登録17秒、登録から受信3時間17分59秒。直前ターンは10:33:41に終了しており、長い実装中のために保留されたとの証拠はない。登録後のCodex側処理が遅れた理由は未確定。これをCI実行時間や監視ポーリング時間に含めない。監視設定の変更や再送は行っていない。

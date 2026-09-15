@@ -1,0 +1,40 @@
+{
+  "source": "ad3ada974c548af18357878eedeab5578fc9b730",
+  "run": 34931319103,
+  "url": "https://github.com/y-aplus/JibunKit/actions/runs/34931319103",
+  "conclusion": "failure",
+  "jobs": {
+    "incoming": {
+      "seconds": 523,
+      "tests": 27,
+      "failures": 1,
+      "failure": "Malformed one-byte explicit UTF16 accepted as empty string"
+    },
+    "incoming-os": {
+      "seconds": 808,
+      "tests": 3,
+      "failures": 1,
+      "file": {
+        "result": "passed",
+        "seconds": 114.814,
+        "scope": "OS Share -> inbox -> Feature content matches"
+      },
+      "url": {
+        "result": "passed",
+        "seconds": 35.019,
+        "scope": "OS Share -> inbox -> Feature content matches"
+      },
+      "text": {
+        "result": "failed",
+        "seconds": 51.642,
+        "phase": "provider-load",
+        "failure": "CoreTransferable.TransferableSupportError 0"
+      }
+    }
+  },
+  "limits": [
+    "Standard Transferable fallback failed in real Share Extension despite passing register(String) native unit test.",
+    "The 167-byte format from349176 remains a hypothesis until actual OS verification.",
+    "No new physical or full candidate acceptance."
+  ]
+}

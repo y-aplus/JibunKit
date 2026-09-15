@@ -1,6 +1,6 @@
 # 公開版・main・開発branchの現在状態
 
-2026-09-15追記: 次の候補は0.7.1/build9を準備中（未公開）。 P1実機ではHTTP/Web/通常状態の通知と通常IPA復帰が成功。共有文字列/URLは失敗、Shortcuts取消/失敗診断とWidget A/B表示は未確認。0.8未達として修正中。CI34881183837でnative共有25件・Intent実行8件/UI1件/metadata比較が成功。CI34883605285で0.7.1通常IPA/共通270件(skip2)/通常UI13件とFiles復元、Simulator更新後のWidget A/B gallery/描画が成功。CI34887580504でIntent管理が成功。共有は操作修正後に拡張機能内のinvalidInputへ到達し、小host34917691331ではURL/ファイルのOS共有保存が成功し、文字列はgeneric plain-textのUTF-8解釈で失敗。標準Transferable読込みを追加してnative/OSを再検証する。[実機結果と残件](verification/2026-09-14-0.8-device-check.md#ユーザー実機結果2026-09-15)を参照。Widget A/Bは配布IPA内にあり、未表示の原因は未確定。
+2026-09-15追記: 次の候補は0.7.1/build9を準備中（未公開）。 P1実機ではHTTP/Web/通常状態の通知と通常IPA復帰が成功。共有文字列/URLは失敗、Shortcuts取消/失敗診断とWidget A/B表示は未確認。0.8未達として修正中。CI34881183837でnative共有25件・Intent実行8件/UI1件/metadata比較が成功。CI34883605285で0.7.1通常IPA/共通270件(skip2)/通常UI13件とFiles復元、Simulator更新後のWidget A/B gallery/描画が成功。CI34887580504でIntent管理が成功。共有は操作修正後に拡張機能内のinvalidInputへ到達し、小host34917691331ではURL/ファイルのOS共有保存が成功し、文字列はgeneric plain-textのUTF-8解釈で失敗。34931319103ではURL/ファイルのFeature内容一致まで成功したが、標準Transferableの文字列読込みは失敗。NSString限定secure archive復号と奇数バイトUTF-16拒否をnative/OSで検証する段階で、未解決。[実機結果と残件](verification/2026-09-14-0.8-device-check.md#ユーザー実機結果2026-09-15)を参照。Widget A/Bは配布IPA内にあり、未表示の原因は未確定。
 
 更新日: 2026-09-15。[0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1/0.8.0は未完了。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に確定する。
 

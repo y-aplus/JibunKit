@@ -57,6 +57,44 @@ final class MiniAppIncomingProviderLoaderTests: XCTestCase, @unchecked Sendable 
     }
 
     @MainActor
+    func testArchivedNSStringAndRawHeaderTextKeepExactValues() async throws {
+        let expected = "共有テキスト 📝\nSecond line"
+        let archive = try NSKeyedArchiver.archivedData(withRootObject: expected as NSString, requiringSecureCoding: true)
+        for (bytes, value) in [(archive, expected), (Data("bplist00 ordinary text".utf8), "bplist00 ordinary text")] {
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.plainText.identifier, visibility: .all) { callback in
+                callback(bytes, nil)
+                return nil
+            }
+            let result = try await MiniAppIncomingProviderLoader.load([provider])
+            defer { try? result.removeTemporaryFiles() }
+            guard case .text(let actual)? = result.inputs.first else { return XCTFail("Missing archived text") }
+            XCTAssertEqual(actual, value)
+        }
+    }
+
+    @MainActor
+    func testNonStringAndCorruptArchivesAreRejected() async throws {
+        let objects: [NSObject] = [NSNumber(value: 42), NSArray(array: ["text"]), NSDictionary(dictionary: ["text": "value"])]
+        var payloads = try objects.map { try NSKeyedArchiver.archivedData(withRootObject: $0, requiringSecureCoding: true) }
+        let stringArchive = try NSKeyedArchiver.archivedData(withRootObject: "value" as NSString, requiringSecureCoding: true)
+        payloads.append(Data(stringArchive.prefix(25)))
+        payloads.append(try PropertyListSerialization.data(fromPropertyList: ["text": "value"], format: .binary, options: 0))
+        for bytes in payloads {
+            let provider = NSItemProvider()
+            provider.registerDataRepresentation(forTypeIdentifier: UTType.plainText.identifier, visibility: .all) { callback in
+                callback(bytes, nil)
+                return nil
+            }
+            do {
+                let result = try await MiniAppIncomingProviderLoader.load([provider])
+                try? result.removeTemporaryFiles()
+                XCTFail("Non-string or corrupt archive was accepted")
+            } catch { /* An archive must securely decode to NSString, with no fallback coercion. */ }
+        }
+    }
+
+    @MainActor
     func testInvalidExplicitAndGenericTextAreRejected() async {
         for type in [UTType.utf8PlainText, .utf16PlainText, .plainText] {
             let provider = NSItemProvider()

@@ -68,7 +68,7 @@ normal-host HTTP/logout/management UI flow in the successful network job of
 run34816553410. That run failed in its separate Web job; it is not an overall
 green-run claim. It is not part of the published 0.7.0 contract. See the
 [P1-B evidence](../verification/2026-09-14-p1-b.md) for method results and
-remaining device checks.
+device results. Physical checks at source6beb877 on 2026-09-15 passed owner login/cache, persisted cookies/passwords after relaunch, cancellation, logout with B retained, IPA overwrite and SideStore Refresh. The final candidate reuses these results after source comparison; see the [device record](../verification/2026-09-14-0.8-device-check.md).
 
 Persist only after a successful response. If validation or persistence fails,
 retain the prior durable snapshot and report failure. `MiniAppCookieStore.clear`

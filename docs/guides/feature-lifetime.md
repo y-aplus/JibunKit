@@ -52,4 +52,4 @@ Counter/Reminderの通常Definitionもlifetimeを持つが、OSに予約済み�
 
 ## 停止後の処理と再開を調停する
 
-P1-B開発branchでは`withStoppedOperation`を追加した。外側の呼出元からFeatureを停止し、logout等の処理が実際に終わるまで同じlifetimeの再開・管理を待たせる。通常の保存排他は別途同じcoordinatorで取得する。callbackから自身のstart/stopや別の停止操作をawaitしない。[HTTP接続の順序と検証範囲](feature-http.md#operation-and-shutdown-order)を参照。公開0.7.0には含まれない。
+0.8.0候補では`withStoppedOperation`を追加した。外側の呼出元からFeatureを停止し、logout等の処理が実際に終わるまで同じlifetimeの再開・管理を待たせる。通常の保存排他は別途同じcoordinatorで取得する。callbackから自身のstart/stopや別の停止操作をawaitしない。[HTTP接続の順序と検証範囲](feature-http.md#operation-and-shutdown-order)を参照。公開0.7.0には含まれない。

@@ -180,7 +180,7 @@ run34808525786では10 UIが全成功したが、試験自体33.03分、host ste
 
 追加のnativeオプションや長い生成selectorを付ければこの見込みを再利用しない。P1-Bの事前契約でnative Web認証等を別jobへ出し、各job30分以内の実績に基づく計画を作る。runの見かけだけをgreenにする目的で、成功済みのP1-A全試験を即座に再実行しない。
 
-P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの新しい経路の初回実動はP1-B統合CIで検証する。
+P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の独立jobへ移し、通常IPA/UIと直列にしない。上限30分。診断artifactは`Native-web-authentication-diagnostics`で、従来のlogとxcresultを保持する。生成hostのHTTP/Web/通知は`prepare-p1-b-host.py`が選択されたペアだけを通常Registryへ接続し、入力の全検査が通るまで書込みを始めない。これらの経路の初回実動と以後の対象別結果は[P1-B検証記録](verification/2026-09-14-p1-b.md)に保持する。
 
 
 ### P1実機後の集中候補境界（2026-09-15）
@@ -193,4 +193,4 @@ P1-B候補では`web_authentication_validation=true`を`native-surface.yml`の�
 `native-surface.yml surface=incoming-os`はP1実機後の共有エラー切り分け用。tracked sourceから通常host+受信A/Bだけを構成し、OS共有の文字列/URL/ファイルを独立methodで観測する。未実行の他形式を最初の失敗で隠さない。通常版/完全P1 candidate/実機受入の代替にはしない。typeと工程のみのDebug診断をxcresult/logへ保存する。詳細は[実機後記録](verification/2026-09-15-p1-device-followup.md)。
 
 
-`surface=incoming-repair`はincoming native回帰とincoming-osを独立jobで一runへまとめる。plain-text受信の修正確認用で、Intent/Widget/通常IPAは再実行しない。OS3件はFeature取込み内容まで照合する。最終の完全host/実機確認は別の未完条件として保持する。
+`surface=incoming-repair`はincoming native回帰とincoming-osを独立jobで一runへまとめる。plain-text受信の修正確認用で、Intent/Widget/通常IPAは再実行しない。OS3件はFeature取込み内容まで照合する。この切り分けrunとは別に、4e6a3f4の完全host CI/実機と71ef1ffの通常出荷候補CIを確認済み。[出荷記録](verification/2026-09-15-0.8-release.md)でsourceを区別する。

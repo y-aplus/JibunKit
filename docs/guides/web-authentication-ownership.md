@@ -46,8 +46,7 @@ run34816553410. In run34819734774 the authentication method instead failed in
 management preparation, before starting an authentication session. Subsequent
 run34823801940 passed both the disable and normal-host authentication methods,
 including A/B callback routing and B OS cancellation with A state retained.
-The earlier unregister delay remains unexplained and physical-device acceptance
-is still pending for the distributed diagnostic IPA; see
+The earlier unregister delay remains unexplained. At source6beb877, physical A/B callbacks, B OS cancellation with A retained, and storage retention passed on 2026-09-15; see the [device record](../verification/2026-09-14-0.8-device-check.md). The final candidate reuses this evidence after source comparison. See also
 [P1-B verification](../verification/2026-09-14-p1-b.md). Earlier isolated native
 authentication evidence does not replace those conditions.
 

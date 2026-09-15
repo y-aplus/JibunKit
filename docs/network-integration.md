@@ -27,7 +27,7 @@ let session = URLSession(configuration: configuration)
 
 [MiniAppHTTPIsolationTests](../Tests/JibunKitCoreTests/MiniAppHTTPIsolationTests.swift)はloopback HTTP serverからSet-Cookieを受け、同URLに異なる応答をcacheし、ネットワークを使わない再読出しを比較する。認証challenge・redirect・サーバー側Cookie失効は34432354335で成功。
 
-永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の明示保存は34437448875でmacOS実HTTPとiOS再起動を検証済み。P1-B開発branchでは34816553410の通常host UIで実URLSessionの認証・Cookie・cache読出し、停止後logout・管理削除とB保持を確認した。[通常Feature接続](guides/feature-http.md)と[実機の残件](verification/2026-09-14-0.8-device-check.md)を参照。公開0.7.0の実績へ追加しない。
+永続Cookieの明示保存はmacOSの実HTTPとiOSのprocess再起動で確認済み（下記）。パスワード型HTTP認証の明示保存は34437448875でmacOS実HTTPとiOS再起動を検証済み。0.8.0候補では34816553410の通常host UIで実URLSessionの認証・Cookie・cache読出し、停止後logout・管理削除とB保持を確認した。[通常Feature接続](guides/feature-http.md)と[実機結果](verification/2026-09-14-0.8-device-check.md)を参照。公開0.7.0の実績へ追加しない。
 
 URLCacheはOSが破棄でき、process再生成・IPA更新・署名更新をまたぐ保持を永続契約にしない。background再接続は[専用ガイド](guides/background-urlsession-reconnect.md)の接続と検証範囲に従い、独自delegateの任意の共有状態まで隔離済みとはしない。恒久的なログインを必要とするアプリへephemeral化を強制しない。App Group cookie storeは署名で許可されたgroupの共有用であり、任意のFeature名で隔離できるとは扱わない。
 
@@ -41,7 +41,7 @@ D09全体は未達。詳細と各CIは[検証記録](verification/2026-09-10-net
 
 ローカルログアウトは要求を停止してから`try cookies.clear()`を呼ぶ。サーバーがCookieを失効させた場合は、応答完了後のstoreをsaveする。削除のKeychain書込みに失敗したら成功扱いしない。セッション限定Cookieは保存せず、有効期限を過ぎたCookieは読み戻さない。相対Max-Ageを再起動時に延長しないため絶対期限で保存する。
 
-これは自動保存のHTTP層ではない。save以前の強制終了、同profileの多重owner、別processの同時利用は残る。HTTPのパスワード資格情報は別の明示保存adapter（下記）で扱う。Keychainのサイズや保護状態による失敗はthrowする。property list化できないデータや、Foundationで再構築したときに期限・名前・値・domain・path・Secure・HttpOnly・version・portが変わるデータは、以前の保存を置き換える前に失敗させる。これは全Cookie属性の完全な検査ではない。macOSでは期限・破損時の保持・保存データからの再生成とHTTP送信・サーバーlogoutを検証済み。[34433288351](https://github.com/y-aplus/JibunKit/actions/runs/34433288351)ではiOS process再起動後の値・Secure/HttpOnly保持、Aのlogout後もBが保持されることを確認した（111.793秒）。実機、SameSite等の全属性、redirect途中の永続化は未検証。
+これは自動保存のHTTP層ではない。save以前の強制終了、同profileの多重owner、別processの同時利用は残る。HTTPのパスワード資格情報は別の明示保存adapter（下記）で扱う。Keychainのサイズや保護状態による失敗はthrowする。property list化できないデータや、Foundationで再構築したときに期限・名前・値・domain・path・Secure・HttpOnly・version・portが変わるデータは、以前の保存を置き換える前に失敗させる。これは全Cookie属性の完全な検査ではない。macOSでは期限・破損時の保持・保存データからの再生成とHTTP送信・サーバーlogoutを検証済み。[34433288351](https://github.com/y-aplus/JibunKit/actions/runs/34433288351)ではiOS process再起動後の値・Secure/HttpOnly保持、Aのlogout後もBが保持されることを確認した（111.793秒）。6beb877で通常HTTPの実機保持・logout・上書き/Refreshを確認済み。SameSite等の全属性、redirect途中の永続化は未検証。
 
 ## 同一Featureの複数アカウントと保存異常
 

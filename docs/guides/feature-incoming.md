@@ -1,6 +1,6 @@
 # 共有入力と外部ファイルの受信
 
-2026-09-14、P1-Aとしてmainへ統合済み。公開0.7.0にはまだ含まれない。native provider/所有試験23件とmacOS別process試験は成功。本体UIで判明した受信/破棄ボタンの干渉を修正し、破棄確認を明示的な取消があるalertへ揃えた。修正後の本体UIはrun34794545131で、破棄取消・A保存後失敗・再起動・冪等再試行とB取込みが成功。OS共有シート/外部ファイルからの実機操作は配布済みP1診断IPAで確認する。Swift/iOS・OS共有シートの受入結果は[検証記録](../verification/2026-09-13-p1-a.md)で区別する。
+0.8.0公開候補のP1接続。公開安定版0.7.0には含まれない。native provider/所有試験は4e6a3f4で32件成功し、macOS別process試験も確認済み。本体UIで判明した受信/破棄ボタンの干渉を修正し、破棄確認を明示的な取消があるalertへ揃えた。修正後の本体UIはrun34794545131で、破棄取消・A保存後失敗・再起動・冪等再試行とB取込みが成功。4e6a3f4の実機で文字列/URL/ファイル共有、Files直接入力、取消、再試行後の重複なし/B保持、再起動・上書き/Refresh保持を確認済み。失敗直後の未取込み行は独立観測しておらず、CIの保持確認と区別する。Swift/iOS・OS共有シートの受入結果は[検証記録](../verification/2026-09-13-p1-a.md)で区別する。
 
 ## 通常Featureへの接続
 
@@ -43,4 +43,4 @@ FeatureのDB更新と受信ACKは異なる保存先で、一般に一つのatomi
 
 通常hostはShare Extensionを埋め込み、host/Shareの同じApp Group、extension point、principal class、版番号、実行ファイル、署名をIPA生成時に検査する。外部ファイルを受けるDocumentTypesもhostへ宣言する。Extensionへ任意のFeatureの業務コードを埋め込まず、共有catalogにある受信先へ永続保存する。
 
-検証用二Featureは`Tests/TemplateIntegration/P1IncomingProbe.swift`。普通のDefinition・独立した文書JSONを使い、保存後の応答失敗→同じreceiptの再試行、A/B保持、再起動保持とOS ShareLink操作を用意している。単体・iOS native provider・macOS別process・本体UIの証拠と、実機のOS共有操作は別々に記録する。OS共有シートの確認は0.8.0候補で一括する。
+検証用二Featureは`Tests/TemplateIntegration/P1IncomingProbe.swift`。普通のDefinition・独立した文書JSONを使い、保存後の応答失敗→同じreceiptの再試行、A/B保持、再起動保持とOS ShareLink操作を用意している。単体・iOS native provider・macOS別process・本体UIの証拠と、実機のOS共有操作は別々に記録する。実機結果のsourceと観測範囲は[実機記録](../verification/2026-09-14-0.8-device-check.md)、最終候補の再利用照合は[出荷記録](../verification/2026-09-15-0.8-release.md)を参照する。

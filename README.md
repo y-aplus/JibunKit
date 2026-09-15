@@ -1,4 +1,4 @@
-> [0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1の実機再確認は受領済みで、0.8.0/build10の出荷検証中（未公開）。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に決定する。
+> [0.7.0](https://github.com/y-aplus/JibunKit/releases/tag/0.7.0)を公開済み。P0全6単位をCIと2026-09-13の一括実機確認で検証済み。P1の実機再確認は受領済みで、0.8.0/build10のCI・文書・証拠照合を完了（公開前）。需要調査Issue #6は受領済みで、1.0の正式範囲は0.8.0完了時に決定する。
 
 # JibunKit
 
@@ -26,7 +26,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 0.7.0候補は[CI34705653297](https://github.com/y-aplus/JibunKit/actions/runs/34705653297)と[実機の一括確認](docs/verification/2026-09-13-0.7-device-check.md)を完了しました。[出荷記録](docs/verification/2026-09-13-0.7-release.md)で配布状態を区別します。
 
-mainにはP1-Aの共有受信、Package Intentsと静的Widgetの通常管理への接続を追加しています。P1-Bの通知添付・HTTP/Web接続は開発branchで実機再確認まで受領済みです。[確認に使った診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)は4e6a3f4（0.7.1/build9）。現在は[0.8.0候補の版更新・文書/出荷検証](docs/verification/2026-09-15-0.8-release.md)を進めています。診断版は0.8.0の正式公開ではありません。
+mainにはP1-Aの共有受信、Package Intentsと静的Widgetの通常管理への接続を追加しています。P1-Bの通知添付・HTTP/Web接続は開発branchで実機再確認まで受領済みです。[確認に使った診断prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p1-device-check-20260915-r2)は4e6a3f4（0.7.1/build9）。[0.8.0候補の版更新・文書/出荷照合](docs/verification/2026-09-15-0.8-release.md)を完了し、公開操作へ進みます。診断版は0.8.0の正式公開ではありません。
 
 ## 文書
 

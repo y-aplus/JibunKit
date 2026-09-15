@@ -1,34 +1,33 @@
-# JibunKit 0.8.0 — 出荷前の下書き
+# JibunKit 0.8.0
 
-**未公開・出荷確認中。** 最新安定版は0.7.0。P0を維持したP1全6単位が0.8.0の到達条件。4e6a3f4（0.7.1/build9）の実機再確認を受領し、0.8.0/build10候補の通常build/IPA検査・最終証拠照合・minor文書レビューへ進む。正式0.7.1は公開していない。
+P0の基本契約を維持し、P1全6単位の通常接続・検証・利用手順を揃えた版です。前の正式公開版は0.7.0。1.0は未達で、対応範囲の最終判断は別に行います。
 
-## この版へ含める変更
+## 変更
 
-- OS共有シート・外部ファイルの入力を受信先Featureへ保存し、本体の「受信」から取り込む接続。取消、再起動後保持、失敗後の冪等再試行、対象ownerだけの削除を扱う。
-- Swift PackageのApp Intents・entity候補と二静的Widgetを、通常保存と無効化・削除へ接続する手順と検証。既存Counterの識別子は維持する。
-- ローカル通知の添付原本を保持する一時コピーと、登録・取消・削除時の寿命管理。Feature別のforeground方針と通知操作の通常接続を検証する。
-- HTTPの専用Cookie・パスワード資格情報・cacheと、停止後logout・管理削除の接続。`MiniAppFeatureLifetime.withStoppedOperation`で停止後の処理が終わるまで再開・管理を調停する。
-- WebViewのCookie/localStorage/IndexedDBとOS Web認証を通常Featureへ接続し、片側取消・削除時の他方保持を検証する。
+- OS共有シート・Filesの入力を受信先Featureへ保存し、本体の「受信」から取り込めます。取消、再起動保持、失敗後の冪等再試行、対象ownerだけの削除を接続しました。文字列の形式読込みと初回保存先の誤拒否も修正しました。
+- Package内App Intents/entity候補と静的Widgetを、通常保存・無効化・削除へ接続する手順と検証を整えました。既存Counterの識別子は維持しています。
+- 通知添付の原本を保持する一時コピーと、登録・取消・削除時の寿命管理を追加しました。Feature別の前景表示、通知操作・文字入力返信を確認しました。
+- HTTPの専用Cookie・パスワード資格情報・cache、停止後logout・管理削除を接続しました。`MiniAppFeatureLifetime.withStoppedOperation`で後処理の実終了まで再開・管理を調停します。
+- WebViewのCookie/localStorage/IndexedDBとOS Web認証を通常Featureへ接続し、片側取消・削除時の他方保持を確認しました。
 
-通常IPAのミニアプリはCounter/Reminderで、汎用Share Extensionを追加する。受信先を持つ独自Featureは`incoming`登録が必要。診断用A/B Feature・Records・ignoredのZaikoを通常IPAへ自動追加しない。
+通常IPAにはCounter/Reminderと汎用Share Extensionを含みます。独自の受信先には`incoming`登録が必要です。診断A/B Feature・Records・個人用Zaikoを通常IPAへ追加するものではありません。
 
-## 現在の検証証拠
+## 検証と配布物
 
-[P1-A記録](docs/verification/2026-09-13-p1-a.md)と[P1-B記録](docs/verification/2026-09-14-p1-b.md)にsource・run・各試験の結果・差分再利用を記録している。通常IPA/回帰、独立Packageのmetadata・Widget、共有入力、通常hostの通知・HTTP・Web試験の個別証拠がある。失敗・取消run内の成功methodを、run全体成功とは記載しない。
+0.8.0/build10の製品sourceは`71ef1ffb4f84442bf8853c0c2e286c2bedd81d22`。[CI34967147135](https://github.com/y-aplus/JibunKit/actions/runs/34967147135)で共通273件（skip2、失敗0）、Records11件、通常Release/metadata/署名/IPA検査が成功しました。
 
-P1-Bでは初回Spotlight解除が120秒を超えた後、再検証で管理完了表示まで約63秒で成功した。以前の超過原因は未確定で、修正済み・Simulator限定とは断定しない。実機の初回無効化を含めた[一括確認](docs/verification/2026-09-14-0.8-device-check.md)は再確認まで受領済み。遅延原因の確定とは区別する。
+IPAは2,243,242 bytes、SHA-256は`50626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6d1faf2f3fbd80cf6ff6`。全ZIP entryのCRC、本体/Widget/Shareの版・ID、診断kind/resource非混入を確認しています。
 
-## 公開前に確定する項目
+実機は6beb877の通知/HTTP/Web・通常Shortcutsと、4e6a3f4（0.7.1/build9）の共有/Files・Shortcuts取消/失敗・Widget・更新/Refresh・通常版復帰を確認しました。4e6a3f4から製品の版のみを変更したため、旧sourceを保持して実機証拠を再利用しています。新0.8.0 IPAそのものを再度実機確認したという意味ではありません。
 
-- 実機結果は受領済み。失敗直後の未取込み行は明示観測なし、Widgetの単純再起動だけの再試験なし（更新後起動は確認）という範囲をCI証拠と区別し、P0/P1全条件を最終判定する。
-- 到達条件に応じた版番号・build番号の更新と、更新後の通常IPA build/metadata/署名・ZIP検査。
-- 製品source、IPA source/run、配布物digest、証拠再利用の差分レビュー。
-- 現況文書の全件確認と出荷gate、公開後の状態同期。
+通常UI13件/Files JSON復元、生成host、独立Packageのmetadata/Widget、対象native試験はsource別の既存証拠を差分照合しました。本runで全Simulator試験を再実行したとは扱いません。[全条件・文書監査・公開確認](docs/verification/2026-09-15-0.8-release.md)を参照してください。
 
-この下書きには未取得のsource・digestや未確認の実機成功を記入しない。公開時に上記を確定し、実際の変更・検証・制約を示すrelease notesへ更新する。
+## 残る制約
 
-## 残る範囲
+Featureは自身の保存・寿命・管理への接続を所有します。同一process内の強制隔離、任意DB/SDK/extensionの透過統合、HTTP cacheの永続保持、全SSO、Widget即時更新は提供しません。
 
-同一process内の強制隔離、任意DB/SDK/extensionの透過統合は提供しない。Feature自身の業務処理や所有資源を、Integrationから保存・寿命・管理へ接続する必要がある。HTTP cacheの永続保持、全Webデータ種別やSSO、Widgetの即時更新等を保証しない。通常版へ戻した後に診断Widgetの旧表示が残ることを実機観測した。通常IPAに診断kind/resourceがないことは検査済みであり、コード除去はホームの配置や所有データの削除を保証しない。
+共有の失敗直後の未取込み行は独立した実機観測なしで、CIの保持確認と分けています。Widget再登録後は上書き/Refreshで起動保持を確認しており、単純再起動だけの再試験とは区別します。通常版復帰後に診断Widgetの旧表示が残りましたが、コード除去はホームの配置や所有データの削除を保証しません。
 
-1.0は未達。受領済み[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の提案を踏まえ、0.8.0完了時にユーザーと正式範囲を確定する。
+Spotlight解除の過去のSimulator遅延原因は未確定です。実機の初回無効化は体感ほぼ即時で成功しました。集中モード下の通知配信、Siri音声呼出しは確認済み範囲へ含めません。
+
+P2/P3の残件は[台帳](docs/coexistence-ledger.md)へ維持し、[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を踏まえた1.0正式境界を0.8.0完了時に決定します。

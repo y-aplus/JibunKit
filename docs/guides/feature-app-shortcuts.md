@@ -35,4 +35,4 @@ OSのShortcut表示・Siri実行・app全体の枠や並び順などは、この
 
 通常接続ではfragmentのownerと、Intentが使う`MiniAppDefinition`/management/store accessのownerを一致させる。登録を外す操作はShortcut式の寄与だけを消す場合と、通常管理でFeatureを無効化・削除する場合を区別する。後者では保存済みShortcut自体がOSに残り得るため、`perform()`入口の通常store accessが必ず拒否を返す必要がある。Aの寄与やデータを外してもBの式、候補、保存値を変更しない。
 
-native metadataの単独A/B対統合比較と寄与削除buildは、成功後に永続識別子・phrase式・引数・戻り値が保持された証拠になる。`perform()` XCTestは成功後に保存と管理境界の証拠になる。P1-AではCI 34746211458によりnative比較と直接実行/管理の試験が成功し、生成hostのautoShortcutsにA/B/既存Counterの3寄与を確認した（[証拠](../verification/2026-09-13-p1-a.md)）。この変更は公開0.7.0には含まれない。また、どちらもShortcutsアプリでの発見、候補picker、workflow保存、保存済みworkflow実行、取消表示の代替ではない。これらの実機操作は0.8.0候補で一括し、結果と端末/OS/buildを記録する。
+native metadataの単独A/B対統合比較と寄与削除buildは、成功後に永続識別子・phrase式・引数・戻り値が保持された証拠になる。`perform()` XCTestは成功後に保存と管理境界の証拠になる。P1-AではCI 34746211458によりnative比較と直接実行/管理の試験が成功し、生成hostのautoShortcutsにA/B/既存Counterの3寄与を確認した（[証拠](../verification/2026-09-13-p1-a.md)）。この変更は公開0.7.0には含まれない。また、どちらもShortcutsアプリでの発見、候補picker、workflow保存、保存済みworkflow実行、取消表示の代替ではない。通常の発見/候補/保存/実行/管理は6beb877、取消・失敗・次回成功は4e6a3f4で実機確認済み。[source別の実機記録](../verification/2026-09-14-0.8-device-check.md)を参照する。Siri音声呼出しの独立検証は含めない。

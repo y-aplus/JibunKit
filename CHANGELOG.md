@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-- 0.8.0/build10の出荷候補を準備中。P1の実機再確認は4e6a3f4（0.7.1/build9）で受領済み。版更新後の通常IPA検査・最終証拠照合・minor文書全件レビューはこれから完了させる。正式0.7.1は公開していない。
+- 0.8.0/build10の出荷候補を準備中。P1の実機再確認は4e6a3f4（0.7.1/build9）で受領済み。版更新後の通常IPA検査・最終証拠照合・minor文書58件レビューを完了。公開操作はこれから行う。正式0.7.1は公開していない。
 - P1-A: Feature別の共有受信先選択、永続inbox、取消・冪等再試行と管理への接続、独立PackageのIntents/静的Widgetの通常host・保存・管理への接続を追加。共有文字列のUTF/NSString限定secure archive読込みと初回保存先の検査を修正。実機で共有/Files直接入口、再試行/B保持、Shortcuts取消/失敗/回復、Widget表示/管理と更新保持を確認。
 - P1-B（開発branch、main未統合）: 通知添付の所有者別一時コピーと取消/削除時の寿命管理、停止後のlogout等を待つ`withStoppedOperation`を追加。HTTP/Web/通知の二Featureを通常入口で検証し、端末内サーバーで動く診断IPAによる実機確認も受領済み。
 - 通常IPA復帰でCounter/Reminder・通常Widget/Shortcutの保持と動作を実機確認。診断Widgetの旧表示はホームに残る場合があり、コード除去と配置/データの削除を同一視しない。

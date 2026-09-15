@@ -1,7 +1,7 @@
 # 公開・release手順
 
 更新日: 2026-09-15。最新公開版はGitHub Releasesを正本とする。0.7.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
-公開候補は0.8.0/build10、PREVIOUSは0.7.0。候補のCI/IPA検査と版更新前source4e6a3f4のP1実機再確認を受領し、文書・出荷gateを確認中（[今回の記録](verification/2026-09-15-0.8-release.md)）。0.7.0当時のP0証拠は[出荷記録](verification/2026-09-13-0.7-release.md)に保持する。
+公開候補は0.8.0/build10、PREVIOUSは0.7.0。候補のCI/IPA検査と版更新前source4e6a3f4のP1実機再確認を受領し、文書58件・証拠を照合済み、公開操作前（[今回の記録](verification/2026-09-15-0.8-release.md)）。0.7.0当時のP0証拠は[出荷記録](verification/2026-09-13-0.7-release.md)に保持する。
 
 ## 版ごとの出荷判断
 
@@ -33,7 +33,7 @@ python Tools/check-delivery.py --list-docs 0.8.0
 python Tools/check-delivery.py --report PATH_TO_REVIEWED_REPORT --stage release --release 0.8.0
 ```
 
-PATH_TO_REVIEWED_REPORTには今回のP1-B出荷reportを指定する。toolの構造検査に加えて、担当は文章の正確さと実証ログを確認する。
+PATH_TO_REVIEWED_REPORTには今回の0.8.0出荷reportを指定する。toolの構造検査に加えて、担当は文章の正確さと実証ログを確認する。
 
 ## 0.7.0完了時の調査結果確認
 

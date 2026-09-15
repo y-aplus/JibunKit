@@ -77,5 +77,4 @@ disable took about 63 seconds from domain deletion to the observed completed
 UI; the earlier 120-second overrun remains unexplained. These passes establish
 the tested operations, not a fix for the delay or physical-device acceptance.
 The earlier four-method pass in the
-cancelled run34808525786 remains historical evidence. P1-B is unreleased and
-physical-device checks remain; see [P1-B verification](../verification/2026-09-14-p1-b.md).
+cancelled run34808525786 remains historical evidence. The 0.8.0 candidate reuses the physical results from source6beb877 on 2026-09-15: save/relaunch, A removal with B retained, overwrite/Refresh retention. Initial disable appeared almost immediate to the user; this does not establish the cause of the earlier simulator delay. See the [device record](../verification/2026-09-14-0.8-device-check.md) and [release comparison](../verification/2026-09-15-0.8-release.md).

@@ -1,8 +1,8 @@
 # SideStoreで導入・更新する
 
-更新日: 2026-09-14（公開版とmainの構成・検証sourceの整理。SideStore画面を再検証した日ではない）
+更新日: 2026-09-15（公開版とmainの構成・検証sourceの整理。SideStore画面を再検証した日ではない）
 
-最新公開版は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
+公開候補は0.8.0/build10。公開操作前の安定版は0.7.0 build8で、一括実機と通常IPA上書き後の保持を確認済み（[結果](verification/2026-09-13-0.7-device-check.md)）。直前の公開版は0.6.0 build7。[公開記録](verification/2026-09-12-0.6-release.md)にIPAのビルド・署名構造・CRC・公開再取得の確認を記載している。0.6.0そのものの新しい実機試験は行っていない。
 
 実機証拠はsourceごとに区別する。0.1.0 build 1→2の上書き・署名更新はiPhone 16e／iOS 26.6／SideStore 0.6.3で確認した[旧版の記録](verification/0.1.md)。2026-09-09にはRecords接続版`afbf4dc`で上書き・署名更新・Widget/Shortcuts/通知・選択復元を確認した[記録](verification/2026-09-09-v1-candidate.md)がある。後者の端末/OS/SideStore版は再報告されておらず、旧環境を転記して断定しない。
 
@@ -59,7 +59,7 @@ JibunKitはSideStoreの`My Apps`上では1つのアプリであり、無料Apple
 
 公開版0.7.0のIPAには本体1つとWidget extension 1つが入る。mainのP1-A追加とP1診断IPAにはShare Extensionも含み、本体/Widget/Shareの3つのbundle IDを持つ（Shareは`com.jibunkit.app.Share`）。通常IPAでの追加構成は[P1-A記録](verification/2026-09-13-p1-a.md)、配布済み診断IPAとsource別の実機結果は[P1実機手順](verification/2026-09-14-0.8-device-check.md)を参照する。
 
-WidgetやShare Extensionは別のホーム画面アプリではなく、App Groupもアプリ枠ではない。署名処理では本体とextensionのbundle ID・profileを扱うため、app枠・bundle ID数・extension数・App Group数を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。4e6a3f4（0.7.1/build9）のiOS27.0実機でP1診断版の同IPA上書き・Refresh後のWidget/受信保持と、通常版復帰後のCounter/Reminder・通常Widget/Shortcutを確認済み。0.8.0/build10候補の新IPAは出荷検証中であり、同じIPAそのものを実機試験済みとは記載しない。
+WidgetやShare Extensionは別のホーム画面アプリではなく、App Groupもアプリ枠ではない。署名処理では本体とextensionのbundle ID・profileを扱うため、app枠・bundle ID数・extension数・App Group数を同一の数として扱わない。SideStore 0.6.2以降にはextensionへ本体のprofileを再利用する選択肢があるため、アカウント上の実際のApp ID表示はSideStoreの`My Apps`を正とする。4e6a3f4（0.7.1/build9）のiOS27.0実機でP1診断版の同IPA上書き・Refresh後のWidget/受信保持と、通常版復帰後のCounter/Reminder・通常Widget/Shortcutを確認済み。0.8.0/build10候補の新IPAはCI・版/ID・署名・CRC検査済みで、4e6a3f4から製品の版番号だけを変更した差分を照合している。同じIPAそのものを実機試験済みとは記載しない。
 
 ## 保証しない境界
 

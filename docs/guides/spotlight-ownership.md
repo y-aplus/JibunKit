@@ -25,7 +25,7 @@ try await spotlight.deleteAll(from: hostSpotlightIndex)
 
 通常hostはFeatureの新規受付を閉じ、Runtimeを終了してから、default index内のそのFeatureのdomainを削除する。独自の`CSSearchableIndex`を使う場合も禁止しないが、そのindexの所有項目の解除を`MiniAppDefinition.onUnregister`へ接続する必要がある。namespaceが同じだけでは別indexの項目をhostが自動で削除することにはならない。停止対象の書込みはlifetimeへ登録し、解除後に古いwriterが再登録しないようにする。
 
-domain削除のnative完了を待ってから管理状態を確定する。APIが返らない場合に期限超過を成功として扱う仕組みはない。0.8候補のSimulator試験で初回domain削除後に管理が登録解除中のまま120秒を超える事象があった。独立native比較34822983863と同一host比較34823801940は成功し、後者の初回解除は管理の完了表示まで約63秒だった。厳密なcallback時間や以前の超過原因は未確定で、修正済み・Simulator限定とは扱わない。配布済み診断IPAで初回無効化の所要時間と完了を実機確認する。[P1-B検証記録](../verification/2026-09-14-p1-b.md)。
+domain削除のnative完了を待ってから管理状態を確定する。APIが返らない場合に期限超過を成功として扱う仕組みはない。0.8候補のSimulator試験で初回domain削除後に管理が登録解除中のまま120秒を超える事象があった。独立native比較34822983863と同一host比較34823801940は成功し、後者の初回解除は管理の完了表示まで約63秒だった。厳密なcallback時間や以前の超過原因は未確定で、修正済み・Simulator限定とは扱わない。6beb877の実機では初回無効化・再有効化が体感ほぼ即時に完了した。秒数の測定やSimulatorの遅延原因の確定ではない。[実機記録](../verification/2026-09-14-0.8-device-check.md)。[P1-B検証記録](../verification/2026-09-14-p1-b.md)。
 
 この境界は同一process内の協調的な所有権であり、Feature間のセキュリティ境界ではない。
 

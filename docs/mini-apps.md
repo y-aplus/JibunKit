@@ -236,7 +236,7 @@ Taskのoperationがscopeを所有するruntime自身を強参照し続けると�
 
 ## 通知操作の所有者配送
 
-IntegrationはonNotificationActionへasyncハンドラを任意登録できる。open/dismiss/custom(action ID)、request ID、destination、文字入力を受け取る。通常openだけが既存の画面遷移を行い、dismiss/customではホストが勝手に画面を切り替えない。未登録ownerやハンドラなしの操作を他Featureへ転送しない。ハンドラ完了後にOSへ完了を返すため、長時間処理や終了しない処理を置かない。category/action宣言の合成とOS経由の独自actionは[既存のnative回帰](verification/2026-09-11-notification-ui-regression.md)で検証済み。独自userInfo/content/trigger等は任意の[requestSnapshot](guides/notification-request-snapshots.md)から読める。P1候補の文字入力・添付等の実機は[一括確認](verification/2026-09-14-0.8-device-check.md)に残る。
+IntegrationはonNotificationActionへasyncハンドラを任意登録できる。open/dismiss/custom(action ID)、request ID、destination、文字入力を受け取る。通常openだけが既存の画面遷移を行い、dismiss/customではホストが勝手に画面を切り替えない。未登録ownerやハンドラなしの操作を他Featureへ転送しない。ハンドラ完了後にOSへ完了を返すため、長時間処理や終了しない処理を置かない。category/action宣言の合成とOS経由の独自actionは[既存のnative回帰](verification/2026-09-11-notification-ui-regression.md)で検証済み。独自userInfo/content/trigger等は任意の[requestSnapshot](guides/notification-request-snapshots.md)から読める。6beb877で文字入力・添付等の実機確認も成功した（[source別結果](verification/2026-09-14-0.8-device-check.md)）。
 
 通知categoryは`context.notificationCategoryIdentifier(for:)`でIDを生成し、ネイティブUNNotificationCategoryをMiniAppDefinition.notificationCategoriesへ登録する。通知content.categoryIdentifierにも同じIDを設定する。ホストが起動時に有効なFeatureの和集合を登録する。FeatureからsetNotificationCategoriesを直接呼ぶと他Featureの登録を上書きするため、この接続を使う。カテゴリIDの重複・他ownerのIDは構成エラーとして登録前に拒否する。action IDはカテゴリ内のFeature所有値のまま保持し、文字入力actionやoptionsを独自形式へ変換しない。実行中の更新には`context.replaceNotificationCategories(with:)`を使い、他Featureの登録を維持する。下の動的更新手順を参照。
 
@@ -268,7 +268,7 @@ Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き�
 
 このAPIはiCloud同期しないKeychain項目のgeneric passwordを扱います。新規項目は標準のwhen-unlocked属性、既存項目の更新では属性を維持します。同期的なSecurity APIなので、UIを待たせる処理は適切な実行場所から呼んでください。SecAccessControlと操作ごとのLAContextも指定できます。[アクセス制御ガイド](guides/keychain-access-control.md)に呼出し・認証取消・OSエラーの扱いを記載しています。
 
-`accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。iOS再起動・A logout後のB保持、アクセス属性、userPresence項目の非対話拒否と認証後の値保持は検証済みです（[証拠](verification/2026-09-10-keychain-access-control.md)）。再署名後の継続や端末ロック・パスコード変更等は未検証です。
+`accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。iOS再起動・A logout後のB保持、アクセス属性、userPresence項目の非対話拒否と認証後の値保持は検証済みです（[証拠](verification/2026-09-10-keychain-access-control.md)）。通常HTTP用Cookie/パスワード資格情報は6beb877で署名更新後の保持を確認しました。userPresence項目の再署名後継続、端末ロック・パスコード変更等は未検証です。
 
 
 `set(data, for: account, accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)`のように、標準のaccessibility定数を指定できます。新規保存と既存項目の変更に適用し、省略した更新では既存属性を維持します。バックグラウンド利用のためのafter-first-unlockは、[最初の端末ロック解除後に利用可能となるAppleの保護条件](https://developer.apple.com/documentation/security/ksecattraccessibleafterfirstunlockthisdeviceonly)に従います。利用可能性を事前判定して成功を保証せず、OSエラーを処理してください。端末ロック・再起動・パスコード変更の実機検証は未完です。
@@ -280,7 +280,7 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 
 識別子はFeature IDとprofileからSHA-256先頭128bit（UUID version/variant設定分を除く）で導出します。毎回同じ保存先となり、UserDefaults側の割当表は不要です。ハッシュ衝突は理論的にはあり得ます。ID/profileを変更すると別ストアになるため、変更時は移行が必要です。`websiteDataStoreIdentifier(profile:)`の導出仕様を無断変更しないでください。別Featureのストアを直接指定する呼出しやdefault storeの利用を遮断するものではありません。
 
-所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持はP1-B開発branchの通常hostで検証済みです（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。公開0.7.0と今回の実機未確認の接続を区別してください。
+所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持は通常hostで検証済みで、6beb877の実機でも保存・再起動・認証取消・片側削除・B保持と上書き/Refresh保持を確認しました（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。公開安定版0.7.0と未公開の0.8.0候補を区別してください。
 
 
 ### 自動ロック抑止の共存
@@ -347,4 +347,4 @@ background連携は[短時間の処理継続](guides/background-execution-owners
 
 公開0.7.0に含まれない追加。外部ファイルとShare Extensionからの受信は、通常Definitionのoptional `incoming`へ接続する。[共有入力ガイド](guides/feature-incoming.md)に受信先選択、receipt IDでの冪等保存、取消・再試行とファイル寿命を示す。業務モデルをCoreへ移す必要はない。
 
-静的Widgetは既存Widget extensionへ標準のWidgetBundle登録を追加する。[二Packageの静的Widget接続](guides/package-static-widgets.md)に所有store、管理状態、kind、翻訳と他owner保持を示す。App Intentsは[Package接続](guides/package-app-intents.md)と[App Shortcuts寄与](guides/feature-app-shortcuts.md)を参照。P1-AのCI証拠と0.8候補で行う実機確認は[検証記録](verification/2026-09-13-p1-a.md)で区別する。
+静的Widgetは既存Widget extensionへ標準のWidgetBundle登録を追加する。[二Packageの静的Widget接続](guides/package-static-widgets.md)に所有store、管理状態、kind、翻訳と他owner保持を示す。App Intentsは[Package接続](guides/package-app-intents.md)と[App Shortcuts寄与](guides/feature-app-shortcuts.md)を参照。P1-AのCI証拠、6beb877/4e6a3f4の対象別実機結果、最終0.8候補の出荷照合を[実機追補](verification/2026-09-15-p1-device-followup.md)と[出荷候補記録](verification/2026-09-15-0.8-release.md)で区別する。

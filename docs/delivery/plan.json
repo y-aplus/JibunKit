@@ -217,10 +217,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "Shortcuts実利用",
-      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認。34881183837で永続診断制御を含む実行8+UI1/metadata成功。34887580504で完全hostの画面外管理行を含むIntent管理UIが成功。4e6a3f4実機でOS Shortcutsの遅延中取消/保存失敗時のA/B旧値保持・次回正常実行でAのみ指定量増加を確認",
-      "remaining": "実機の正負加算/候補/保存/再起動/A管理/B保持は成功。永続化した取消/失敗診断も4e6a3f4のOS Shortcutsで実機成功。最終sourceの差分照合・出荷確認が残る。",
+      "existing": "native metadata8定義/寄与削除、直接実行7+managed UI1、通常host管理UIをP1-Aで確認。34881183837で永続診断制御を含む実行8+UI1/metadata成功。34887580504で完全hostの画面外管理行を含むIntent管理UIが成功。4e6a3f4実機でOS Shortcutsの遅延中取消/保存失敗時のA/B旧値保持・次回正常実行でAのみ指定量増加を確認 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "Control等の高度な接続",
       "criteria": [
         {
@@ -247,10 +247,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "静的Widget通常接続",
-      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認。34883605285で通常hostから診断hostへの削除なし更新後、gallery A/Bとホームの実描画/OCRが成功。4e6a3f4のiOS27.0実機でWidget追加一覧の機能A/B表示、ホーム描画・本体値一致・各値更新を確認（加算回数は指定と逆、反映は体感即時）。機能Aの無効化/再有効化/削除/初期状態で再登録と各段階のB保持も実機成功。同IPA上書き/Refresh後起動でもA空値/B数値を実機保持。通常IPA復帰も成功し、残存する診断Widgetの旧表示は別記録",
-      "remaining": "実機手順は受領済み。通常IPAから診断kind/resource除去を検査済み。ホームの旧表示が消える時刻やキャッシュ原因は未確定であり、削除保証へ含めない。最終source照合・出荷確認が残る。",
+      "existing": "Timeline4/独立統合gallery3、通常hostの管理削除/再登録/再起動/B保持をP1-Aで確認。34883605285で通常hostから診断hostへの削除なし更新後、gallery A/Bとホームの実描画/OCRが成功。4e6a3f4のiOS27.0実機でWidget追加一覧の機能A/B表示、ホーム描画・本体値一致・各値更新を確認（加算回数は指定と逆、反映は体感即時）。機能Aの無効化/再有効化/削除/初期状態で再登録と各段階のB保持も実機成功。同IPA上書き/Refresh後起動でもA空値/B数値を実機保持。通常IPA復帰も成功し、残存する診断Widgetの旧表示は別記録 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "設定可能/操作可能Widget・Control/任意extension",
       "criteria": [
         {
@@ -278,10 +278,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "URL・外部ファイル・Share入口",
-      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功。34933726496で共有文字列の追加修正をnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）で確認。34942837167で完全P1 hostのOS文字列/URL/ファイル共有・保存後失敗の再試行・再起動後保持/B保持が成功。4e6a3f4で初回owner保存先の検査を修正し、34958710691/34958712557で共通273(skip2)/native32/完全host共有・再試行が成功。4e6a3f4のiOS27.0実機で文字列の共有保存→本体取込みが成功し、A件数1を確認。同実機でURL/ファイルも取込み成功し、A件数3・内容3行を確認。Bへの文字列取込み、Aの受信先選択前キャンセル後に未取込み増加なし/A3/B件数保持を実機確認。保存後失敗/再試行の手順後、未取込みなし・A4件のまま/B件数不変を実機確認。実機の強制終了/再起動後もA4件・B件数/内容を保持。同IPA上書き/RefreshでA4件/B保持、Files直接開く取消/取込みでA5件/B保持、通常IPA復帰を実機確認",
-      "remaining": "実機手順は受領済み。失敗直後の未取込み行は独立した明示観測なし（CIの該当証拠と区別）。最終source照合・出荷確認が残る。",
+      "existing": "持続受信/所有/NSItemProvider23、別process200受信、通常host破棄取消/保存後失敗/再起動/冪等再試行/B取込みをP1-Aで確認。34881183837で修正した文字列providerと実App Groupを含むnative25件、34883605285で完全hostの永続再試行が成功。34933726496で共有文字列の追加修正をnative29件と小host OS共有3件（文字列/URL/ファイルのFeature内容一致）で確認。34942837167で完全P1 hostのOS文字列/URL/ファイル共有・保存後失敗の再試行・再起動後保持/B保持が成功。4e6a3f4で初回owner保存先の検査を修正し、34958710691/34958712557で共通273(skip2)/native32/完全host共有・再試行が成功。4e6a3f4のiOS27.0実機で文字列の共有保存→本体取込みが成功し、A件数1を確認。同実機でURL/ファイルも取込み成功し、A件数3・内容3行を確認。Bへの文字列取込み、Aの受信先選択前キャンセル後に未取込み増加なし/A3/B件数保持を実機確認。保存後失敗/再試行の手順後、未取込みなし・A4件のまま/B件数不変を実機確認。実機の強制終了/再起動後もA4件・B件数/内容を保持。同IPA上書き/RefreshでA4件/B保持、Files直接開く取消/取込みでA5件/B保持、通常IPA復帰を実機確認 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "任意extension自動統合/実Universal Link一般化",
       "criteria": [
         {
@@ -307,10 +307,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "実用ローカル通知",
-      "existing": "通知添付のコピー/寿命/取消/故障と通常hostのforeground・添付/解除/B保持を34802338245/34816553410で確認",
-      "remaining": "2026-09-15実機で添付/mark/reply/owner保持/通常前景方針が成功。集中モード下は未確認で通常結果へ含めない。最終sourceの差分照合・出荷確認が残る。",
+      "existing": "通知添付のコピー/寿命/取消/故障と通常hostのforeground・添付/解除/B保持を34802338245/34816553410で確認 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "APNs/全通知配送条件",
       "criteria": [
         {
@@ -338,10 +338,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "資格情報とHTTP",
-      "existing": "実URLSessionの認証/Cookie/cache・保持/故障/取消/停止後logout/管理削除/B保持を34816553410で確認。端末内HTTP fixtureも実通信7試験成功",
-      "remaining": "2026-09-15実機でlogin/cache/再起動/取消/logout/B保持と同IPA上書き/署名更新保持が成功。最終sourceの差分照合・出荷確認が残る。",
+      "existing": "実URLSessionの認証/Cookie/cache・保持/故障/取消/停止後logout/管理削除/B保持を34816553410で確認。端末内HTTP fixtureも実通信7試験成功 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "非パスワード資格情報/専門的認証",
       "criteria": [
         {
@@ -369,10 +369,10 @@
       ],
       "priority": "P1",
       "milestone": "0.8.0",
-      "state": "partial",
+      "state": "complete",
       "title": "WebViewとWeb認証",
-      "existing": "端末内fixtureへ接続済み。通常Web保存/取消/drainは34819734774、無効化/認証とhost直接比較は34823801940で成功",
-      "remaining": "2026-09-15実機で保存/再起動/認証callback/OS取消/片側削除/B保持と上書き/署名更新保持が成功。初回無効化は体感ほぼ即時。Simulatorの遅延原因は未確定。最終sourceの差分照合・出荷確認が残る。",
+      "existing": "端末内fixtureへ接続済み。通常Web保存/取消/drainは34819734774、無効化/認証とhost直接比較は34823801940で成功 0.8.0/build10候補71ef1ffの通常CI34967147135とsource別の再利用照合・現況文書監査を完了。",
+      "remaining": "なし（P1の合意範囲）。対象source・実機の観測限界と高度な残件は2026-09-15-0.8-release.mdおよびdeferredに記録。公開操作は出荷記録で別管理。",
       "deferred": "全Webデータ/全SSO/複数OS scene",
       "criteria": [
         {

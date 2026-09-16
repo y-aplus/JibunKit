@@ -162,6 +162,8 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
         try coordinator.updateIntent(.stoppedForRouteChange, for: lease)
         coordinator.receiveInterruptionEnded(shouldResume: true)
         XCTAssertEqual(events.values.last, .interruptionEnded(resumeCandidate: false))
+        try await coordinator.activateForUserAction(lease)
+        XCTAssertEqual(coordinator.sessionState, .active(playback))
     }
 
     func testEligibleInterruptionAndMediaResetRequireExplicitDriverReactivation() async throws {
@@ -169,12 +171,19 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
         let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
         let lease = try acquired(await coordinator.acquire(owner: MiniAppID("a"), request: request([playback]), stop: {}, receive: { _ in }))
         try coordinator.updateIntent(.active, for: lease)
-        coordinator.receiveInterruptionBegan(); coordinator.receiveInterruptionEnded(shouldResume: true)
+        coordinator.receiveInterruptionBegan()
+        do {
+            _ = try await coordinator.acquire(owner: MiniAppID("b"), request: request([playback]), stop: {}, receive: { _ in })
+            XCTFail("Interrupted session must recover before admitting another lease")
+        } catch MiniAppAudioSessionCoordinator.Failure.sessionRecoveryRequired { }
+        do { try await coordinator.reactivate(lease); XCTFail("Begin alone must not permit resume") }
+        catch MiniAppAudioSessionCoordinator.Failure.resumeNotAllowed { }
+        coordinator.receiveInterruptionEnded(shouldResume: true)
         let before = driver.events.count
-        try coordinator.reactivate(lease)
+        try await coordinator.reactivate(lease)
         XCTAssertEqual(Array(driver.events.suffix(from: before)), ["apply-playback-spokenAudio", "active-true"])
         coordinator.receiveMediaServicesReset()
-        try coordinator.reactivate(lease)
+        try await coordinator.reactivate(lease)
         XCTAssertEqual(coordinator.sessionState, .active(playback))
     }
 

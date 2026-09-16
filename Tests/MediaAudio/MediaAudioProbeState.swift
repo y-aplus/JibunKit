@@ -57,6 +57,8 @@ final class MediaAudioProbeState {
     private let beforePlayerStop: @MainActor @Sendable () async throws -> Void
     private var playerOperation: UInt64 = 0
     private var recorderOperation: UInt64 = 0
+    private var consentGeneration: UInt64 = 0
+    private var featureConsentAllowed = false
     @ObservationIgnored private var pendingRecorderConflict: MiniAppAudioSessionCoordinator.Conflict?
 
     var playerTime: Double { player?.currentTime().seconds ?? 0 }
@@ -74,10 +76,14 @@ final class MediaAudioProbeState {
         sceneSummary = "\(activity.featureID.rawValue):\(String(describing: activity.phase)) selected=\(activity.isSelected)"
     }
 
+    func updateFeatureConsent(_ allowed: Bool) {
+        if featureConsentAllowed != allowed { featureConsentAllowed = allowed; consentGeneration &+= 1 }
+    }
+
     func startPlayer() async {
         guard playerLease == nil else {
             if let lease = playerLease {
-                do { try coordinator.reactivate(lease); player?.play(); playerStatus = "再生再開" }
+                do { try await coordinator.activateForUserAction(lease); player?.play(); playerStatus = "再生再開" }
                 catch { playerError = "再開: \(error)" }
             }
             return
@@ -89,31 +95,13 @@ final class MediaAudioProbeState {
             let duplex = MiniAppAudioProfile(category: .playAndRecord, mode: .spokenAudio)
             let admission = try await coordinator.acquire(owner: MiniAppID("media-audio-player"),
                 request: .init(acceptableProfiles: [playback, duplex], purpose: "ローカル音声の再生"),
-                stop: { [weak self] in await self?.stopPlayerProducer() }, receive: { [weak self] in self?.handlePlayer($0) })
+                stop: { [weak self] in try await self?.stopPlayerProducer() }, receive: { [weak self] in self?.handlePlayer($0) })
             guard operation == playerOperation else { if case .acquired(let lease) = admission { try? await coordinator.release(lease) }; return }
             guard case .acquired(let lease) = admission else { playerStatus = "再生競合"; return }
             acquiredLease = lease
-            let item = AVPlayerItem(url: try Self.makeToneFile())
-            let localPlayer = AVQueuePlayer()
-            let localLooper = AVPlayerLooper(player: localPlayer, templateItem: item)
-            let owner = MiniAppNowPlayingOwner(id: lease.owner, players: [localPlayer])
-            owner.session.nowPlayingInfoCenter.nowPlayingInfo = [MPMediaItemPropertyTitle: "JibunKit Loop Tone",
-                MPMediaItemPropertyArtist: "MediaAudioProbe", MPNowPlayingInfoPropertyPlaybackRate: 1.0]
-            owner.installStandardHandlers({ [weak self, weak localPlayer] command in
-                guard let self, self.playerLease == lease else { return false }
-                switch command {
-                case .play: localPlayer?.play(); try? self.coordinator.updateIntent(.active, for: lease)
-                case .pause: localPlayer?.pause(); try? self.coordinator.updateIntent(.stoppedByUser, for: lease)
-                case .changePlaybackPosition(let seconds): localPlayer?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
-                }
-                self.playerCommandCount += 1; return true
-            }, onCompletion: { [weak self] _, completed in
-                self?.playerStatus = completed ? "remote操作完了" : "remote操作失敗"
-            })
-            player = localPlayer; looper = localLooper; nowPlaying = owner
             playerLease = lease; playerGeneration = lease.generation
             try coordinator.updateIntent(.active, for: lease)
-            localPlayer.play(); _ = await owner.requestActivation()
+            try await installPlayerNative(for: lease)
             playerStatus = "loop再生中"; playerError = "なし"; refreshDetail()
         } catch {
             if let acquiredLease { try? await coordinator.release(acquiredLease) }
@@ -149,19 +137,39 @@ final class MediaAudioProbeState {
 
     func confirmRecorderReplacement(featureConsent: Bool) async {
         guard let conflict = pendingRecorderConflict else { return }
+        updateFeatureConsent(featureConsent)
+        guard featureConsentAllowed else { recorderError = "Feature microphone同意が必要"; return }
+        let consent = consentGeneration
+        recorderOperation &+= 1; let operation = recorderOperation
+        guard await permission(), operation == recorderOperation, consent == consentGeneration, featureConsentAllowed else {
+            if operation == recorderOperation { recorderError = "OS microphone許可なし" }
+            return
+        }
         do {
             let lease = try await coordinator.resolve(conflict, as: .replaceOwners(conflict.incumbentOwners))
+            guard operation == recorderOperation else { try? await coordinator.release(lease); return }
             pendingRecorderConflict = nil; recorderLease = lease; recorderGeneration = lease.generation
             if conflict.incumbentOwners.contains(MiniAppID("media-audio-player")) { playerLease = nil }
-            await startRecording(featureConsent: featureConsent)
-        } catch { pendingRecorderConflict = nil; recorderError = "明示切替: \(error)"; recorderStatus = "失敗" }
+            try await coordinator.activateForUserAction(lease)
+            guard operation == recorderOperation, consent == consentGeneration, featureConsentAllowed else {
+                await releaseRecorder(); return
+            }
+            try recording.start(at: Self.recordingURL)
+            try coordinator.updateIntent(.active, for: lease)
+            recorderStatus = "録音中"; recorderError = "なし"; refreshDetail()
+        } catch {
+            if recorderLease != nil { await releaseRecorder() }
+            pendingRecorderConflict = nil; recorderError = "明示切替: \(error)"; recorderStatus = "失敗"
+        }
     }
 
     func startRecording(featureConsent: Bool) async {
-        guard featureConsent else { recorderError = "Feature microphone同意が必要"; recorderStatus = "録音拒否"; return }
+        updateFeatureConsent(featureConsent)
+        guard featureConsentAllowed else { recorderError = "Feature microphone同意が必要"; recorderStatus = "録音拒否"; return }
+        let consent = consentGeneration
         recorderOperation &+= 1; let operation = recorderOperation
         let granted = await permission()
-        guard operation == recorderOperation else { return }
+        guard operation == recorderOperation, consent == consentGeneration, featureConsentAllowed else { return }
         guard granted else {
             if recorderLease != nil { await releaseRecorder() }
             recorderError = "OS microphone許可なし"; recorderStatus = "録音拒否"
@@ -171,6 +179,10 @@ final class MediaAudioProbeState {
         do {
             if recorderLease == nil { try await reserveRecorderAudio(); acquiredHere = true }
             guard operation == recorderOperation else { if acquiredHere { await releaseRecorder() }; return }
+            if let lease = recorderLease { try await coordinator.activateForUserAction(lease) }
+            guard operation == recorderOperation, consent == consentGeneration, featureConsentAllowed else {
+                if recorderLease != nil { await releaseRecorder() }; return
+            }
             try recording.start(at: Self.recordingURL)
             guard operation == recorderOperation else { recording.stop(); if acquiredHere { await releaseRecorder() }; return }
             if let lease = recorderLease { try coordinator.updateIntent(.active, for: lease) }
@@ -199,9 +211,22 @@ final class MediaAudioProbeState {
 
     func reset() async { await stopPlayer(); await releaseRecorder(); pendingRecorderConflict = nil }
 
+    func recoverAudioSession() async {
+        do { try await coordinator.recoverSession(); playerStatus = "AudioSession復旧済み"; recorderStatus = "AudioSession復旧済み" }
+        catch { playerError = "AudioSession復旧: \(error)"; recorderError = playerError }
+        refreshDetail()
+    }
+
+    func stopPlayerForLifetime() async {
+        while playerLease != nil { await stopPlayer(); if playerLease != nil { try? await Task.sleep(for: .milliseconds(100)) } }
+    }
+    func stopRecorderForLifetime() async {
+        while recorderLease != nil { await releaseRecorder(); if recorderLease != nil { try? await Task.sleep(for: .milliseconds(100)) } }
+    }
+
     private func stopPlayerProducer() async throws {
         try await beforePlayerStop()
-        player?.pause(); await nowPlaying?.invalidate(); nowPlaying = nil; looper = nil; player = nil
+        player?.pause(); try await nowPlaying?.invalidate(); nowPlaying = nil; looper = nil; player = nil
     }
     private func stopRecorderProducer() { recording.stop() }
     private func handlePlayer(_ event: MiniAppAudioEvent) {
@@ -213,7 +238,9 @@ final class MediaAudioProbeState {
                 player?.pause(); if let playerLease { try? coordinator.updateIntent(.stoppedForRouteChange, for: playerLease) }
             }
             playerStatus = "経路変更 reason=\(reason)"
-        case .mediaServicesReset: player?.pause(); playerStatus = "media reset: 再開操作待ち"
+        case .mediaServicesReset:
+            playerStatus = "media reset: native再構築中"
+            Task { @MainActor [weak self] in await self?.rebuildPlayerAfterReset() }
         }
     }
     private func handleRecorder(_ event: MiniAppAudioEvent) {
@@ -222,6 +249,35 @@ final class MediaAudioProbeState {
     }
     private func refreshDetail() {
         detail = "owners=\(coordinator.activeOwners.count) playerGen=\(playerGeneration) recorderGen=\(recorderGeneration) commands=\(playerCommandCount) state=\(coordinator.sessionState)"
+    }
+    private func installPlayerNative(for lease: MiniAppAudioSessionCoordinator.Lease) async throws {
+        let item = AVPlayerItem(url: try Self.makeToneFile())
+        let localPlayer = AVQueuePlayer()
+        let localLooper = AVPlayerLooper(player: localPlayer, templateItem: item)
+        let owner = MiniAppNowPlayingOwner(id: lease.owner, players: [localPlayer])
+        owner.session.nowPlayingInfoCenter.nowPlayingInfo = [MPMediaItemPropertyTitle: "JibunKit Loop Tone",
+            MPMediaItemPropertyArtist: "MediaAudioProbe", MPNowPlayingInfoPropertyPlaybackRate: 1.0]
+        owner.installStandardHandlers({ [weak self, weak localPlayer] command in
+            guard let self, self.playerLease == lease else { return false }
+            switch command {
+            case .play:
+                do { try await self.coordinator.activateForUserAction(lease); localPlayer?.play() } catch { return false }
+            case .pause: localPlayer?.pause(); try? self.coordinator.updateIntent(.stoppedByUser, for: lease)
+            case .changePlaybackPosition(let seconds): localPlayer?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+            }
+            self.playerCommandCount += 1; return true
+        }, onCompletion: { [weak self] _, completed in self?.playerStatus = completed ? "remote操作完了" : "remote操作失敗" })
+        player = localPlayer; looper = localLooper; nowPlaying = owner
+        localPlayer.play(); _ = await owner.requestActivation()
+    }
+    private func rebuildPlayerAfterReset() async {
+        guard let lease = playerLease else { return }
+        do {
+            player?.pause(); try await nowPlaying?.invalidate(); nowPlaying = nil; looper = nil; player = nil
+            try await coordinator.reactivate(lease)
+            try await installPlayerNative(for: lease)
+            playerStatus = "media reset再構築済み"
+        } catch { playerError = "media reset再構築: \(error)"; playerStatus = "再構築失敗" }
     }
     private static let recordingURL = FileManager.default.temporaryDirectory.appendingPathComponent("media-audio-recording.caf")
     private static func makeToneFile() throws -> URL {

@@ -28,8 +28,8 @@ public struct MiniAppAudioProfile: Hashable, Sendable {
         public init(rawValue: UInt) { self.rawValue = rawValue }
         public static let `default` = Self(rawValue: 0)
         public static let longFormAudio = Self(rawValue: 1)
-        public static let longFormVideo = Self(rawValue: 2)
-        public static let independent = Self(rawValue: 3)
+        public static let independent = Self(rawValue: 2)
+        public static let longFormVideo = Self(rawValue: 3)
     }
     /// AVAudioSession.CategoryOptions raw bits; unknown future bits survive unchanged.
     public struct Options: OptionSet, Hashable, Sendable {
@@ -39,7 +39,7 @@ public struct MiniAppAudioProfile: Hashable, Sendable {
         public static let duckOthers = Self(rawValue: 1 << 1)
         public static let allowBluetoothHFP = Self(rawValue: 1 << 2)
         public static let defaultToSpeaker = Self(rawValue: 1 << 3)
-        public static let interruptSpokenAudioAndMixWithOthers = Self(rawValue: 1 << 4)
+        public static let interruptSpokenAudioAndMixWithOthers = Self(rawValue: 0x11)
         public static let allowBluetoothA2DP = Self(rawValue: 1 << 5)
         public static let allowAirPlay = Self(rawValue: 1 << 6)
     }

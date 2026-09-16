@@ -10,6 +10,8 @@ public enum MiniAppRemoteCommandValue: Sendable, Equatable {
 
 @MainActor
 public final class MiniAppNowPlayingOwner {
+    public enum Failure: Error, Sendable, Equatable { case recursiveInvalidation }
+    private enum DeliveryContext { @TaskLocal static var id: UUID? }
     public typealias Handler = @MainActor @Sendable (MiniAppRemoteCommandValue) async -> Bool
 
     public nonisolated let id: MiniAppID
@@ -43,7 +45,8 @@ public final class MiniAppNowPlayingOwner {
 
     public func requestActivation() async -> Bool { await session.becomeActiveIfPossible() }
 
-    public func invalidate() async {
+    public func invalidate() async throws {
+        if let id = DeliveryContext.id, activeDeliveries.contains(id) { throw Failure.recursiveInvalidation }
         acceptsCommands = false
         generation &+= 1
         for (command, token) in targets { command.removeTarget(token) }
@@ -64,18 +67,29 @@ public final class MiniAppNowPlayingOwner {
             let id = UUID()
             Task { @MainActor [weak self] in
                 guard let self, self.acceptsCommands, self.generation == installedGeneration else { return }
-                self.activeDeliveries.insert(id)
-                let completed = await handler(commandValue)
+                let completed = await self.performDelivery(id: id, value: commandValue, handler: handler)
                 onCompletion?(commandValue, completed)
-                self.activeDeliveries.remove(id)
-                if self.activeDeliveries.isEmpty {
-                    let waiters = self.deliveryWaiters; self.deliveryWaiters.removeAll()
-                    waiters.forEach { $0.resume() }
-                }
             }
             return .success
         }
         targets.append((command, target))
+    }
+
+    @_spi(Testing)
+    public func deliverForTesting(_ value: MiniAppRemoteCommandValue, handler: @escaping Handler) async -> Bool {
+        await performDelivery(id: UUID(), value: value, handler: handler)
+    }
+
+    private func performDelivery(id: UUID, value: MiniAppRemoteCommandValue,
+                                 handler: @escaping Handler) async -> Bool {
+        activeDeliveries.insert(id)
+        let completed = await DeliveryContext.$id.withValue(id) { await handler(value) }
+        activeDeliveries.remove(id)
+        if activeDeliveries.isEmpty {
+            let waiters = deliveryWaiters; deliveryWaiters.removeAll()
+            waiters.forEach { $0.resume() }
+        }
+        return completed
     }
 }
 #endif

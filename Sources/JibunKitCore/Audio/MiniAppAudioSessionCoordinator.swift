@@ -2,6 +2,7 @@ import Foundation
 
 @MainActor
 public final class MiniAppAudioSessionCoordinator {
+    private enum StopContext { @TaskLocal static var token: UUID? }
     public struct Lease: Hashable, Sendable {
         public let owner: MiniAppID
         public let generation: UInt64
@@ -71,6 +72,7 @@ public final class MiniAppAudioSessionCoordinator {
         let receive: Receive
         var intent: MiniAppAudioIntent = .paused
         var interruptedGeneration: UInt64?
+        var interruptionEndedGeneration: UInt64?
         var producerStopped = false
     }
 
@@ -81,6 +83,7 @@ public final class MiniAppAudioSessionCoordinator {
     private var revision: UInt64 = 0
     private var transactionInProgress = false
     private var stoppingTokens: Set<UUID> = []
+    private var idleWaiters: [CheckedContinuation<Void, Never>] = []
     public private(set) var sessionState: SessionState = .inactive
 
     public init(driver: any MiniAppAudioSessionDriver) { self.driver = driver }
@@ -92,7 +95,11 @@ public final class MiniAppAudioSessionCoordinator {
     public func acquire(owner: MiniAppID, request: MiniAppAudioRequest,
                         stop: @escaping Stop, receive: @escaping Receive) async throws -> Admission {
         try Task.checkCancellation()
-        guard !transactionInProgress else { throw Failure.coordinatorBusy }
+        await waitUntilIdle()
+        switch sessionState {
+        case .inactive, .active: break
+        default: throw Failure.sessionRecoveryRequired
+        }
         if case .recoveryFailed = sessionState { throw Failure.sessionRecoveryRequired }
         if case .deactivationFailed = sessionState { throw Failure.sessionRecoveryRequired }
         guard owner.isValid, !request.acceptableProfiles.isEmpty,
@@ -124,7 +131,7 @@ public final class MiniAppAudioSessionCoordinator {
 
     public func resolve(_ conflict: Conflict, as decision: ConflictResolution) async throws -> Lease {
         try Task.checkCancellation()
-        guard !transactionInProgress else { throw Failure.coordinatorBusy }
+        await waitUntilIdle()
         guard conflict.revision == revision,
               conflict.incumbentOwners == activeOwners,
               !entries.values.contains(where: { $0.lease.owner == conflict.requester })
@@ -137,12 +144,14 @@ public final class MiniAppAudioSessionCoordinator {
         }
 
         transactionInProgress = true
-        defer { transactionInProgress = false; stoppingTokens.removeAll() }
+        defer { finishTransaction(); stoppingTokens.removeAll() }
         var stopped: Set<MiniAppID> = []
         for entry in entries.values.filter({ selected.contains($0.lease.owner) })
             .sorted(by: { $0.lease.owner.rawValue < $1.lease.owner.rawValue }) {
             stoppingTokens.insert(entry.lease.token)
-            do { try await Task { @MainActor in try await entry.stop() }.value }
+            do { try await Task { @MainActor in
+                try await StopContext.$token.withValue(entry.lease.token) { try await entry.stop() }
+            }.value }
             catch {
                 try failPartialStop(stopped: stopped, reason: String(describing: error))
             }
@@ -171,14 +180,19 @@ public final class MiniAppAudioSessionCoordinator {
     /// Stops this lease's producer and joins completion before removing it.
     /// A stop callback must never call release for the same lease.
     public func release(_ lease: Lease) async throws {
-        guard var entry = entries[lease.token], entry.lease == lease else { throw Failure.unknownLease }
+        if let stopping = StopContext.token {
+            throw stopping == lease.token ? Failure.stopReentry : Failure.coordinatorBusy
+        }
         if stoppingTokens.contains(lease.token) { throw Failure.stopReentry }
-        guard !transactionInProgress else { throw Failure.coordinatorBusy }
+        await waitUntilIdle()
+        guard var entry = entries[lease.token], entry.lease == lease else { throw Failure.unknownLease }
         transactionInProgress = true
         stoppingTokens.insert(lease.token)
-        defer { transactionInProgress = false; stoppingTokens.remove(lease.token) }
+        defer { finishTransaction(); stoppingTokens.remove(lease.token) }
         if !entry.producerStopped {
-            do { try await Task { @MainActor in try await entry.stop() }.value }
+            do { try await Task { @MainActor in
+                try await StopContext.$token.withValue(entry.lease.token) { try await entry.stop() }
+            }.value }
             catch { throw Failure.producerStop(String(describing: error)) }
             entry.producerStopped = true
             entries[lease.token] = entry
@@ -204,26 +218,30 @@ public final class MiniAppAudioSessionCoordinator {
 
     /// Reapplies and activates the current profile after a valid interruption end or media-services reset.
     /// User/route stop intents are never overridden.
-    public func reactivate(_ lease: Lease) throws {
+    public func reactivate(_ lease: Lease) async throws {
+        await waitUntilIdle()
         guard var entry = entries[lease.token], entry.lease == lease, !entry.producerStopped,
               entry.intent == .active, let profile = currentProfile else { throw Failure.resumeNotAllowed }
         let allowed: Bool
         switch sessionState {
-        case .interrupted: allowed = entry.interruptedGeneration == lease.generation
+        case .interrupted: allowed = entry.interruptionEndedGeneration == lease.generation
         case .resetRequired, .recoveryFailed: allowed = true
-        case .active: allowed = entry.interruptedGeneration == lease.generation
+        case .active: allowed = entry.interruptionEndedGeneration == lease.generation
         default: allowed = false
         }
         guard allowed else { throw Failure.resumeNotAllowed }
         do { try driver.apply(profile); try driver.setActive(true, notifyOthersOnDeactivation: false) }
         catch { sessionState = .recoveryFailed(profile, String(describing: error)); throw Failure.driver(String(describing: error)) }
         entry.interruptedGeneration = nil
+        entry.interruptionEndedGeneration = nil
         entries[lease.token] = entry
         sessionState = .active(profile)
     }
 
     /// Repairs an unknown native state. With no owners it deactivates; otherwise it restores the accepted profile.
-    public func recoverSession() throws {
+    public func recoverSession() async throws {
+        await waitUntilIdle()
+        if case .interrupted = sessionState { throw Failure.resumeNotAllowed }
         if entries.isEmpty {
             do { try driver.setActive(false, notifyOthersOnDeactivation: true) }
             catch { throw Failure.driver(String(describing: error)) }
@@ -235,12 +253,25 @@ public final class MiniAppAudioSessionCoordinator {
         }
     }
 
+    /// A new explicit Play/Record intent. Unlike interruption auto-resume eligibility, this may recover a paused route.
+    public func activateForUserAction(_ lease: Lease) async throws {
+        await waitUntilIdle()
+        guard var entry = entries[lease.token], entry.lease == lease, !entry.producerStopped,
+              let profile = currentProfile else { throw Failure.resumeNotAllowed }
+        entry.intent = .active
+        do { try driver.apply(profile); try driver.setActive(true, notifyOthersOnDeactivation: false) }
+        catch { sessionState = .recoveryFailed(profile, String(describing: error)); throw Failure.driver(String(describing: error)) }
+        entry.interruptedGeneration = nil; entry.interruptionEndedGeneration = nil
+        entries[lease.token] = entry; sessionState = .active(profile)
+    }
+
     public func receiveInterruptionBegan() {
         if let profile = currentProfile { sessionState = .interrupted(profile) }
         for token in Array(entries.keys) {
             guard var entry = entries[token] else { continue }
             entry.interruptedGeneration = entry.intent == .active && entry.request.allowsInterruptionResume
                 ? entry.lease.generation : nil
+            entry.interruptionEndedGeneration = nil
             entries[token] = entry
             entry.receive(.interruptionBegan)
         }
@@ -251,6 +282,7 @@ public final class MiniAppAudioSessionCoordinator {
             guard var entry = entries[token] else { continue }
             let candidate = shouldResume && entry.intent == .active
                 && entry.interruptedGeneration == entry.lease.generation
+            entry.interruptionEndedGeneration = candidate ? entry.lease.generation : nil
             if !candidate { entry.interruptedGeneration = nil }
             entries[token] = entry
             entry.receive(.interruptionEnded(resumeCandidate: candidate))
@@ -318,5 +350,17 @@ public final class MiniAppAudioSessionCoordinator {
 
     private func failPartialStop(stopped: Set<MiniAppID>, reason: String) throws -> Never {
         throw Failure.partialStop(.init(stoppedOwners: stopped, remainingOwners: activeOwners, reason: reason))
+    }
+
+    private func waitUntilIdle() async {
+        while transactionInProgress {
+            await withCheckedContinuation { idleWaiters.append($0) }
+        }
+    }
+
+    private func finishTransaction() {
+        transactionInProgress = false
+        let waiters = idleWaiters; idleWaiters.removeAll()
+        waiters.forEach { $0.resume() }
     }
 }

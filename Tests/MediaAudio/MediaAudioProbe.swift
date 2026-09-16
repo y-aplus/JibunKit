@@ -7,10 +7,10 @@ import SwiftUI
 enum MediaAudioProbe {
     static let state = MediaAudioProbeState()
     static let playerLifetime = MiniAppFeatureLifetime(id: MiniAppID("media-audio-player")) { runtime in
-        try runtime.onShutdownAsync { await state.stopPlayer() }
+        try runtime.onShutdownAsync { await state.stopPlayerForLifetime() }
     }
     static let recorderLifetime = MiniAppFeatureLifetime(id: MiniAppID("media-audio-recorder")) { runtime in
-        try runtime.onShutdownAsync { await state.releaseRecorder() }
+        try runtime.onShutdownAsync { await state.stopRecorderForLifetime() }
     }
 
     static var definitions: [MiniAppDefinition] {

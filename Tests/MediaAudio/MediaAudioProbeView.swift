@@ -21,6 +21,8 @@ struct MediaAudioProbeView: View {
                 let error = recorder ? state.recorderError : state.playerError
                 Text(error).foregroundStyle(error == "なし" ? .secondary : .red)
                     .accessibilityIdentifier("media-audio.error")
+                Button("AudioSessionを復旧") { Task { await state.recoverAudioSession() } }
+                    .accessibilityIdentifier("media-audio.recover")
                 if recorder {
                     Text(microphoneConsent ? "Feature microphone同意済み" : "管理画面でFeature microphone同意が必要")
                     Button("録音開始") { Task { await state.startRecording(featureConsent: microphoneConsent) } }
@@ -39,6 +41,8 @@ struct MediaAudioProbeView: View {
                 }
             }.padding()
         }
+        .task { state.updateFeatureConsent(microphoneConsent) }
+        .onChange(of: microphoneConsent) { _, value in state.updateFeatureConsent(value) }
     }
 }
 #endif

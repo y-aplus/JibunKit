@@ -20,11 +20,11 @@ let admission = try await audio.acquire(
 
 Category/ModeはApple標準文字列、route policy/optionsは標準raw bitsを保持するSendable wrapperである。named constantsは便利APIにすぎず、`init(rawValue:)`で将来追加された標準値・bitも欠落なくnative adapterへ渡る。profile変更失敗は旧profileを再適用・activateしてrollbackし、rollback失敗は`.driverChangeFailed`と`.recoveryFailed`で明示する。
 
-`release`自身が登録済みstopをawaitする。stop closureはnative producerの停止完了までを担当し、同じleaseの`release`を呼ばない（`.stopReentry`）。deactivate失敗時は停止済みleaseと`.deactivationFailed`を保持し、同じleaseの`release`再試行ではproducerを二重停止せずdeactivateを再試行する。`.coordinatorBusy`等の失敗はFeature終了成功として扱わない。lifetimeの`runtime.onShutdownAsync`から`release`をawaitする。
+`release`自身が登録済みstopをawaitする。stop closureはnative producerの停止完了までを担当し、同じleaseの`release`を呼ばない（`.stopReentry`）。別transaction中のrelease/acquireはidle境界をjoinし、終了要求をbusyとして捨てない。deactivate失敗時は停止済みleaseと`.deactivationFailed`を保持し、同じleaseの`release`再試行ではproducerを二重停止せずdeactivateを再試行する。lifetime shutdownはleaseが消えるまで再試行し、恒久stop failureを終了成功にしない。
 
-Featureは再生・録音開始時に`updateIntent(.active, for:)`、ユーザー停止、remote pause、headphone抜去ではそれぞれ`.stoppedByUser` / `.stoppedForRouteChange`を設定する。interruption endの候補後は、Featureがlifetime/scene/producer状態を確認して`reactivate(_:)`を明示的に呼ぶ。このAPIがprofile再適用とactivateを行うため、通知だけでplayerを再開しない。media-services resetも`.resetRequired`へ遷移し、同じAPIでnative構成を再構築する。ユーザー・route停止intentでは拒否される。
+Featureは再生・録音開始時に`updateIntent(.active, for:)`、ユーザー停止、remote pause、headphone抜去ではそれぞれ`.stoppedByUser` / `.stoppedForRouteChange`を設定する。interruption endの候補後は、Featureがlifetime/scene/producer状態を確認して`reactivate(_:)`を明示的に呼ぶ。beginだけでは成功しない。新しいユーザーPlay/Recordは`activateForUserAction(_:)`を使い、過去の停止intentを明示的に更新する。media-services resetでは旧player/Now Playingを終了し、`reactivate(_:)`後にnative objectを新規生成する。通知だけで旧objectを再生しない。
 
-Now PlayingはFeatureごとに`MiniAppNowPlayingOwner`を持つ。session固有のinfo center/command centerを使い、ownerは登録tokenだけを削除する。同期remote handlerの`.success`はMainActorへのenqueue成功であり、操作完了ではない。実操作のBool結果は別の`onCompletion`へ届く。async `invalidate()`は受付を閉じてtokenを除去し、既に実行中の配送をjoinしてから返る。停止時はplayer停止、`invalidate()`完了、audio lease解放の順にする。
+Now PlayingはFeatureごとに`MiniAppNowPlayingOwner`を持つ。session固有のinfo center/command centerを使い、ownerは登録tokenだけを削除する。同期remote handlerの`.success`はMainActorへのenqueue成功であり、操作完了ではない。実操作のBool結果は別の`onCompletion`へ届く。async `invalidate()`は受付を閉じてtokenを除去し、既に実行中の配送をjoinしてから返る。handler自身から同ownerをinvalidateする再帰は`.recursiveInvalidation`で拒否する。停止時はplayer停止、`invalidate()`完了、audio lease解放の順にする。
 
 録音Featureは`MiniAppPermissionDeclaration`とhostの`MiniAppConsentStore`によるFeature ID別同意、および`AVAudioApplication.requestRecordPermission()`によるOS許可を別々に扱う。許可await後にはFeature操作世代を再検査し、停止済みなら開始しない。iOS 26のみのため旧permission API fallbackはない。親は`FeatureBuildRequirement`で`NSMicrophoneUsageDescription`を合成する。背景再生が必要なFeatureは同じ仕組みで`UIBackgroundModes = ["audio"]`を要求する（専用entitlementではない）。
 

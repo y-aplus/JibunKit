@@ -103,9 +103,11 @@ public struct MiniAppContinuingJournal: Sendable {
     private func validate(_ envelope: Envelope) throws {
         guard envelope.format == 1, envelope.owner == owner.rawValue, envelope.namespace == namespace,
               Set(envelope.registrations.map { $0.identity.registrationID }).count == envelope.registrations.count,
+              Set(envelope.registrations.compactMap(\.systemID)).count == envelope.registrations.compactMap(\.systemID).count,
               envelope.registrations.allSatisfy({ record in
                   record.identity.owner == owner.rawValue && !record.identity.localID.isEmpty
                       && (record.systemID == nil || record.systemID?.isEmpty == false)
+                      && (record.phase != .active || record.systemID != nil)
               }) else { throw MiniAppContinuingError.invalidJournal }
     }
 

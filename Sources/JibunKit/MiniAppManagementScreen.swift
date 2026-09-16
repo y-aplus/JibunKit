@@ -25,6 +25,17 @@ struct MiniAppManagementScreen: View {
                             Text("\(stageText(failure.stage))で失敗しました。\(failure.message)")
                                 .foregroundStyle(.red)
                         }
+                        if let failure = MiniAppRegistry.continuingStatus.errors[definition.id],
+                           management.isEnabled(definition.id) {
+                            Text("継続中の活動を確認できません。\(failure)")
+                                .foregroundStyle(.red)
+                                .accessibilityIdentifier("management.continuing.error.\(definition.id.rawValue)")
+                            Button("状態を再確認") {
+                                MiniAppRegistry.reconcileContinuingSurfaces(for: definition.id)
+                            }
+                            .disabled(MiniAppRegistry.continuingStatus.pending.contains(definition.id)
+                                || management.stages[definition.id] != nil)
+                        }
                         if let stage = management.stages[definition.id] {
                             ProgressView(stageText(stage))
                             if stage == .stopping, let runtime = definition.lifetime?.runtime {

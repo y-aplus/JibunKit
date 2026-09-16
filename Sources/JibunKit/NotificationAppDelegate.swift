@@ -24,6 +24,7 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
             let registrations = Dictionary(uniqueKeysWithValues:
                 MiniAppRegistry.all.map { ($0.id, MiniAppRegistry.management.isEnabled($0.id) ? $0.notificationCategories : []) })
             try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
+            MiniAppRegistry.reconcileContinuingSurfaces()
         } catch {
             preconditionFailure("Invalid Feature launch registration: \(error)")
         }

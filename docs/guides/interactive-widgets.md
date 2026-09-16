@@ -34,7 +34,7 @@ let definition = MiniAppDefinition(
 ) { context in MyRoot(context: context) }
 ```
 
-hostはDefinition.externalAccessを通常MiniAppManagementへ渡す。起動時prepareは保存済み管理状態と整合させ、新規登録だけを初期化する。未完了の復元等を見つけたら、そのownerを停止未完了として扱い、管理画面へ失敗理由を示す。ほかのownerは初期化を続ける。
+0.8.1のhostはDefinition.externalAccessを通常MiniAppManagementへ渡す。0.8.2開発中のhostは継続活動との合成を含む`effectiveExternalAccess`を渡す（継続活動がなければ同じadapter）。起動時prepareは保存済み管理状態と整合させ、新規登録だけを初期化する。未完了の復元等を見つけたら、そのownerを停止未完了として扱い、管理画面へ失敗理由を示す。ほかのownerは初期化を続ける。
 
 無効化/削除は外部受付を閉じ、既に受け付けた同期書込みの終了を待ってから所有処理の停止・予約・登録解除・必要なデータ削除へ進む。close失敗時は削除を始めず、成功と表示しない。削除はtombstoneを残し、seedや古い操作による復活を防ぐ。明示的な再登録では初期データと新しい世代になる。通常の無効化/再有効化では値を保持する。
 

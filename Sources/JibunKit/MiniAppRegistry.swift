@@ -5,6 +5,14 @@ import ReminderIntegration
 import Foundation
 import CoreSpotlight
 import WidgetKit
+import OSLog
+import Observation
+
+@MainActor @Observable
+final class ContinuingSurfaceStatus {
+    var errors: [MiniAppID: String] = [:]
+    var pending: Set<MiniAppID> = []
+}
 
 @MainActor
 enum MiniAppRegistry {
@@ -20,6 +28,35 @@ enum MiniAppRegistry {
     static let incomingStore = Result { try MiniAppIncomingStore.shared() }
     private(set) static var incomingCatalogError: String?
     static let management = makeManagement()
+    private static var continuingTasks: [MiniAppID: Task<Void, Never>] = [:]
+    static let continuingStatus = ContinuingSurfaceStatus()
+
+    /// App-scoped work: leaving a Feature screen must not cancel OS activities.
+    /// A cold launch or foreground transition rechecks daemon state. Per-owner
+    /// tasks avoid duplicate subscriptions and do not make A wait for B.
+    static func reconcileContinuingSurfaces(for owner: MiniAppID? = nil) {
+        for definition in all where !definition.continuingSurfaces.isEmpty
+            && (owner == nil || definition.id == owner) && management.isEnabled(definition.id) {
+            let id = definition.id
+            guard continuingTasks[id] == nil else { continue }
+            let group = definition.continuingSurfaceGroup
+            continuingStatus.pending.insert(id)
+            continuingTasks[id] = Task {
+                defer {
+                    continuingTasks[id] = nil
+                    continuingStatus.pending.remove(id)
+                }
+                do {
+                    try await group.reconcile()
+                    continuingStatus.errors[id] = nil
+                } catch {
+                    continuingStatus.errors[id] = error.localizedDescription
+                    Logger(subsystem: "com.jibunkit.app", category: "ContinuingSurfaces")
+                        .error("Reconciliation failed for \(id.rawValue, privacy: .public): \(error.localizedDescription)")
+                }
+            }
+        }
+    }
 
     // Keep closure isolation and defaults out of a nested static initializer.
     // These factories also leave one activity dispatcher per App/scene owner.
@@ -27,7 +64,7 @@ enum MiniAppRegistry {
         let registrations: [MiniAppManagement.Registration] = all.map { definition in
             MiniAppManagement.Registration(
                 id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
-                externalAccess: definition.externalAccess,
+                externalAccess: definition.effectiveExternalAccess,
                 unregister: {
                     #if DEBUG
                     let started = Date()
@@ -38,6 +75,8 @@ enum MiniAppRegistry {
                         let store = try incomingStore.get()
                         try await Task.detached { try store.setAdmission(destination, enabled: false) }.value
                     }
+                    try await definition.continuingSurfaceGroup.endOwned()
+                    continuingStatus.errors[definition.id] = nil
                     try await definition.onUnregister?()
                     #if DEBUG
                     print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) feature-hook-complete")
@@ -96,7 +135,9 @@ enum MiniAppRegistry {
     }
 
     static func makeLifecycleDispatcher() -> MiniAppLifecycleDispatcher {
-        var handlers: [@MainActor (MiniAppHostPhase) -> Void] = []
+        var handlers: [@MainActor (MiniAppHostPhase) -> Void] = [{ phase in
+            if phase == .active { reconcileContinuingSurfaces() }
+        }]
         for definition in all {
             guard let handler = definition.onHostPhaseChange else { continue }
             let gated: @MainActor (MiniAppHostPhase) -> Void = { phase in

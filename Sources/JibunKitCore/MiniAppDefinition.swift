@@ -17,6 +17,7 @@ public struct MiniAppDefinition: Identifiable {
     public let presentations: MiniAppPresentationOwner?
     public let removal: MiniAppRemovalProvider?
     public let externalAccess: MiniAppExternalAccess?
+    public let continuingSurfaces: [MiniAppContinuingSurface]
     public let permissions: [MiniAppPermissionDeclaration]
     /// Idempotent cleanup for owned registrations beyond host notifications/search.
     public let onUnregister: (@MainActor @Sendable () async throws -> Void)?
@@ -45,6 +46,7 @@ public struct MiniAppDefinition: Identifiable {
         presentations: MiniAppPresentationOwner? = nil,
         removal: MiniAppRemovalProvider? = nil,
         externalAccess: MiniAppExternalAccess? = nil,
+        continuingSurfaces: [MiniAppContinuingSurface] = [],
         permissions: [MiniAppPermissionDeclaration] = [],
         onUnregister: (@MainActor @Sendable () async throws -> Void)? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
@@ -79,6 +81,11 @@ public struct MiniAppDefinition: Identifiable {
         self.removal = removal
         precondition(externalAccess == nil || externalAccess?.id == id)
         self.externalAccess = externalAccess
+        precondition(continuingSurfaces.isEmpty || externalAccess != nil,
+                     "Continuing surfaces require durable external admission.")
+        precondition(continuingSurfaces.allSatisfy { $0.owner == id })
+        precondition(Set(continuingSurfaces.map(\.id)).count == continuingSurfaces.count)
+        self.continuingSurfaces = continuingSurfaces
         self.permissions = permissions
         self.onUnregister = onUnregister
         self.restoreLifecycle = restoreLifecycle
@@ -108,7 +115,16 @@ public struct MiniAppDefinition: Identifiable {
     @MainActor
     public var effectiveRestoreLifecycle: MiniAppRestoreLifecycle? {
         let inner = restoreLifecycle ?? lifetime?.restoreLifecycle
-        return externalAccess?.restoreLifecycle(inner) ?? inner
+        return effectiveExternalAccess?.restoreLifecycle(inner) ?? inner
+    }
+
+    public var continuingSurfaceGroup: MiniAppContinuingSurfaceGroup {
+        MiniAppContinuingSurfaceGroup(owner: id, surfaces: continuingSurfaces)
+    }
+
+    public var effectiveExternalAccess: MiniAppExternalAccess? {
+        guard let externalAccess, !continuingSurfaces.isEmpty else { return externalAccess }
+        return continuingSurfaceGroup.wrapping(externalAccess)
     }
 
     /// Integration appends its Feature's native navigation values to an empty

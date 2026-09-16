@@ -1,6 +1,6 @@
 # 操作Widget／ControlとFeatureの共有状態
 
-0.8.1候補向け（2026-09-16更新）。公開安定版0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。e984d44の一括実機でOS Widget/Control操作・設定保持・再起動/上書き/Refresh・管理/復元とB保持・通常復帰も確認済み。0.8.1の版変更後CI/公開は別gate。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
+0.8.1以降向け（2026-09-16更新）。0.8.0以前には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。e984d44の一括実機でOS Widget/Control操作・設定保持・再起動/上書き/Refresh・管理/復元とB保持・通常復帰も確認済み。0.8.1の版変更後CI/公開IPA取得も完了。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
 
 ## 標準APIと責任
 

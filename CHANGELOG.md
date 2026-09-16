@@ -4,9 +4,13 @@
 
 ## [Unreleased]
 
-- P2-W開発branchで、owner別process共有状態、通常管理/復元の外部受付フック、A/Bの設定可能Widget・操作Controlの接続例を追加。共有状態probe・通常回帰と新接続の独立/統合native build・metadata・管理UIは成功。確認用e984d44で実OS操作/設定保持、再起動/上書き/Refresh、管理/選択復元/B保持と通常復帰を実機確認済み。0.8.1/build11の出荷CIを実行中。公開0.8.0の提供範囲には含めない。
+次はP2-L（Live Activities/AlarmKit）。
 
-- 2026-09-15のユーザー承認でIssue #6推奨境界を1.0の正式範囲に採用。P0/P1維持、P2-A全体/P2-B通常範囲を必須、P2-Cを条件付き採用、P3一般化を後段とし、通常中断・復帰・所有者分離を必須として計画を更新。
+## [0.8.1] - 2026-09-16
+
+- owner別process共有状態、通常管理/復元のoptional外部受付、独立A/Bの設定可能Widget・操作Control接続例とガイドを追加。native/通常回帰とOS操作・設定保持・再起動/上書き/Refresh・管理/選択復元/B保持・通常復帰を実機確認。版変更後CI35038442208、通常IPA/ZIPの公開取得も成功。通常IPAへ診断A/Bは含めない。
+- Counter/Reminderの保存IDと通常Widget/Shortcutを維持。削除/復元後の古いWidget/Control操作は拒否し、対象の再選択で再開する。
+- Issue #6推奨境界を1.0の正式範囲として計画へ反映。P2-W以外の採用P2範囲は継続開発する。
 
 ## [0.8.0] - 2026-09-15
 

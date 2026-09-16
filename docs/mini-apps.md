@@ -1,6 +1,6 @@
 # ミニアプリの追加
 
-操作可能Widget/Controlを追加する場合は[標準型の登録・共有状態・管理/復元接続](guides/interactive-widgets.md)へ進む。0.8.1候補で検証済みの追加経路で、公開0.8.0の収録範囲とは区別する。
+操作可能Widget/Controlを追加する場合は[標準型の登録・共有状態・管理/復元接続](guides/interactive-widgets.md)へ進む。0.8.1以降の追加経路で、0.8.0以前には含まれない。
 
 JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。
 

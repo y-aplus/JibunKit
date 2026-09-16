@@ -1,8 +1,8 @@
 # 1.0の互換性とFeatureの責任境界
 
-更新日: 2026-09-16。公開版0.8.0/build10（直前の正式版0.7.0）とmainの区別は[現在状態](status.md)を参照。
+更新日: 2026-09-16。公開版0.8.1/build11（直前の正式版0.8.0）とmainの区別は[現在状態](status.md)を参照。
 0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。
-0.8.1/build11は出荷候補。操作Widget/Controlと共有状態の実機確認を完了し、版変更後CIを検証中（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。
+0.8.1/build11を公開済み。操作Widget/Controlと共有状態の実機確認、版変更後CIと公開物検査を完了（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。
 
 1.0に向けた実装・レビューで守る基準。現時点で1.0を公開済みという意味ではない。
 [Issue #5の版境界](implementation-priorities.md)に従い、P0完了を0.7.0、P0を維持したP1完了を0.8.0とする。
@@ -47,6 +47,6 @@ Featureはpayloadの形式・schema移行・整合性検証・保存処理を所
 
 公開API・保存形式を変更する作業では、旧版データの読込み、単独版とホスト版のビルド、他Featureとの独立性、該当するUI経路を確認する。出荷候補は同じsourceから作ったIPAで上書き・署名更新を確認する。Foundation/Simulatorの成功を署名環境の実績として代用しない。
 
-## 0.8.1候補の共有状態接続
+## 0.8.1の共有状態接続
 
 既存Featureの変更は不要で、Definition.externalAccessはoptional。Widget/Control等の別process writerがある場合だけ、owner別の共有状態と管理/復元の停止・再開へ接続する。既存DBや保存先をMiniAppSharedStateへ強制移行しない。削除/復元は保存世代を更新するため、古いWidget/Control設定は更新を拒否し、対象の再選択が必要になる。[接続手順](guides/interactive-widgets.md)。Counter/Reminderの保存IDと通常IPA構成は維持する。

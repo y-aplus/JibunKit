@@ -1,8 +1,8 @@
 # 基盤を更新する
 
-更新日: 2026-09-16。公開版0.8.0とmainの区別は[現在状態](status.md)を参照。
+更新日: 2026-09-16。公開版0.8.1とmainの区別は[現在状態](status.md)を参照。
 0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。
-0.8.1/build11は出荷候補。操作Widget/Controlと共有状態の実機確認を完了し、版変更後CIを検証中（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。
+0.8.1/build11を公開済み。操作Widget/Controlと共有状態の実機確認、版変更後CIと公開物検査を完了（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 
@@ -103,6 +103,6 @@ git merge upstream/main
 
 未公開ブランチの旧方式でドット入りIDを使った派生がある場合、更新前にバックアップし、該当Featureが所有するキーを明示して旧キーから新キーへ移す。旧方式では他Featureと同じキーになり得るため、基盤は所有者を推測した一括移行・削除をしない。旧通知はそのFeatureが予約したIDを明示して取り消し、新IDで再予約する。
 
-## 0.8.1候補の共有状態接続
+## 0.8.1の共有状態接続
 
 既存Featureの変更は不要で、Definition.externalAccessはoptional。Widget/Control等の別process writerがある場合だけ、owner別の共有状態と管理/復元の停止・再開へ接続する。既存DBや保存先をMiniAppSharedStateへ強制移行しない。削除/復元は保存世代を更新するため、古いWidget/Control設定は更新を拒否し、対象の再選択が必要になる。[接続手順](guides/interactive-widgets.md)。Counter/Reminderの保存IDと通常IPA構成は維持する。

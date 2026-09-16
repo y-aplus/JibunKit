@@ -1,6 +1,6 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-16。公開安定版は[0.8.0/build10](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)（直前の正式版0.7.0）。P0/P1全12単位の合意範囲を実装・接続・検証・文書まで確認済み。mainへの統合と公開IPA/ZIPの無認証再取得・完全一致/CRC検査も完了。[出荷記録](verification/2026-09-15-0.8-release.md)を参照する。
+更新日: 2026-09-16。公開安定版は[0.8.1/build11](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)（直前0.8.0）。P0/P1とP2-Wの実装・接続・CI・対象別実機を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.1出荷記録](verification/2026-09-16-0.8.1-release.md)。以下の0.8.0節は引き継いだP0/P1証拠。
 
 ## 0.8.0公開版
 
@@ -43,4 +43,4 @@ P2-WはCI35027469173（e984d44）で独立A/B/統合build、metadata10定義比�
 
 e984d44の診断IPAで一括実機確認が完了。Widget/Control各二候補・選択変更・背景からの加算、アプリ/端末再起動、同IPA上書き/SideStore Refresh、片側項目削除/無効化/全削除/再登録/選択JSON復元と古い設定拒否・B保持、通常IPA復帰が成功した。Control設定は編集状態で開く。実機の無効化はほぼ即時。本体表示も手動再読込みなしで更新されたが、一般的な即時更新保証とはしない。[操作記録](verification/2026-09-15-p2-widget-control-device.md)。
 
-今回のまとまりを0.8.1/build11へ進め、source88ab7cbの[CI35038442208](https://github.com/y-aplus/JibunKit/actions/runs/35038442208)で版更新後の通常IPAを検証中。候補の実行コードは実機確認版と同じで、製品差分は3bundle版のみ。P2-7の操作・検証は揃ったが、正式0.8.1公開とmain統合は未完。1.0の残るP2範囲は継続する。[出荷照合](verification/2026-09-16-0.8.1-release.md)・[接続ガイド](guides/interactive-widgets.md)。
+0.8.1/build11のsource88ab7cbはCI35038442208で成功。実行コードは実機確認版と同じで、製品差分は3bundle版のみ。main統合・0.8.1正式公開・IPA/ZIP無認証再取得/一致/CRCまで完了した。P2-7はcomplete。1.0全体は未完で、次はP2-LのLive Activities/AlarmKit。旧sourceのCI/実機を今回sourceへ無条件に読み替えない。[出荷照合](verification/2026-09-16-0.8.1-release.md)・[接続ガイド](guides/interactive-widgets.md)。

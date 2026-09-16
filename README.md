@@ -1,4 +1,4 @@
-> [0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)を公開済み。P0/P1全12単位の合意範囲をCI・対象別実機・文書・配布物の検査で確認しました。2026-09-15にIssue #6の推奨境界を1.0の正式範囲として採用しました。
+> [0.8.1](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)を公開済み。P0/P1に加え、操作Widget/Control・別process共有状態・管理/復元の接続をCIと一括実機で確認しました。1.0は未達です。
 
 # JibunKit
 
@@ -8,15 +8,15 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.8.0](https://github.com/y-aplus/JibunKit/releases/tag/0.8.0)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.0の変更と検証範囲](release-notes-0.8.0.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.8.1](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.1の変更と検証範囲](release-notes-0.8.1.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
-独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。現在の出荷検証は[0.8.0公開記録](docs/verification/2026-09-15-0.8-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
+独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。現在の出荷検証は[0.8.1公開記録](docs/verification/2026-09-16-0.8.1-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
-0.8.1/build11を出荷準備中です。操作Widget/Controlと共有状態の一括実機確認が完了し、版変更後のCIを待っています。[候補の範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。公開安定版は引き続き0.8.0です。
+0.8.1/build11は操作Widget/Controlと共有状態の実機確認、版変更後CI、公開IPA/ZIP再取得を完了しています。[出荷範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。通常IPAへ診断A/Bは含めません。
 
-## 公開版0.8.0とmain
+## 公開版0.8.1とmain
 
 通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
@@ -34,7 +34,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.8.0の出荷範囲、開発状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.8.1の出荷範囲、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |

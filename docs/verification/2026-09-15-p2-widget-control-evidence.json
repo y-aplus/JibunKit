@@ -642,7 +642,30 @@
         "structure": "single IPA; ZIP64 disabled; exact inner bytes and CRC passed"
       }
     },
-    "state": "verified; publication pending",
-    "source_difference": "e984d44 to88ab7cb product difference is only3 bundle versions and validator expectations; later source changes documentation only"
+    "state": "published; main integrated; both public assets downloaded without credentials and verified exact bytes/CRC",
+    "source_difference": "e984d44 to88ab7cb product difference is only3 bundle versions and validator expectations; later source changes documentation only",
+    "tag": "0.8.1",
+    "tag_commit": "889f079",
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/0.8.1",
+    "public_assets": [
+      {
+        "name": "JibunKit.ipa",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/0.8.1/JibunKit.ipa",
+        "http": 200,
+        "sha256": "6498605839402ae79c3dbc41395abd650e60d3b1c2d10a7303f20311ca88b987",
+        "size": 2351004,
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      },
+      {
+        "name": "JibunKit.zip",
+        "url": "https://github.com/y-aplus/JibunKit/releases/download/0.8.1/JibunKit.zip",
+        "http": 200,
+        "sha256": "304bf03a3e88b6fb00087b19a83fae3c2e5f2b7b7fbce935ee09ac0dc650ed03",
+        "size": 2324505,
+        "unauthenticated_exact_match": true,
+        "crc": "passed"
+      }
+    ]
   }
 }

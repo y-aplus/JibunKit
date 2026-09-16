@@ -33,6 +33,9 @@ public enum MiniAppCaptureFailure: Error, Sendable, Equatable {
     case staleGeneration
     case unsupported
     case unavailable(String)
+    case presentationEnded
+    case initialization(String)
+    case runtime(String)
     case native(String)
 }
 
@@ -47,6 +50,22 @@ public enum MiniAppCaptureState: Sendable, Equatable {
     case stopped
 }
 
+/// SDK notifications are converted to values before leaving the native
+/// producer's serial actor. `generation` rejects notifications from an older
+/// AVCaptureSession after a new operation starts.
+public enum MiniAppCaptureNativeEvent: Sendable, Equatable {
+    case interrupted(generation: UUID, reason: String?)
+    case interruptionEnded(generation: UUID)
+    case runtimeFailed(generation: UUID, reason: String, canRestart: Bool)
+
+    public var generation: UUID {
+        switch self {
+        case .interrupted(let generation, _), .interruptionEnded(let generation),
+             .runtimeFailed(let generation, _, _): generation
+        }
+    }
+}
+
 @MainActor
 public protocol MiniAppCapturePermissionClient: AnyObject {
     func request(_ resource: MiniAppCaptureResource) async -> Bool
@@ -59,19 +78,27 @@ public struct MiniAppCaptureOperation: Sendable {
     public typealias Stop = @MainActor @Sendable (MiniAppCaptureStopReason) async -> Void
     public typealias Start = @MainActor @Sendable () async throws -> Stop
     public typealias AcquireAudio = @MainActor @Sendable () async throws -> (@MainActor @Sendable () async -> Void)
+    public typealias Events = @MainActor @Sendable () async -> AsyncStream<MiniAppCaptureNativeEvent>
+    public typealias Restart = @MainActor @Sendable () async throws -> Void
 
     public let resources: Set<MiniAppCaptureResource>
     public let startNative: Start
     public let acquireAudio: AcquireAudio?
+    public let nativeEvents: Events?
+    public let restartNative: Restart?
 
     public init(
         resources: Set<MiniAppCaptureResource>,
         acquireAudio: AcquireAudio? = nil,
+        nativeEvents: Events? = nil,
+        restartNative: Restart? = nil,
         startNative: @escaping Start
     ) {
         precondition(resources.contains(.camera), "Capture operations require camera ownership.")
         self.resources = resources
         self.acquireAudio = acquireAudio
+        self.nativeEvents = nativeEvents
+        self.restartNative = restartNative
         self.startNative = startNative
     }
 }

@@ -25,6 +25,11 @@ public enum MiniAppAVCaptureMode: Sendable {
     case movie
 }
 
+public enum MiniAppMovieCompletion: Sendable, Equatable {
+    case succeeded(URL)
+    case failed(URL, String)
+}
+
 /// Owns its entire AVFoundation graph on one actor. No AVCapture object leaves
 /// the actor; photo results cross as Data and movie results as a Feature URL.
 public actor MiniAppAVCaptureSessionProducer {
@@ -35,6 +40,12 @@ public actor MiniAppAVCaptureSessionProducer {
     private var movieOutput: AVCaptureMovieFileOutput?
     private var photoDelegates: [Int64: PhotoDelegate] = [:]
     private var movieDelegate: MovieDelegate?
+    private var lastMovieCompletion: MiniAppMovieCompletion?
+    private var generation: UUID?
+    private var observers: [NSObjectProtocol] = []
+    private var eventContinuations: [UUID: AsyncStream<MiniAppCaptureNativeEvent>.Continuation] = [:]
+    private var pendingEvents: [MiniAppCaptureNativeEvent] = []
+    private var startupError = RuntimeErrorBox()
 
     public init(mode: MiniAppAVCaptureMode, includesAudio: Bool = false) {
         self.mode = mode
@@ -50,12 +61,20 @@ public actor MiniAppAVCaptureSessionProducer {
         session.automaticallyConfiguresApplicationAudioSession = !includesAudio
         try configure(session)
         self.session = session
+        startupError = RuntimeErrorBox()
+        let generation = UUID()
+        self.generation = generation
+        installObservers(for: session, generation: generation)
         session.startRunning()
         guard session.isRunning else {
+            removeObservers()
             self.session = nil
+            self.generation = nil
             photoOutput = nil
             movieOutput = nil
-            throw MiniAppCaptureFailure.native("capture session did not start")
+            throw MiniAppCaptureFailure.initialization(
+                startupError.read() ?? "capture session did not start"
+            )
         }
     }
 
@@ -99,19 +118,26 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func stop() async {
-        guard let session else { return }
-        if let output = movieOutput, output.isRecording {
+        guard let session else {
+            cancelPhotos(reason: "capture stopped")
+            return
+        }
+        removeObservers()
+        cancelPhotos(reason: "capture stopped")
+        if let output = movieOutput, let movieDelegate {
+            // Apple guarantees didFinish for every recording request, including
+            // a stop immediately after startRecording.
             output.stopRecording()
-            if let movieDelegate {
-                for await _ in movieDelegate.finished { break }
-            }
+            let result = await movieDelegate.completion()
+            lastMovieCompletion = result
         }
         session.stopRunning()
-        photoDelegates.removeAll()
         movieDelegate = nil
         photoOutput = nil
         movieOutput = nil
         self.session = nil
+        generation = nil
+        finishEventStreams()
     }
 
     public func capturePhoto() async throws -> Data {
@@ -120,11 +146,9 @@ public actor MiniAppAVCaptureSessionProducer {
             let settings = AVCapturePhotoSettings()
             let id = settings.uniqueID
             let delegate = PhotoDelegate { [weak self] data, failure in
-                Task {
-                    await self?.removePhotoDelegate(id)
-                    if let data { continuation.resume(returning: data) }
-                    else { continuation.resume(throwing: MiniAppCaptureFailure.native(failure ?? "photo failed")) }
-                }
+                if let data { continuation.resume(returning: data) }
+                else { continuation.resume(throwing: MiniAppCaptureFailure.native(failure ?? "photo failed")) }
+                Task { await self?.removePhotoDelegate(id) }
             }
             photoDelegates[id] = delegate
             output.capturePhoto(with: settings, delegate: delegate)
@@ -133,60 +157,208 @@ public actor MiniAppAVCaptureSessionProducer {
 
     public func startMovie(to url: URL) throws {
         guard let output = movieOutput, !output.isRecording else { throw MiniAppCaptureFailure.stopped }
-        let delegate = MovieDelegate()
+        lastMovieCompletion = nil
+        let delegate = MovieDelegate(url: url)
         movieDelegate = delegate
         output.startRecording(to: url, recordingDelegate: delegate)
+    }
+
+    public func movieCompletion() -> MiniAppMovieCompletion? { lastMovieCompletion }
+
+    public func events() -> AsyncStream<MiniAppCaptureNativeEvent> {
+        let id = UUID()
+        let pair = AsyncStream<MiniAppCaptureNativeEvent>.makeStream()
+        eventContinuations[id] = pair.continuation
+        pendingEvents.forEach { pair.continuation.yield($0) }
+        pendingEvents.removeAll()
+        pair.continuation.onTermination = { [weak self] _ in
+            Task { await self?.removeEventContinuation(id) }
+        }
+        return pair.stream
+    }
+
+    public func restartAfterInterruption() throws {
+        guard let session else { throw MiniAppCaptureFailure.stopped }
+        guard !session.isInterrupted else { throw MiniAppCaptureFailure.unavailable("capture remains interrupted") }
+        if !session.isRunning { session.startRunning() }
+        guard session.isRunning else { throw MiniAppCaptureFailure.native("capture session restart failed") }
+    }
+
+    private func installObservers(for session: AVCaptureSession, generation: UUID) {
+        let center = NotificationCenter.default
+        let startupError = self.startupError
+        observers = [
+            center.addObserver(forName: AVCaptureSession.wasInterruptedNotification, object: session,
+                               queue: nil) { [weak self] note in
+                let number = note.userInfo?[AVCaptureSessionInterruptionReasonKey] as? NSNumber
+                let reason = number.map { String($0.intValue) }
+                Task { await self?.emit(.interrupted(generation: generation, reason: reason)) }
+            },
+            center.addObserver(forName: AVCaptureSession.interruptionEndedNotification, object: session,
+                               queue: nil) { [weak self] _ in
+                Task { await self?.emit(.interruptionEnded(generation: generation)) }
+            },
+            center.addObserver(forName: AVCaptureSession.runtimeErrorNotification, object: session,
+                               queue: nil) { [weak self] note in
+                let error = note.userInfo?[AVCaptureSessionErrorKey] as? AVError
+                let reason = error.map { String(describing: $0) } ?? "unknown capture runtime error"
+                startupError.set(reason)
+                let canRestart = error?.code == .mediaServicesWereReset
+                Task { await self?.emit(.runtimeFailed(generation: generation, reason: reason,
+                                                       canRestart: canRestart)) }
+            },
+        ]
+    }
+
+    private func removeObservers() {
+        let center = NotificationCenter.default
+        for observer in observers { center.removeObserver(observer) }
+        observers.removeAll()
+    }
+
+    private func emit(_ event: MiniAppCaptureNativeEvent) {
+        guard generation == event.generation else { return }
+        if eventContinuations.isEmpty { pendingEvents.append(event); return }
+        for continuation in eventContinuations.values { continuation.yield(event) }
+    }
+
+    private func removeEventContinuation(_ id: UUID) { eventContinuations[id] = nil }
+    private func finishEventStreams() {
+        eventContinuations.values.forEach { $0.finish() }
+        eventContinuations.removeAll()
+        pendingEvents.removeAll()
+    }
+
+    private func cancelPhotos(reason: String) {
+        let delegates = photoDelegates.values
+        photoDelegates.removeAll()
+        delegates.forEach { $0.cancel(reason: reason) }
     }
 
     private func removePhotoDelegate(_ id: Int64) { photoDelegates[id] = nil }
 }
 
+/// Synchronous notification bridge containing only a lock-protected String;
+/// no AVFoundation object crosses the producer actor.
+private final class RuntimeErrorBox: @unchecked Sendable {
+    private let lock = NSLock()
+    private var reason: String?
+    func set(_ value: String) { lock.withLock { reason = value } }
+    func read() -> String? { lock.withLock { reason } }
+}
+
 private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
-    private let completion: @Sendable (Data?, String?) -> Void
+    private let lock = NSLock()
+    private var completion: (@Sendable (Data?, String?) -> Void)?
     init(completion: @escaping @Sendable (Data?, String?) -> Void) { self.completion = completion }
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        completion(photo.fileDataRepresentation(), error.map { String(describing: $0) })
+        finish(data: photo.fileDataRepresentation(), failure: error.map { String(describing: $0) })
+    }
+    func cancel(reason: String) { finish(data: nil, failure: reason) }
+    private func finish(data: Data?, failure: String?) {
+        let callback = lock.withLock { () -> (@Sendable (Data?, String?) -> Void)? in
+            defer { completion = nil }
+            return completion
+        }
+        callback?(data, failure)
     }
 }
 
 private final class MovieDelegate: NSObject, AVCaptureFileOutputRecordingDelegate {
-    let finished: AsyncStream<String?>
-    private let finishContinuation: AsyncStream<String?>.Continuation
-    override init() {
-        let pair = AsyncStream<String?>.makeStream()
-        finished = pair.stream
-        finishContinuation = pair.continuation
+    private let url: URL
+    private let finished: AsyncStream<MiniAppMovieCompletion>
+    private let finishContinuation: AsyncStream<MiniAppMovieCompletion>.Continuation
+    init(url: URL) {
+        self.url = url
+        let pair = AsyncStream<MiniAppMovieCompletion>.makeStream()
+        self.finished = pair.stream
+        self.finishContinuation = pair.continuation
         super.init()
+    }
+    func completion() async -> MiniAppMovieCompletion {
+        for await result in finished { return result }
+        return .failed(url, "recording ended without completion")
     }
     func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL,
                     from connections: [AVCaptureConnection]) {}
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL,
                     from connections: [AVCaptureConnection], error: Error?) {
-        finishContinuation.yield(error.map { String(describing: $0) })
+        let result: MiniAppMovieCompletion = if let error {
+            .failed(outputFileURL, String(describing: error))
+        } else {
+            .succeeded(outputFileURL)
+        }
+        finishContinuation.yield(result)
         finishContinuation.finish()
     }
 }
 
 @MainActor
 public final class MiniAppVisionCaptureAdapter: NSObject,
-    @preconcurrency VNDocumentCameraViewControllerDelegate, DataScannerViewControllerDelegate {
+    @preconcurrency VNDocumentCameraViewControllerDelegate, DataScannerViewControllerDelegate,
+    UIAdaptivePresentationControllerDelegate {
     public typealias Present = @MainActor @Sendable (UIViewController) async throws -> Void
-    public typealias Dismiss = @MainActor @Sendable () async -> Void
+    public typealias Dismiss = @MainActor @Sendable (UIViewController) async -> Void
+
+    @MainActor private final class Operation {
+        let generation = UUID()
+        let controller: UIViewController
+        let documentResult: (@MainActor @Sendable (Result<[Data], Error>) -> Void)?
+        let codeResult: (@MainActor @Sendable (String) -> Void)?
+        let failure: (@MainActor @Sendable (MiniAppCaptureFailure) -> Void)?
+        let ended: @MainActor @Sendable () async -> Void
+        var handle: MiniAppPresentationOwner.Handle?
+        var finishing = false
+        var endingFromOwner = false
+
+        init(controller: UIViewController,
+             documentResult: (@MainActor @Sendable (Result<[Data], Error>) -> Void)? = nil,
+             codeResult: (@MainActor @Sendable (String) -> Void)? = nil,
+             failure: (@MainActor @Sendable (MiniAppCaptureFailure) -> Void)? = nil,
+             ended: @escaping @MainActor @Sendable () async -> Void) {
+            self.controller = controller
+            self.documentResult = documentResult
+            self.codeResult = codeResult
+            self.failure = failure
+            self.ended = ended
+        }
+    }
 
     private let presentationOwner: MiniAppPresentationOwner
     private let present: Present
     private let dismiss: Dismiss
-    private var handle: MiniAppPresentationOwner.Handle?
-    private var controller: UIViewController?
-    private var documentResult: (@MainActor @Sendable (Result<[Data], Error>) -> Void)?
-    private var codeResult: (@MainActor @Sendable (String) -> Void)?
-    private var operationEnded: (@MainActor @Sendable () async -> Void)?
+    private let documentSupported: @MainActor @Sendable () -> Bool
+    private let makeDocumentController: @MainActor @Sendable () -> VNDocumentCameraViewController
+    private let dataScannerSupported: @MainActor @Sendable () -> Bool
+    private let dataScannerAvailable: @MainActor @Sendable () -> Bool
+    private let startDataScanner: @MainActor @Sendable (DataScannerViewController) throws -> Void
+    private var operation: Operation?
 
     public init(presentationOwner: MiniAppPresentationOwner,
-                present: @escaping Present, dismiss: @escaping Dismiss) {
+                present: @escaping Present, dismiss: @escaping Dismiss,
+                documentSupported: @escaping @MainActor @Sendable () -> Bool = {
+                    VNDocumentCameraViewController.isSupported
+                },
+                makeDocumentController: @escaping @MainActor @Sendable () -> VNDocumentCameraViewController = {
+                    VNDocumentCameraViewController()
+                },
+                dataScannerSupported: @escaping @MainActor @Sendable () -> Bool = {
+                    DataScannerViewController.isSupported
+                },
+                dataScannerAvailable: @escaping @MainActor @Sendable () -> Bool = {
+                    DataScannerViewController.isAvailable
+                },
+                startDataScanner: @escaping @MainActor @Sendable (DataScannerViewController) throws -> Void = {
+                    try $0.startScanning()
+                }) {
         self.presentationOwner = presentationOwner
         self.present = present
         self.dismiss = dismiss
+        self.documentSupported = documentSupported
+        self.makeDocumentController = makeDocumentController
+        self.dataScannerSupported = dataScannerSupported
+        self.dataScannerAvailable = dataScannerAvailable
+        self.startDataScanner = startDataScanner
     }
 
     public func documentOperation(
@@ -195,93 +367,147 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
     ) -> MiniAppCaptureOperation {
         MiniAppCaptureOperation(resources: [.camera]) { [weak self] in
             guard let self else { throw MiniAppCaptureFailure.stopped }
-            guard VNDocumentCameraViewController.isSupported else { throw MiniAppCaptureFailure.unsupported }
-            let controller = VNDocumentCameraViewController()
+            guard self.documentSupported() else { throw MiniAppCaptureFailure.unsupported }
+            let controller = self.makeDocumentController()
             controller.delegate = self
-            self.documentResult = result
-            self.operationEnded = ended
-            try await self.begin(controller)
-            return { [weak self] _ in await self?.end() }
+            let pending = Operation(controller: controller, documentResult: result, ended: ended)
+            try await self.begin(pending)
+            return { [weak self] _ in await self?.end(generation: pending.generation) }
         }
     }
 
     public func codeOperation(
         symbologies: [VNBarcodeSymbology] = [.qr],
         result: @escaping @MainActor @Sendable (String) -> Void,
+        failure: @escaping @MainActor @Sendable (MiniAppCaptureFailure) -> Void = { _ in },
         ended: @escaping @MainActor @Sendable () async -> Void
     ) -> MiniAppCaptureOperation {
         MiniAppCaptureOperation(resources: [.camera]) { [weak self] in
             guard let self else { throw MiniAppCaptureFailure.stopped }
-            guard DataScannerViewController.isSupported else { throw MiniAppCaptureFailure.unsupported }
-            guard DataScannerViewController.isAvailable else { throw MiniAppCaptureFailure.unavailable("data scanner") }
+            guard self.dataScannerSupported() else { throw MiniAppCaptureFailure.unsupported }
+            guard self.dataScannerAvailable() else { throw MiniAppCaptureFailure.unavailable("data scanner") }
             let controller = DataScannerViewController(
                 recognizedDataTypes: [.barcode(symbologies: symbologies)], qualityLevel: .balanced,
                 recognizesMultipleItems: false, isHighFrameRateTrackingEnabled: false,
                 isPinchToZoomEnabled: true, isGuidanceEnabled: true, isHighlightingEnabled: true
             )
             controller.delegate = self
-            self.codeResult = result
-            self.operationEnded = ended
-            try await self.begin(controller)
-            try controller.startScanning()
+            let pending = Operation(controller: controller, codeResult: result,
+                                    failure: failure, ended: ended)
+            try await self.begin(pending)
+            do { try self.startDataScanner(controller) }
+            catch {
+                await self.end(generation: pending.generation)
+                throw error
+            }
             return { [weak self] _ in
                 controller.stopScanning()
-                await self?.end()
+                await self?.end(generation: pending.generation)
             }
         }
     }
 
-    private func begin(_ controller: UIViewController) async throws {
-        let handle = try presentationOwner.begin(.uiViewController) { [weak self] in await self?.dismiss() }
-        self.handle = handle
-        self.controller = controller
-        do { try await present(controller) }
+    private func begin(_ pending: Operation) async throws {
+        guard operation == nil else { throw MiniAppCaptureFailure.unavailable("scanner already presented") }
+        let controller = pending.controller
+        let generation = pending.generation
+        let handle = try presentationOwner.begin(.uiViewController) { [weak self, weak controller] in
+            guard let self, let controller else { return }
+            await self.dismiss(controller)
+            await self.presentationDidEnd(controller: controller, generation: generation,
+                                          failure: .presentationEnded)
+        }
+        pending.handle = handle
+        operation = pending
+        controller.presentationController?.delegate = self
+        do {
+            try await present(controller)
+            controller.presentationController?.delegate = self
+        }
         catch {
             presentationOwner.didEnd(handle)
-            self.handle = nil
-            self.controller = nil
+            if operation === pending { operation = nil }
             throw error
         }
     }
 
-    private func end() async {
-        guard let handle else { return }
+    private func end(generation: UUID) async {
+        guard let pending = operation, pending.generation == generation else { return }
+        pending.finishing = true
+        pending.endingFromOwner = true
+        guard let handle = pending.handle else { operation = nil; return }
         await presentationOwner.end(handle)
         presentationOwner.didEnd(handle)
-        self.handle = nil
-        controller = nil
-        documentResult = nil
-        codeResult = nil
-        operationEnded = nil
+        if operation === pending { operation = nil }
+    }
+
+    private func finish(_ pending: Operation, action: () -> Void) {
+        guard operation === pending, !pending.finishing else { return }
+        pending.finishing = true
+        action()
+        let ended = pending.ended
+        Task { @MainActor in await ended() }
+    }
+
+    private func presentationDidEnd(controller: UIViewController, generation: UUID,
+                                    failure: MiniAppCaptureFailure) async {
+        guard let pending = operation, pending.generation == generation,
+              pending.controller === controller else { return }
+        if let handle = pending.handle { presentationOwner.didEnd(handle) }
+        if pending.endingFromOwner {
+            if operation === pending { operation = nil }
+            return
+        }
+        guard !pending.finishing else { return }
+        pending.finishing = true
+        pending.documentResult?(.failure(failure))
+        pending.failure?(failure)
+        operation = nil
+        await pending.ended()
     }
 
     public func documentCameraViewController(_ controller: VNDocumentCameraViewController,
                                              didFinishWith scan: VNDocumentCameraScan) {
-        let pages = (0..<scan.pageCount).compactMap { scan.imageOfPage(at: $0).jpegData(compressionQuality: 0.9) }
-        documentResult?(.success(pages))
-        Task { @MainActor [weak self] in await self?.operationEnded?() }
+        guard let pending = operation, pending.controller === controller else { return }
+        let pages = (0..<scan.pageCount).compactMap {
+            scan.imageOfPage(at: $0).jpegData(compressionQuality: 0.9)
+        }
+        finish(pending) { pending.documentResult?(.success(pages)) }
     }
 
     public func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-        documentResult?(.failure(CancellationError()))
-        Task { @MainActor [weak self] in await self?.operationEnded?() }
+        guard let pending = operation, pending.controller === controller else { return }
+        finish(pending) { pending.documentResult?(.failure(CancellationError())) }
     }
 
     public func documentCameraViewController(_ controller: VNDocumentCameraViewController,
                                              didFailWithError error: Error) {
-        documentResult?(.failure(error))
-        Task { @MainActor [weak self] in await self?.operationEnded?() }
+        guard let pending = operation, pending.controller === controller else { return }
+        finish(pending) { pending.documentResult?(.failure(error)) }
     }
 
     public func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
-        guard case .barcode(let barcode) = item, let payload = barcode.payloadStringValue else { return }
-        codeResult?(payload)
-        Task { @MainActor [weak self] in await self?.operationEnded?() }
+        guard let pending = operation, pending.controller === dataScanner,
+              case .barcode(let barcode) = item,
+              let payload = barcode.payloadStringValue else { return }
+        finish(pending) { pending.codeResult?(payload) }
     }
 
     public func dataScanner(_ dataScanner: DataScannerViewController,
                             becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
-        Task { @MainActor [weak self] in await self?.operationEnded?() }
+        guard let pending = operation, pending.controller === dataScanner else { return }
+        let failure = MiniAppCaptureFailure.unavailable(String(describing: error))
+        finish(pending) { pending.failure?(failure) }
+    }
+
+    public func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        guard let pending = operation,
+              presentationController.presentedViewController === pending.controller else { return }
+        Task { @MainActor [weak self] in
+            await self?.presentationDidEnd(controller: pending.controller,
+                                           generation: pending.generation,
+                                           failure: .presentationEnded)
+        }
     }
 }
 #endif

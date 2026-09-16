@@ -21,7 +21,7 @@ enum ContinuingProbe {
         make("alarm-feature-b", FeatureBAlarmIntegration.makeDefinition),
     ]
 
-    private static func make(_ owner: String, _ factory: () throws -> MiniAppDefinition) -> MiniAppDefinition {
+    private static func make(_ owner: String, _ factory: @MainActor @Sendable () throws -> MiniAppDefinition) -> MiniAppDefinition {
         do { return try factory() }
         catch {
             let reason = String(describing: error)

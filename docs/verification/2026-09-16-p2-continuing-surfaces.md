@@ -28,7 +28,7 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 | 共通Swift試験 | e6155ac / run35046154290で共通10件・Live10件・Alarm16件を含む全326件成功（既知Keychain skip2、失敗0） |
 | Native adapter / A/B fixture | 両review1を統合。Live親補修・Alarm review2統合済み。Swift/native検証結果はまだない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
-| CI / 実機 | 初回2runを70c2ca4で投入。通常版・native3jobとも同じCoreコンパイル3点で失敗。実機未実施 |
+| CI / 実機 | 通常版35046699862成功。native35046697413はAlarm成功、Liveテスト/host診断接続のactor指定を修正中。実機未実施 |
 
 共通Swift試験はjournal再構築・片側失敗/Bの保存bytes保持、破損/重複登録拒否、await中の直列化、close/drainと取消、OS解除失敗時のremoving維持と再試行、復元前解除/世代変更/自動再開始なし、停止失敗時の元データ保持、複数surfaceの一部失敗、close失敗時にも永続受付閉鎖、復元中の管理無効化をresumeが覆さないこと、復旧失敗時の閉鎖維持を扱う。fake成功はAlarmKit/ActivityKitの実動作の証拠にしない。
 
@@ -123,3 +123,17 @@ af484a1でSDKオブジェクトの転送を除去したため、追加2run（累
 artifactをローカルへ取得してIPA全entry CRCを再検査し、実際のInfo.plistから本体com.jibunkit.app・Widget・Shareの3IDと0.8.1/build11を確認した。IPAは2,874,006 bytes、SHA-256 `a72dbcce4f57959a41af7188cf4ecd3014032067dacff8c949b58b7183115de1`。実機確認後に版を進める運用に従い、現段階の診断比較用buildは既存版を維持する。これは0.8.2公開・実機完了を意味しない。
 
 35046697413のnative3jobは完了通知待ち。通常版成功を独立A/B/Combinedのmetadata、診断host UI、OS活動の実動作の代替にしない。実機へ案内する前に残るnative証拠と診断IPAを照合する。CI用branchは固定し、この記録はcodex/p2-live-evidence側へ保存する。
+
+## 3回目・native結果と切り分け
+
+[35046697413](https://github.com/y-aplus/JibunKit/actions/runs/35046697413)はb1d379b。Alarm job7分06秒で成功、Live9分25秒/host4分47秒で失敗。取得artifactのresult.jsonは全て同SHAで、Alarmだけpassed=trueと照合した。
+
+- Alarm: 独立A/B/CombinedのRelease app/Widget、app・Widget各2定義のmetadata比較とWidget→app対応、native XCTest2件が成功。OSで鳴る/止める操作は未確認。
+- Live: 独立A/B/Combined Release app/Widgetと各2定義metadata比較は成功。native XCTestのcompileで、MainActorテストから非isolated補助関数へclosureを送る箇所が拒否された。実行テスト0件であり4件成功とはしない。
+- 通常診断host: 実Feature factory参照のMainActor属性をContinuingProbe.makeの引数型が落としていた。4factory全て同じ1つの補助関数で失敗。診断IPA/UIは未到達。
+
+3回失敗時の切り分けとして、初回Core接続不良→2回目SDK転送→今回は診断/テストのactor型という異なる阻害工程を全ログで照合した。現在の製品Coreとnative adaptersは通常IPA、Live/Alarm全Release、Alarm nativeでcompile済み。Alarm nativeの@MainActorテストは同じDefinition factoryを直接呼んで成功しているため、factory内部ではなく型を落としたhost helperへ原因を限定できる。Liveの実production service/buildも成功し、未修飾テストhelperへ渡す時点だけで失敗する。新しい最小probeを別CIで作らず、これら既存の直接呼出し成功を比較対照として使う。
+
+host factory引数へ@MainActor @Sendableを保持し、Live async assertion helperとそのclosure引数を@MainActorへ揃えた。actor検査を無効化しない。これ以外のSources、package、Alarm fixtureに変更なし。
+
+追加は1run（累計7run）に削減し、`native-surface.yml surface=continuing-live-host ios_major=26 simulator_runtime=''`の独立2jobだけを実行する。新choiceは既存Live/host verifierと同じ入力・assertionを使い、Alarmを除外するだけ。Live20分/host23分、並列最長23分見込み。通常版/Alarmはb1d379bの成功を差分レビュー付きで再利用する。ローカル準備/証拠checker5件、Simulator選択3件、YAML parse、diff checkは成功。累計6runの実行済job時間は64分53秒。

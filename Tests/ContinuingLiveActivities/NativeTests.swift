@@ -55,7 +55,8 @@ final class ContinuingLiveActivityNativeTests: XCTestCase {
     }
 }
 
-private func XCTAssertThrowsErrorAsync<T>(_ expression: () async throws -> T,
+@MainActor
+private func XCTAssertThrowsErrorAsync<T>(_ expression: @MainActor () async throws -> T,
     file: StaticString = #filePath, line: UInt = #line) async {
     do { _ = try await expression(); XCTFail("Expected error", file: file, line: line) } catch {}
 }

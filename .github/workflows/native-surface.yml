@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair, interactive-widgets, continuing-surfaces]
+        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair, interactive-widgets, continuing-surfaces, continuing-live-host]
       ios_major:
         description: Target OS major for native comparison; 27 uses the preview Xcode image
         type: choice
@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         # One device-followup boundary; independent builds finish/report once.
-        surface: ${{ fromJSON(inputs.surface == 'continuing-surfaces' && '["continuing-live","continuing-alarm","continuing-host"]' || inputs.surface == 'interactive-widgets' && '["interactive-native","interactive-host"]' || inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || inputs.surface == 'incoming-repair' && '["incoming","incoming-os"]' || format('["{0}"]', inputs.surface)) }}
+        surface: ${{ fromJSON(inputs.surface == 'continuing-surfaces' && '["continuing-live","continuing-alarm","continuing-host"]' || inputs.surface == 'continuing-live-host' && '["continuing-live","continuing-host"]' || inputs.surface == 'interactive-widgets' && '["interactive-native","interactive-host"]' || inputs.surface == 'p1-input-repair' && '["incoming","intents"]' || inputs.surface == 'incoming-repair' && '["incoming","incoming-os"]' || format('["{0}"]', inputs.surface)) }}
     runs-on: ${{ inputs.ios_major == '27' && 'xcode-27' || 'macos-26' }}
     timeout-minutes: 30
     env:

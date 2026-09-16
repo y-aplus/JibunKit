@@ -1,6 +1,6 @@
 import XCTest
 @testable import JibunKit_App
-import JibunKitCore
+@_spi(Testing) import JibunKitCore
 import UIKit
 import VisionKit
 
@@ -126,62 +126,38 @@ final class MediaCaptureNativeTests: XCTestCase {
         await definition.lifetime?.stop()
     }
 
-    func testVisionAdapterRejectsOldControllerAndExternalDismissReleasesOnlyItsPresentation() {
-        // Keep XCTest's async error observer out of this SDK/delegate exercise.
-        // The same assertions run in an explicit main-actor task; errors remain failures.
-        let finished = expectation(description: "Vision ownership scenario finished")
-        Task { @MainActor in
-            do { try await self.exerciseVisionPresentationOwnership() }
-            catch { XCTFail("Vision ownership scenario: \(error)") }
-            finished.fulfill()
-        }
-        wait(for: [finished], timeout: 20)
-    }
-
-    private func exerciseVisionPresentationOwnership() async throws {
-        print("VISION-PHASE setup")
+    func testVisionAdapterRejectsOldControllerAndExternalDismissReleasesOnlyItsPresentation() async throws {
         let coordinator = MiniAppCaptureCoordinator()
         let ownerID = MiniAppID("vision-test")
         let owner = MiniAppCaptureOwner(id: ownerID, coordinator: coordinator,
                                         permissions: NativePermission(), consent: { _ in true })
         let runtime = MiniAppRuntime()
         let presentations = MiniAppPresentationOwner(id: ownerID)
-        print("VISION-PHASE runtime-connect")
         try presentations.connect(to: runtime)
         try owner.connect(to: runtime)
         activate(ownerID) { owner.receive($0) }
         let harness = PresentationHarness()
         let adapter = MiniAppVisionCaptureAdapter(
             presentationOwner: presentations,
-            present: { print("VISION-PHASE present-callback"); harness.presented = $0 },
+            present: { harness.presented = $0 },
             dismiss: { controller in
                 XCTAssertTrue(harness.presented === controller)
                 harness.dismissed.append(controller)
                 harness.presented = nil
-            },
-            documentSupported: { print("VISION-PHASE support SDK=\(VNDocumentCameraViewController.isSupported)"); return true },
-            makeDocumentController: {
-                print("VISION-PHASE controller-init-enter")
-                let controller = VNDocumentCameraViewController()
-                print("VISION-PHASE controller-init-return")
-                return controller
             }
         )
-        print("VISION-PHASE first-start")
         var firstResults = 0
-        try await owner.start(adapter.documentOperation(result: { _ in firstResults += 1 },
+        try await owner.start(adapter.documentOperationForTesting(controller: UIViewController(), result: { _ in firstResults += 1 },
                                                          ended: { await owner.stop() }))
-        let first = try XCTUnwrap(harness.presented as? VNDocumentCameraViewController)
-        print("VISION-PHASE first-cancel")
-        adapter.documentCameraViewControllerDidCancel(first)
+        let first = try XCTUnwrap(harness.presented)
+        adapter.cancelDocumentForTesting(first)
         await eventually { coordinator.currentCameraOwner == nil }
 
-        print("VISION-PHASE second-start")
         var secondResults = 0
-        try await owner.start(adapter.documentOperation(result: { _ in secondResults += 1 },
+        try await owner.start(adapter.documentOperationForTesting(controller: UIViewController(), result: { _ in secondResults += 1 },
                                                          ended: { await owner.stop() }))
-        let second = try XCTUnwrap(harness.presented as? VNDocumentCameraViewController)
-        adapter.documentCameraViewControllerDidCancel(first)
+        let second = try XCTUnwrap(harness.presented)
+        adapter.cancelDocumentForTesting(first)
         await Task.yield()
         XCTAssertEqual(firstResults, 1)
         XCTAssertEqual(secondResults, 0)
@@ -192,7 +168,6 @@ final class MediaCaptureNativeTests: XCTestCase {
         try otherOwner.connect(to: otherRuntime)
         var otherDismissed = false
         _ = try otherOwner.begin(.uiViewController) { otherDismissed = true }
-        print("VISION-PHASE external-dismiss")
         let presentation = UIPresentationController(presentedViewController: second, presenting: nil)
         adapter.presentationControllerDidDismiss(presentation)
         await eventually { coordinator.currentCameraOwner == nil }
@@ -200,18 +175,39 @@ final class MediaCaptureNativeTests: XCTestCase {
         XCTAssertFalse(otherDismissed)
         XCTAssertEqual(harness.dismissed.count, 1)
 
-        print("VISION-PHASE navigation-start")
-        try await owner.start(adapter.documentOperation(result: { _ in },
+        try await owner.start(adapter.documentOperationForTesting(controller: UIViewController(), result: { _ in },
                                                          ended: { await owner.stop() }))
         let third = try XCTUnwrap(harness.presented)
-        print("VISION-PHASE navigation-dismiss")
         await presentations.dismissForNavigation()
         await eventually { coordinator.currentCameraOwner == nil }
         XCTAssertTrue(harness.dismissed.last === third)
         XCTAssertFalse(otherDismissed)
         await runtime.shutdown()
         await otherRuntime.shutdown()
-        print("VISION-PHASE completed")
+    }
+
+    func testUnsupportedDocumentScanRejectsBeforeConstructingSDKController() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let id = MiniAppID("unsupported-document")
+        let owner = MiniAppCaptureOwner(id: id, coordinator: coordinator,
+            permissions: NativePermission(), consent: { _ in true })
+        let runtime = MiniAppRuntime()
+        let presentations = MiniAppPresentationOwner(id: id)
+        try presentations.connect(to: runtime); try owner.connect(to: runtime)
+        activate(id) { owner.receive($0) }
+        let adapter = MiniAppVisionCaptureAdapter(presentationOwner: presentations,
+            present: { _ in XCTFail("Unsupported camera must not be presented") }, dismiss: { _ in },
+            documentSupported: { false }, makeDocumentController: {
+                XCTFail("Unsupported SDK controller must never be constructed")
+                fatalError("Unsupported SDK construction")
+            })
+        await XCTAssertThrowsErrorAsync(try await owner.start(adapter.documentOperation(
+            result: { _ in XCTFail("Unsupported camera must not deliver results") }, ended: {}))) {
+            XCTAssertEqual($0 as? MiniAppCaptureFailure, .unsupported)
+        }
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(presentations.activePresentationCount, 0)
+        await runtime.shutdown()
     }
 
     func testDataScannerStartFailureDismissesAndReleasesReservation() async throws {

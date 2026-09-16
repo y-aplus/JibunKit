@@ -410,11 +410,39 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         result: @escaping @MainActor @Sendable (Result<[Data], Error>) -> Void,
         ended: @escaping @MainActor @Sendable () async -> Void
     ) -> MiniAppCaptureOperation {
-        MiniAppCaptureOperation(resources: [.camera]) { [weak self] in
+        makeDocumentOperation(makeController: { [weak self] in
             guard let self else { throw MiniAppCaptureFailure.stopped }
             guard self.documentSupported() else { throw MiniAppCaptureFailure.unsupported }
             let controller = self.makeDocumentController()
             controller.delegate = self
+            return controller
+        }, result: result, ended: ended)
+    }
+
+    /// Exercises the real presentation/delegate lifetime without constructing a
+    /// hardware-only VisionKit camera on an unsupported Simulator.
+    @_spi(Testing)
+    public func documentOperationForTesting(
+        controller: UIViewController,
+        result: @escaping @MainActor @Sendable (Result<[Data], Error>) -> Void,
+        ended: @escaping @MainActor @Sendable () async -> Void
+    ) -> MiniAppCaptureOperation {
+        makeDocumentOperation(makeController: { controller }, result: result, ended: ended)
+    }
+
+    @_spi(Testing)
+    public func cancelDocumentForTesting(_ controller: UIViewController) {
+        cancelDocument(controller)
+    }
+
+    private func makeDocumentOperation(
+        makeController: @escaping @MainActor @Sendable () throws -> UIViewController,
+        result: @escaping @MainActor @Sendable (Result<[Data], Error>) -> Void,
+        ended: @escaping @MainActor @Sendable () async -> Void
+    ) -> MiniAppCaptureOperation {
+        MiniAppCaptureOperation(resources: [.camera]) { [weak self] in
+            guard let self else { throw MiniAppCaptureFailure.stopped }
+            let controller = try makeController()
             let pending = Operation(controller: controller, documentResult: result, ended: ended)
             try await self.begin(pending)
             return { [weak self] _ in await self?.end(generation: pending.generation) }
@@ -521,6 +549,10 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
     }
 
     public func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+        cancelDocument(controller)
+    }
+
+    private func cancelDocument(_ controller: UIViewController) {
         guard let pending = operation, pending.controller === controller else { return }
         finish(pending) { pending.documentResult?(.failure(CancellationError())) }
     }

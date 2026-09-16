@@ -83,3 +83,5 @@ operationの型は契約どおり`(@MainActor @Sendable () async throws -> (@Mai
 Apple一次資料: [AVCaptureSession](https://developer.apple.com/documentation/avfoundation/avcapturesession)、[startRunning](https://developer.apple.com/documentation/avfoundation/avcapturesession/startrunning())、[runtimeErrorNotification](https://developer.apple.com/documentation/avfoundation/avcapturesession/runtimeerrornotification)、[AVCaptureFileOutputRecordingDelegate](https://developer.apple.com/documentation/avfoundation/avcapturefileoutputrecordingdelegate)。
 
 外部の音声解放通知などを非同期配送する場合は、取得時の`operationGeneration`を保持し、`suspend(_:ifGeneration:)`へ渡す。旧操作の解放通知が新しい撮影を停止することを防ぐ。写真成功はfinal callbackで確定するが、停止時は未完了要求を取消し、遅着するcallbackを無視する。
+
+文書scanの所有・取消・外部dismiss回帰は、非対応Simulatorに実`VNDocumentCameraViewController`を強制作成しない。Testing SPIから通常の`UIViewController`を注入し、本番と共有するoperation/presentation/cancel経路を検査する。公開`documentOperation`はSDK対応判定→実controller作成→delegate登録を行い、対応判定falseでは作成/提示前に`.unsupported`を返すことを別試験で確認する。このSPI試験はVisionKit画面の成功や実scan結果の証拠ではなく、それらは対応実機に残る。

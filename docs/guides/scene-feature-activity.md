@@ -27,3 +27,7 @@ MiniAppDefinition(
 単一processのOS実行時間は増えない。強制終了前のcallbackや、OS上の複数window生成・破棄の検証完了も保証しない。現時点のhost接続終了はrootの`onDisappear`に結び付く。OS scene sessionの永続化やFeature実行instanceの明示生成/終了、任意のView内状態保持は別の補完単位である。
 
 根拠: [Apple ScenePhase](https://developer.apple.com/documentation/swiftui/scenephase)はView内のphaseとApp内の集約phaseを区別する。本APIはそれへFeature選択の情報を追加する。[検証記録](../verification/2026-09-10-scene-feature-activity.md)。
+
+## 全画面提示と接続の寿命（開発branch）
+
+自Featureの全画面UIが背後のhostを隠しても、選択中sceneの接続は維持する。`onDisappear`や一時的な`view.window == nil`をscene切断へ変換しない。`MiniAppSceneConnection`が対象UIWindowSceneの切断とroot破棄を処理する。background/inactiveや実際のFeature切替の通知は従来どおりで、camera停止条件を緩める変更ではない。[実機不具合と修正検証](../verification/2026-09-16-p2-media.md)参照。

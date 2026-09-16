@@ -596,5 +596,27 @@
       }
     ]
   },
-  "next_action": "User physical checkpoint (docs/verification/2026-09-16-p2-media-device.md), starting with Audio Player background/lock-screen controls. No active CI. No version bump/main merge yet."
+  "next_action": "Repair document start/host scene coverage; validate shared/normal and full media native regression plus diagnostic IPA in one new CI. Then ask only remaining focused device checks. No version bump/main merge.",
+  "physical_observations": {
+    "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+    "record": "docs/verification/2026-09-16-p2-media-device.md",
+    "passed": [
+      "playback-background-remote",
+      "Siri-explicit-replay-stop",
+      "record-playback-release",
+      "photo",
+      "video-background-stop-saved-audio"
+    ],
+    "failed": [
+      "document start: unavailable(no active selected scene) / stopped"
+    ],
+    "unresolved": [
+      "first photo error uncertain",
+      "headphone route",
+      "document success/cancel",
+      "QR",
+      "normal IPA return"
+    ],
+    "repair": "Host scene registration must survive full-screen coverage; new UIKit regression and normal/media CI pending. Prior success does not verify repaired source."
+  }
 }

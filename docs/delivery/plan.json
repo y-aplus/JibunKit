@@ -403,8 +403,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "音声・Now Playing",
-      "existing": "開発branch306874f: AudioSession互換/競合/停止/復旧・Now Playing ownerと実Feature接続。CI35090872646でcore14件、音声native13件とbridge2件、通常/診断IPA成功。未公開。",
-      "remaining": "実機の実録音/再生・背景・OS中断/経路変更・Now Playing配送の代表確認、結果と制限の記録。",
+      "existing": "開発branch306874f: AudioSession互換/競合/停止/復旧・Now Playing ownerと実Feature接続。CI35090872646でcore14件、音声native13件とbridge2件、通常/診断IPA成功。未公開。 306874f実機で再生/背景/lock操作、Siri後明示再開、実録音/再生を確認。",
+      "remaining": "代表経路変更、残項目後の通常IPA復帰。既存成功をsource別に保持し、未観測の同時音声付き撮影を実機成功と記載しない。",
       "deferred": "特殊多経路/機器・任意engineの一般共存",
       "criteria": [
         {
@@ -449,8 +449,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "撮影・スキャン",
-      "existing": "開発branch306874f: camera予約/世代/取消と既存lifetime/scene/presentation/同意接続、音声付き撮影hook。CI35090872646でcore19件、capture native11件とbridge2件、診断IPA成功。文書所有試験はUIKit注入で実scanではない。未公開。",
-      "remaining": "対応実機でcamera/音声付き動画・中断後の成果、文書scan成功/取消、QRの通常操作を確認。実SDK対応条件と制限の記録。",
+      "existing": "開発branch306874f: camera予約/世代/取消と既存lifetime/scene/presentation/同意接続、音声付き撮影hook。CI35090872646でcore19件、capture native11件とbridge2件、診断IPA成功。文書所有試験はUIKit注入で実scanではない。未公開。 306874f実機で写真と背景移動後に停止した音声動画を確認。",
+      "remaining": "文書scan開始がno active selected scene/stoppedで失敗。全画面提示時のhost接続寿命と提示anchorを修正し、native回帰・修正IPAで再検証する。文書成功/取消、QR、通常版復帰は未確認。写真初回の不明エラーは原因未確定。",
       "deferred": "高度同時capture・AR world state",
       "criteria": [
         {

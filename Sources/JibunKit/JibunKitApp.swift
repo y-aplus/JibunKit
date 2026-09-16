@@ -52,24 +52,23 @@ private struct MiniAppSceneRoot: View {
                     navigation.open(route)
                 }
             }
-            .onAppear {
+            .background(MiniAppSceneConnection(connect: {
                 activity.connect(phase: activityPhase, selectedID: navigation.activeID)
                 guard registration == nil else { return }
                 registration = AppSceneRouting.shared.register(isActive: scenePhase == .active) { [weak navigation] route in
                     navigation?.openNotificationRoute(route)
                 }
-            }
+            }, disconnect: {
+                activity.disconnect()
+                if let registration { AppSceneRouting.shared.unregister(registration) }
+                registration = nil
+            }))
             .onChange(of: scenePhase) { _, phase in
                 activity.update(phase: activityPhase, selectedID: navigation.activeID)
                 if let registration { AppSceneRouting.shared.update(registration, isActive: phase == .active) }
             }
             .onChange(of: navigation.activeID) { _, selectedID in
                 activity.update(phase: activityPhase, selectedID: selectedID)
-            }
-            .onDisappear {
-                activity.disconnect()
-                if let registration { AppSceneRouting.shared.unregister(registration) }
-                registration = nil
             }
     }
 }

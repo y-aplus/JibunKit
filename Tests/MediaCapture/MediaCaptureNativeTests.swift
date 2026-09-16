@@ -3,9 +3,99 @@ import XCTest
 @_spi(Testing) import JibunKitCore
 import UIKit
 import VisionKit
+import SwiftUI
 
 @MainActor
 final class MediaCaptureNativeTests: XCTestCase {
+    func testFullScreenScannerKeepsMountedSceneSelectedAndCanPresentAgain() async throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let originalKeyWindow = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let ownerID = MiniAppID("fullscreen-scanner")
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: ownerID, coordinator: coordinator,
+                                        permissions: NativePermission(), consent: { _ in true })
+        let runtime = MiniAppRuntime()
+        let presentations = MiniAppPresentationOwner(id: ownerID)
+        try presentations.connect(to: runtime)
+        try owner.connect(to: runtime)
+        let anchor = MediaCapturePresentationAnchor()
+        let events = NativeEvents()
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [.init(id: ownerID) {
+            events.values.append($0.isConnected ? "connected" : "disconnected")
+            owner.receive($0)
+        }])
+        let mounted = expectation(description: "scene mounted")
+        let root = Color.clear
+            .background(MediaCapturePresentationAnchorView(anchor: anchor))
+            .background(MiniAppSceneConnection(connect: {
+                dispatcher.connect(phase: .active, selectedID: ownerID)
+                mounted.fulfill()
+            }, disconnect: { dispatcher.disconnect() }))
+            .onDisappear { events.values.append("hidden") }
+        let hosting = UIHostingController(rootView: root)
+        window.rootViewController = hosting
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            originalKeyWindow?.makeKey()
+        }
+        await fulfillment(of: [mounted], timeout: 5)
+        XCTAssertNotNil(anchor.controller)
+        let adapter = MiniAppVisionCaptureAdapter(presentationOwner: presentations,
+            present: { try await anchor.present($0) }, dismiss: { await anchor.dismiss($0) })
+
+        // The actual UIKit fullScreen transition hides/removes the host's view.
+        // onDisappear must not revoke the scanner's selected scene or reservation.
+        for _ in 0..<2 {
+            let controller = UIViewController()
+            controller.modalPresentationStyle = .fullScreen
+            try await owner.start(adapter.documentOperationForTesting(controller: controller,
+                result: { _ in }, ended: { await owner.stop() }))
+            XCTAssertEqual(owner.state, .running([.camera]))
+            XCTAssertEqual(coordinator.currentCameraOwner, ownerID)
+            XCTAssertTrue(hosting.presentedViewController === controller)
+            XCTAssertNotNil(anchor.controller)
+            await owner.stop()
+            XCTAssertNil(hosting.presentedViewController)
+            XCTAssertNil(coordinator.currentCameraOwner)
+        }
+        XCTAssertTrue(events.values.contains("hidden"), "Must actually exercise the old onDisappear boundary")
+        XCTAssertFalse(events.values.contains("disconnected"))
+        await runtime.shutdown()
+    }
+
+    func testSceneConnectionIgnoresCoverageButDisconnectsAndReactivatesOnlyItsScene() throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let notifications = NotificationCenter()
+        let events = NativeEvents()
+        let connection = MiniAppSceneConnection.ConnectionView(
+            connect: { events.values.append("connect") },
+            disconnect: { events.values.append("disconnect") }, notifications: notifications)
+        let root = UIViewController()
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = root
+        window.isHidden = false
+        defer { connection.detach(); window.isHidden = true; window.rootViewController = nil }
+        root.view.addSubview(connection)
+        XCTAssertEqual(events.values, ["connect"])
+        connection.removeFromSuperview()
+        XCTAssertEqual(events.values, ["connect"], "Temporary fullScreen coverage is not disconnection")
+        notifications.post(name: UIScene.didDisconnectNotification, object: NSObject())
+        XCTAssertEqual(events.values, ["connect"], "Another scene must not stop this owner")
+        notifications.post(name: UIScene.didDisconnectNotification, object: scene)
+        notifications.post(name: UIScene.didDisconnectNotification, object: scene)
+        XCTAssertEqual(events.values, ["connect", "disconnect"])
+        notifications.post(name: UIScene.didActivateNotification, object: scene)
+        XCTAssertEqual(events.values, ["connect", "disconnect", "connect"])
+        root.view.addSubview(connection)
+        XCTAssertEqual(events.values.count, 3)
+        MiniAppSceneConnection.dismantleUIView(connection, coordinator: ())
+        notifications.post(name: UIScene.didActivateNotification, object: scene)
+        XCTAssertEqual(events.values, ["connect", "disconnect", "connect", "disconnect"])
+    }
+
     func testProbePublishesTwoRealFeatureDefinitions() {
         let definitions = MediaCaptureProbe.definitions
         XCTAssertEqual(definitions.map(\.id), [MiniAppID("media-photo"), MiniAppID("media-scanner")])

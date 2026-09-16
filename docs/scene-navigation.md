@@ -4,7 +4,7 @@
 
 `JibunKitApp`のWindowGroup内にある`MiniAppSceneRoot`が、自分の`AppNavigation`を`@State`で保持する。App単位のsingleton NavigationPathを廃止した。各rootの検索・backup sheetも既存のview状態としてそのsceneに属する。sceneに届いた`onOpenURL`は、そのsceneのnavigationへ直接渡す。
 
-process単位の通知には対象sceneが直接渡されないため、`AppSceneRouting.shared`が`MiniAppSceneRouter`で配送先を選ぶ。これは経路そのものを共有するオブジェクトではない。各rootは表示時に登録し、sceneのactive変化を更新し、非表示時に登録解除する。handlerはnavigationを弱参照し、登録が画面の寿命を延ばさない。
+process単位の通知には対象sceneが直接渡されないため、`AppSceneRouting.shared`が`MiniAppSceneRouter`で配送先を選ぶ。これは経路そのものを共有するオブジェクトではない。各rootはwindowへの接続時に登録し、sceneのactive変化を更新する。全画面提示で背後のrootが非表示になっても登録を維持する。登録解除は実際のUIScene切断またはrootの破棄で行い、同じsceneの再接続では再登録する（開発branchの修正。下記実機不具合の再検証待ち）。handlerはnavigationを弱参照し、登録が画面の寿命を延ばさない。
 
 配送規則は次のとおり。
 
@@ -45,3 +45,7 @@ P0-Bでは[Feature所有の提示](guides/feature-owned-presentations.md)を追�
 [34440305199](https://github.com/y-aplus/JibunKit/actions/runs/34440305199)（source `26a5d45`）は共有テストのコンパイルで失敗。CoreだけをimportするテストがCounterFeatureで定義されるMiniAppID.counterを参照していた。Coreテストは専用の明示IDへ変更し、同じ参照を持つiOS確認画面もMiniAppID("counter")へ変更した。CoreにCounterFeatureの依存は追加しない。このrunではscene routerの実行試験・iOS build/UIへ到達しておらず、当時は変更全体が検証待ちだった。次のrunで解消している。
 
 34440565104（source `6a4d2fd`）で修正後のCIが成功。scene routerのcold start・選択/解除・再入の3unitも成功した。実window操作の証拠へ読み替えない。
+
+### P2-Cで見つかった全画面提示時の切断
+
+306874fの文書scan実機で`unavailable("no active selected scene")`と`stopped`を観測した。旧hostは`onDisappear`からsceneを切断していた。Appleの[全画面提示の説明](https://developer.apple.com/library/archive/featuredarticles/ViewControllerPGforiPhoneOS/PresentingaViewController.html)では、fullScreen提示は背後のviewを一時的に階層から外す。これは[UISceneの切断](https://developer.apple.com/documentation/uikit/uiscenedelegate/scenediddisconnect(_:))とは別である。開発branchはこの境界を分離し、実UIKit全画面提示と再提示、同一sceneの切断/再接続と他scene通知の無視をnative回帰へ追加した。実機事象の解消はCIおよび修正IPAでの確認待ち。

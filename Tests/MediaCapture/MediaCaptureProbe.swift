@@ -394,13 +394,17 @@ final class MediaCapturePresentationAnchor {
     }
 }
 
-private struct MediaCapturePresentationAnchorView: UIViewControllerRepresentable {
+struct MediaCapturePresentationAnchorView: UIViewControllerRepresentable {
     let anchor: MediaCapturePresentationAnchor
     func makeUIViewController(context: Context) -> AnchorController {
         AnchorController(anchor: anchor)
     }
     func updateUIViewController(_ controller: AnchorController, context: Context) {
         anchor.controller = controller
+    }
+
+    static func dismantleUIViewController(_ controller: AnchorController, coordinator: ()) {
+        if controller.anchor.controller === controller { controller.anchor.controller = nil }
     }
 
     final class AnchorController: UIViewController {
@@ -410,10 +414,6 @@ private struct MediaCapturePresentationAnchorView: UIViewControllerRepresentable
         override func viewDidAppear(_ animated: Bool) {
             super.viewDidAppear(animated)
             anchor.controller = self
-        }
-        override func viewDidDisappear(_ animated: Bool) {
-            super.viewDidDisappear(animated)
-            if anchor.controller === self { anchor.controller = nil }
         }
     }
 }

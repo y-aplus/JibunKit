@@ -15,7 +15,7 @@ import tempfile
 import time
 
 
-def require_test_passes(log, sources):
+def require_test_passes(report, summary, sources):
     expected = []
     for source in sources:
         classes = re.findall(r"\bclass\s+(\w+)\s*:\s*XCTestCase", source)
@@ -25,12 +25,25 @@ def require_test_passes(log, sources):
         expected.extend((classes[0], method) for method in methods)
     if not expected or len(expected) != len(set(expected)):
         raise ValueError("Missing or duplicate media tests")
+    cases = []
+    def visit(nodes):
+        for node in nodes:
+            if node.get("nodeType") == "Test Case":
+                identity = node.get("nodeIdentifier", "").split("/")
+                if len(identity) < 2:
+                    raise ValueError("Test case has no class/method identifier")
+                cases.append((identity[-2], identity[-1].removesuffix("()"), node.get("result")))
+            else:
+                visit(node.get("children", []))
+    visit(report.get("testNodes", []))
     for name, method in expected:
-        pattern = rf"Test Case '-\[(?:\w+\.)?{re.escape(name)} {re.escape(method)}\]' passed"
-        if len(re.findall(pattern, log)) != 1:
-            raise ValueError(f"Expected one actual passing test: {name}.{method}")
-    if "** TEST SUCCEEDED **" not in log:
-        raise ValueError("Native media tests did not finish successfully")
+        actual = [status for cls, test, status in cases if (cls, test) == (name, method)]
+        if actual != ["Passed"]:
+            raise ValueError(f"Expected one actual passing test: {name}.{method}: {actual}")
+    if (summary.get("result") != "Passed" or summary.get("failedTests") != 0
+            or summary.get("skippedTests") != 0 or summary.get("passedTests") != len(expected)
+            or len(cases) != len(expected)):
+        raise ValueError("Native media summary contains failure, skip, missing or unexpected tests")
     return [f"{name}.{method}" for name, method in expected]
 
 
@@ -93,12 +106,27 @@ def main():
             run(["tuist", "generate", "--no-open"], root, "generate")
             derived = root / "Build"
             common = ["-workspace", "JibunKit.xcworkspace", "-derivedDataPath", derived]
-            log = run(["xcodebuild", "test", *common, "-scheme", "MediaNativeTests",
+            try:
+                run(["xcodebuild", "test", *common, "-scheme", "MediaNativeTests",
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                        "-resultBundlePath", evidence / "native-tests.xcresult",
                        "-only-testing:MediaNativeTests", "-parallel-testing-enabled", "NO",
                        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "native-tests")
-            result["tests"] = require_test_passes(log, [
+            finally:
+                # Console output can be interleaved with AVFoundation diagnostics.
+                # Export structured results even on failure; retain the original error.
+                for section in ["tests", "summary"]:
+                    try:
+                        output = run(["xcrun", "xcresulttool", "get", "test-results", section,
+                                      "--path", evidence / "native-tests.xcresult"], root,
+                                     f"test-{section}", limit=60)
+                        (evidence / f"test-{section}.json").write_text(output, encoding="utf-8")
+                    except Exception as export_error:
+                        result[f"{section}_export_error"] = str(export_error)
+            result["tests"] = require_test_passes(
+                json.loads((evidence / "test-tests.json").read_text(encoding="utf-8")),
+                json.loads((evidence / "test-summary.json").read_text(encoding="utf-8")), [
+
                 (root / f"Tests/{family}/{family}NativeTests.swift").read_text(encoding="utf-8")
                 for family in ["MediaAudio", "MediaCapture", "MediaIntegration"]])
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",

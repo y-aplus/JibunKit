@@ -126,7 +126,20 @@ final class MediaCaptureNativeTests: XCTestCase {
         await definition.lifetime?.stop()
     }
 
-    func testVisionAdapterRejectsOldControllerAndExternalDismissReleasesOnlyItsPresentation() async throws {
+    func testVisionAdapterRejectsOldControllerAndExternalDismissReleasesOnlyItsPresentation() {
+        // Keep XCTest's async error observer out of this SDK/delegate exercise.
+        // The same assertions run in an explicit main-actor task; errors remain failures.
+        let finished = expectation(description: "Vision ownership scenario finished")
+        Task { @MainActor in
+            do { try await self.exerciseVisionPresentationOwnership() }
+            catch { XCTFail("Vision ownership scenario: \(error)") }
+            finished.fulfill()
+        }
+        wait(for: [finished], timeout: 20)
+    }
+
+    private func exerciseVisionPresentationOwnership() async throws {
+        print("VISION-PHASE setup")
         let coordinator = MiniAppCaptureCoordinator()
         let ownerID = MiniAppID("vision-test")
         let owner = MiniAppCaptureOwner(id: ownerID, coordinator: coordinator,
@@ -152,9 +165,11 @@ final class MediaCaptureNativeTests: XCTestCase {
         try await owner.start(adapter.documentOperation(result: { _ in firstResults += 1 },
                                                          ended: { await owner.stop() }))
         let first = try XCTUnwrap(harness.presented as? VNDocumentCameraViewController)
+        print("VISION-PHASE first-cancel")
         adapter.documentCameraViewControllerDidCancel(first)
         await eventually { coordinator.currentCameraOwner == nil }
 
+        print("VISION-PHASE second-start")
         var secondResults = 0
         try await owner.start(adapter.documentOperation(result: { _ in secondResults += 1 },
                                                          ended: { await owner.stop() }))
@@ -170,6 +185,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         try otherOwner.connect(to: otherRuntime)
         var otherDismissed = false
         _ = try otherOwner.begin(.uiViewController) { otherDismissed = true }
+        print("VISION-PHASE external-dismiss")
         let presentation = UIPresentationController(presentedViewController: second, presenting: nil)
         adapter.presentationControllerDidDismiss(presentation)
         await eventually { coordinator.currentCameraOwner == nil }
@@ -177,15 +193,18 @@ final class MediaCaptureNativeTests: XCTestCase {
         XCTAssertFalse(otherDismissed)
         XCTAssertEqual(harness.dismissed.count, 1)
 
+        print("VISION-PHASE navigation-start")
         try await owner.start(adapter.documentOperation(result: { _ in },
                                                          ended: { await owner.stop() }))
         let third = try XCTUnwrap(harness.presented)
+        print("VISION-PHASE navigation-dismiss")
         await presentations.dismissForNavigation()
         await eventually { coordinator.currentCameraOwner == nil }
         XCTAssertTrue(harness.dismissed.last === third)
         XCTAssertFalse(otherDismissed)
         await runtime.shutdown()
         await otherRuntime.shutdown()
+        print("VISION-PHASE completed")
     }
 
     func testDataScannerStartFailureDismissesAndReleasesReservation() async throws {

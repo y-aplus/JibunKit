@@ -11,23 +11,33 @@ SPEC.loader.exec_module(MODULE)
 class MediaVerificationTests(unittest.TestCase):
     sources = ["final class AudioTests: XCTestCase { func testOwner() {} }",
                "final class CaptureTests: XCTestCase { func testOwner() {} }"]
-    log = ("Test Case '-[Media.AudioTests testOwner]' passed (0.01 seconds).\n"
-           "Test Case '-[Media.CaptureTests testOwner]' passed (0.01 seconds).\n"
-           "** TEST SUCCEEDED **\n")
+    def report(self):
+        return {"testNodes": [{"nodeType": "Test Suite", "children": [
+            {"nodeType": "Test Case", "nodeIdentifier": cls + "/testOwner()", "result": "Passed"}
+            for cls in ["AudioTests", "CaptureTests"]]}]}
 
-    def test_real_pass_required_for_each_class_not_just_same_method_name(self):
-        self.assertEqual(MODULE.require_test_passes(self.log, self.sources),
+    def summary(self):
+        return {"result": "Passed", "failedTests": 0, "skippedTests": 0, "passedTests": 2}
+
+    def test_structured_pass_required_for_each_class(self):
+        self.assertEqual(MODULE.require_test_passes(self.report(), self.summary(), self.sources),
                          ["AudioTests.testOwner", "CaptureTests.testOwner"])
-        for log in [self.log.replace("CaptureTests", "WrongTests"), self.log + self.log,
-                    self.log.replace("passed", "skipped"), self.log.replace("** TEST SUCCEEDED **", "")]:
+        for change in ["missing", "duplicate", "skipped", "failed", "unknown"]:
+            report = self.report(); nodes = report["testNodes"][0]["children"]
+            if change == "missing": nodes.pop()
+            elif change == "duplicate": nodes.append(dict(nodes[0]))
+            else: nodes[1]["result"] = change.title()
             with self.assertRaises(ValueError):
-                MODULE.require_test_passes(log, self.sources)
+                MODULE.require_test_passes(report, self.summary(), self.sources)
+        for key, value in [("result", "Failed"), ("failedTests", 1), ("skippedTests", 1), ("passedTests", 1)]:
+            summary = self.summary(); summary[key] = value
+            with self.assertRaises(ValueError):
+                MODULE.require_test_passes(self.report(), summary, self.sources)
 
     def test_no_test_declarations_cannot_pass(self):
-        with self.assertRaises(ValueError):
-            MODULE.require_test_passes(self.log, [])
-        with self.assertRaises(ValueError):
-            MODULE.require_test_passes(self.log, ["final class Empty: XCTestCase {}"])
+        for sources in [[], ["final class Empty: XCTestCase {}"]]:
+            with self.assertRaises(ValueError):
+                MODULE.require_test_passes(self.report(), self.summary(), sources)
 
     def test_built_app_must_have_usage_descriptions_and_background_audio(self):
         info = {"CFBundleIdentifier": "com.jibunkit.app", "NSCameraUsageDescription": "camera",

@@ -106,12 +106,15 @@ def main():
             run(["tuist", "generate", "--no-open"], root, "generate")
             derived = root / "Build"
             common = ["-workspace", "JibunKit.xcworkspace", "-derivedDataPath", derived]
+            native_error = None
             try:
                 run(["xcodebuild", "test", *common, "-scheme", "MediaNativeTests",
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                        "-resultBundlePath", evidence / "native-tests.xcresult",
                        "-only-testing:MediaNativeTests", "-parallel-testing-enabled", "NO",
                        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "native-tests")
+            except subprocess.CalledProcessError as error:
+                native_error = error
             finally:
                 # Console output can be interleaved with AVFoundation diagnostics.
                 # Export structured results even on failure; retain the original error.
@@ -123,6 +126,14 @@ def main():
                         (evidence / f"test-{section}.json").write_text(output, encoding="utf-8")
                     except Exception as export_error:
                         result[f"{section}_export_error"] = str(export_error)
+            if native_error is not None:
+                try:
+                    run(["xcrun", "xcresulttool", "export", "diagnostics", "--path",
+                         evidence / "native-tests.xcresult", "--output-path", evidence / "crash-diagnostics"],
+                        root, "export-diagnostics", limit=90)
+                except Exception as export_error:
+                    result["diagnostics_export_error"] = str(export_error)
+                raise native_error
             result["tests"] = require_test_passes(
                 json.loads((evidence / "test-tests.json").read_text(encoding="utf-8")),
                 json.loads((evidence / "test-summary.json").read_text(encoding="utf-8")), [

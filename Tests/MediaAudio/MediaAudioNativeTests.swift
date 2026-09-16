@@ -42,7 +42,11 @@ final class MediaAudioNativeTests: XCTestCase {
         let state = MediaAudioProbe.state
         await state.startPlayer()
         XCTAssertEqual(state.nowPlayingTitle, "JibunKit Loop Tone")
-        for _ in 0..<50 where state.playerTime <= 0.1 { try await Task.sleep(for: .milliseconds(100)) }
+        for _ in 0..<50 {
+            let time = state.playerTime
+            if time.isFinite && time > 0.1 { break }
+            try await Task.sleep(for: .milliseconds(100))
+        }
         XCTAssertGreaterThan(state.playerTime, 0.1, state.playerError)
         try await state.reserveRecorderAudio()
         let generation = try XCTUnwrap(state.recorderLease?.generation)

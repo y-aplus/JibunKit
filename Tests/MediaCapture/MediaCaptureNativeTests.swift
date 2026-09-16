@@ -146,21 +146,28 @@ final class MediaCaptureNativeTests: XCTestCase {
                                         permissions: NativePermission(), consent: { _ in true })
         let runtime = MiniAppRuntime()
         let presentations = MiniAppPresentationOwner(id: ownerID)
+        print("VISION-PHASE runtime-connect")
         try presentations.connect(to: runtime)
         try owner.connect(to: runtime)
         activate(ownerID) { owner.receive($0) }
         let harness = PresentationHarness()
         let adapter = MiniAppVisionCaptureAdapter(
             presentationOwner: presentations,
-            present: { harness.presented = $0 },
+            present: { print("VISION-PHASE present-callback"); harness.presented = $0 },
             dismiss: { controller in
                 XCTAssertTrue(harness.presented === controller)
                 harness.dismissed.append(controller)
                 harness.presented = nil
             },
-            documentSupported: { true },
-            makeDocumentController: { VNDocumentCameraViewController() }
+            documentSupported: { print("VISION-PHASE support SDK=\(VNDocumentCameraViewController.isSupported)"); return true },
+            makeDocumentController: {
+                print("VISION-PHASE controller-init-enter")
+                let controller = VNDocumentCameraViewController()
+                print("VISION-PHASE controller-init-return")
+                return controller
+            }
         )
+        print("VISION-PHASE first-start")
         var firstResults = 0
         try await owner.start(adapter.documentOperation(result: { _ in firstResults += 1 },
                                                          ended: { await owner.stop() }))

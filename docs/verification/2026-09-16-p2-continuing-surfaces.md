@@ -8,7 +8,7 @@
 
 [固定した契約](../delivery/P2-continuing-surfaces-contract.md)を正本とする。設計提出の提案は、この文書と契約の採否決定が優先する。設計baselineはbcfde0d、実装baselineはe46209cc5a4563b09026421dce0d1b035ddef19b。
 
-CLI sol/lowの二レーンが、同じbaselineから型付きnative adapter・A/B fixture・Intent/表示・失敗試験・開発者ガイドを実装中。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。独立workerの初回設計各1提出、実装は未提出。workerごとのCIは起動していない。
+CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出、修正1往復目。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
 
 ## 親の実装
 
@@ -26,7 +26,8 @@ CLI sol/lowの二レーンが、同じbaselineから型付きnative adapter・A/
 | 既存操作Widget診断host生成 | 3件成功。hostがeffectiveExternalAccessを利用する変更へ既存assertionを更新 |
 | `check-delivery.py` plan検査 | 25単位/12境界で成功。P2-Lの証拠合格や出荷合格ではない |
 | 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
-| Native adapter / A/B fixture | 各workerが実装中。提出レビュー前 |
+| Native adapter / A/B fixture | 初回提出をレビューし、1往復目の修正中。現状を合格扱いしない |
+| P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
 | CI / 実機 | 本境界では未投入・未実施 |
 
 共通Swift試験はjournal再構築・片側失敗/Bの保存bytes保持、破損/重複登録拒否、await中の直列化、close/drainと取消、OS解除失敗時のremoving維持と再試行、復元前解除/世代変更/自動再開始なし、停止失敗時の元データ保持、複数surfaceの一部失敗、close失敗時にも永続受付閉鎖、復元中の管理無効化をresumeが覆さないこと、復旧失敗時の閉鎖維持を扱う。fake成功はAlarmKit/ActivityKitの実動作の証拠にしない。
@@ -38,3 +39,13 @@ CLI sol/lowの二レーンが、同じbaselineから型付きnative adapter・A/
 初回予算は2run。独立/統合native build・App Intents metadata・共通試験・通常hostの管理/復元を同一sourceの並列jobへまとめ、必要な通常IPA/回帰と分担する。具体的なworkflow input/filter、変更で無効になる既存証拠、準備/uploadを含む25分見込みは提出統合後・投入前に記録する。未確定の入力を「準備済み」としてCIを起動しない。
 
 実機は開始/更新/終了、OS上の操作、二owner共存、再起動、片側無効化/削除/復元とB保持、通常版復帰を一括する。OSの権限拒否・署名条件はFeature受付の拒否と区別する。署名差が疑われた場合は同条件の独立アプリ比較を行い、未実装をOS制約として扱わない。
+
+## CI投入前の構成案（修正版レビュー後にsource/filterを最終固定）
+
+- run 1: `native-surface.yml surface=continuing-surfaces ios_major=26 simulator_runtime=''`。依存のないcontinuing-live / continuing-alarm / continuing-hostの3job。独立A/B/CombinedのRelease build・app/Widget metadata差分・対象native XCTest、通常ホストの管理UIと診断IPAを分担する。`verify-continuing-surfaces.py`が各commandのlog/timingsと最終sourceを保存する。scriptは24分、jobは30分の上限。試験を省略して時間を合わせない。
+- run 2: `build-ios.yml`の通常構成（simulator_tests=false、feature_validation=false、records_validation=false、その他default）。通常IPA、Foundation共通試験（今回追加のgate/journal/restoreと両coordinatorを含む）、既存の要求合成/独立package/process等。Simulator OS表示はrun 1/実機へ分け、未実施を成功としない。
+- 見込み根拠: P2-W 35027469173のnative718秒/host833秒、通常版35038442208はrun6分18秒。新4Featureのcompile/metadata・追加native testを見込み、run 1はlive20分/Alarm20分/host23分（準備・upload込み）を初期見積り、run 2は10分。両runを同じSHAで並行投入すれば見込み最長23分。runner待ちは外部要因として実測する。修正版がこの量を超える場合は投入前に分割を再検討する。
+- 親の注入ツールは4つの型付きFeature moduleと任意のfixture support moduleを通常hostへ追加し、既存Counter/Reminder/Widget/Share extensionを残す。全入力/anchor確認後に一括書込み、欠落時は途中のhostを残さない。実fixtureの修正版に対するdry runとSwift検証はこれから。
+- `ContinuingHostUITests`は実OS活動を開始しない通常画面/管理接続試験。無効化の保持/再有効化・片側削除/再登録と他ownerの管理状態を確認する。これはnative解除成功やOS実操作の代替ではなく、fakeの所有データ保持試験・実機のOS活動確認と合わせる。
+
+preflight reportは最終実装のsource・確定したnative test scheme/filter・再利用証拠の差分レビューを揃えてから通す。この構成案をCI実施済みとは扱わない。

@@ -115,3 +115,11 @@ CIの入力・時間予算は上記2run構成で確定。独立/Combined両famil
 35046152156の3jobもe6155acで完了し、同じActivityKitインスタンスのactor/Task間転送エラーのみだった。Alarm3分52秒、Live5分24秒、host5分58秒。2回目の4job計19分17秒。初回からの累計は4run・39分42秒。native comparison/XCTest/host UIはまだ未到達。
 
 af484a1でSDKオブジェクトの転送を除去したため、追加2run（累計6run）を初回と同じ入力/filterで実行する。Swift6の安全性検査は維持し、unchecked Sendableやpreconcurrencyで隠さない。e6155acの326件/Records11件等の成功証拠は保存するが、通常workflowはIPAのbuild/signing/metadataまで再検証するため既存の短い共通試験も再実行する。native最長23分・通常10分の見積りを維持。3回目の一括検証で再び失敗した場合は、初回Core接続/2回目SDK隔離の両ログと比較し、全再実行の前に到達工程・最小の直接SDK/fixture比較・再利用可能jobを再評価する。
+
+## 3回目・通常版成功と取得IPA
+
+[35046699862](https://github.com/y-aplus/JibunKit/actions/runs/35046699862)は`b1d379bf5179564230299d02295d3c130efd7866`で成功。通常job3分53秒。shared326件（既知Keychain skip2・失敗0、新規common10/Live10/Alarm16を含む）、Records11件、要求合成/独立package、incoming別process200commit・SharedState別process300update、通常Release app/Widget/Share、署名/metadata、IPA CRCが成功した。ActivityKit SDK隔離の修正で通常iOS buildまで通過した。
+
+artifactをローカルへ取得してIPA全entry CRCを再検査し、実際のInfo.plistから本体com.jibunkit.app・Widget・Shareの3IDと0.8.1/build11を確認した。IPAは2,874,006 bytes、SHA-256 `a72dbcce4f57959a41af7188cf4ecd3014032067dacff8c949b58b7183115de1`。実機確認後に版を進める運用に従い、現段階の診断比較用buildは既存版を維持する。これは0.8.2公開・実機完了を意味しない。
+
+35046697413のnative3jobは完了通知待ち。通常版成功を独立A/B/Combinedのmetadata、診断host UI、OS活動の実動作の代替にしない。実機へ案内する前に残るnative証拠と診断IPAを照合する。CI用branchは固定し、この記録はcodex/p2-live-evidence側へ保存する。

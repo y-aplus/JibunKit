@@ -28,7 +28,7 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 | 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
 | Native adapter / A/B fixture | 両review1を統合。Live親補修・Alarm review2統合済み。Swift/native検証結果はまだない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
-| CI / 実機 | 初回2runを70c2ca4で投入。通常版はコンパイル失敗、native3jobは結果待ち。実機未実施 |
+| CI / 実機 | 初回2runを70c2ca4で投入。通常版・native3jobとも同じCoreコンパイル3点で失敗。実機未実施 |
 
 共通Swift試験はjournal再構築・片側失敗/Bの保存bytes保持、破損/重複登録拒否、await中の直列化、close/drainと取消、OS解除失敗時のremoving維持と再試行、復元前解除/世代変更/自動再開始なし、停止失敗時の元データ保持、複数surfaceの一部失敗、close失敗時にも永続受付閉鎖、復元中の管理無効化をresumeが覆さないこと、復旧失敗時の閉鎖維持を扱う。fake成功はAlarmKit/ActivityKitの実動作の証拠にしない。
 
@@ -92,3 +92,13 @@ CIの入力・時間予算は上記2run構成で確定。独立/Combined両famil
 3. Alarm observerのnested escaping closureでnativeに明示selfがなかった。captureを明示する。
 
 修正はCI実行中branchを動かさず `codex/p2-live-ci-repair` に保存。同種の新規coordinator/journal closureと共通テストの接続を点検した。ローカルdiff check成功、Swift成功はまだ主張しない。native側の全結果も揃えて一括修正するため、この3点だけで再dispatchしない。現在の既知失敗は通常版1run/コンパイル1回であり、native結果は未確定。
+
+## native初回結果と再実行境界
+
+35045520639も70c2ca4で完了し、3jobすべてが上記と同じCoreコンパイル3点で停止した。別のiOS固有エラーはログに出ていないが、未到達部分があるためSDK全体のコンパイル成功とはしない。liveはStandaloneA build、AlarmもStandaloneA build、通常診断hostはJibunKit-App buildで失敗。Tuist生成/依存解決へは到達・通過した。native XCTest/host UI/IPAは未実行。
+
+実測はAlarm7分10秒、Live6分29秒、host5分17秒。初回は通常版89秒を含め4job計20分25秒。全4jobが同じ未修正sourceの一括投入で失敗したもので、同じ修正を3回試したわけではない。2つのrunの全エラーを照合し、原因をec24756の3修正へ限定できたため、盲目的なtimeout変更や専用probeの追加はしない。
+
+初回予算2runから追加2run（累計4run）を使う。理由は新Coreのcompile不備で全検証が未到達のため。修正はread closureの接続/不変capture/明示selfだけで、受入条件・操作assertion・期待値を緩めない。native3jobと通常版を同一の新SHAで、初回と同じworkflow入力/filterにより並列再実行する。成功済みのnative/IPA証拠はまだないため、今回のCore変更の影響を受けない旧P0/P1証拠以外は再利用しない。
+
+見積りは初回と同じnative最長23分/通常10分、nativejob30分上限。初回実測の生成/初期compileに最大7分を要した点を踏まえ、成功後は残りのnative tests/IPAまでのtimingsを照合する。同じ受入条件でさらに失敗した場合は、今回の3点との同一性/初めて到達した工程を切り分けてから再実行する。

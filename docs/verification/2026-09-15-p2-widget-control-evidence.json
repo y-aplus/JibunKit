@@ -14,8 +14,8 @@
   "dependencies": {
     "P1-B": "Published0.8.0; docs/verification/2026-09-15-0.8-release.md and immutable source-specific 0.8-evidence.json. All P0/P1 adopted scope passed at that release."
   },
-  "planned_ci_runs": 4,
-  "budget_exception": "Run4 follows two failed connection runs. Run3 native failed missing SwiftUI in widget entrypoints; host compiled but stopped its first native unregister expectation at20s. Repair all three widget entries together, strengthen native owner/query evidence, align management cleanup bound with existing P1 120s and add service/timing diagnostics. One combined native+host run retains all native4/hostUI1/IPA checks. Normal4eb784d source and artifacts are unchanged and reused. Root causes investigated before third failure; native OS cleanup subservice not yet established, so further failure requires collected service evidence rather than another blind timeout increase.",
+  "planned_ci_runs": 5,
+  "budget_exception": "Run4 follows two failed connection runs. Run3 native failed missing SwiftUI in widget entrypoints; host compiled but stopped its first native unregister expectation at20s. Repair all three widget entries together, strengthen native owner/query evidence, align management cleanup bound with existing P1 120s and add service/timing diagnostics. One combined native+host run retains all native4/hostUI1/IPA checks. Normal4eb784d source and artifacts are unchanged and reused. Root causes investigated before third failure; native OS cleanup subservice not yet established, so further failure requires collected service evidence rather than another blind timeout increase. Run5 is the required version-only0.8.1/build11 release build after grouped device success, not another repair retry. New normal IPA/metadata/signatures/shared tests; unchanged native/UI/device evidence reused with source diff. Source88ab7cbe9f41a7eb102fed9444923c8ff8812bfd; expected10min based on prior5m16 version run.",
   "jobs": [
     {
       "id": "interactive-native",
@@ -360,6 +360,33 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35027469173; docs/verification/2026-09-15-p2-widget-control.md",
       "observation": "Four native contract tests pass: selected owner/item query and update, Widget/Control configuration/deleted item rejection, actual Definition disable/enable/restore/remove and stale generations, failed/cancelled intent preservation. Builds and metadata10 compare independent A/B vs combined and host/extension. SharedState17 and real multiprocess300-update/interruption evidence reused from unchanged Core at4eb784d. Real OS taps remain a separate integration/device gate.",
       "review": "Inspected all test method pass lines, logs, result.json source, metadata comparisons and archive. Normal Core paths have no changes since successful34979381516."
+    },
+    {
+      "criterion": "P2-7.integration",
+      "kind": "device",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-15-p2-widget-control-device.md",
+      "observation": "User confirmed full grouped OS Widget/Control configuration/taps, app/device restart, same-IPA overwrite/SideStore Refresh, selected item removal, disabled update rejection/B operation, full remove/reregister stale rejection, A-only JSON restore/B retention, normal4eb784d return. Foreground values reflected without manual reread; physical disable almost immediate.",
+      "review": "Each expected-value sequence explicitly confirmed in this conversation. Control configuration opened after entering edit mode; no product repair needed. Device OS last reported27.0, not re-queried this session. Normal return checked Counter/Reminder, existing Widget/Shortcut and backup export/import; no invented OS-share repeat."
+    },
+    {
+      "criterion": "P2-7.device",
+      "kind": "device",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-15-p2-widget-control-device.md",
+      "observation": "User confirmed full grouped OS Widget/Control configuration/taps, app/device restart, same-IPA overwrite/SideStore Refresh, selected item removal, disabled update rejection/B operation, full remove/reregister stale rejection, A-only JSON restore/B retention, normal4eb784d return. Foreground values reflected without manual reread; physical disable almost immediate.",
+      "review": "Each expected-value sequence explicitly confirmed in this conversation. Control configuration opened after entering edit mode; no product repair needed. Device OS last reported27.0, not re-queried this session. Normal return checked Counter/Reminder, existing Widget/Shortcut and backup export/import; no invented OS-share repeat."
+    },
+    {
+      "criterion": "P2-7.docs",
+      "kind": "inspection",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "result": "passed",
+      "reference": "docs/guides/interactive-widgets.md; docs/guides/feature-management.md; docs/verification/2026-09-15-p2-widget-control-device.md",
+      "observation": "Owner responsibilities, native registration, shared state/management/restore, generation reselection, OS refresh limitations and actual physical check sequence documented. API samples match actual Definition/effective lifecycle integration.",
+      "review": "Compared guide with FeatureA/B, Registry and native test fixtures; corrected completed device state and editing-mode instructions.0.8.1 publication remains separate pending gate."
     }
   ],
   "deferred_device": {
@@ -368,8 +395,7 @@
     "P1-1.os": "0.8.0",
     "P1-2.device": "0.8.0",
     "P1-3.os": "0.8.0",
-    "P1-5.device": "0.8.0",
-    "P2-7.device": "1.0.0"
+    "P1-5.device": "0.8.0"
   },
   "documents": [],
   "document_review": {
@@ -441,16 +467,15 @@
       "inputs_and_filters": "native-surface.yml surface=interactive-widgets ios_major=26 simulator_runtime empty; frozen source e984d44fbae1946720f2d43f3ee776e2f25c20f1. Same native4 and hostUI1, A/B/Combined release metadata, diagnostic IPA. No normal rerun.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Run3 host17m16 includes compile and failed105s UI; allow full remaining management path plus longer first native cleanup and diagnostic export. Native first build6m46; remaining B/Combined incremental builds and native Simulator compile/tests estimated10-15m extra. Parallel jobs30m limit. This is an estimate, not a confirmed completion bound."
-    }
-  ],
-  "planned_device_checks": [
+    },
     {
-      "criterion": "P2-7.integration",
-      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
-      "checkpoint": "1.0.0",
-      "procedure": "docs/verification/2026-09-15-p2-widget-control-device.md: six grouped phases ready at public diagnostic e984d44; actual OS Widget/Control selection/taps, retained configuration and restart/overwrite/Refresh, deletion/stale rejection, management/selected restore/B retention and normal IPA return. First disable duration explicitly observed. Next0.8.x checkpoint; no OS success inferred from direct perform."
+      "id": "release-0.8.1",
+      "inputs_and_filters": "build-ios.yml ref codex/release-0.8.1 source88ab7cbe9f41a7eb102fed9444923c8ff8812bfd; simulator_tests=false feature_validation=false records_validation=false simulator_runtime empty, remaining inputs default. Normal shared/independent-package tests, Release app/Widget/Share, metadata/signature/IPA/version checks.",
+      "expected_elapsed_minutes": 10,
+      "estimate_basis": "Prior analogous version-only34967147135 took5m16. Allow SharedState17 added tests and process probe/setup/upload margin; no Simulator or independent diagnostic build repeated."
     }
   ],
+  "planned_device_checks": [],
   "supporting_checks": [
     {
       "source": "4eb784d3f8f313eef9c6566f5729006e655af164",

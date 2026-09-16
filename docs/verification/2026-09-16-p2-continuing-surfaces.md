@@ -8,7 +8,7 @@
 
 [固定した契約](../delivery/P2-continuing-surfaces-contract.md)を正本とする。設計提出の提案は、この文書と契約の採否決定が優先する。設計baselineはbcfde0d、実装baselineはe46209cc5a4563b09026421dce0d1b035ddef19b。
 
-CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出、修正1往復目。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
+CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出。Live修正be4451a・Alarm修正1160c2eを受領・統合済み。Live残件は親で補修し、Alarmの通知順序/購読寿命/異owner保存先拒否は同じCLI担当の2往復目で修正中（理由は末尾）。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
 
 ## 親の実装
 
@@ -22,11 +22,11 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 
 | 検証 | 結果と限界 |
 |---|---|
-| Python Tools試験 | 77件成功（Windows、11.477秒）。その後の管理画面表示追加はSwift実行検証待ち |
+| Python Tools試験 | 82件成功（Windows、11.771秒、追加Tools試験込み）。Swift実行検証とは別 |
 | 既存操作Widget診断host生成 | 3件成功。hostがeffectiveExternalAccessを利用する変更へ既存assertionを更新 |
 | `check-delivery.py` plan検査 | 25単位/12境界で成功。P2-Lの証拠合格や出荷合格ではない |
 | 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
-| Native adapter / A/B fixture | 初回提出をレビューし、1往復目の修正中。現状を合格扱いしない |
+| Native adapter / A/B fixture | 両review1を統合。Live親補修済み、Alarm残件修正中。現状を合格扱いしない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
 | CI / 実機 | 本境界では未投入・未実施 |
 
@@ -45,7 +45,26 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 - run 1: `native-surface.yml surface=continuing-surfaces ios_major=26 simulator_runtime=''`。依存のないcontinuing-live / continuing-alarm / continuing-hostの3job。独立A/B/CombinedのRelease build・app/Widget metadata差分・対象native XCTest、通常ホストの管理UIと診断IPAを分担する。`verify-continuing-surfaces.py`が各commandのlog/timingsと最終sourceを保存する。scriptは24分、jobは30分の上限。試験を省略して時間を合わせない。
 - run 2: `build-ios.yml`の通常構成（simulator_tests=false、feature_validation=false、records_validation=false、その他default）。通常IPA、Foundation共通試験（今回追加のgate/journal/restoreと両coordinatorを含む）、既存の要求合成/独立package/process等。Simulator OS表示はrun 1/実機へ分け、未実施を成功としない。
 - 見込み根拠: P2-W 35027469173のnative718秒/host833秒、通常版35038442208はrun6分18秒。新4Featureのcompile/metadata・追加native testを見込み、run 1はlive20分/Alarm20分/host23分（準備・upload込み）を初期見積り、run 2は10分。両runを同じSHAで並行投入すれば見込み最長23分。runner待ちは外部要因として実測する。修正版がこの量を超える場合は投入前に分割を再検討する。
-- 親の注入ツールは4つの型付きFeature moduleと任意のfixture support moduleを通常hostへ追加し、既存Counter/Reminder/Widget/Share extensionを残す。全入力/anchor確認後に一括書込み、欠落時は途中のhostを残さない。実fixtureの修正版に対するdry runとSwift検証はこれから。
+- 親の注入ツールは4つの型付きFeature moduleと任意のfixture support moduleを通常hostへ追加し、既存Counter/Reminder/Widget/Share extensionを残す。全入力/anchor確認後に一括書込み、欠落時は途中のhostを残さない。実fixture 4Feature＋ContinuingAlarmSupportをtracked copyへ注入するdry runが成功。Swift検証はこれから。
 - `ContinuingHostUITests`は実OS活動を開始しない通常画面/管理接続試験。無効化の保持/再有効化・片側削除/再登録と他ownerの管理状態を確認する。これはnative解除成功やOS実操作の代替ではなく、fakeの所有データ保持試験・実機のOS活動確認と合わせる。
 
 preflight reportは最終実装のsource・確定したnative test scheme/filter・再利用証拠の差分レビューを揃えてから通す。この構成案をCI実施済みとは扱わない。
+
+## 統合前レビューの残件と修正（2026-09-16追記）
+
+Live review1はf745d05として統合し、8e307f1でcold handleの回復、終了中の登録を再開しないこと、同一identity/異systemIDの拒否、購読生成の重複防止/close時drain、foreground表示更新、standalone初期化を補修した。異owner journalが渡された場合も照合/解除をfail-closedとする試験を追加した。これらSwift試験は未実行。
+
+Alarm review1は888164eとして統合した。初回のtyped package/永続業務状態/Definition/部分失敗試験は揃ったが、OS stop通知の配送前に2回照合すると受付記録を失う、closed中の照合でも購読を作る、購読生成が重複guard前に行われる問題が残った。所有権と通常終了の保証に関わるため、回数上限を理由に見逃さず、同じsol/lowセッションへ関連修正を一括返却した。新たなCIはまだ起動していない。再レビューは変更箇所と対応する試験へ限定する。
+
+親のツールは実fixtureに合わせ、AlarmのschemeをStandaloneA/StandaloneB/Combined、host status IDをalarm-feature-a.status / alarm-feature-b.statusへ修正した。実tracked copyのhost注入で、4Featureとsupport依存、既存通常Feature/extensionを保持する構成を確認。Python全82件が成功した。生成ソースの構造確認だけでXcode build成功とはしない。
+
+次の残件はAlarm修正版の該当差分確認、fixture packageの相対パス依存名とmanifestの最終照合、対象sourceを固定したpreflight report、上記2runの投入。worker完了は既存OS通知で受信し、モデルpollを行わない。
+
+## 実機手順の準備範囲（依頼前の草案）
+
+CI後に実際の候補IPAと表示文言へ合わせ、モバイルで一項目ずつ読める手順として確定する。現在は端末操作を依頼していない。
+
+- Live A/B開始・各OSボタン・foreground反映、app終了後の既存登録回復、片側終了と他方の表示/業務値保持。
+- Alarm A/Bの許可・固定予定/タイマー・pause/resume/標準stop配送、app終了後の既存登録回復。OSが許可しない場合はエラー/署名条件と実装不備を分ける。
+- 動作中の片側無効化/再有効化、削除/再登録、業務backupの片側復元をまとめて確認。OS活動の解除、暗黙再開始なし、他方の業務値/OS活動保持を観測する。
+- 通常IPAへの上書きでCounter/Reminder/既存保存値を保持。診断OS面の残存は有無と操作結果を記録し、残存を成功と決めつけない。

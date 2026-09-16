@@ -12,7 +12,7 @@ final class ContinuingHostUITests: XCTestCase {
         app.launch()
         for owner in ["continuing-live-a", "continuing-live-b", "alarm-feature-a", "alarm-feature-b"] {
             XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/" + owner)))
-            let status = owner.hasPrefix("continuing-live") ? "live-\(owner.suffix(1)).status" : "alarm.\(owner).status"
+            let status = owner.hasPrefix("continuing-live") ? "live-\(owner.suffix(1)).status" : "\(owner).status"
             XCTAssertTrue(app.staticTexts[status].waitForExistence(timeout: 20), app.debugDescription)
             tap("miniapp.back-to-list")
         }

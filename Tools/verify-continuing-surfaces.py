@@ -18,7 +18,7 @@ import time
 FAMILIES = {
     "live": {"directory": "ContinuingLiveActivities", "schemes": ["StandaloneA", "StandaloneB", "Combined"],
              "modules": ["ContinuingFeatureA", "ContinuingFeatureB"], "tests": "ContinuingLiveActivityNativeTests"},
-    "alarm": {"directory": "ContinuingAlarms", "schemes": ["AlarmStandaloneA", "AlarmStandaloneB", "AlarmCombined"],
+    "alarm": {"directory": "ContinuingAlarms", "schemes": ["StandaloneA", "StandaloneB", "Combined"],
               "modules": ["ContinuingAlarmFeatureA", "ContinuingAlarmFeatureB"], "tests": "ContinuingAlarmNativeTests"},
 }
 

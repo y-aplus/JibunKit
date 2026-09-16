@@ -64,7 +64,7 @@ public struct MiniAppLiveActivityJournalAccess: Sendable {
 #if os(iOS) || os(macOS)
 public extension MiniAppLiveActivityJournalAccess {
     init(_ journal: MiniAppContinuingJournal) {
-        self.init(read: { try journal.read() }, update: { mutation in try journal.update(mutation) })
+        self.init(read: { try readOwned() }, update: { mutation in try journal.update(mutation) })
     }
 }
 #endif
@@ -110,7 +110,7 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         -> MiniAppLiveActivityDescriptor {
         try await gate.perform { [self] in
             try await validate(proposed)
-            let saved = try journal.read()
+            let saved = try readOwned()
             let nativeRecords = await native.records()
             let os = nativeRecords.filter { $0.identity.owner == owner.rawValue }
             let sameBusiness: @Sendable (MiniAppContinuingIdentity) -> Bool = { identity in
@@ -168,7 +168,7 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
             let candidate = try MiniAppContinuingIdentity(owner: owner, localID: localID, generation: generation)
             try await validate(candidate)
             let os = await native.records()
-            let matches = try journal.read().filter { row in
+            let matches = try readOwned().filter { row in
                 row.identity.owner == owner.rawValue && row.identity.localID == localID
                     && row.identity.generation == generation && row.phase == .active
                     && os.contains(where: { $0.identity == row.identity && $0.systemID == row.systemID
@@ -233,6 +233,7 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
 
     public func endOwned(input: @escaping @Sendable (MiniAppContinuingIdentity) -> Driver.EndInput) async throws {
         try await gate.performMaintenance { [self] in
+            _ = try readOwned()
             let nativeRecords = await native.records()
             let owned = nativeRecords.filter { $0.identity.owner == owner.rawValue }
             var failures: [String] = []
@@ -261,7 +262,7 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
     private func reconcileInsideGate() async throws -> MiniAppLiveActivityReconcileReport {
         let nativeRecords = await native.records()
         let os = nativeRecords.filter { $0.identity.owner == owner.rawValue }
-        let saved = try journal.read()
+        let saved = try readOwned()
         var report = MiniAppLiveActivityReconcileReport()
         var kept: [MiniAppContinuingRegistration] = []
         for var row in saved {
@@ -290,13 +291,21 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         return report
     }
 
+    private func readOwned() throws -> [MiniAppContinuingRegistration] {
+        let rows = try journal.read()
+        guard rows.allSatisfy({ $0.identity.owner == owner.rawValue }) else {
+            throw MiniAppLiveActivityError.invalidIdentity
+        }
+        return rows
+    }
+
     private func validate(_ identity: MiniAppContinuingIdentity) async throws {
         guard identity.owner == owner.rawValue, !identity.localID.isEmpty else { throw MiniAppLiveActivityError.invalidIdentity }
         try await admission(identity)
     }
 
     private func requireActive(_ descriptor: MiniAppLiveActivityDescriptor) async throws {
-        guard try journal.read().contains(where: {
+        guard try readOwned().contains(where: {
             $0.identity == descriptor.identity && $0.systemID == descriptor.systemID && $0.phase == .active
         }) else { throw MiniAppLiveActivityError.staleIdentity }
         let nativeRecords = await native.records()

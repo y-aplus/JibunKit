@@ -158,6 +158,20 @@ final class MiniAppLiveActivityCoordinatorTests: XCTestCase {
         XCTAssertNil(ended)
     }
 
+    func testForeignJournalFailsClosedWithoutChangingEitherOwner() async throws {
+        let journal = JournalBox(), driver = FakeDriver(), generation = UUID()
+        let foreign = try identity(owner: MiniAppID("live-b"), generation: generation)
+        let systemID = try await driver.request(identity: foreign, input: 5)
+        journal.rows = [.init(identity: foreign, systemID: systemID, phase: .active)]
+        let before = journal.rows
+        let sut = service(journal, driver, generation: generation)
+        await XCTAssertThrowsErrorAsync { try await sut.reconcile() }
+        await XCTAssertThrowsErrorAsync { try await sut.endOwned { _ in 0 } }
+        XCTAssertEqual(journal.rows, before)
+        let counts = await driver.counts()
+        XCTAssertTrue(counts.1.isEmpty)
+    }
+
     func testObservationCreationIsDeduplicatedAndCloseDrainsIt() async throws {
         let probe = ObservedDriver()
         let journal = JournalBox()

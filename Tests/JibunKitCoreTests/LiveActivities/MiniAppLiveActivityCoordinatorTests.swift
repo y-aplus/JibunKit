@@ -126,6 +126,74 @@ final class MiniAppLiveActivityCoordinatorTests: XCTestCase {
         XCTAssertTrue(journal.rows.contains { $0.systemID == first.systemID })
         XCTAssertFalse(journal.rows.contains { $0.systemID == secondID })
     }
+
+    func testStartCannotReopenAnEndingActivityOrRepairAMismatchedSystemID() async throws {
+        let journal = JournalBox(), driver = FakeDriver(), generation = UUID()
+        let sut = service(journal, driver, generation: generation)
+        let first = try await sut.start(identity: identity(generation: generation), input: 1)
+        journal.rows[0].phase = .ending
+        await XCTAssertThrowsErrorAsync { try await sut.start(identity: self.identity(generation: generation), input: 2) }
+        XCTAssertEqual(journal.rows[0].phase, .ending)
+        journal.rows[0].phase = .active
+        journal.rows[0].systemID = "mismatch"
+        await XCTAssertThrowsErrorAsync { try await sut.start(identity: self.identity(generation: generation), input: 3) }
+        XCTAssertEqual(journal.rows[0].systemID, "mismatch")
+        let counts = await driver.counts()
+        XCTAssertEqual(counts.0, 1)
+        XCTAssertEqual(first.systemID, "os-1")
+    }
+
+    func testColdHandleRecoveryDoesNotRequestAnotherActivity() async throws {
+        let journal = JournalBox(), driver = FakeDriver(), generation = UUID()
+        let first = service(journal, driver, generation: generation)
+        let handle = try await first.start(identity: identity(generation: generation), input: 10)
+        let reconstructed = service(journal, driver, generation: generation)
+        _ = try await reconstructed.reconcile()
+        let recovered = try await reconstructed.current(localID: "same-id", generation: generation)
+        XCTAssertEqual(recovered, handle)
+        let counts = await driver.counts()
+        XCTAssertEqual(counts.0, 1)
+        await driver.setState(handle.systemID, .ended)
+        let ended = try await reconstructed.current(localID: "same-id", generation: generation)
+        XCTAssertNil(ended)
+    }
+
+    func testObservationCreationIsDeduplicatedAndCloseDrainsIt() async throws {
+        let probe = ObservedDriver()
+        let journal = JournalBox()
+        let coordinator = MiniAppLiveActivityCoordinator(owner: owner, gate: .init(), journal: journal.access(),
+            native: probe, admission: { _ in })
+        try await coordinator.observe()
+        await probe.waitForCreation()
+        try await coordinator.observe()
+        try await coordinator.observe()
+        await coordinator.close()
+        let count = await probe.streamCount
+        XCTAssertEqual(count, 1)
+        await XCTAssertThrowsErrorAsync { try await coordinator.observe() }
+    }
+}
+
+private actor ObservedDriver: MiniAppLiveActivityNativeDriver {
+    typealias StartInput = Int
+    typealias UpdateInput = Int
+    typealias EndInput = Int
+    var streamCount = 0
+    var waiting: CheckedContinuation<Void, Never>?
+    func request(identity: MiniAppContinuingIdentity, input: Int) async throws -> String { "unused" }
+    func records() async -> [MiniAppLiveActivityNativeRecord] { [] }
+    func update(systemID: String, input: Int) async {}
+    func end(systemID: String, input: Int) async {}
+    func awaitEnded(systemID: String) async -> Bool { true }
+    func changes() async -> AsyncStream<Void> {
+        streamCount += 1
+        waiting?.resume()
+        waiting = nil
+        return AsyncStream { _ in }
+    }
+    func waitForCreation() async {
+        if streamCount == 0 { await withCheckedContinuation { waiting = $0 } }
+    }
 }
 
 private final class LockedInt: @unchecked Sendable {

@@ -2,8 +2,30 @@ import AppIntents
 import ContinuingFeatureB
 import JibunKitCore
 import SwiftUI
-struct FixtureIntents: AppIntentsPackage { static var includedPackages: [any AppIntentsPackage.Type] { [FeatureBIntents.self] } }
+struct FixtureIntents: AppIntentsPackage {
+    static var includedPackages: [any AppIntentsPackage.Type] { [FeatureBIntents.self] }
+}
 @main struct FixtureHost: App {
-    @State private var definition: MiniAppDefinition?
-    var body: some Scene { WindowGroup { Group { if let definition { definition.makeDestination() } else { ProgressView() } }.task { definition = try? FeatureBLiveIntegration.makeDefinition() } } }
+    @State private var definitions: [MiniAppDefinition] = []
+    @State private var errorMessage: String?
+    var body: some Scene {
+        WindowGroup {
+            Group {
+                if let errorMessage { Text(errorMessage) }
+                else { TabView { ForEach(definitions) { definition in
+                    definition.makeDestination().tabItem { Text(definition.title) }
+                } } }
+            }.task {
+                guard definitions.isEmpty, errorMessage == nil else { return }
+                do {
+                    let prepared = try [FeatureBLiveIntegration.makeDefinition()]
+                    for definition in prepared {
+                        try definition.effectiveExternalAccess?.prepare(true)
+                        try definition.onHostLaunch?()
+                    }
+                    definitions = prepared
+                } catch { errorMessage = String(describing: error) }
+            }
+        }
+    }
 }

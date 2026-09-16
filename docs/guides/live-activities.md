@@ -1,5 +1,8 @@
 # Live Activities integration
 
+Development status: targeted for 0.8.2; native build and device evidence are not
+yet complete. See `docs/verification/2026-09-16-p2-continuing-surfaces.md`.
+
 JibunKit keeps ActivityKit payloads in the Feature module. Define a concrete
 `MiniAppLiveActivityAttributes` type, its business-specific `ContentState`, an
 `ActivityConfiguration`, and any `LiveActivityIntent` beside the Feature. Do not
@@ -40,7 +43,8 @@ record before invoking this closure. Put the Feature business commit and creatio
 of the next `ActivityContent` inside it. ActivityKit's nonthrowing `update` return
 means “request completed”, not proof that the new content is visible; UI evidence
 is separate. An already committed business change followed by OS nonreflection
-is an explicit non-atomic partial result recovered by reconcile.
+is an explicit non-atomic partial result. Reconcile checks OS bindings; it does
+not retransmit business content. The Feature can explicitly retry its update.
 
 ## Host lifecycle
 
@@ -50,7 +54,9 @@ backup, removal, durable external access, and the diagnostic View. The fixture
 provides `FeatureALiveIntegration.makeDefinition()` and
 `FeatureBLiveIntegration.makeDefinition()`. The ordering is:
 
-1. launch/resume: `reconcile`, then `open`; never recreate a missing activity;
+1. launch/resume: `reconcile`, recover a handle with `current(localID:generation:)`,
+   and start passive `observe`; do not reopen a management-closed gate or recreate
+   a missing activity. Explicit management enable/resume controls `open`;
 2. disable/delete: `close` (drains admitted work), `endOwned`, then ordinary
    unregister/removal;
 3. restore stop: `close`, `endOwned`, replace business payload; resume reconciles

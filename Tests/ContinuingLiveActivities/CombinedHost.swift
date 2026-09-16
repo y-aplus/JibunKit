@@ -8,8 +8,25 @@ struct FixtureIntents: AppIntentsPackage {
 }
 @main struct FixtureHost: App {
     @State private var definitions: [MiniAppDefinition] = []
+    @State private var errorMessage: String?
     var body: some Scene {
-        WindowGroup { TabView { ForEach(definitions) { definition in definition.makeDestination().tabItem { Text(definition.title) } } }
-            .task { definitions = (try? [FeatureALiveIntegration.makeDefinition(), FeatureBLiveIntegration.makeDefinition()]) ?? [] } }
+        WindowGroup {
+            Group {
+                if let errorMessage { Text(errorMessage) }
+                else { TabView { ForEach(definitions) { definition in
+                    definition.makeDestination().tabItem { Text(definition.title) }
+                } } }
+            }.task {
+                guard definitions.isEmpty, errorMessage == nil else { return }
+                do {
+                    let prepared = try [FeatureALiveIntegration.makeDefinition(), FeatureBLiveIntegration.makeDefinition()]
+                    for definition in prepared {
+                        try definition.effectiveExternalAccess?.prepare(true)
+                        try definition.onHostLaunch?()
+                    }
+                    definitions = prepared
+                } catch { errorMessage = String(describing: error) }
+            }
+        }
     }
 }

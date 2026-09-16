@@ -71,11 +71,20 @@ public extension MiniAppLiveActivityJournalAccess {
 
 private actor MiniAppLiveActivityObservation {
     private var task: Task<Void, Never>?
-    func start(stream: AsyncStream<Void>, reconcile: @escaping @Sendable () async -> Void) {
+    func start(makeStream: @escaping @Sendable () async -> AsyncStream<Void>,
+               reconcile: @escaping @Sendable () async -> Void) {
         guard task == nil else { return }
-        task = Task { for await _ in stream { if Task.isCancelled { break }; await reconcile() } }
+        task = Task {
+            let stream = await makeStream()
+            for await _ in stream { if Task.isCancelled { break }; await reconcile() }
+        }
     }
-    func stop() { task?.cancel(); task = nil }
+    func stop() async {
+        let previous = task
+        task = nil
+        previous?.cancel()
+        await previous?.value
+    }
 }
 
 /// Share one value for one owner/native type in the app process. The operation
@@ -108,6 +117,16 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
                 identity.owner == proposed.owner && identity.localID == proposed.localID
                     && identity.generation == proposed.generation
             }
+            let sameOS = os.filter { sameBusiness($0.identity) && [.pending, .active, .stale, .unknown].contains($0.state) }
+            guard sameOS.count <= 1 else { throw MiniAppLiveActivityError.duplicateRegistration }
+            if let unknown = sameOS.first(where: { $0.state == .unknown }) {
+                throw MiniAppLiveActivityError.nativeStateUnresolved(systemID: unknown.systemID)
+            }
+            // An explicit stop/management cleanup must not be undone by start.
+            guard !saved.contains(where: { row in
+                sameBusiness(row.identity) && row.phase == .ending
+                    && sameOS.contains(where: { $0.identity == row.identity })
+            }) else { throw MiniAppLiveActivityError.duplicateRegistration }
             for row in saved.filter({ sameBusiness($0.identity) && $0.phase != .ending }) {
                 if let systemID = row.systemID,
                    let nativeRow = os.first(where: { $0.systemID == systemID && $0.identity == row.identity }),
@@ -116,14 +135,20 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
                 }
             }
             if let orphan = os.first(where: { sameBusiness($0.identity) && [.pending, .active, .stale].contains($0.state) }) {
+                guard !saved.contains(where: {
+                    $0.identity == orphan.identity && $0.systemID != nil && $0.systemID != orphan.systemID
+                }) else { throw MiniAppLiveActivityError.staleIdentity }
                 try journal.update { rows in
-                    rows.removeAll { sameBusiness($0.identity) }
+                    rows.removeAll { $0.identity == orphan.identity }
                     rows.append(.init(identity: orphan.identity, systemID: orphan.systemID, phase: .active))
                 }
                 return .init(identity: orphan.identity, systemID: orphan.systemID)
             }
             try journal.update { rows in
-                rows.removeAll { sameBusiness($0.identity) }
+                // Keep ended-but-visible UI bindings for later owner cleanup.
+                rows.removeAll { row in
+                    sameBusiness(row.identity) && !os.contains(where: { $0.identity == row.identity })
+                }
                 rows.append(.init(identity: proposed, phase: .starting))
             }
             let systemID = try await native.request(identity: proposed, input: input)
@@ -137,9 +162,28 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         }
     }
 
+    /// Recover a usable handle after app/scene recreation without starting work.
+    public func current(localID: String, generation: UUID) async throws -> MiniAppLiveActivityDescriptor? {
+        try await gate.perform { [self] in
+            let candidate = try MiniAppContinuingIdentity(owner: owner, localID: localID, generation: generation)
+            try await validate(candidate)
+            let os = await native.records()
+            let matches = try journal.read().filter { row in
+                row.identity.owner == owner.rawValue && row.identity.localID == localID
+                    && row.identity.generation == generation && row.phase == .active
+                    && os.contains(where: { $0.identity == row.identity && $0.systemID == row.systemID
+                        && [.pending, .active, .stale].contains($0.state) })
+            }
+            guard matches.count <= 1 else { throw MiniAppLiveActivityError.duplicateRegistration }
+            guard let row = matches.first, let systemID = row.systemID else { return nil }
+            return .init(identity: row.identity, systemID: systemID)
+        }
+    }
+
     /// Feature mutation runs only after complete admission/registration checks.
     /// If the native call doesn't reflect the request, the committed Feature
-    /// mutation is an explicit non-atomic partial success and reconcile follows.
+    /// mutation is an explicit non-atomic partial result. Reconciliation checks
+    /// bindings; the Feature must explicitly retry content delivery if needed.
     @discardableResult
     public func update<Result: Sendable>(_ descriptor: MiniAppLiveActivityDescriptor,
         prepare: @escaping @Sendable () throws -> (Result, Driver.UpdateInput)) async throws -> Result {
@@ -170,12 +214,21 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         try await gate.performMaintenance { [self] in try await reconcileInsideGate() }
     }
 
-    public func close() async { await observation.stop(); await gate.close() }
+    public func close() async { await gate.close(); await observation.stop() }
 
-    public func open() async {
+    public func open() async throws {
         await gate.open()
-        let stream = await native.changes()
-        await observation.start(stream: stream) { [self] in _ = try? await reconcile() }
+        try await observe()
+    }
+
+    /// Start passive observation without reopening admission after a screen or
+    /// host launch races with management. Stream creation is itself deduplicated.
+    public func observe() async throws {
+        try await gate.perform { [self] in
+            await observation.start(makeStream: { await native.changes() }) {
+                _ = try? await self.reconcile()
+            }
+        }
     }
 
     public func endOwned(input: @escaping @Sendable (MiniAppContinuingIdentity) -> Driver.EndInput) async throws {
@@ -202,7 +255,7 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         finalInput: @escaping @Sendable (MiniAppContinuingIdentity) -> Driver.EndInput) -> MiniAppContinuingSurface {
         MiniAppContinuingSurface(owner: owner, id: id, close: { await self.close() },
             reconcile: { _ = try await self.reconcile() },
-            endOwned: { try await self.endOwned(input: finalInput) }, open: { await self.open() })
+            endOwned: { try await self.endOwned(input: finalInput) }, open: { try await self.open() })
     }
 
     private func reconcileInsideGate() async throws -> MiniAppLiveActivityReconcileReport {
@@ -223,14 +276,15 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
             } else if row.systemID == nil, identityMatches.count == 1,
                       let exact = identityMatches.first, exact.state != .dismissed {
                 row.systemID = exact.systemID
-                row.phase = exact.state == .ended ? .ending : .active
+                if row.phase == .ending || exact.state == .ended { row.phase = .ending }
+                else if exact.state != .unknown { row.phase = .active }
                 kept.append(row)
             } else if row.systemID != nil, !identityMatches.isEmpty {
                 report.mismatchedSystemIDs += identityMatches.map(\.systemID)
                 kept.append(row)
             }
         }
-        let known = Set(saved.compactMap(\.systemID))
+        let known = Set(kept.compactMap(\.systemID))
         report.unknownSystemIDs = os.filter { !known.contains($0.systemID) }.map(\.systemID)
         try journal.update { $0 = kept }
         return report

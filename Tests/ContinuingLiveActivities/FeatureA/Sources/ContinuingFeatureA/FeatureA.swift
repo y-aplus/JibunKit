@@ -48,7 +48,24 @@ public final class FeatureALiveActivityService: @unchecked Sendable {
             }
     }
 
-    public func activate() { Task { _ = try? await coordinator.reconcile(); await coordinator.open() } }
+    public func activate() async throws {
+        _ = try store().read()
+        _ = try await coordinator.reconcile()
+        try await coordinator.observe()
+    }
+    public func activateAfterLaunch() {
+        Task {
+            do { try await activate() }
+            catch { setStatus("A: reconcile error: \(error)") }
+        }
+    }
+    public func currentDescriptor() async throws -> MiniAppLiveActivityDescriptor? {
+        _ = try await coordinator.reconcile()
+        let snapshot = try store().read()
+        let current = try await coordinator.current(localID: Self.localID, generation: snapshot.generation)
+        setStatus("A: count \(snapshot.value.count); activity \(current?.systemID ?? "none")")
+        return current
+    }
     public func status() -> String { statusLock.withLock { statusText } }
     private func setStatus(_ value: String) { statusLock.withLock { statusText = value } }
 
@@ -68,8 +85,13 @@ public final class FeatureALiveActivityService: @unchecked Sendable {
         _ = try await coordinator.reconcile()
         let descriptor = MiniAppLiveActivityDescriptor(identity: identity, systemID: systemID)
         let next = try await coordinator.update(descriptor) { [self] in
-            let shared = try store(), snapshot = try shared.read()
-            let count = try shared.update(generation: snapshot.generation) { value in value.count += 1; return value.count }
+            let shared = try store()
+            let count = try shared.update(generation: identity.generation) { value in
+                let (next, overflow) = value.count.addingReportingOverflow(1)
+                guard !overflow else { throw MiniAppBackupError.invalidEntry }
+                value.count = next
+                return next
+            }
             return (count, ActivityContent(state: .init(count: count, message: "A 更新済み"),
                                            staleDate: .now.addingTimeInterval(900), relevanceScore: 60))
         }
@@ -143,6 +165,7 @@ public struct FeatureALiveActivityWidget: Widget {
 }
 
 public struct FeatureADiagnosticView: View {
+    @Environment(\.scenePhase) private var scenePhase
     private let service: FeatureALiveActivityService
     @State private var status: String
     @State private var descriptor: MiniAppLiveActivityDescriptor?
@@ -154,7 +177,16 @@ public struct FeatureADiagnosticView: View {
             Button("Aを更新") { run { guard let descriptor else { throw MiniAppLiveActivityError.missingRegistration }; try await service.advance(identity: descriptor.identity, systemID: descriptor.systemID) } }
             Button("Aを終了") { run { guard let descriptor else { throw MiniAppLiveActivityError.missingRegistration }; try await service.end(identity: descriptor.identity, systemID: descriptor.systemID); self.descriptor = nil } }
             Button("Aだけreset") { run { try service.resetAOnly() } }
-        }.task { service.activate(); status = service.status() }
+        }.task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            do {
+                try await service.activate()
+                descriptor = try await service.currentDescriptor()
+                status = service.status()
+            } catch is CancellationError {
+                return
+            } catch { status = "A error: \(error)" }
+        }
     }
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
         Task { do { try await operation(); status = service.status() } catch { status = "A error: \(error)" } }
@@ -177,7 +209,7 @@ public struct FeatureADiagnosticView: View {
             backup: backup,
             removal: .init(id: FeatureALiveActivityService.owner, dataDescription: "継続表示Aの業務状態") { try store.remove() },
             externalAccess: store.externalAccess(initialValue: .initial), continuingSurfaces: [service.surface()],
-            onHostLaunch: { service.activate() }) { _ in FeatureADiagnosticView(service: service) }
+            onHostLaunch: { service.activateAfterLaunch() }) { _ in FeatureADiagnosticView(service: service) }
     }
 }
 #endif

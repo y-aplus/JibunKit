@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-- P2-W開発branchで、owner別process共有状態、通常管理/復元の外部受付フック、A/Bの設定可能Widget・操作Controlの接続例を追加。共有状態probe・通常回帰と新接続の独立/統合native build・metadata・管理UIは成功。確認用prereleaseを公開し、実OS操作/設定保持の一括実機確認待ち。公開0.8.0の提供範囲には含めない。
+- P2-W開発branchで、owner別process共有状態、通常管理/復元の外部受付フック、A/Bの設定可能Widget・操作Controlの接続例を追加。共有状態probe・通常回帰と新接続の独立/統合native build・metadata・管理UIは成功。確認用e984d44で実OS操作/設定保持、再起動/上書き/Refresh、管理/選択復元/B保持と通常復帰を実機確認済み。0.8.1/build11の出荷CIを実行中。公開0.8.0の提供範囲には含めない。
 
 - 2026-09-15のユーザー承認でIssue #6推奨境界を1.0の正式範囲に採用。P0/P1維持、P2-A全体/P2-B通常範囲を必須、P2-Cを条件付き採用、P3一般化を後段とし、通常中断・復帰・所有者分離を必須として計画を更新。
 

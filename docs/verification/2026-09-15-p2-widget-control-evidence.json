@@ -119,6 +119,12 @@
           "seconds": 833
         }
       ]
+    },
+    {
+      "id": "35038442208",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35038442208",
+      "source": "88ab7cbe9f41a7eb102fed9444923c8ff8812bfd",
+      "conclusion": "pending; version-only0.8.1 normal build, exact head verified and OS monitor registered"
     }
   ],
   "evidence": [
@@ -387,6 +393,15 @@
       "reference": "docs/guides/interactive-widgets.md; docs/guides/feature-management.md; docs/verification/2026-09-15-p2-widget-control-device.md",
       "observation": "Owner responsibilities, native registration, shared state/management/restore, generation reselection, OS refresh limitations and actual physical check sequence documented. API samples match actual Definition/effective lifecycle integration.",
       "review": "Compared guide with FeatureA/B, Registry and native test fixtures; corrected completed device state and editing-mode instructions.0.8.1 publication remains separate pending gate."
+    },
+    {
+      "criterion": "P0-4.docs",
+      "kind": "inspection",
+      "source": "e984d44fbae1946720f2d43f3ee776e2f25c20f1",
+      "result": "passed",
+      "reference": "README.md; docs/mini-apps.md; docs/updating.md; docs/compatibility.md; docs/guides/interactive-widgets.md; docs/verification/2026-09-16-0.8.1-release.md",
+      "observation": "README to mini-app addition/build/update/recovery routes retained; added explicit interactive Widget/Control route and compatible optional externalAccess guidance. Current public0.8.0 and candidate0.8.1 separated. Existing unchanged onboarding/recovery documentation retains0.8 all58 review evidence.",
+      "review": "Read README/build/compatibility/updating/management/interactive guide and checked new source/API/physical evidence. This is affected-scope patch review, not a fresh full-minor audit. Updated related status/ledger/plan and release instructions."
     }
   ],
   "deferred_device": {

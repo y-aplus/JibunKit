@@ -14,6 +14,8 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 本体 `com.jibunkit.app`、Widget `com.jibunkit.app.Widget`、App Group `group.com.jibunkit.shared`を維持します。0.1.0公開時の実機実績は[導入・更新](docs/sidestore.md)に記録しています。過去の確認結果を現在の出荷候補の確認済み扱いにはしません。
 
+0.8.1/build11を出荷準備中です。操作Widget/Controlと共有状態の一括実機確認が完了し、版変更後のCIを待っています。[候補の範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。公開安定版は引き続き0.8.0です。
+
 ## 公開版0.8.0とmain
 
 通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、

@@ -1,6 +1,6 @@
 # Feature管理への接続
 
-P2-W開発branchの別process writerは、optionalのDefinition.externalAccessを使う。[操作Widget/Controlのガイド](interactive-widgets.md)に起動・停止・削除・復元との契約を記す。公開0.8.0には未収録で、新接続のnative/通常管理UIは35027469173で成功。実OS Widget/Controlからの管理反映は実機確認待ち。
+0.8.1候補の別process writerは、optionalのDefinition.externalAccessを使う。[操作Widget/Controlのガイド](interactive-widgets.md)に起動・停止・削除・復元との契約を記す。公開0.8.0には未収録で、新接続のnative/通常管理UIは35027469173で成功。実OS Widget/Controlからの更新拒否・片側削除/再登録・復元・B保持もe984d44で実機確認済み。版更新後CIと0.8.1公開は別途確認する。
 
 P0-Bで通常hostへ接続し、通常・生成CIの非実機条件を確認済み。対象sourceと試験範囲は[検証記録](../verification/2026-09-12-p0-b.md)を参照する。0.7.0候補の実機確認も2026-09-13に完了（[結果](../verification/2026-09-13-0.7-device-check.md)）。
 

@@ -1,6 +1,6 @@
 # 操作Widget／ControlとFeatureの共有状態
 
-P2-W開発版向け（2026-09-16更新）。公開0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。一括実機でのOS Widget/Control操作・設定保持は未実施。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
+0.8.1候補向け（2026-09-16更新）。公開安定版0.8.0には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。e984d44の一括実機でOS Widget/Control操作・設定保持・再起動/上書き/Refresh・管理/復元とB保持・通常復帰も確認済み。0.8.1の版変更後CI/公開は別gate。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
 
 ## 標準APIと責任
 
@@ -43,6 +43,10 @@ hostはDefinition.externalAccessを通常MiniAppManagementへ渡す。起動時p
 復元の一時停止と管理の有効/無効は別の永続状態である。復元中に管理が無効化を始めても、復元resumeは管理の無効化を打ち消さない。停止・適用に失敗して元runtimeへ戻せた場合は自分の復元予約だけを解放する。resume/recovery失敗時は閉じたままとし、明示的な無効化完了→再有効化で回復する。再有効化はhostの排他予約下で行い、生きた復元を途中解除しない。破損した保存内容をこの回復で初期化しない。
 
 独自MiniAppExternalAccessのprepare/close/openとrestoreLifecycleにも同じ契約を実装する。NSLockやsavedStatusの一回の読取りはprocess間の予約ではない。prepareはhost起動前の同期処理なので短く保ち、長い外部通信を入れない。
+
+## 利用者によるControl設定
+
+コントロールセンターへ追加した後、左上の＋で編集状態に入ってからControlの設定を開き、項目を選ぶ。通常状態の長押しだけでは設定画面は開かなかった。今回の診断A/Bで編集状態から項目を選べることを実機確認した。未選択時の「利用不可」は保存失敗の断定ではない。削除/復元後は古い世代を自動的に新データへ結び直さず、利用者が対象を再選択する。
 
 ## 表示更新と検証
 

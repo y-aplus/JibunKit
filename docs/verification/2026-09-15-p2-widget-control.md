@@ -2,7 +2,7 @@
 
 開始点はmain df43dac（0.8.0公開後にIssue #6を正式採用）。[開始契約](../delivery/P2-widget-control-contract.md)に設定/操作・app-extension整合・管理・OS接続・ガイドを一括した。P2-7は未完。
 
-現在: CI35027469173（e984d44）はnative/診断hostの両jobが成功。通常job34979381516は差分確認して再利用。確認用prereleaseを公開し、全4assetの無認証再取得・完全一致/CRCを確認。残るP2-W gateは一括実機確認で、P2-7/1.0は未完。以下の待機記述は履歴。
+現在: CI35027469173（e984d44）はnative/診断hostの両jobが成功。通常job34979381516は差分確認して再利用。確認用prereleaseを公開し、全4assetの無認証再取得・完全一致/CRCを確認。一括実機確認も完了し、0.8.1/build11の出荷CI35038442208待ち。公開/main統合と1.0全体は未完。以下の待機記述は履歴。
 
 ## 基盤実装
 
@@ -93,3 +93,7 @@ source e984d44、全体14分05秒（見込み25分）、native11分58秒・host1
 診断IPAは2,598,654 bytes、SHA-256 `456e2ca666b0d709b527d8fa9cb1aa19d038191b7ebf818c3787c71d3534608c`。CIの署名/metadata/CRC検査に加え、取得後の全entry CRC、既存本体/Widget/Shareの3ID・0.8.0/build10、Counter kindとA/B各Widget/Control kindを照合した。通常IPAは4eb784dの2,351,018 bytes/SHA e61991a1…を再利用し、診断kind非混入と通常source差分なしを確認した。
 
 [実機確認用prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p2-w-device-check-20260916)のtagはe984d44。診断/通常それぞれのIPAと単一IPA入りZIPを公開し、4ファイルすべてHTTP200で無認証再取得・元byte完全一致・CRCを確認した。ZIP64なし。既存release/tag/assetは変更していない。正式版とmainは未更新。実機手順は[こちら](2026-09-15-p2-widget-control-device.md)。実機確認後に版を進める。
+
+## 一括実機完了と0.8.1候補
+
+[操作別結果](2026-09-15-p2-widget-control-device.md)に全工程の確認をまとめた。Control設定は編集状態で開き、コード修正なしで成功。実機の無効化はほぼ即時。本体の表示は手動再読込み前に反映したが、一般的な即時更新保証にはしない。選択/管理/復元/更新保持と通常復帰まで確認済み。0.8.1への版更新と公開は[出荷照合](2026-09-16-0.8.1-release.md)に分ける。

@@ -41,4 +41,6 @@ P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳]
 
 P2-WはCI35027469173（e984d44）で独立A/B/統合build、metadata10定義比較、native4件、通常管理UI1件、診断IPAが成功。通常job34979381516の共有290件（skip2）、Records11件、別process probe、通常IPA/UI13件/Files往復1件は差分を確認して再利用した。初回無効化はSimulatorで約88秒、通知終了後のSpotlight接続中断も記録されており、遅延の解消とは扱わない。
 
-[実機確認版](https://github.com/y-aplus/JibunKit/releases/tag/p2-w-device-check-20260916)を公開し、診断/通常IPA・ZIPを無認証再取得して完全一致/CRCを確認した。残るP2-W gateは[一括実機確認](verification/2026-09-15-p2-widget-control-device.md)。P2-7はpartial、正式版0.8.0とmainは未更新で、新機能の実OS成功や1.0完成はまだ主張しない。[検証記録](verification/2026-09-15-p2-widget-control.md)・[接続ガイド](guides/interactive-widgets.md)。
+e984d44の診断IPAで一括実機確認が完了。Widget/Control各二候補・選択変更・背景からの加算、アプリ/端末再起動、同IPA上書き/SideStore Refresh、片側項目削除/無効化/全削除/再登録/選択JSON復元と古い設定拒否・B保持、通常IPA復帰が成功した。Control設定は編集状態で開く。実機の無効化はほぼ即時。本体表示も手動再読込みなしで更新されたが、一般的な即時更新保証とはしない。[操作記録](verification/2026-09-15-p2-widget-control-device.md)。
+
+今回のまとまりを0.8.1/build11へ進め、source88ab7cbの[CI35038442208](https://github.com/y-aplus/JibunKit/actions/runs/35038442208)で版更新後の通常IPAを検証中。候補の実行コードは実機確認版と同じで、製品差分は3bundle版のみ。P2-7の操作・検証は揃ったが、正式0.8.1公開とmain統合は未完。1.0の残るP2範囲は継続する。[出荷照合](verification/2026-09-16-0.8.1-release.md)・[接続ガイド](guides/interactive-widgets.md)。

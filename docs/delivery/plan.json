@@ -693,8 +693,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "設定可能Widget・操作Widget・Control",
-      "existing": "P1静的Widget・App Intents/entity/metadataに加え、P2-Wのowner別process共有状態と管理/復元接続、独立A/B/統合の操作Widget/Control build・metadata・native4件・通常管理UIは35027469173で成功",
-      "remaining": "実OS Widget/Controlの設定・操作・背景/再起動/上書き/Refresh保持、片側管理/選択復元とB保持の一括実機確認。初回管理の待ち時間も記録。確認後の版更新/出荷",
+      "existing": "P1静的Widget・App Intents/entity/metadataに加え、P2-Wのowner別process共有状態と管理/復元接続、独立A/B/統合の操作Widget/Control build・metadata・native4件・通常管理UIは35027469173で成功。e984d44でOS設定/操作、背景/再起動/上書き/Refresh、管理/復元/古い世代拒否/B保持と通常復帰も実機成功",
+      "remaining": "0.8.1/build11版変更後のCI/IPAと公開・main統合。動作の一括実機確認は完了",
       "deferred": "任意extension/storageの透過一般化",
       "criteria": [
         {

@@ -1,7 +1,7 @@
 # 公開・release手順
 
-更新日: 2026-09-15。最新公開版はGitHub Releasesを正本とする。0.8.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
-今回のVERSIONは0.8.0/build10、PREVIOUSは0.7.0。CI/IPA検査と版更新前source4e6a3f4のP1実機再確認を受領し、文書58件・証拠照合、公開と無認証再取得を完了（[今回の記録](verification/2026-09-15-0.8-release.md)）。0.7.0当時のP0証拠は[出荷記録](verification/2026-09-13-0.7-release.md)に保持する。
+更新日: 2026-09-16。最新公開版はGitHub Releasesを正本とする。0.8.0を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
+今回の候補VERSIONは0.8.1/build11、PREVIOUSは0.8.0/build10。e984d44のP2-W一括実機確認を受領し、版更新後のbuild/IPA検査を進めている（[今回の記録](verification/2026-09-16-0.8.1-release.md)）。0.8.0のP0/P1出荷証拠は[当時の記録](verification/2026-09-15-0.8-release.md)へ保持する。
 
 ## 版ごとの出荷判断
 
@@ -27,6 +27,8 @@ README、CHANGELOG、互換性、追加/更新/復旧手順、状態一覧、台
 出荷tagに入る文書が古い版を無条件に「現在」と呼ぶ状態を残さない。履歴はsource/時点付きで保持する。
 公開後はmainのREADME/状態一覧/CHANGELOG/検証記録を公開済みへ更新し、公開状態に関係する文章を再確認する。
 既存tagや過去release notesを書き換えず、公開後の確認commitを明示する。
+
+以下はmilestone minorの0.8.0時の例。0.8.1 patchではP2-Wのci条件と個別出荷記録を照合し、全minorレビュー実施とは記載しない。
 
 ```powershell
 python Tools/check-delivery.py --list-docs 0.8.0

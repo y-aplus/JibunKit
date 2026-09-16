@@ -45,6 +45,8 @@ PackageのIntents/Widget/resources、background/Web認証等のnative比較はwo
 
 ビルド・Simulator成功は実機の上書き更新、SideStore再署名、Widget・Shortcutsの保証ではない。公開版0.8.0は[出荷照合](verification/2026-09-15-0.8-release.md)、公開済み0.7.0は[当時の記録](verification/2026-09-13-0.7-release.md)、過去0.6.0の出荷検証は[公開記録](verification/2026-09-12-0.6-release.md)、公開後mainの追加は[現在状態](status.md)を参照する。Tuist移行時の記録は当時のsourceの履歴である。
 
+0.8.1/build11候補は[出荷照合](verification/2026-09-16-0.8.1-release.md)を参照。操作Widget/Controlの独立/統合比較は`native-surface.yml surface=interactive-widgets ios_major=26`でnativeと診断hostを並列実行する。これは通常IPAとは別の検証構成である。版だけを更新する0.8.1出荷runでは成功済みnative/UI/実機証拠をsource差分付きで再利用する。
+
 ## UI失敗の限定再現
 
 診断時は`-f simulator_tests=true -f focused_ui_validation=true -f ui_test_filter=MigrationUITests/MigrationUITests/testNotificationDeliveryAndRouting`のように、単一test methodのXcode test identifierを指定できる。このfocused経路はpublication boundary、固定Xcode/Tuist、workspace生成、Simulator準備、指定UIテストと診断artifactだけを実行する。通常のSwift/Moduleテスト、Releaseビルド、IPA検査、Files往復は省略し、CounterExampleまたはBackupHarnessも指定テストが使う場合だけ準備する。

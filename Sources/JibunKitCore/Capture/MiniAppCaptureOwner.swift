@@ -87,6 +87,11 @@ public final class MiniAppCaptureOwner {
                 try check(pending, runtimeGeneration)
                 guard allowed else { throw MiniAppCaptureFailure.osPermissionDenied(resource) }
             }
+            // Feature consent may be revoked while an OS permission sheet is
+            // pending. Recheck every requested resource before reserving camera.
+            for resource in request.resources {
+                guard consent(resource) else { throw MiniAppCaptureFailure.featureConsentDenied(resource) }
+            }
             guard request.resources.contains(.microphone) == (request.acquireAudio != nil) else {
                 throw MiniAppCaptureFailure.missingAudioHook
             }
@@ -115,14 +120,14 @@ public final class MiniAppCaptureOwner {
             try check(pending, runtimeGeneration)
             state = .running(request.resources)
             if let nativeEvents = request.nativeEvents {
-                let stream = await nativeEvents()
+                let events = try await nativeEvents()
+                try check(pending, runtimeGeneration)
+                pending.nativeGeneration = events.generation
                 pending.events = Task { @MainActor [weak self, weak pending] in
-                    for await event in stream {
+                    for await event in events.stream {
                         guard let self, let pending, self.operation === pending,
                               !pending.closed else { return }
-                        if let nativeGeneration = pending.nativeGeneration,
-                           nativeGeneration != event.generation { continue }
-                        pending.nativeGeneration = event.generation
+                        guard pending.nativeGeneration == event.generation else { continue }
                         await self.handle(event, operation: pending, request: request)
                     }
                 }
@@ -220,10 +225,14 @@ public final class MiniAppCaptureOwner {
         if let stopTask { await stopTask.value; finishRuntimeIfNeeded(); return }
         guard let pending = operation else { finishRuntimeIfNeeded(); return }
         pending.closed = true
-        pending.events?.cancel()
+        let events = pending.events
+        events?.cancel()
         pending.events = nil
         state = .stopping(reason)
         let task = Task { @MainActor in
+            // A non-cooperative restart may ignore cancellation. Join it before
+            // stopping native resources or releasing camera to another owner.
+            await events?.value
             if let startup = pending.startup, case .success(let started) = await startup.result {
                 await started.stop(reason)
                 await started.releaseAudio?()

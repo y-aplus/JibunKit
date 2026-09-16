@@ -23,8 +23,8 @@ final class MediaCaptureNativeTests: XCTestCase {
         let photoDefinition = photo.definition, scannerDefinition = scanner.definition
         try await photoDefinition.lifetime?.start()
         try await scannerDefinition.lifetime?.start()
-        photoDefinition.onSceneActivityChange?(active("media-photo"))
-        scannerDefinition.onSceneActivityChange?(active("media-scanner"))
+        activate(MiniAppID("media-photo")) { photoDefinition.onSceneActivityChange?($0) }
+        activate(MiniAppID("media-scanner")) { scannerDefinition.onSceneActivityChange?($0) }
         scanner.state.retainedValue = 41
         let scannerRuntime = try XCTUnwrap(scannerDefinition.lifetime?.runtime)
         let scannerGeneration = scanner.state.generation
@@ -50,7 +50,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         let fixture = PhotoFixture(coordinator: .init(), permissions: permission, consentStore: nil)
         let definition = fixture.definition
         try await definition.lifetime?.start()
-        definition.onSceneActivityChange?(active("media-photo"))
+        activate(MiniAppID("media-photo")) { definition.onSceneActivityChange?($0) }
         var started = false
         await XCTAssertThrowsErrorAsync(try await fixture.owner.start(.init(resources: [.camera]) {
             started = true
@@ -60,6 +60,45 @@ final class MediaCaptureNativeTests: XCTestCase {
         }
         XCTAssertTrue(permission.requested.isEmpty)
         XCTAssertFalse(started)
+        await definition.lifetime?.stop()
+    }
+
+    func testPhotoFeatureCaptureFailureStopsAndReleasesCamera() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let defaults = try makeDefaults()
+        let fixture = PhotoFixture(
+            coordinator: coordinator, permissions: NativePermission(),
+            consentStore: allowed(defaults, owner: "media-photo", ids: ["camera"]),
+            photoCapture: { owner in
+                try await owner.start(.init(resources: [.camera]) { { _ in } })
+                throw MiniAppCaptureFailure.native("injected photo failure")
+            }
+        )
+        let definition = fixture.definition
+        try await definition.lifetime?.start()
+        activate(MiniAppID("media-photo")) { definition.onSceneActivityChange?($0) }
+        await fixture.takePhoto()
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(fixture.owner.state, .idle)
+        XCTAssertTrue(fixture.state.status.contains("injected photo failure"))
+        await definition.lifetime?.stop()
+    }
+
+    func testRejectedAudioMovieDoesNotRetainProducerOrResult() async throws {
+        let previous = MediaCaptureProbe.makeAcquireAudio
+        defer { MediaCaptureProbe.makeAcquireAudio = previous }
+        MediaCaptureProbe.makeAcquireAudio = { _, _ in
+            { return { } }
+        }
+        let fixture = PhotoFixture(coordinator: .init(), permissions: NativePermission(), consentStore: nil)
+        let definition = fixture.definition
+        try await definition.lifetime?.start()
+        activate(MiniAppID("media-photo")) { definition.onSceneActivityChange?($0) }
+        await fixture.recordAudioMovie()
+        XCTAssertFalse(fixture.hasActiveMovieProducer)
+        XCTAssertNil(fixture.state.movieURL)
+        XCTAssertEqual(fixture.state.resultCount, 0)
+        XCTAssertTrue(fixture.state.status.contains("featureConsentDenied"))
         await definition.lifetime?.stop()
     }
 
@@ -78,7 +117,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         )
         let definition = fixture.definition
         try await definition.lifetime?.start()
-        definition.onSceneActivityChange?(active("media-scanner"))
+        activate(MiniAppID("media-scanner")) { definition.onSceneActivityChange?($0) }
         await fixture.scanDocument()
         XCTAssertEqual(events.values, ["present"])
         await fixture.stop()
@@ -96,7 +135,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         let presentations = MiniAppPresentationOwner(id: ownerID)
         try presentations.connect(to: runtime)
         try owner.connect(to: runtime)
-        owner.receive(.init(featureID: ownerID, sceneID: UUID(), phase: .active, isSelected: true))
+        activate(ownerID) { owner.receive($0) }
         let harness = PresentationHarness()
         let adapter = MiniAppVisionCaptureAdapter(
             presentationOwner: presentations,
@@ -158,7 +197,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         let presentations = MiniAppPresentationOwner(id: id)
         try presentations.connect(to: runtime)
         try owner.connect(to: runtime)
-        owner.receive(.init(featureID: id, sceneID: UUID(), phase: .active, isSelected: true))
+        activate(id) { owner.receive($0) }
         let harness = PresentationHarness()
         let adapter = MiniAppVisionCaptureAdapter(
             presentationOwner: presentations,
@@ -232,8 +271,11 @@ private final class PresentationHarness {
 
 @MainActor private final class NativeEvents { var values: [String] = [] }
 
-private func active(_ owner: String) -> MiniAppSceneActivity {
-    .init(featureID: MiniAppID(owner), sceneID: UUID(), phase: .active, isSelected: true)
+@MainActor
+private func activate(_ owner: MiniAppID,
+                      handler: @escaping @MainActor (MiniAppSceneActivity) -> Void) {
+    let dispatcher = MiniAppSceneActivityDispatcher(handlers: [.init(id: owner, handler: handler)])
+    dispatcher.connect(phase: .active, selectedID: owner)
 }
 
 @MainActor

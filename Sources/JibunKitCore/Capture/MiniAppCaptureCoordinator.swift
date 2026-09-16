@@ -66,6 +66,16 @@ public enum MiniAppCaptureNativeEvent: Sendable, Equatable {
     }
 }
 
+public struct MiniAppCaptureNativeEvents: Sendable {
+    public let generation: UUID
+    public let stream: AsyncStream<MiniAppCaptureNativeEvent>
+
+    public init(generation: UUID, stream: AsyncStream<MiniAppCaptureNativeEvent>) {
+        self.generation = generation
+        self.stream = stream
+    }
+}
+
 @MainActor
 public protocol MiniAppCapturePermissionClient: AnyObject {
     func request(_ resource: MiniAppCaptureResource) async -> Bool
@@ -78,7 +88,7 @@ public struct MiniAppCaptureOperation: Sendable {
     public typealias Stop = @MainActor @Sendable (MiniAppCaptureStopReason) async -> Void
     public typealias Start = @MainActor @Sendable () async throws -> Stop
     public typealias AcquireAudio = @MainActor @Sendable () async throws -> (@MainActor @Sendable () async -> Void)
-    public typealias Events = @MainActor @Sendable () async -> AsyncStream<MiniAppCaptureNativeEvent>
+    public typealias Events = @MainActor @Sendable () async throws -> MiniAppCaptureNativeEvents
     public typealias Restart = @MainActor @Sendable () async throws -> Void
 
     public let resources: Set<MiniAppCaptureResource>

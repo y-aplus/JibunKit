@@ -195,7 +195,9 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         let generation = UUID()
         let events = CaptureEvents()
         let operation = MiniAppCaptureOperation(
-            resources: [.camera], nativeEvents: { pair.stream },
+            resources: [.camera], nativeEvents: {
+                MiniAppCaptureNativeEvents(generation: generation, stream: pair.stream)
+            },
             restartNative: { events.append("restart") },
             startNative: { { _ in events.append("stop") } }
         )
@@ -223,8 +225,13 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         owner.receive(active("runtime")); other.receive(active("other"))
         let pair = AsyncStream<MiniAppCaptureNativeEvent>.makeStream()
         let generation = UUID()
-        try await owner.start(.init(resources: [.camera], nativeEvents: { pair.stream },
+        try await owner.start(.init(resources: [.camera], nativeEvents: {
+            MiniAppCaptureNativeEvents(generation: generation, stream: pair.stream)
+        },
                                     startNative: { { _ in } }))
+        pair.continuation.yield(.interrupted(generation: UUID(), reason: "old-first"))
+        await Task.yield()
+        XCTAssertEqual(owner.state, .running([.camera]))
         pair.continuation.yield(.interrupted(generation: generation, reason: "pressure"))
         await eventually { owner.state == .suspended(.interrupted("pressure")) }
         pair.continuation.yield(.runtimeFailed(generation: UUID(), reason: "old", canRestart: false))
@@ -234,6 +241,69 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         await eventually { owner.state == .failed(.runtime("reset")) }
         XCTAssertFalse(otherRuntime.isClosed)
         XCTAssertNil(coordinator.currentCameraOwner)
+    }
+
+    func testStopJoinsInFlightRestartBeforeCameraSwitch() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions()
+        let a = MiniAppCaptureOwner(id: MiniAppID("restart-a"), coordinator: coordinator,
+                                    permissions: permissions, consent: allow)
+        let b = MiniAppCaptureOwner(id: MiniAppID("restart-b"), coordinator: coordinator,
+                                    permissions: permissions, consent: allow)
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        a.receive(active("restart-a")); b.receive(active("restart-b"))
+        let pair = AsyncStream<MiniAppCaptureNativeEvent>.makeStream()
+        let generation = UUID()
+        let restartGate = NativeStartGate()
+        try await a.start(.init(
+            resources: [.camera],
+            nativeEvents: { .init(generation: generation, stream: pair.stream) },
+            restartNative: { await restartGate.wait() },
+            startNative: { { _ in } }
+        ))
+        pair.continuation.yield(.interrupted(generation: generation, reason: "test"))
+        await eventually { a.state == .suspended(.interrupted("test")) }
+        pair.continuation.yield(.interruptionEnded(generation: generation))
+        await restartGate.waitUntilEntered()
+
+        let aStop = Task { @MainActor in await a.stop() }
+        await eventually { a.state == .stopping(.user) }
+        let switched = CaptureFlag()
+        let bStart = Task { @MainActor in
+            try await b.start(operation(events: .init(), label: "b"), switching: .stopCurrent)
+            switched.value = true
+        }
+        await Task.yield()
+        XCTAssertEqual(coordinator.currentCameraOwner, MiniAppID("restart-a"))
+        XCTAssertFalse(switched.value)
+        restartGate.open()
+        await aStop.value
+        try await bStart.value
+        XCTAssertTrue(switched.value)
+        XCTAssertEqual(coordinator.currentCameraOwner, MiniAppID("restart-b"))
+    }
+
+    func testStopWhileAwaitingNativeEventStreamDoesNotRegisterLateObserver() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("events-late"), coordinator: coordinator,
+                                        permissions: CapturePermissions(), consent: allow)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("events-late"))
+        let gate = NativeEventsGate()
+        let events = CaptureEvents()
+        let starting = Task { @MainActor in
+            try await owner.start(.init(
+                resources: [.camera], nativeEvents: { await gate.wait() },
+                startNative: { { _ in events.append("native-stop") } }
+            ))
+        }
+        await gate.waitUntilEntered()
+        await owner.stop()
+        gate.open()
+        await XCTAssertThrowsErrorAsync(try await starting.value) { _ in }
+        XCTAssertEqual(events.values, ["native-stop"])
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(owner.state, .idle)
     }
 
     func testConsentDenialPrecedesOSPermissionAndNativeAcquisition() async throws {
@@ -248,6 +318,27 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
             XCTAssertEqual($0 as? MiniAppCaptureFailure, .featureConsentDenied(.camera))
         }
         XCTAssertTrue(permissions.requestedResources.isEmpty)
+        XCTAssertNil(coordinator.currentCameraOwner)
+    }
+
+    func testConsentRevokedDuringOSPromptIsRecheckedBeforeCameraReservation() async throws {
+        let permissions = CapturePermissions(blocked: true)
+        let consent = ConsentFlag()
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("revoked"), coordinator: coordinator,
+                                        permissions: permissions, consent: { _ in consent.allowed })
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("revoked"))
+        let events = CaptureEvents()
+        let starting = Task { @MainActor in
+            try await owner.start(operation(events: events, label: "revoked"))
+        }
+        await permissions.waitUntilRequested()
+        consent.allowed = false
+        permissions.resolve(true)
+        await XCTAssertThrowsErrorAsync(try await starting.value) {
+            XCTAssertEqual($0 as? MiniAppCaptureFailure, .featureConsentDenied(.camera))
+        }
+        XCTAssertTrue(events.values.isEmpty)
         XCTAssertNil(coordinator.currentCameraOwner)
     }
 
@@ -305,6 +396,9 @@ private final class CaptureEvents {
     func append(_ value: String) { values.append(value) }
 }
 
+@MainActor private final class CaptureFlag { var value = false }
+@MainActor private final class ConsentFlag { var allowed = true }
+
 @MainActor
 private final class NativeStartGate {
     private var entered = false
@@ -320,6 +414,20 @@ private final class NativeStartGate {
         continuation?.resume()
         continuation = nil
     }
+}
+
+@MainActor
+private final class NativeEventsGate {
+    private let generation = UUID()
+    private var entered = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async -> MiniAppCaptureNativeEvents {
+        entered = true
+        await withCheckedContinuation { continuation = $0 }
+        return .init(generation: generation, stream: AsyncStream { $0.finish() })
+    }
+    func waitUntilEntered() async { while !entered { await Task.yield() } }
+    func open() { continuation?.resume(); continuation = nil }
 }
 
 @MainActor

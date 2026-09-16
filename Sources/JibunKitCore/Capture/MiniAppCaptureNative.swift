@@ -46,6 +46,8 @@ public actor MiniAppAVCaptureSessionProducer {
     private var eventContinuations: [UUID: AsyncStream<MiniAppCaptureNativeEvent>.Continuation] = [:]
     private var pendingEvents: [MiniAppCaptureNativeEvent] = []
     private var startupError = RuntimeErrorBox()
+    private var isStopping = false
+    private var stopWaiters: [CheckedContinuation<Void, Never>] = []
 
     public init(mode: MiniAppAVCaptureMode, includesAudio: Bool = false) {
         self.mode = mode
@@ -53,6 +55,7 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func start() throws {
+        guard !isStopping else { throw MiniAppCaptureFailure.stopped }
         guard session == nil else { return }
         let session = AVCaptureSession()
         // Audio is process-shared and must already be configured by the injected
@@ -118,9 +121,20 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func stop() async {
+        if isStopping {
+            await withCheckedContinuation { stopWaiters.append($0) }
+            return
+        }
         guard let session else {
             cancelPhotos(reason: "capture stopped")
             return
+        }
+        isStopping = true
+        defer {
+            isStopping = false
+            let waiters = stopWaiters
+            stopWaiters.removeAll()
+            waiters.forEach { $0.resume() }
         }
         removeObservers()
         cancelPhotos(reason: "capture stopped")
@@ -141,7 +155,7 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func capturePhoto() async throws -> Data {
-        guard let output = photoOutput else { throw MiniAppCaptureFailure.stopped }
+        guard !isStopping, let output = photoOutput else { throw MiniAppCaptureFailure.stopped }
         return try await withCheckedThrowingContinuation { continuation in
             let settings = AVCapturePhotoSettings()
             let id = settings.uniqueID
@@ -156,7 +170,8 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func startMovie(to url: URL) throws {
-        guard let output = movieOutput, !output.isRecording else { throw MiniAppCaptureFailure.stopped }
+        guard !isStopping, let output = movieOutput, movieDelegate == nil,
+              !output.isRecording else { throw MiniAppCaptureFailure.stopped }
         lastMovieCompletion = nil
         let delegate = MovieDelegate(url: url)
         movieDelegate = delegate
@@ -165,7 +180,8 @@ public actor MiniAppAVCaptureSessionProducer {
 
     public func movieCompletion() -> MiniAppMovieCompletion? { lastMovieCompletion }
 
-    public func events() -> AsyncStream<MiniAppCaptureNativeEvent> {
+    public func events() throws -> MiniAppCaptureNativeEvents {
+        guard !isStopping, let generation else { throw MiniAppCaptureFailure.stopped }
         let id = UUID()
         let pair = AsyncStream<MiniAppCaptureNativeEvent>.makeStream()
         eventContinuations[id] = pair.continuation
@@ -174,7 +190,7 @@ public actor MiniAppAVCaptureSessionProducer {
         pair.continuation.onTermination = { [weak self] _ in
             Task { await self?.removeEventContinuation(id) }
         }
-        return pair.stream
+        return MiniAppCaptureNativeEvents(generation: generation, stream: pair.stream)
     }
 
     public func restartAfterInterruption() throws {
@@ -230,7 +246,7 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     private func cancelPhotos(reason: String) {
-        let delegates = photoDelegates.values
+        let delegates = Array(photoDelegates.values)
         photoDelegates.removeAll()
         delegates.forEach { $0.cancel(reason: reason) }
     }
@@ -250,9 +266,19 @@ private final class RuntimeErrorBox: @unchecked Sendable {
 private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     private let lock = NSLock()
     private var completion: (@Sendable (Data?, String?) -> Void)?
+    private var processedData: Data?
+    private var processingFailure: String?
     init(completion: @escaping @Sendable (Data?, String?) -> Void) { self.completion = completion }
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        finish(data: photo.fileDataRepresentation(), failure: error.map { String(describing: $0) })
+        lock.withLock {
+            processedData = photo.fileDataRepresentation()
+            processingFailure = error.map { String(describing: $0) }
+        }
+    }
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings,
+                     error: Error?) {
+        let values = lock.withLock { (processedData, error.map { String(describing: $0) } ?? processingFailure) }
+        finish(data: values.0, failure: values.1)
     }
     func cancel(reason: String) { finish(data: nil, failure: reason) }
     private func finish(data: Data?, failure: String?) {
@@ -264,32 +290,50 @@ private final class PhotoDelegate: NSObject, AVCapturePhotoCaptureDelegate {
     }
 }
 
-private final class MovieDelegate: NSObject, AVCaptureFileOutputRecordingDelegate {
+/// Delegate callbacks may arrive on an arbitrary queue. Only immutable URL and
+/// lock-protected value/continuations cross that boundary; no AVCapture object
+/// is stored or declared Sendable here.
+private final class MovieDelegate: NSObject, AVCaptureFileOutputRecordingDelegate, @unchecked Sendable {
     private let url: URL
-    private let finished: AsyncStream<MiniAppMovieCompletion>
-    private let finishContinuation: AsyncStream<MiniAppMovieCompletion>.Continuation
+    private let lock = NSLock()
+    private var result: MiniAppMovieCompletion?
+    private var waiters: [CheckedContinuation<MiniAppMovieCompletion, Never>] = []
     init(url: URL) {
         self.url = url
-        let pair = AsyncStream<MiniAppMovieCompletion>.makeStream()
-        self.finished = pair.stream
-        self.finishContinuation = pair.continuation
         super.init()
     }
     func completion() async -> MiniAppMovieCompletion {
-        for await result in finished { return result }
-        return .failed(url, "recording ended without completion")
+        if let result = lock.withLock({ self.result }) { return result }
+        return await withCheckedContinuation { continuation in
+            let ready = lock.withLock { () -> MiniAppMovieCompletion? in
+                if let result = self.result { return result }
+                waiters.append(continuation)
+                return nil
+            }
+            if let ready { continuation.resume(returning: ready) }
+        }
     }
     func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL,
                     from connections: [AVCaptureConnection]) {}
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL,
                     from connections: [AVCaptureConnection], error: Error?) {
-        let result: MiniAppMovieCompletion = if let error {
+        let explicitlyFinished = error.map {
+            ($0 as NSError).userInfo[AVErrorRecordingSuccessfullyFinishedKey] as? Bool == true
+        } ?? false
+        let result: MiniAppMovieCompletion = if error == nil || explicitlyFinished {
+            .succeeded(outputFileURL)
+        } else if let error {
             .failed(outputFileURL, String(describing: error))
         } else {
-            .succeeded(outputFileURL)
+            .failed(outputFileURL, "recording completion was unsupported")
         }
-        finishContinuation.yield(result)
-        finishContinuation.finish()
+        let continuations = lock.withLock { () -> [CheckedContinuation<MiniAppMovieCompletion, Never>] in
+            guard self.result == nil else { return [] }
+            self.result = result
+            defer { waiters.removeAll() }
+            return waiters
+        }
+        continuations.forEach { $0.resume(returning: result) }
     }
 }
 

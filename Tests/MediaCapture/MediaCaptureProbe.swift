@@ -1,5 +1,4 @@
 import AVFoundation
-import AVKit
 import JibunKitCore
 import SwiftUI
 import UIKit
@@ -52,11 +51,14 @@ final class MediaCaptureFixtureState: ObservableObject {
 
 @MainActor
 final class PhotoFixture {
+    typealias PhotoCaptureOverride = @MainActor (MiniAppCaptureOwner) async throws -> Data
     let id = MiniAppID("media-photo")
     let state = MediaCaptureFixtureState()
     let owner: MiniAppCaptureOwner
     let consentGate: MediaCaptureConsentGate
     private var movieProducer: MiniAppAVCaptureSessionProducer?
+    var hasActiveMovieProducer: Bool { movieProducer != nil }
+    private let photoCaptureOverride: PhotoCaptureOverride?
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
         try self.owner.connect(to: runtime)
@@ -66,10 +68,12 @@ final class PhotoFixture {
 
     init(coordinator: MiniAppCaptureCoordinator,
          permissions: any MiniAppCapturePermissionClient = MiniAppAVCapturePermissionClient(),
-         consentStore: MiniAppConsentStore? = nil) {
+         consentStore: MiniAppConsentStore? = nil,
+         photoCapture: PhotoCaptureOverride? = nil) {
         let featureID = MiniAppID("media-photo")
         let gate = MediaCaptureConsentGate(owner: featureID, store: consentStore)
         consentGate = gate
+        photoCaptureOverride = photoCapture
         owner = MiniAppCaptureOwner(id: featureID, coordinator: coordinator,
                                     permissions: permissions,
                                     consent: { [gate] in gate.allows($0) })
@@ -94,25 +98,30 @@ final class PhotoFixture {
                 .init(id: "microphone", title: "マイク", purpose: "動画へ音声を収録します", deniedBehavior: "音声付き動画を開始しません"),
             ],
             onSceneActivityChange: { [weak self] in self?.owner.receive($0) }
-        ) { [weak self] _ in
-            PhotoProbeView(fixture: self!)
+        ) { [self] _ in
+            PhotoProbeView(fixture: self)
         }
     }
 
     func takePhoto() async {
-        let producer = MiniAppAVCaptureSessionProducer(mode: .photo)
-        let operation = MiniAppCaptureOperation(
-            resources: [.camera], nativeEvents: { await producer.events() },
-            restartNative: { try await producer.restartAfterInterruption() },
-            startNative: { [weak self] in
-                try await producer.start()
-                self?.state.status = "写真: camera実行中"
-                return { _ in await producer.stop() }
-            }
-        )
         do {
-            try await owner.start(operation, switching: .stopCurrent)
-            let data = try await producer.capturePhoto()
+            let data: Data
+            if let photoCaptureOverride {
+                data = try await photoCaptureOverride(owner)
+            } else {
+                let producer = MiniAppAVCaptureSessionProducer(mode: .photo)
+                let operation = MiniAppCaptureOperation(
+                    resources: [.camera], nativeEvents: { try await producer.events() },
+                    restartNative: { try await producer.restartAfterInterruption() },
+                    startNative: { [weak self] in
+                        try await producer.start()
+                        self?.state.status = "写真: camera実行中"
+                        return { _ in await producer.stop() }
+                    }
+                )
+                try await owner.start(operation, switching: .stopCurrent)
+                data = try await producer.capturePhoto()
+            }
             // Fixture/Feature owns the result bytes; Core never stores them.
             state.resultCount += data.isEmpty ? 0 : 1
             state.photoData = data
@@ -121,6 +130,7 @@ final class PhotoFixture {
             await owner.stop()
         } catch {
             state.status = "写真失敗: \(error)"
+            await owner.stop()
         }
     }
 
@@ -137,7 +147,7 @@ final class PhotoFixture {
             .appendingPathComponent("media-capture-\(UUID().uuidString).mov")
         let operation = MiniAppCaptureOperation(
             resources: [.camera, .microphone], acquireAudio: acquireAudio,
-            nativeEvents: { await producer.events() },
+            nativeEvents: { try await producer.events() },
             restartNative: { try await producer.restartAfterInterruption() },
             startNative: { [weak self] in
                 do {
@@ -159,7 +169,17 @@ final class PhotoFixture {
         do {
             try await owner.start(operation, switching: .stopCurrent)
             state.retainedValue = url.path.count
-        } catch { state.status = "音声付き動画失敗: \(error)" }
+        } catch {
+            await owner.stop()
+            await producer.stop()
+            try? FileManager.default.removeItem(at: url)
+            if movieProducer === producer { movieProducer = nil }
+            if state.movieURL == url {
+                state.movieURL = nil
+                state.resultCount = max(0, state.resultCount - 1)
+            }
+            state.status = "音声付き動画失敗: \(error)"
+        }
     }
 
     func stop() async {
@@ -250,8 +270,8 @@ final class ScannerFixture {
                 .init(id: "camera", title: "カメラ", purpose: "文書とコードを読み取ります", deniedBehavior: "scanを開始しません"),
             ],
             onSceneActivityChange: { [weak self] in self?.owner.receive($0) }
-        ) { [weak self] _ in
-            ScannerProbeView(fixture: self!)
+        ) { [self] _ in
+            ScannerProbeView(fixture: self)
         }
     }
 
@@ -312,7 +332,9 @@ private struct PhotoProbeView: View {
                     .accessibilityLabel("撮影した写真")
             }
             if let url = state.movieURL {
-                MediaCaptureMoviePreview(url: url)
+                ShareLink(item: url) {
+                    Label("保存した動画を共有して確認", systemImage: "square.and.arrow.up")
+                }
             }
         }
         .onAppear { fixture.consentGate.store = consentStore }
@@ -339,16 +361,6 @@ private struct ScannerProbeView: View {
         }
         .background(MediaCapturePresentationAnchorView(anchor: fixture.presentationAnchor))
         .onAppear { fixture.consentGate.store = consentStore }
-    }
-}
-
-private struct MediaCaptureMoviePreview: View {
-    @State private var player: AVPlayer
-    init(url: URL) { _player = State(initialValue: AVPlayer(url: url)) }
-    var body: some View {
-        VideoPlayer(player: player).frame(minHeight: 180)
-            .accessibilityLabel("撮影した動画")
-            .onDisappear { player.pause() }
     }
 }
 

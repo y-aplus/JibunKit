@@ -93,15 +93,39 @@ final class MediaAudioNativeTests: XCTestCase {
         XCTAssertEqual(state.recorderStatus, "失敗")
     }
 
-    func testConflictConfirmationWithoutCurrentConsentDoesNotStopIncumbent() async {
+    func testConflictConfirmationWithoutCurrentConsentDoesNotStopIncumbent() async throws {
         let coordinator = MiniAppAudioSessionCoordinator(driver: MediaAudioTestDriver())
         let state = MediaAudioProbeState(coordinator: coordinator, permission: { true }, recording: MediaAudioTestRecordingBackend())
-        await state.startPlayer()
+        let incumbent = try await coordinator.acquire(owner: MiniAppID("exclusive"),
+            request: .init(acceptableProfiles: [.init(category: .record, mode: .measurement)], purpose: "exclusive"),
+            stop: { XCTFail("Consent rejection must not stop the incumbent") }, receive: { _ in })
+        guard case .acquired = incumbent else { return XCTFail("Incumbent missing") }
         await state.startRecording(featureConsent: true)
-        await state.confirmRecorderReplacement(featureConsent: false)
-        XCTAssertEqual(coordinator.activeOwners, [MiniAppID("media-audio-player")])
         XCTAssertNil(state.recorderLease)
-        await state.stopPlayer()
+        XCTAssertTrue(state.recorderStatus.contains("競合"))
+        await state.confirmRecorderReplacement(featureConsent: false)
+        XCTAssertEqual(coordinator.activeOwners, [MiniAppID("exclusive")])
+        XCTAssertNil(state.recorderLease)
+    }
+
+    func testRealFeatureLifetimeStopKeepsOtherRuntimeAndLease() async throws {
+        let definitions = MediaAudioProbe.definitions
+        let player = try XCTUnwrap(definitions[0].lifetime)
+        let recorder = try XCTUnwrap(definitions[1].lifetime)
+        try await player.start(); try await recorder.start()
+        let otherRuntime = try XCTUnwrap(recorder.runtime)
+        let state = MediaAudioProbe.state
+        await state.startPlayer()
+        XCTAssertNotNil(state.playerLease)
+        try await state.reserveRecorderAudio()
+        let otherLease = try XCTUnwrap(state.recorderLease)
+        await player.stop()
+        XCTAssertNil(state.playerLease)
+        XCTAssertTrue(recorder.runtime === otherRuntime)
+        XCTAssertEqual(state.recorderLease, otherLease)
+        XCTAssertEqual(state.coordinator.activeOwners, [otherLease.owner])
+        await recorder.stop()
+        XCTAssertTrue(state.coordinator.activeOwners.isEmpty)
     }
 
     func testFeatureConnectionReactivatesAfterInterruptionButNotAfterUserStop() async throws {

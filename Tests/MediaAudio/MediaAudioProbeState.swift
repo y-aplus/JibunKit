@@ -102,6 +102,7 @@ final class MediaAudioProbeState {
             playerLease = lease; playerGeneration = lease.generation
             try coordinator.updateIntent(.active, for: lease)
             try await installPlayerNative(for: lease)
+            guard playerOperation == operation, playerLease == lease else { return }
             playerStatus = "loop再生中"; playerError = "なし"; refreshDetail()
         } catch {
             if let acquiredLease { try? await coordinator.release(acquiredLease) }
@@ -218,10 +219,18 @@ final class MediaAudioProbeState {
     }
 
     func stopPlayerForLifetime() async {
-        while playerLease != nil { await stopPlayer(); if playerLease != nil { try? await Task.sleep(for: .milliseconds(100)) } }
+        await stopPlayer()
+        if let lease = playerLease {
+            await coordinator.waitForRelease(lease)
+            playerLease = nil
+        }
     }
     func stopRecorderForLifetime() async {
-        while recorderLease != nil { await releaseRecorder(); if recorderLease != nil { try? await Task.sleep(for: .milliseconds(100)) } }
+        await releaseRecorder()
+        if let lease = recorderLease {
+            await coordinator.waitForRelease(lease)
+            recorderLease = nil
+        }
     }
 
     private func stopPlayerProducer() async throws {
@@ -241,9 +250,13 @@ final class MediaAudioProbeState {
         case .mediaServicesReset:
             playerStatus = "media reset: native再構築中"
             Task { @MainActor [weak self] in await self?.rebuildPlayerAfterReset() }
+        case .released:
+            playerLease = nil
+            playerStatus = "停止済み"
         }
     }
     private func handleRecorder(_ event: MiniAppAudioEvent) {
+        if case .released = event { recorderLease = nil; recorderStatus = "停止済み" }
         if case .interruptionBegan = event { recording.stop(); recorderStatus = "録音中断" }
         if case .mediaServicesReset = event { recording.stop(); recorderStatus = "media reset: 再構築待ち" }
     }
@@ -272,10 +285,14 @@ final class MediaAudioProbeState {
     }
     private func rebuildPlayerAfterReset() async {
         guard let lease = playerLease else { return }
+        let operation = playerOperation
         do {
             player?.pause(); try await nowPlaying?.invalidate(); nowPlaying = nil; looper = nil; player = nil
+            guard playerOperation == operation, playerLease == lease else { return }
             try await coordinator.reactivate(lease)
+            guard playerOperation == operation, playerLease == lease else { return }
             try await installPlayerNative(for: lease)
+            guard playerOperation == operation, playerLease == lease else { return }
             playerStatus = "media reset再構築済み"
         } catch { playerError = "media reset再構築: \(error)"; playerStatus = "再構築失敗" }
     }

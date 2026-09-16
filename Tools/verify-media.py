@@ -100,7 +100,7 @@ def main():
                        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "native-tests")
             result["tests"] = require_test_passes(log, [
                 (root / f"Tests/{family}/{family}NativeTests.swift").read_text(encoding="utf-8")
-                for family in ["MediaAudio", "MediaCapture"]])
+                for family in ["MediaAudio", "MediaCapture", "MediaIntegration"]])
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")

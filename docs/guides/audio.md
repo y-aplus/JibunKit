@@ -20,7 +20,7 @@ let admission = try await audio.acquire(
 
 Category/ModeはApple標準文字列、route policy/optionsは標準raw bitsを保持するSendable wrapperである。named constantsは便利APIにすぎず、`init(rawValue:)`で将来追加された標準値・bitも欠落なくnative adapterへ渡る。profile変更失敗は旧profileを再適用・activateしてrollbackし、rollback失敗は`.driverChangeFailed`と`.recoveryFailed`で明示する。
 
-`release`自身が登録済みstopをawaitする。stop closureはnative producerの停止完了までを担当し、同じleaseの`release`を呼ばない（`.stopReentry`）。別transaction中のrelease/acquireはidle境界をjoinし、終了要求をbusyとして捨てない。deactivate失敗時は停止済みleaseと`.deactivationFailed`を保持し、同じleaseの`release`再試行ではproducerを二重停止せずdeactivateを再試行する。lifetime shutdownはleaseが消えるまで再試行し、恒久stop failureを終了成功にしない。
+`release`自身が登録済みstopをawaitする。stop closureはnative producerの停止完了までを担当し、同じcoordinatorの`release`を再帰awaitしない（`.stopReentry`/`.coordinatorBusy`）。別transaction中の外部releaseはidle境界をjoinする。他の開始/設定変更はbusyを返し、停止が待つremote commandとの相互待ちを避ける。deactivate失敗時は停止済みleaseと`.deactivationFailed`を保持し、同じleaseの再試行はproducerを二重停止しない。すべてのproducerが停止済みなら`recoverSession()`でdeactivateを再試行してleaseを除去できる。lifetimeは失敗後に`waitForRelease`で明示的な解放/復旧を待ち、短周期retryや終了成功扱いをしない。恒久的なnative stop失敗では終了境界も完了せず、Feature側の回復が必要となる。解放後は`.released`をそのownerへ送り、外部切替による停止もFeatureへ伝える。
 
 Featureは再生・録音開始時に`updateIntent(.active, for:)`、ユーザー停止、remote pause、headphone抜去ではそれぞれ`.stoppedByUser` / `.stoppedForRouteChange`を設定する。interruption endの候補後は、Featureがlifetime/scene/producer状態を確認して`reactivate(_:)`を明示的に呼ぶ。beginだけでは成功しない。新しいユーザーPlay/Recordは`activateForUserAction(_:)`を使い、過去の停止intentを明示的に更新する。media-services resetでは旧player/Now Playingを終了し、`reactivate(_:)`後にnative objectを新規生成する。通知だけで旧objectを再生しない。
 

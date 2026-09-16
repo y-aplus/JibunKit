@@ -160,7 +160,8 @@ public actor MiniAppAVCaptureSessionProducer {
             let settings = AVCapturePhotoSettings()
             let id = settings.uniqueID
             let delegate = PhotoDelegate { [weak self] data, failure in
-                if let data { continuation.resume(returning: data) }
+                if let failure { continuation.resume(throwing: MiniAppCaptureFailure.native(failure)) }
+                else if let data { continuation.resume(returning: data) }
                 else { continuation.resume(throwing: MiniAppCaptureFailure.native(failure ?? "photo failed")) }
                 Task { await self?.removePhotoDelegate(id) }
             }
@@ -194,7 +195,7 @@ public actor MiniAppAVCaptureSessionProducer {
     }
 
     public func restartAfterInterruption() throws {
-        guard let session else { throw MiniAppCaptureFailure.stopped }
+        guard !isStopping, let session else { throw MiniAppCaptureFailure.stopped }
         guard !session.isInterrupted else { throw MiniAppCaptureFailure.unavailable("capture remains interrupted") }
         if !session.isRunning { session.startRunning() }
         guard session.isRunning else { throw MiniAppCaptureFailure.native("capture session restart failed") }

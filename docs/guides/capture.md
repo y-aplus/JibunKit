@@ -41,7 +41,7 @@ hostは既存`FeatureBuildRequirement`で`NSCameraUsageDescription`を合成す�
 
 VisionKitは`MiniAppVisionCaptureAdapter`がMainActor上でcontrollerとoperation generationを所有し、既存`MiniAppPresentationOwner`へ提示を登録する。旧controller、多重tap、終端後のdelegateは無視する。`startScanning()`失敗は提示dismiss完了までjoinしてからthrowし、`becameUnavailableWithError`はFeatureへ失敗理由を返す。interactive dismissとnavigation dismissも同じownerのcamera予約を解放する。
 
-inactive、background、非選択は、そのownerにactiveかつselectedな別sceneがなければ停止する。Feature停止、許可待ち取消、開始失敗でも、event/restart終了→native capture停止（photoのfinal callbackとmovie `didFinishRecording`を含む）→presentation dismiss完了→関連lease解放の境界をawaitする。producerへの同時stopは一つの停止処理へ合流する。ユーザー停止は復帰通知で取り消さない。古いruntime／operation／native session generationの許可結果・通知・delegate結果は採用しない。OS許可待ちの後にも全要求資源のFeature同意を再検査する。
+inactive、background、非選択は、そのownerにactiveかつselectedな別sceneがなければ停止する。Feature停止、許可待ち取消、開始失敗でも、event/restart終了→native capture停止（未完了photoの取消とmovie `didFinishRecording`待ちを含む）→presentation dismiss完了→関連lease解放の境界をawaitする。producerへの同時stopは一つの停止処理へ合流する。ユーザー停止は復帰通知で取り消さない。古いruntime／operation／native session generationの許可結果・通知・delegate結果は採用しない。OS許可待ちの後にも全要求資源のFeature同意を再検査する。
 
 同じcameraが使用中なら既定の`.reject`は`.cameraInUse(by:)`を返す。ユーザーが明示した切替だけ`.stopCurrent`を渡し、旧producerの停止・解放完了後に新ownerを開始する。Feature内部で一つのproducerが組むMultiCam graphは一予約として扱い、Coreが固定単眼構成へ変換しない。
 
@@ -81,3 +81,5 @@ operationの型は契約どおり`(@MainActor @Sendable () async throws -> (@Mai
 実機ではcamera許可の許可／拒否、写真成功と中断終了後の条件付き復帰、文書成功／取消、QR成功、background／foreground、Feature切替、音声統合後の短時間動画と他owner音声保持を確認する。動画中断では録画中表示が終了し、部分fileの成功／失敗が表示され、勝手に同じ録画を再開しないこと、その後の明示的新規録画が成功することを確認する。SimulatorやmacOS試験を実camera、VisionKit対応（DataScannerは対応hardwareが必要）、OS許可UI、音声経路の証拠にしない。
 
 Apple一次資料: [AVCaptureSession](https://developer.apple.com/documentation/avfoundation/avcapturesession)、[startRunning](https://developer.apple.com/documentation/avfoundation/avcapturesession/startrunning())、[runtimeErrorNotification](https://developer.apple.com/documentation/avfoundation/avcapturesession/runtimeerrornotification)、[AVCaptureFileOutputRecordingDelegate](https://developer.apple.com/documentation/avfoundation/avcapturefileoutputrecordingdelegate)。
+
+外部の音声解放通知などを非同期配送する場合は、取得時の`operationGeneration`を保持し、`suspend(_:ifGeneration:)`へ渡す。旧操作の解放通知が新しい撮影を停止することを防ぐ。写真成功はfinal callbackで確定するが、停止時は未完了要求を取消し、遅着するcallbackを無視する。

@@ -71,6 +71,8 @@ public enum MiniAppAudioEvent: Sendable, Equatable {
     case interruptionEnded(resumeCandidate: Bool)
     case routeChanged(reason: UInt)
     case mediaServicesReset
+    /// Native producer has stopped and its lease has been removed.
+    case released
 }
 
 @MainActor public protocol MiniAppAudioSessionDriver: AnyObject {

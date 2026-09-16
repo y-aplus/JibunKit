@@ -55,6 +55,23 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         XCTAssertEqual(events.values, ["audio-acquire", "native-start", "native-stop", "audio-release"])
     }
 
+    func testDelayedExternalReleaseCannotStopNextOperation() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("generation"), coordinator: coordinator,
+            permissions: CapturePermissions(), consent: allow)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("generation"))
+        let events = CaptureEvents()
+        try await owner.start(operation(events: events, label: "old"))
+        let old = try XCTUnwrap(owner.operationGeneration)
+        await owner.stop()
+        try await owner.start(operation(events: events, label: "new"))
+        await owner.suspend(.interrupted("late audio release"), ifGeneration: old)
+        XCTAssertEqual(owner.state, .running([.camera]))
+        XCTAssertEqual(coordinator.currentCameraOwner, owner.id)
+        XCTAssertEqual(events.values, ["start-old", "stop-old-other", "start-new"])
+        await owner.stop()
+    }
+
     func testCameraOnlyNeverRequestsMicrophone() async throws {
         let permissions = CapturePermissions()
         let owner = MiniAppCaptureOwner(id: MiniAppID("still"), coordinator: .init(), permissions: permissions, consent: allow)

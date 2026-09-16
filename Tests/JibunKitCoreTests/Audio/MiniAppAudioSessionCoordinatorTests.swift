@@ -199,6 +199,46 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(state.failure, .stopReentry)
     }
 
+    func testConcurrentReleaseJoinsAndPlayDoesNotDeadlockWithStop() async throws {
+        let coordinator = MiniAppAudioSessionCoordinator(driver: FakeAudioSessionDriver())
+        let gate = AsyncGate()
+        let lease = try acquired(await coordinator.acquire(owner: MiniAppID("joined"),
+            request: request([playback]), stop: { await gate.wait() }, receive: { _ in }))
+        let first = Task { @MainActor in try await coordinator.release(lease) }
+        await gate.waitUntilEntered()
+        let entered = AsyncGate()
+        let second = Task { @MainActor in
+            entered.open()
+            try await coordinator.release(lease)
+        }
+        await entered.wait()
+        do {
+            try await coordinator.activateForUserAction(lease)
+            XCTFail("Play must not wait on a stop that may itself be joining the remote command")
+        } catch MiniAppAudioSessionCoordinator.Failure.coordinatorBusy { }
+        gate.open()
+        try await first.value
+        try await second.value
+        XCTAssertTrue(coordinator.activeOwners.isEmpty)
+    }
+
+    func testExplicitRecoveryCompletesFailedDeactivationWithoutProducerRetry() async throws {
+        let driver = FakeAudioSessionDriver()
+        let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
+        let stops = StopCountBox()
+        let lease = try acquired(await coordinator.acquire(owner: MiniAppID("recovery"),
+            request: request([playback]), stop: { stops.value += 1 }, receive: { _ in }))
+        driver.failNextDeactivation = true
+        do { try await coordinator.release(lease); XCTFail("Expected failure") }
+        catch MiniAppAudioSessionCoordinator.Failure.driver { }
+        let waiting = Task { @MainActor in await coordinator.waitForRelease(lease) }
+        try await coordinator.recoverSession()
+        await waiting.value
+        XCTAssertTrue(coordinator.activeOwners.isEmpty)
+        XCTAssertEqual(stops.value, 1)
+        XCTAssertEqual(coordinator.sessionState, .inactive)
+    }
+
     private func request(_ profiles: [MiniAppAudioProfile]) -> MiniAppAudioRequest {
         MiniAppAudioRequest(acceptableProfiles: profiles, purpose: "test")
     }

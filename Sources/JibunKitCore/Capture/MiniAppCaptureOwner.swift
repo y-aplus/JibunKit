@@ -6,6 +6,9 @@ public final class MiniAppCaptureOwner {
     public private(set) var state: MiniAppCaptureState = .idle {
         didSet { stateChanged?(state) }
     }
+    /// Capture this value before scheduling external resource cleanup.
+    public var operationGeneration: UUID? { operation?.generation }
+
     public var stateChanged: (@MainActor @Sendable (MiniAppCaptureState) -> Void)?
     private struct Started: Sendable {
         let stop: MiniAppCaptureOperation.Stop
@@ -151,6 +154,12 @@ public final class MiniAppCaptureOwner {
     }
 
     public func suspend(_ reason: MiniAppCaptureStopReason) async {
+        await stop(reason: reason, final: false)
+    }
+
+    /// Reject an external resource callback belonging to an earlier operation.
+    public func suspend(_ reason: MiniAppCaptureStopReason, ifGeneration generation: UUID) async {
+        guard operation?.generation == generation else { return }
         await stop(reason: reason, final: false)
     }
 

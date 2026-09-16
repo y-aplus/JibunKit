@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 
-FAMILIES = ("MediaAudio", "MediaCapture")
+FAMILIES = ("MediaAudio", "MediaCapture", "MediaIntegration")
 
 
 def once(text, old, new):
@@ -55,7 +55,7 @@ def prepare(host):
     registry = host / "Sources/JibunKit/MiniAppRegistry.swift"
     changes[registry] = once(registry.read_text(encoding="utf-8"),
         "static let all = makeRegistry([",
-        "static let all = makeRegistry(MediaAudioProbe.definitions + MediaCaptureProbe.definitions + [")
+        "static let all = makeRegistry(MediaIntegrationProbe.definitions + [")
     project = host / "Project.swift"
     sources = ", ".join(f'"{path}"' for path in test_sources)
     text = once(project.read_text(encoding="utf-8"), "    targets: [\n", "    targets: [\n"

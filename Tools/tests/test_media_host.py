@@ -43,7 +43,7 @@ class MediaHostTests(unittest.TestCase):
             self.assertTrue((target / f"{family}Probe.swift").is_file())
             self.assertFalse((target / f"{family}NativeTests.swift").exists())
         registry = (root / "Sources/JibunKit/MiniAppRegistry.swift").read_text(encoding="utf-8")
-        self.assertIn("MediaAudioProbe.definitions + MediaCaptureProbe.definitions + [", registry)
+        self.assertIn("MediaIntegrationProbe.definitions + [", registry)
         self.assertIn("CounterMiniApp.definition", registry)
         self.assertIn("ReminderMiniApp.definition", registry)
         requirements = (root / "Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift").read_text(encoding="utf-8")

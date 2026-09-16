@@ -64,7 +64,7 @@ public struct MiniAppLiveActivityJournalAccess: Sendable {
 #if os(iOS) || os(macOS)
 public extension MiniAppLiveActivityJournalAccess {
     init(_ journal: MiniAppContinuingJournal) {
-        self.init(read: { try readOwned() }, update: { mutation in try journal.update(mutation) })
+        self.init(read: { try journal.read() }, update: { mutation in try journal.update(mutation) })
     }
 }
 #endif
@@ -287,7 +287,8 @@ public struct MiniAppLiveActivityCoordinator<Driver: MiniAppLiveActivityNativeDr
         }
         let known = Set(kept.compactMap(\.systemID))
         report.unknownSystemIDs = os.filter { !known.contains($0.systemID) }.map(\.systemID)
-        try journal.update { $0 = kept }
+        let reconciled = kept
+        try journal.update { $0 = reconciled }
         return report
     }
 

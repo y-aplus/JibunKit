@@ -28,7 +28,7 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 | 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
 | Native adapter / A/B fixture | 両review1を統合。Live親補修・Alarm review2統合済み。Swift/native検証結果はまだない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
-| CI / 実機 | 本境界では未投入・未実施 |
+| CI / 実機 | 初回2runを70c2ca4で投入。通常版はコンパイル失敗、native3jobは結果待ち。実機未実施 |
 
 共通Swift試験はjournal再構築・片側失敗/Bの保存bytes保持、破損/重複登録拒否、await中の直列化、close/drainと取消、OS解除失敗時のremoving維持と再試行、復元前解除/世代変更/自動再開始なし、停止失敗時の元データ保持、複数surfaceの一部失敗、close失敗時にも永続受付閉鎖、復元中の管理無効化をresumeが覆さないこと、復旧失敗時の閉鎖維持を扱う。fake成功はAlarmKit/ActivityKitの実動作の証拠にしない。
 
@@ -80,3 +80,15 @@ Alarm bc6b99dを67ce68eとして統合し、繰り返し照合後の標準stop�
 投入するSwift試験は共通10件、Live10件、Alarm16件（正確な実行数・skipはCI出力で照合）。独立nativeはLive4件/Alarm2件、通常診断host UI1件。操作Widget/Control等の以前のOS実操作は本CIで再証明せず、0.8.1証拠と変更経路を照合して再利用する。通常Counter/ReminderのcontinuingSurfacesは空であり、effectiveExternalAccessは既存externalAccessをそのまま返し、restoreLifecycleの合成経路も変わらない。管理の空group解除はOS操作を行わない。共通swift全体と通常IPAは再実行する。
 
 CIの入力・時間予算は上記2run構成で確定。独立/Combined両familyのschemeはStandaloneA/StandaloneB/Combined、native test filterはContinuingLiveActivityNativeTests / ContinuingAlarmNativeTests、通常hostはMigrationUITests/ContinuingHostUITests。preflightの完全SHA/再利用理由はローカルreportへ固定し、結果受領後に公開の証拠記録へ移す。Swift/Xcode実行前のため0.8.2完了・実機準備完了とはしない。
+
+## 初回CIとコンパイル修正
+
+候補 `70c2ca406a024f53256c73a321157db489fc6e24` で[通常版35045522768](https://github.com/y-aplus/JibunKit/actions/runs/35045522768)と[native35045520639](https://github.com/y-aplus/JibunKit/actions/runs/35045520639)を投入し、両head SHAを照合してOS完了監視を登録した。preflight構造/網羅検査は通過。native側の3jobは独立で、通常版失敗によってcancelしない。
+
+通常版はshared Coreコンパイルで失敗（job01:48:40–01:50:09 UTC、89秒）。実行テスト・IPA buildへは未到達。全エラーを重複除去し、次の3点を確認した。
+
+1. 親のforeign journal拒否追加時の置換がJournalAccess.initまで及び、coordinator専用readOwnedをscope外で呼んでいた。アダプターは元のjournal.readへ戻し、owner検証はcoordinator内に維持する。
+2. reconcileで組み立てた可変keptをSendable closureがcaptureした。確定した不変snapshotを保存closureへ渡す。
+3. Alarm observerのnested escaping closureでnativeに明示selfがなかった。captureを明示する。
+
+修正はCI実行中branchを動かさず `codex/p2-live-ci-repair` に保存。同種の新規coordinator/journal closureと共通テストの接続を点検した。ローカルdiff check成功、Swift成功はまだ主張しない。native側の全結果も揃えて一括修正するため、この3点だけで再dispatchしない。現在の既知失敗は通常版1run/コンパイル1回であり、native結果は未確定。

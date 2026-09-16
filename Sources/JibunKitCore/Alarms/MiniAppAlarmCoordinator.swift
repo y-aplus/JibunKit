@@ -268,7 +268,7 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
 
     public func observe() async throws {
         try await gate.perform { [self] in
-            await observer.start(makeStream: { native.updates() }) { [weak self] in
+            await observer.start(makeStream: { self.native.updates() }) { [weak self] in
                 guard let self else { return }
                 _ = try? await self.gate.performMaintenance { [self] in try await reconcileInsideGate() }
             }

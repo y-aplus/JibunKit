@@ -20,6 +20,25 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         XCTAssertNotNil(records[0].systemID.flatMap(UUID.init(uuidString:)))
     }
 
+    func testPendingRetryUsesPersistedIdentityAndSystemID() async throws {
+        let native = FakeAlarmNative()
+        await native.failNextSchedule()
+        let store = MemoryAlarmStore()
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        let generation = UUID()
+        do { _ = try await service.schedule(localID: "same-id", generation: generation) { _, _ in "first" } }
+        catch FakeFailure.injected {}
+        let pending = try XCTUnwrap(store.read().first)
+        let originalID = try XCTUnwrap(pending.systemID.flatMap(UUID.init(uuidString:)))
+
+        try await service.retryPending(pending.identity) { _, _ in "retry" }
+
+        XCTAssertEqual(try store.read().first?.phase, .active)
+        XCTAssertEqual(try store.read().first?.systemID, originalID.uuidString)
+        let nativeContainsOriginal = await native.contains(originalID)
+        XCTAssertTrue(nativeContainsOriginal)
+    }
+
     func testPartialReplacementKeepsBothRegistrationsAndOtherOwner() async throws {
         let native = FakeAlarmNative()
         let storeA = MemoryAlarmStore()
@@ -35,7 +54,7 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         do {
             _ = try await a.replace(oldA) { _, _ in "A-new" }
             XCTFail("replacement should report its partial result")
-        } catch MiniAppAlarmError.partialReplacement {}
+        } catch MiniAppAlarmError.partialReplacement(_, _, _, _) {}
 
         XCTAssertEqual(try storeA.read().count, 2)
         XCTAssertEqual(try storeB.read(), bBefore)
@@ -125,6 +144,100 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         XCTAssertTrue(nativeActions.isEmpty)
     }
 
+    func testStoppedAlarmGetsCallbackWindowThenAllowsNextSchedule() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        let generation = UUID()
+        let first = try await service.schedule(localID: "same-id", generation: generation) { _, _ in "first" }
+        let firstID = try systemID(store, first)
+        await native.remove(firstID)
+
+        _ = try await service.reconcile()
+        XCTAssertEqual(try store.read().first?.phase, .ending)
+        let callback = CallbackCounter()
+        try await service.handleSystemIntent(identity: first, systemID: firstID) { await callback.hit() }
+        let callbackValue = await callback.value
+        XCTAssertEqual(callbackValue, 1)
+        XCTAssertTrue(try store.read().isEmpty)
+
+        let second = try await service.schedule(localID: "same-id", generation: generation) { _, _ in "second" }
+        XCTAssertNotEqual(first.registrationID, second.registrationID)
+    }
+
+    func testEndOwnedTreatsAlreadyAbsentAsCompletedAndContinuesAfterBadRow() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let owner = MiniAppID("alarm-a")
+        let bad = try MiniAppContinuingIdentity(owner: owner, localID: "bad", generation: UUID())
+        let absent = try MiniAppContinuingIdentity(owner: owner, localID: "absent", generation: UUID())
+        try store.write([
+            .init(identity: bad, systemID: "not-a-uuid", phase: .active),
+            .init(identity: absent, systemID: UUID().uuidString, phase: .active),
+        ])
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        await XCTAssertThrowsErrorAsync(try await service.endOwned())
+        XCTAssertEqual(try store.read().map(\.identity), [bad], "later absent row must still be completed")
+    }
+
+    func testReplacementReportsJournalFailuresAtBothCommitStages() async throws {
+        for successfulWritesBeforeFailure in [1, 2] {
+            let native = FakeAlarmNative()
+            let store = MemoryAlarmStore()
+            let service = coordinator(owner: "alarm-a", native: native, store: store)
+            let old = try await service.schedule(localID: "same-id", generation: UUID()) { _, _ in "old" }
+            store.failWrite(afterSuccessfulWrites: successfulWritesBeforeFailure)
+            do {
+                _ = try await service.replace(old) { _, _ in "new" }
+                XCTFail("journal failure should be a partial replacement")
+            } catch let MiniAppAlarmError.partialReplacement(newID, oldID, stage, reason) {
+                XCTAssertNotEqual(newID, oldID)
+                XCTAssertFalse(stage.isEmpty)
+                XCTAssertTrue(reason.contains("injected"))
+            }
+            XCTAssertEqual(try store.read().count, 2, "both recovery IDs must remain")
+            let recovery = try await service.reconcile()
+            XCTAssertEqual(recovery.active.count, 1)
+            XCTAssertEqual(recovery.duplicates.count, 1)
+            XCTAssertEqual(try store.read().filter { $0.phase == .ending }.count, 1)
+        }
+    }
+
+    func testStartingAndReplacementEndingRejectBusinessCallback() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let owner = MiniAppID("alarm-a"), generation = UUID()
+        let ending = try MiniAppContinuingIdentity(owner: owner, localID: "same-id", generation: generation)
+        let active = try MiniAppContinuingIdentity(owner: owner, localID: "same-id", generation: generation)
+        let endingID = UUID(), activeID = UUID()
+        try store.write([
+            .init(identity: ending, systemID: endingID.uuidString, phase: .ending),
+            .init(identity: active, systemID: activeID.uuidString, phase: .active),
+        ])
+        await native.seed(id: activeID, state: .scheduled)
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        let callback = CallbackCounter()
+        await XCTAssertThrowsErrorAsync(try await service.handleSystemIntent(identity: ending, systemID: endingID) {
+            await callback.hit()
+        })
+        let callbackValue = await callback.value
+        XCTAssertEqual(callbackValue, 0)
+        await XCTAssertThrowsErrorAsync(try await service.replace(ending) { _, _ in "must-not-schedule" }) {
+            XCTAssertEqual($0 as? MiniAppAlarmError, .staleRegistration)
+        }
+
+        let starting = try MiniAppContinuingIdentity(owner: owner, localID: "pending", generation: generation)
+        let startingID = UUID()
+        try store.write(try store.read() + [
+            .init(identity: starting, systemID: startingID.uuidString, phase: .starting),
+        ])
+        await XCTAssertThrowsErrorAsync(try await service.handleSystemIntent(identity: starting, systemID: startingID) {
+            await callback.hit()
+        })
+        let afterStarting = await callback.value
+        XCTAssertEqual(afterStarting, 0)
+    }
+
     private func coordinator(owner: String, native: FakeAlarmNative, store: MemoryAlarmStore,
                              attempts: Int = 1) -> MiniAppAlarmCoordinator<FakeAlarmNative> {
         MiniAppAlarmCoordinator(owner: MiniAppID(owner), native: native, store: store,
@@ -151,6 +264,7 @@ private actor FakeAlarmNative: MiniAppAlarmNative {
     func failCancel(for id: UUID) { cancelFailures.insert(id) }
     func ignoreCancel(for id: UUID) { ignoredCancels.insert(id) }
     func seed(id: UUID, state: MiniAppAlarmState) { values[id] = state }
+    func remove(_ id: UUID) { values[id] = nil }
     func contains(_ id: UUID) -> Bool { values[id] != nil }
 
     func schedule(id: UUID, configuration: String) throws {
@@ -177,8 +291,18 @@ private actor FakeAlarmNative: MiniAppAlarmNative {
 private final class MemoryAlarmStore: MiniAppAlarmRegistrationStore, @unchecked Sendable {
     private let lock = NSLock()
     private var records: [MiniAppContinuingRegistration] = []
+    private var successfulWritesBeforeFailure: Int?
     func read() throws -> [MiniAppContinuingRegistration] { lock.withLock { records } }
-    func write(_ registrations: [MiniAppContinuingRegistration]) throws { lock.withLock { records = registrations } }
+    func write(_ registrations: [MiniAppContinuingRegistration]) throws {
+        try lock.withLock {
+            if let remaining = successfulWritesBeforeFailure {
+                if remaining == 0 { successfulWritesBeforeFailure = nil; throw FakeFailure.injected }
+                successfulWritesBeforeFailure = remaining - 1
+            }
+            records = registrations
+        }
+    }
+    func failWrite(afterSuccessfulWrites count: Int) { lock.withLock { successfulWritesBeforeFailure = count } }
 }
 
 private actor CallbackCounter {

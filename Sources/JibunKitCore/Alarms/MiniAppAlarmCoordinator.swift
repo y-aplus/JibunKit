@@ -1,7 +1,7 @@
 import Foundation
 
 public enum MiniAppAlarmState: String, Codable, Equatable, Sendable {
-    case scheduled, countdown, paused, alerting
+    case scheduled, countdown, paused, alerting, unknown
 }
 
 public enum MiniAppAlarmAction: String, Codable, Equatable, Sendable {
@@ -25,7 +25,7 @@ public enum MiniAppAlarmError: Error, Equatable, Sendable {
     case missingRegistration
     case invalidNativeState(action: MiniAppAlarmAction, observed: MiniAppAlarmState?)
     case nativeDidNotConverge(action: MiniAppAlarmAction, systemID: UUID)
-    case partialReplacement(newSystemID: UUID, oldSystemID: UUID)
+    case partialReplacement(newSystemID: UUID, oldSystemID: UUID, stage: String, reason: String)
 }
 
 public struct MiniAppAlarmSnapshot: Equatable, Sendable {
@@ -38,11 +38,29 @@ public struct MiniAppAlarmSnapshot: Equatable, Sendable {
     }
 }
 
+public struct MiniAppAlarmRegistrationDescriptor: Equatable, Sendable {
+    public let identity: MiniAppContinuingIdentity
+    public let systemID: UUID
+    public let phase: MiniAppContinuingRegistration.Phase
+
+    public init(identity: MiniAppContinuingIdentity, systemID: UUID,
+                phase: MiniAppContinuingRegistration.Phase) {
+        self.identity = identity
+        self.systemID = systemID
+        self.phase = phase
+    }
+}
+
 public protocol MiniAppAlarmNative: Sendable {
     associatedtype Configuration: Sendable
     func schedule(id: UUID, configuration: Configuration) async throws
     func perform(_ action: MiniAppAlarmAction, id: UUID) async throws
     func snapshots() async throws -> [MiniAppAlarmSnapshot]
+    func updates() -> AsyncStream<Void>
+}
+
+public extension MiniAppAlarmNative {
+    func updates() -> AsyncStream<Void> { AsyncStream { $0.finish() } }
 }
 
 public protocol MiniAppAlarmRegistrationStore: Sendable {
@@ -56,15 +74,17 @@ public struct MiniAppAlarmReconciliation: Equatable, Sendable {
     public let unknownSystemIDs: [UUID]
     public let recoveredStarting: [MiniAppContinuingIdentity]
     public let completedEnding: [MiniAppContinuingIdentity]
+    public let duplicates: [MiniAppContinuingIdentity]
 
     public init(active: [MiniAppContinuingIdentity], missing: [MiniAppContinuingIdentity],
                 unknownSystemIDs: [UUID], recoveredStarting: [MiniAppContinuingIdentity],
-                completedEnding: [MiniAppContinuingIdentity]) {
+                completedEnding: [MiniAppContinuingIdentity], duplicates: [MiniAppContinuingIdentity] = []) {
         self.active = active
         self.missing = missing
         self.unknownSystemIDs = unknownSystemIDs
         self.recoveredStarting = recoveredStarting
         self.completedEnding = completedEnding
+        self.duplicates = duplicates
     }
 }
 
@@ -81,6 +101,7 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
     private let admission: Admission
     private let confirmationAttempts: Int
     private let confirmationDelayNanoseconds: UInt64
+    private let observer = MiniAppAlarmObserver()
 
     public init(owner: MiniAppID, native: Native, store: any MiniAppAlarmRegistrationStore,
                 gate: MiniAppContinuingOperationGate = .init(),
@@ -105,13 +126,54 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
             let identity = try MiniAppContinuingIdentity(owner: owner, localID: localID, generation: generation)
             let systemID = UUID()
             var records = try store.read()
-            guard !records.contains(where: { $0.identity.localID == localID && $0.identity.generation == generation })
+            guard !records.contains(where: {
+                $0.identity.localID == localID && $0.identity.generation == generation && $0.phase != .ending
+            })
             else { throw MiniAppAlarmError.staleRegistration }
             records.append(.init(identity: identity, systemID: systemID.uuidString, phase: .starting))
             try store.write(records)
             try await native.schedule(id: systemID, configuration: try configuration(identity, systemID))
             try update(identity: identity, systemID: systemID, phase: .active)
             return identity
+        }
+    }
+
+    /// Explicitly retries a persisted pre-native/ambiguous start with the same
+    /// identity and system ID. It never manufactures a second registration.
+    public func retryPending(_ identity: MiniAppContinuingIdentity,
+                             configuration: @Sendable (MiniAppContinuingIdentity, UUID) throws -> Native.Configuration)
+        async throws {
+        try await gate.perform { [self] in
+            try await admission(identity.localID, identity.generation)
+            let record = try exactRecord(identity, phase: .starting)
+            let id = try systemID(record)
+            if try await native.snapshots().contains(where: { $0.id == id }) {
+                try update(identity: identity, systemID: id, phase: .active)
+                return
+            }
+            try await native.schedule(id: id, configuration: try configuration(identity, id))
+            try update(identity: identity, systemID: id, phase: .active)
+        }
+    }
+
+    public func current(localID: String, generation: UUID) throws -> MiniAppAlarmRegistrationDescriptor? {
+        let candidates = try store.read().filter {
+            $0.identity.localID == localID && $0.identity.generation == generation && $0.phase == .active
+        }
+        guard let record = candidates.last else { return nil }
+        return .init(identity: record.identity, systemID: try systemID(record), phase: record.phase)
+    }
+
+    public func retryEnding(_ identity: MiniAppContinuingIdentity) async throws {
+        try await gate.performMaintenance { [self] in
+            let record = try exactRecord(identity, phase: .ending)
+            let id = try systemID(record)
+            let exists = try await native.snapshots().contains { $0.id == id }
+            if exists {
+                try await native.perform(.cancel, id: id)
+                try await confirm(.cancel, id: id)
+            }
+            try remove(identity)
         }
     }
 
@@ -123,7 +185,7 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         try await gate.perform { [self] in
             try checkOwner(old)
             try await admission(old.localID, old.generation)
-            let oldRecord = try exactRecord(old)
+            let oldRecord = try exactRecord(old, phase: .active)
             let oldID = try systemID(oldRecord)
             let next = try MiniAppContinuingIdentity(owner: owner, localID: old.localID,
                                                      generation: old.generation)
@@ -132,15 +194,16 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
             records.append(.init(identity: next, systemID: nextID.uuidString, phase: .starting))
             try store.write(records)
             try await native.schedule(id: nextID, configuration: try configuration(next, nextID))
-            try update(identity: next, systemID: nextID, phase: .active)
-            try update(identity: old, systemID: oldID, phase: .ending)
             do {
+                try update(identity: next, systemID: nextID, phase: .active)
+                try update(identity: old, systemID: oldID, phase: .ending)
                 try await native.perform(.cancel, id: oldID)
                 try await confirm(.cancel, id: oldID)
                 try remove(old)
                 return next
             } catch {
-                throw MiniAppAlarmError.partialReplacement(newSystemID: nextID, oldSystemID: oldID)
+                throw MiniAppAlarmError.partialReplacement(newSystemID: nextID, oldSystemID: oldID,
+                    stage: replacementStage(old: old, next: next), reason: String(describing: error))
             }
         }
     }
@@ -149,7 +212,7 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         try await gate.perform { [self] in
             try checkOwner(identity)
             try await admission(identity.localID, identity.generation)
-            let record = try exactRecord(identity)
+            let record = try exactRecord(identity, phase: .active)
             let id = try systemID(record)
             let observed = try await native.snapshots().first { $0.id == id }?.state
             try validate(action: action, observed: observed)
@@ -168,17 +231,30 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         try await gate.perform { [self] in
             try checkOwner(identity)
             try await admission(identity.localID, identity.generation)
-            let record = try exactRecord(identity)
+            let record = try intentRecord(identity)
             guard try self.systemID(record) == systemID else { throw MiniAppAlarmError.staleRegistration }
+            let systemStillExists = try await native.snapshots().contains { $0.id == systemID }
+            if record.phase == .ending {
+                guard !systemStillExists else { throw MiniAppAlarmError.staleRegistration }
+            }
             try await event()
+            if !systemStillExists { try remove(identity) }
         }
     }
 
-    public func close() async { await gate.close() }
-    public func open() async { await gate.open() }
+    public func close() async {
+        await observer.stop()
+        await gate.close()
+    }
+    public func open() async {
+        await gate.open()
+        await startObserving()
+    }
 
     public func reconcile() async throws -> MiniAppAlarmReconciliation {
-        try await gate.performMaintenance { [self] in try await reconcileInsideGate() }
+        let result = try await gate.performMaintenance { [self] in try await reconcileInsideGate() }
+        await startObserving()
+        return result
     }
 
     public func endOwned() async throws {
@@ -186,9 +262,14 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
             let records = try store.read()
             var firstFailure: Error?
             for record in records {
-                let id = try systemID(record)
-                try update(identity: record.identity, systemID: id, phase: .ending)
                 do {
+                    let id = try systemID(record)
+                    try update(identity: record.identity, systemID: id, phase: .ending)
+                    let systemStillExists = try await native.snapshots().contains { $0.id == id }
+                    if !systemStillExists {
+                        try remove(record.identity)
+                        continue
+                    }
                     try await native.perform(.cancel, id: id)
                     try await confirm(.cancel, id: id)
                     try remove(record.identity)
@@ -219,6 +300,7 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         var missing: [MiniAppContinuingIdentity] = []
         var recovered: [MiniAppContinuingIdentity] = []
         var completed: [MiniAppContinuingIdentity] = []
+        var duplicates: [MiniAppContinuingIdentity] = []
         records.removeAll { record in
             guard let text = record.systemID, let id = UUID(uuidString: text) else {
                 missing.append(record.identity); return false
@@ -227,7 +309,10 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
             case (.starting, true): recovered.append(record.identity); active.append(record.identity); return false
             case (.ending, false): completed.append(record.identity); return true
             case (.active, true), (.ending, true): active.append(record.identity); return false
-            case (.starting, false), (.active, false): missing.append(record.identity); return false
+            case (.starting, false): missing.append(record.identity); return false
+            // Preserve one callback/reconcile window after a standard stop.
+            // A second reconciliation sees ending+absent and removes it.
+            case (.active, false): missing.append(record.identity); return false
             }
         }
         for index in records.indices where records[index].phase == .starting {
@@ -235,10 +320,31 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
                 records[index].phase = .active
             }
         }
+        for index in records.indices where records[index].phase == .active {
+            if let text = records[index].systemID, let id = UUID(uuidString: text), !nativeIDs.contains(id) {
+                records[index].phase = .ending
+            }
+        }
+        var activeByBusinessID: [String: [Int]] = [:]
+        for index in records.indices where records[index].phase == .active {
+            let identity = records[index].identity
+            activeByBusinessID[identity.localID + "\u{0}" + identity.generation.uuidString, default: []].append(index)
+        }
+        for indices in activeByBusinessID.values where indices.count > 1 {
+            for index in indices.dropLast() {
+                records[index].phase = .ending
+                duplicates.append(records[index].identity)
+            }
+        }
+        active = records.compactMap { record in
+            guard record.phase == .active, let text = record.systemID, let id = UUID(uuidString: text),
+                  nativeIDs.contains(id) else { return nil }
+            return record.identity
+        }
         try store.write(records)
         return .init(active: active, missing: missing,
                      unknownSystemIDs: Array(nativeIDs.subtracting(knownIDs)).sorted { $0.uuidString < $1.uuidString },
-                     recoveredStarting: recovered, completedEnding: completed)
+                     recoveredStarting: recovered, completedEnding: completed, duplicates: duplicates)
     }
 
     private func confirm(_ action: MiniAppAlarmAction, id: UUID,
@@ -278,14 +384,45 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         guard identity.owner == owner.rawValue else { throw MiniAppAlarmError.wrongOwner }
     }
 
-    private func exactRecord(_ identity: MiniAppContinuingIdentity) throws -> MiniAppContinuingRegistration {
+    private func exactRecord(_ identity: MiniAppContinuingIdentity,
+                             phase: MiniAppContinuingRegistration.Phase? = nil) throws
+        -> MiniAppContinuingRegistration {
         try checkOwner(identity)
         let sameLocal = try store.read().filter { $0.identity.localID == identity.localID }
         guard sameLocal.contains(where: { $0.identity.generation == identity.generation })
         else { throw MiniAppAlarmError.staleGeneration }
         guard let record = sameLocal.first(where: { $0.identity == identity })
         else { throw MiniAppAlarmError.staleRegistration }
+        if let phase, record.phase != phase { throw MiniAppAlarmError.staleRegistration }
         return record
+    }
+
+    private func intentRecord(_ identity: MiniAppContinuingIdentity) throws -> MiniAppContinuingRegistration {
+        let record = try exactRecord(identity)
+        if record.phase == .active { return record }
+        guard record.phase == .ending else { throw MiniAppAlarmError.staleRegistration }
+        let siblingIsCurrent = try store.read().contains {
+            $0.identity != identity && $0.identity.localID == identity.localID
+                && $0.identity.generation == identity.generation && $0.phase != .ending
+        }
+        guard !siblingIsCurrent else { throw MiniAppAlarmError.staleRegistration }
+        return record
+    }
+
+    private func replacementStage(old: MiniAppContinuingIdentity,
+                                  next: MiniAppContinuingIdentity) -> String {
+        guard let records = try? store.read() else { return "journal-read" }
+        let newPhase = records.first { $0.identity == next }?.phase.rawValue ?? "missing-new"
+        let oldPhase = records.first { $0.identity == old }?.phase.rawValue ?? "missing-old"
+        return "new-\(newPhase)-old-\(oldPhase)"
+    }
+
+    private func startObserving() async {
+        let stream = native.updates()
+        await observer.start(stream: stream) { [weak self] in
+            guard let self else { return }
+            _ = try? await self.gate.performMaintenance { [self] in try await reconcileInsideGate() }
+        }
     }
 
     private func systemID(_ record: MiniAppContinuingRegistration) throws -> UUID {
@@ -309,5 +446,27 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
         var records = try store.read()
         records.removeAll { $0.identity == identity }
         try store.write(records)
+    }
+}
+
+private actor MiniAppAlarmObserver {
+    private var task: Task<Void, Never>?
+
+    func start(stream: AsyncStream<Void>, onUpdate: @escaping @Sendable () async -> Void) {
+        guard task == nil else { return }
+        task = Task {
+            for await _ in stream {
+                guard !Task.isCancelled else { break }
+                await onUpdate()
+            }
+            task = nil
+        }
+    }
+
+    func stop() async {
+        let running = task
+        task = nil
+        running?.cancel()
+        _ = await running?.result
     }
 }

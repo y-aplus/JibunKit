@@ -30,9 +30,22 @@ public struct MiniAppAlarmKitNative<Metadata: AlarmMetadata>: MiniAppAlarmNative
             case .countdown: .countdown
             case .paused: .paused
             case .alerting: .alerting
-            @unknown default: .scheduled
+            @unknown default: .unknown
             }
             return .init(id: alarm.id, state: state)
+        }
+    }
+
+    public func updates() -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            let task = Task {
+                for await _ in AlarmManager.shared.alarmUpdates {
+                    guard !Task.isCancelled else { break }
+                    continuation.yield(())
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
         }
     }
 }

@@ -17,23 +17,38 @@ singleton per owner in the **app process**. The Feature supplies:
   backup business data;
 - final Feature content used by management cleanup.
 
-`start` returns a typed `MiniAppLiveActivityDescriptor`. Keep its complete
+`start` returns a `MiniAppLiveActivityDescriptor`. Keep its complete
 identity (`owner`, `localID`, `generation`, `registrationID`) and opaque Activity
 ID together. `update`, `end`, and Intent delivery reject a stale generation,
 replacement registration, wrong owner, or mismatched Activity ID. Two Features
 may deliberately use the same `localID`; owner remains part of the key.
 
+The start input contains the Feature's complete attributes and `ActivityContent`,
+so immutable domain attributes, stale date, and relevance score are preserved.
+The end input likewise preserves optional final content and `.default`,
+`.immediate`, or `.after(Date)` dismissal policy.
+
 The coordinator records `.starting` before `Activity.request`. A request error or
-post-request journal failure is not success and the pending row remains available
-to cold `reconcile`. ActivityKit `update` and `end` are asynchronous but do not
-throw an OS acknowledgement; the adapter observes state for a bounded interval
-and reports `nativeStateUnresolved` while retaining retry information.
+post-request journal failure is not success. Cold `reconcile` repairs an exact
+identity match and reports unknown, duplicate, and mismatched OS IDs. Starting
+again compares owner/localID/generation, not a newly generated registration ID,
+and returns only an OS registration that is still pending/active/stale.
+
+For an update, pass a synchronous `prepare` closure. The gate validates durable
+admission, full identity, exact system ID, active journal phase, and current OS
+record before invoking this closure. Put the Feature business commit and creation
+of the next `ActivityContent` inside it. ActivityKit's nonthrowing `update` return
+means “request completed”, not proof that the new content is visible; UI evidence
+is separate. An already committed business change followed by OS nonreflection
+is an explicit non-atomic partial result recovered by reconcile.
 
 ## Host lifecycle
 
-Expose `coordinator.surface(id:finalContent:)` from the Feature singleton and add
-it to the Feature's `MiniAppDefinition.continuingSurfaces` registration when the
-host integration is present. The ordering is:
+Expose `coordinator.surface(id:finalInput:)` from the Feature singleton. A real
+synchronous `@MainActor makeDefinition() throws` must register it together with
+backup, removal, durable external access, and the diagnostic View. The fixture
+provides `FeatureALiveIntegration.makeDefinition()` and
+`FeatureBLiveIntegration.makeDefinition()`. The ordering is:
 
 1. launch/resume: `reconcile`, then `open`; never recreate a missing activity;
 2. disable/delete: `close` (drains admitted work), `endOwned`, then ordinary
@@ -48,10 +63,10 @@ maintenance. It ends only activities whose immutable attributes prove the same
 owner. Unknown typed OS rows stay diagnostic during reconcile and are never
 assigned to another owner.
 
-The fixture's copy-ready Definition wiring is
-`Tests/ContinuingLiveActivities/DefinitionExamples.swift.fixture`. Its A and B
-packages use different attributes and owners with the same `same-id`; resetting
-A does not modify B.
+The A and B packages use separate journal namespaces, surface IDs, attributes,
+and process singletons while deliberately sharing `same-id`. This also permits a
+single owner to add another native type without one adapter deleting the other's
+journal. Resetting A does not modify B.
 
 ## Targets and metadata
 
@@ -75,9 +90,11 @@ Standalone B, and Combined from the same two package sources. Each diagnostic
 view displays initial state and the latest start/update/end failure. The widget
 extension supplies the Lock Screen/Dynamic Island display and interactive button.
 
-Foundation fake tests verify serialization, duplicate suppression, stale
-generation/registration rejection, post-native persistence recovery, bounded
-failure, and A cleanup/B retention. They do not prove ActivityKit behavior. Xcode
+Foundation fake tests verify business-key duplicate suppression, pre-mutation
+routing rejection, reconcile diagnostics/ending preservation, and cleanup that
+continues after one native failure. Native fixture tests pass forged owner,
+localID, generation, registrationID, and system ID into the real service and
+assert the business value is unchanged. They do not prove ActivityKit behavior. Xcode
 and device verification must additionally cover request authorization/error,
 Lock Screen/Dynamic Island rendering, Intent metadata and routing, force-quit and
 cold reconcile, immediate/default end behavior, disable/delete/restore retry, and

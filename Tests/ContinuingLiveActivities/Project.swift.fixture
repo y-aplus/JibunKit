@@ -27,4 +27,7 @@ targets.append(.target(name: "ContinuingLiveActivityNativeTests", destinations: 
         .package(product: "ContinuingFeatureA"), .package(product: "ContinuingFeatureB")]))
 let project = Project(name: "ContinuingLiveActivities", packages: [
     .package(path: "FeatureA"), .package(path: "FeatureB"), .package(path: "__JIBUNKIT_PATH__")],
-    settings: .settings(base: ["SWIFT_VERSION": "6.0"]), targets: targets)
+    settings: .settings(base: ["SWIFT_VERSION": "6.0"]), targets: targets,
+    schemes: [.scheme(name: "ContinuingLiveActivityNativeTests", shared: true,
+        buildAction: .buildAction(targets: ["Combined"]),
+        testAction: .targets(["ContinuingLiveActivityNativeTests"], configuration: .debug))])

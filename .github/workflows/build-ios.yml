@@ -15,6 +15,10 @@ on:
         description: Run P2-L real Feature storage/management/restore regression in parallel with the normal IPA
         type: boolean
         default: false
+      media_validation:
+        description: Run the combined P2-C audio/capture native tests and diagnostic IPA in parallel
+        type: boolean
+        default: false
       feature_validation:
         description: Verify standalone Features, template generation and host integration
         type: boolean
@@ -104,6 +108,13 @@ permissions:
   contents: read
 
 jobs:
+  media:
+    if: inputs.media_validation && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: media
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   continuing-state:
     if: inputs.continuing_state_validation && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml

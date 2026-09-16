@@ -8,7 +8,7 @@
 
 [固定した契約](../delivery/P2-continuing-surfaces-contract.md)を正本とする。設計提出の提案は、この文書と契約の採否決定が優先する。設計baselineはbcfde0d、実装baselineはe46209cc5a4563b09026421dce0d1b035ddef19b。
 
-CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出。Live修正be4451a・Alarm修正1160c2eを受領・統合済み。Live残件は親で補修し、Alarmの通知順序/購読寿命/異owner保存先拒否は同じCLI担当の2往復目bc6b99dで修正済み（理由は末尾）。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
+CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正を行った。初回設計各1提出、実装各1提出。Live修正be4451a・Alarm修正1160c2eを受領・統合済み。Live残件は親で補修し、Alarmの通知順序/購読寿命/異owner保存先拒否は同じCLI担当の2往復目bc6b99dで修正済み（理由は末尾）。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
 
 ## 親の実装
 
@@ -77,6 +77,6 @@ Alarm bc6b99dを67ce68eとして統合し、繰り返し照合後の標準stop�
 - Alarm support packageの参照名を明示し、checkoutの末尾名に依存しないJibunKit package名を両fixtureへ設定。
 - unknown状態のpending retryをactive成功にしない。observer試験の10回yield依存をXCTestの通知待ちへ変更。native比較用JSONはsortedKeysで固定し、辞書順序による偽失敗を避ける。
 
-投入するSwift試験は共通10件、Live10件、Alarm18件（正確な実行数・skipはCI出力で照合）。独立nativeはLive4件/Alarm2件、通常診断host UI1件。操作Widget/Control等の以前のOS実操作は本CIで再証明せず、0.8.1証拠と変更経路を照合して再利用する。通常Counter/ReminderのcontinuingSurfacesは空であり、既存のexternalAccess/restoreLifecycleへ空のgroupを合成してもOS操作は加わらない。共通swift全体と通常IPAは再実行する。
+投入するSwift試験は共通10件、Live10件、Alarm16件（正確な実行数・skipはCI出力で照合）。独立nativeはLive4件/Alarm2件、通常診断host UI1件。操作Widget/Control等の以前のOS実操作は本CIで再証明せず、0.8.1証拠と変更経路を照合して再利用する。通常Counter/ReminderのcontinuingSurfacesは空であり、effectiveExternalAccessは既存externalAccessをそのまま返し、restoreLifecycleの合成経路も変わらない。管理の空group解除はOS操作を行わない。共通swift全体と通常IPAは再実行する。
 
 CIの入力・時間予算は上記2run構成で確定。独立/Combined両familyのschemeはStandaloneA/StandaloneB/Combined、native test filterはContinuingLiveActivityNativeTests / ContinuingAlarmNativeTests、通常hostはMigrationUITests/ContinuingHostUITests。preflightの完全SHA/再利用理由はローカルreportへ固定し、結果受領後に公開の証拠記録へ移す。Swift/Xcode実行前のため0.8.2完了・実機準備完了とはしない。

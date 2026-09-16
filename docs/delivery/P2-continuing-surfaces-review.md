@@ -39,3 +39,5 @@
 ## review1後の扱い
 
 Live be4451a / Alarm1160c2eを統合し、Live残件は親で8e307f1以後に補修。Alarmは通知配送と照合回数の競合、closed中の購読、異owner storeの保護に追加修正が必要だったため、同じ担当へ2回目の一括修正を依頼した。これは初回レビューの合格扱いではなく、失敗時保証に残る欠陥の修正。現状とテスト実行有無は[境界記録](../verification/2026-09-16-p2-continuing-surfaces.md)に集約する。
+
+Alarm review2 bc6b99dは67ce68eとして統合済み。親0704ecbでtyped SDK factory・manifest名・試験の待機/JSON安定性も補修した。対象差分のsource reviewを終了し、Swift/native CIへ進む。未実行のテスト合格は主張しない。

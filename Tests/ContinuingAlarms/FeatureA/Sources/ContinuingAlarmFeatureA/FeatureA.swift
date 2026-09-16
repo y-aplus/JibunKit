@@ -123,6 +123,7 @@ public struct FeatureAAlarmLiveActivity: Widget {
 
 @available(iOS 26.0, *)
 public struct FeatureAAlarmDiagnosticView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var status = "A: 読み込み中"
     public init() {}
     public var body: some View {
@@ -142,7 +143,10 @@ public struct FeatureAAlarmDiagnosticView: View {
             Button("A: cancel") { run { try await service().perform(.cancel) } }
             Button("A: cold reconcile") { run { _ = try await service().reconcile() } }
             Button("Aだけreset") { run { try service().resetFeatureOnly() } }
-        }.task { refresh() }
+        }.task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            await reloadForeground()
+        }
     }
     private func service() throws -> ContinuingAlarmFeatureService<FeatureAAlarmModel> {
         try FeatureAAlarmEnvironment.shared.service()
@@ -151,12 +155,20 @@ public struct FeatureAAlarmDiagnosticView: View {
         _ = try await service().schedule(value) { FeatureAAlarmStopIntent(identity: $0, systemID: $1) }
     }
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
-        Task { do { try await operation(); refresh() } catch { status = "A失敗: \(error)" } }
+        Task {
+            do { try await operation(); await reloadForeground() }
+            catch is CancellationError { status = "A操作を取消" }
+            catch { status = "A失敗: \(error)" }
+        }
     }
-    private func refresh() {
+    private func reloadForeground() async {
         do {
             let service = try service(), state = try service.store.read().value
-            status = "\(service.status()) / \(FeatureAAlarmModel.summary(state))"
+            let reconciliation = try await service.reconcile()
+            try await service.observeAfterDurableRead()
+            status = "\(service.status()) / \(FeatureAAlarmModel.summary(state)) / missing \(reconciliation.missing.count)"
+        } catch is CancellationError {
+            status = "A更新を取消"
         } catch { status = "A状態失敗: \(error)" }
     }
 }
@@ -180,7 +192,11 @@ public struct FeatureAAlarmDiagnosticView: View {
             },
             externalAccess: service.store.externalAccess(initialValue: .initial),
             continuingSurfaces: [service.surface()],
-            onHostLaunch: { _ = try FeatureAAlarmEnvironment.shared.service() }
+            onHostLaunch: {
+                let service = try FeatureAAlarmEnvironment.shared.service()
+                _ = try service.store.read()
+                Task { try? await service.observeAfterDurableRead() }
+            }
         ) { _ in FeatureAAlarmDiagnosticView() }
     }
 }

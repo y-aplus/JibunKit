@@ -144,7 +144,7 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         XCTAssertTrue(nativeActions.isEmpty)
     }
 
-    func testStoppedAlarmGetsCallbackWindowThenAllowsNextSchedule() async throws {
+    func testRepeatedReconcileKeepsStoppedCallbackTombstoneUntilIntentConsumesIt() async throws {
         let native = FakeAlarmNative()
         let store = MemoryAlarmStore()
         let service = coordinator(owner: "alarm-a", native: native, store: store)
@@ -154,15 +154,34 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         await native.remove(firstID)
 
         _ = try await service.reconcile()
-        XCTAssertEqual(try store.read().first?.phase, .ending)
+        _ = try await service.reconcile()
+        XCTAssertEqual(try store.read().first?.phase, .active)
         let callback = CallbackCounter()
         try await service.handleSystemIntent(identity: first, systemID: firstID) { await callback.hit() }
         let callbackValue = await callback.value
         XCTAssertEqual(callbackValue, 1)
         XCTAssertTrue(try store.read().isEmpty)
 
+    }
+
+    func testExplicitRescheduleSupersedesTombstoneAndRejectsOldCallback() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        let generation = UUID()
+        let first = try await service.schedule(localID: "same-id", generation: generation) { _, _ in "first" }
+        let firstID = try systemID(store, first)
+        await native.remove(firstID)
+        _ = try await service.reconcile()
+
         let second = try await service.schedule(localID: "same-id", generation: generation) { _, _ in "second" }
         XCTAssertNotEqual(first.registrationID, second.registrationID)
+        let callback = CallbackCounter()
+        await XCTAssertThrowsErrorAsync(try await service.handleSystemIntent(identity: first, systemID: firstID) {
+            await callback.hit()
+        })
+        let value = await callback.value
+        XCTAssertEqual(value, 0)
     }
 
     func testEndOwnedTreatsAlreadyAbsentAsCompletedAndContinuesAfterBadRow() async throws {
@@ -238,6 +257,93 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         XCTAssertEqual(afterStarting, 0)
     }
 
+    func testEndingWithoutSiblingStillRejectsCallback() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let owner = MiniAppID("alarm-a")
+        let identity = try MiniAppContinuingIdentity(owner: owner, localID: "same-id", generation: UUID())
+        let id = UUID()
+        try store.write([.init(identity: identity, systemID: id.uuidString, phase: .ending)])
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        let callback = CallbackCounter()
+        await XCTAssertThrowsErrorAsync(try await service.handleSystemIntent(identity: identity, systemID: id) {
+            await callback.hit()
+        })
+        let value = await callback.value
+        XCTAssertEqual(value, 0)
+    }
+
+    func testMiswiredForeignOwnerStoreFailsBeforeNativeOrJournalMutation() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let ownerB = MiniAppID("alarm-b")
+        let identityB = try MiniAppContinuingIdentity(owner: ownerB, localID: "same-id", generation: UUID())
+        let idB = UUID()
+        try store.write([.init(identity: identityB, systemID: idB.uuidString, phase: .active)])
+        await native.seed(id: idB, state: .scheduled)
+        let before = try store.read()
+        let serviceA = coordinator(owner: "alarm-a", native: native, store: store)
+
+        await XCTAssertThrowsErrorAsync(try await serviceA.endOwned()) {
+            XCTAssertEqual($0 as? MiniAppAlarmError, .wrongOwner)
+        }
+
+        XCTAssertEqual(try store.read(), before)
+        let bStillNative = await native.contains(idB)
+        let actions = await native.actions
+        XCTAssertTrue(bStillNative)
+        XCTAssertTrue(actions.isEmpty)
+    }
+
+    func testReconcileIsPassiveAndObserveCreatesOneProducerUntilReopened() async throws {
+        let native = CountingUpdateNative()
+        let store = MemoryAlarmStore()
+        let service = MiniAppAlarmCoordinator(owner: MiniAppID("alarm-a"), native: native, store: store,
+            confirmationAttempts: 1, confirmationDelayNanoseconds: 0) { _, _ in }
+
+        _ = try await service.reconcile()
+        _ = try await service.reconcile()
+        XCTAssertEqual(native.starts, 0)
+        try await service.observe()
+        try await service.observe()
+        for _ in 0..<10 where native.starts == 0 { await Task.yield() }
+        XCTAssertEqual(native.starts, 1)
+        await service.close()
+        try await service.open()
+        for _ in 0..<10 where native.starts == 1 { await Task.yield() }
+        XCTAssertEqual(native.starts, 2)
+        await service.close()
+    }
+
+    func testCurrentRejectsMultipleMatchesAndUnknownDoesNotPromoteStarting() async throws {
+        let native = FakeAlarmNative()
+        let store = MemoryAlarmStore()
+        let owner = MiniAppID("alarm-a"), generation = UUID()
+        let first = try MiniAppContinuingIdentity(owner: owner, localID: "same-id", generation: generation)
+        let second = try MiniAppContinuingIdentity(owner: owner, localID: "same-id", generation: generation)
+        let firstID = UUID(), secondID = UUID()
+        try store.write([
+            .init(identity: first, systemID: firstID.uuidString, phase: .active),
+            .init(identity: second, systemID: secondID.uuidString, phase: .active),
+        ])
+        await native.seed(id: firstID, state: .scheduled)
+        await native.seed(id: secondID, state: .scheduled)
+        let service = coordinator(owner: "alarm-a", native: native, store: store)
+        await XCTAssertThrowsErrorAsync(try await service.current(localID: "same-id", generation: generation)) {
+            XCTAssertEqual($0 as? MiniAppAlarmError, .staleRegistration)
+        }
+
+        let pending = try MiniAppContinuingIdentity(owner: owner, localID: "pending", generation: generation)
+        let pendingID = UUID()
+        try store.write([.init(identity: pending, systemID: pendingID.uuidString, phase: .starting)])
+        await native.remove(firstID)
+        await native.remove(secondID)
+        await native.seed(id: pendingID, state: .unknown)
+        let result = try await service.reconcile()
+        XCTAssertFalse(result.recoveredStarting.contains(pending))
+        XCTAssertEqual(try store.read().first?.phase, .starting)
+    }
+
     private func coordinator(owner: String, native: FakeAlarmNative, store: MemoryAlarmStore,
                              attempts: Int = 1) -> MiniAppAlarmCoordinator<FakeAlarmNative> {
         MiniAppAlarmCoordinator(owner: MiniAppID(owner), native: native, store: store,
@@ -285,6 +391,31 @@ private actor FakeAlarmNative: MiniAppAlarmNative {
 
     func snapshots() -> [MiniAppAlarmSnapshot] {
         values.map { .init(id: $0.key, state: $0.value) }
+    }
+}
+
+private final class CountingUpdateNative: MiniAppAlarmNative, @unchecked Sendable {
+    typealias Configuration = String
+    private let lock = NSLock()
+    private var startCount = 0
+    private var continuations: [UUID: AsyncStream<Void>.Continuation] = [:]
+    var starts: Int { lock.withLock { startCount } }
+
+    func schedule(id: UUID, configuration: String) async throws {}
+    func perform(_ action: MiniAppAlarmAction, id: UUID) async throws {}
+    func snapshots() async throws -> [MiniAppAlarmSnapshot] { [] }
+    func updates() -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            let id = UUID()
+            lock.withLock {
+                startCount += 1
+                continuations[id] = continuation
+            }
+            continuation.onTermination = { [weak self] _ in
+                guard let self else { return }
+                self.lock.withLock { self.continuations[id] = nil }
+            }
+        }
     }
 }
 

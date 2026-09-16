@@ -79,9 +79,9 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
 
     public func status() -> String { statusLock.withLock { statusValue } }
 
-    public func current() throws -> MiniAppAlarmRegistrationDescriptor? {
+    public func current() async throws -> MiniAppAlarmRegistrationDescriptor? {
         let snapshot = try store.read()
-        return try coordinator.current(localID: F.localID, generation: snapshot.generation)
+        return try await coordinator.current(localID: F.localID, generation: snapshot.generation)
     }
 
     @discardableResult
@@ -89,7 +89,7 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
                          stopIntent: @escaping @Sendable (MiniAppContinuingIdentity, UUID) -> any LiveActivityIntent)
         async throws -> MiniAppAlarmRegistrationDescriptor {
         let snapshot = try store.read()
-        if let existing = try coordinator.current(localID: F.localID, generation: snapshot.generation) {
+        if let existing = try await coordinator.current(localID: F.localID, generation: snapshot.generation) {
             setStatus("既存登録を再利用 \(existing.systemID.uuidString.prefix(8))")
             return existing
         }
@@ -97,7 +97,7 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
             ContinuingAlarmConfiguration.make(feature: F.self, identity: identity, schedule: schedule,
                                                stopIntent: stopIntent(identity, id))
         }
-        let result = try requiredCurrent(identity)
+        let result = try await requiredCurrent(identity)
         setStatus("登録済み \(result.systemID.uuidString.prefix(8))")
         return result
     }
@@ -113,7 +113,7 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
     }
 
     public func perform(_ action: MiniAppAlarmAction) async throws {
-        guard let descriptor = try current() else { throw MiniAppAlarmError.missingRegistration }
+        guard let descriptor = try await current() else { throw MiniAppAlarmError.missingRegistration }
         try await coordinator.perform(action, identity: descriptor.identity)
         setStatus("\(action.rawValue) 反映確認済み")
     }
@@ -137,11 +137,17 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
         return result
     }
 
+    public func observeAfterDurableRead() async throws {
+        _ = try store.read()
+        try await coordinator.observe()
+    }
+
     public func surface() -> MiniAppContinuingSurface { coordinator.surface(id: "alarmkit") }
 
-    private func requiredCurrent(_ identity: MiniAppContinuingIdentity) throws -> MiniAppAlarmRegistrationDescriptor {
+    private func requiredCurrent(_ identity: MiniAppContinuingIdentity) async throws
+        -> MiniAppAlarmRegistrationDescriptor {
         let snapshot = try store.read()
-        guard let value = try coordinator.current(localID: F.localID, generation: snapshot.generation),
+        guard let value = try await coordinator.current(localID: F.localID, generation: snapshot.generation),
               value.identity == identity else { throw MiniAppAlarmError.missingRegistration }
         return value
     }

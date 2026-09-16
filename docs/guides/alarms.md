@@ -1,25 +1,28 @@
 # AlarmKit 接続ガイド
 
+状態: **0.8.2開発中・native未検証**。Windows上のsource reviewであり、Xcode 26 buildや実機AlarmKit成功を示す文書ではない。
+
 JibunKitのAlarmKit境界は、Feature固有の`AlarmMetadata`、表示、schedule、業務状態を型付きのまま保つ。共通coordinatorはowner、local ID、業務世代、registration ID、AlarmKit UUID、操作排他、永続journal、OS集合との照合だけを扱う。汎用timerや任意payloadへ変換しない。
 
 ## 製品API
 
 `MiniAppAlarmCoordinator<Native>`は次を提供する。
 
-- `schedule`: `.starting`を保存してからnative登録し、成功後に`.active`へ進める。同じowner/localID/generationのstarting/activeを二重作成しない。
+- `schedule`: `.starting`を保存してからnative登録し、成功後に`.active`へ進める。同じowner/localID/generationのstarting/OS存在activeを二重作成しない。OS不在のactive callback tombstoneは明示的な次回scheduleが同じgate内で除去し、古いIntentを拒否してから新規登録する。
 - `retryPending`: native前後が曖昧なstarting行を同じidentity/UUIDで明示再試行する。別UUIDを作らない。
 - `replace`: 新UUIDを先に登録する非原子的replace。新active保存、旧ending保存、旧cancelのいずれの失敗も、両UUID、失敗stage、元エラーを`partialReplacement`で返しjournalを保持する。
-- `perform`: active行だけにstop/cancel/countdown/pause/resumeを許す。AlarmKit呼出しのreturnを成功ACKとせず、boundedなsnapshot再読出しで状態遷移を確認する。
-- `handleSystemIntent`: admission、完全identity、systemID、phaseを業務変更前に検証する。標準stop/countdownはOSが行うのでnative操作を重複実行しない。stop直後にOS行が消えた場合は一回のcallback回収窓を残すが、置換済みの古いending行は拒否する。
-- `reconcile`: cold launchと`alarmUpdates`で照合する。starting+OS存在を回収し、active+OS不在はendingへ進め、ending+不在を次回完了する。期限切れアラームは自動再登録しない。重複は診断して古い行をendingへ隔離する。
+- `current`: gateと永続admissionの内側でOS存在を検証するasync lookup。unknown stateをusableにせず、複数のusable一致はfail closedする。
+- `perform`: active行についてOS snapshotの操作前stateを検証してからstop/cancel/countdown/pause/resumeを許す。AlarmKit呼出しのreturnを成功ACKとせず、boundedなsnapshot再読出しで状態遷移を確認する。
+- `handleSystemIntent`: admission、完全identity、systemID、active phaseを業務変更前に検証する。標準stop/countdownはOSが行うのでnative操作を重複実行しない。OSから消えたactive行も永続callback tombstoneとして有効なstop Intentだけが消費でき、endingは兄弟行の有無によらず拒否する。
+- `reconcile`: cold launchと`alarmUpdates`で照合する。既知stateのstarting+OS存在だけをactiveへ回収する。active+OS不在はmissing callback tombstoneとして保持し、任意回数のreconcileで削除しない。期限切れアラームは自動再登録しない。重複は診断して古い行をendingへ隔離する。
 - `retryEnding` / `endOwned`: 解除retryと管理cleanup。既にOS不在なら成功として行を除去し、不正な一行やcancel失敗があっても残りのowner行を処理する。
-- `close/reconcile/endOwned/open` descriptor: `surface(id: "alarmkit")`で親の`MiniAppContinuingSurfaceGroup`へ接続する。closeは購読停止とdrain、open/reconcileは購読を重複なく再開する。
+- `close/reconcile/endOwned/open` descriptor: `surface(id: "alarmkit")`で親の`MiniAppContinuingSurfaceGroup`へ接続する。`reconcile`はpassiveでproducerを作らない。`observe`は通常gateにadmitされた場合だけ一つのproducerを作る。closeはgateを閉じて通常操作をdrainしてから購読をcancel/drainし、openはgateを開いてobserveする。
 
-`MiniAppAlarmState.unknown`は将来のAlarmKit stateを正常scheduledへ偽装しない。未知daemon UUIDも`unknownSystemIDs`へ報告するだけで、ownerを推測したりcancelしたりしない。同じ`AlarmManager.shared`を使うBや同ownerの別namespaceをAの欠落として扱わない。
+`MiniAppAlarmState.unknown`は将来のAlarmKit stateを正常scheduledへ偽装せず、startingをactiveへ昇格させない。未知daemon UUIDも`unknownSystemIDs`へ報告するだけで、ownerを推測したりcancelしたりしない。同じ`AlarmManager.shared`を使うBや同ownerの別namespaceをAの欠落として扱わない。coordinatorはjournalを読むたび全行のownerを検証し、miswired storeならwrite/cancel等の副作用前にfail closedする。
 
 ## Feature integration
 
-Featureは`MiniAppSharedState`など永続業務状態を正本にし、admission closureでenabled/maintenanceとgenerationを毎回検証する。画面の`@State`やprocess内UUIDを正本にしない。app/Intentのcold起動でも、Feature singletonは`MiniAppSharedState.shared`と`MiniAppContinuingJournal.shared`から同期的に構成できるようにする。
+Featureは`MiniAppSharedState`など永続業務状態を正本にし、admission closureでenabled/maintenanceとgenerationを毎回検証する。画面の`@State`やprocess内UUIDを正本にしない。app/Intentのcold起動でも、Feature singletonは`MiniAppSharedState.shared`と`MiniAppContinuingJournal.shared`から同期的に構成できるようにする。host launchと診断Viewのforeground復帰はdurable stateをreadしてから`reconcile`と`observe`を行い、画面退出だけではOS alarmを終了しない。
 
 Definition factoryは同期の`@MainActor static func makeDefinition() throws -> MiniAppDefinition`とし、次をすべて返す。
 
@@ -48,7 +51,7 @@ Widgetは`AlarmAttributes.metadata`がoptionalであることを表示に反映�
 
 app targetには空でない、ローカライズ済み`NSAlarmKitUsageDescription`が必要である。countdownを使うappは`NSSupportsLiveActivities = YES`と、同一Feature packageの`AlarmAttributes<Metadata>`を登録するWidget extensionを含める。AlarmKit専用entitlementを推測で追加しない。App GroupはJibunKitのSharedState/journal共有要件であり、AlarmKit自体の要件ではない。
 
-pure XCTestはjournal段階失敗、pending retry、全replace部分失敗、stale identity、標準stop callback窓、既に不在の冪等cleanup、未知UUID、A失敗時のB保持を検査する。`ContinuingAlarmNativeTests`は実Feature serviceへ誤owner/localID/generation/registrationID/systemIDを渡し、業務bytes不変とDefinition接続を検査する。fakeはAlarmKit実機証拠の代替ではない。
+pure XCTestはjournal段階失敗、pending retry、全replace部分失敗、stale identity、繰返しreconcile後のstop callback tombstone、callback未配送の明示reschedule、ending拒否、既に不在の冪等cleanup、unknown state、passive observer、miswired owner、未知UUID、A失敗時のB保持を検査する。`ContinuingAlarmNativeTests`は実Feature serviceへ誤owner/localID/generation/registrationID/systemIDを渡し、業務bytes不変とDefinition接続を検査する。fakeはAlarmKit実機証拠の代替ではない。
 
 Xcode 26 / iOS 26ではStandalone A、Standalone B、Combined、通常host、Widget、AppIntent metadataをstrict concurrencyでbuildする。実機ではapp単位許可、固定/週次/countdown、pause/resume/stop/cancel、標準stop callback、cold launch、端末再起動、Focus/silent、片側disable/remove/restore失敗後のB保持を確認する。
 

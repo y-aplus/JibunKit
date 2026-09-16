@@ -1,0 +1,570 @@
+{
+  "schema": 1,
+  "wave": "P2-C",
+  "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+  "contract": {
+    "baseline": "52a29ff00312069082c190f4391a0a3ea84fdbf8",
+    "interfaces": "docs/delivery/P2-media-contract.md; explicit audio profiles/lease/async stop; camera reservation and typed audio acquisition hook.",
+    "ownership": "Native graph belongs to Feature; common audio coordinator and camera reservation mediate shared resources. Existing runtime/scene/presentation/consent APIs retained.",
+    "failure_cases": "Partial stop, failed apply/rollback/deactivation, interrupted/reset session, permission late/revoked, generation-stale delegate, explicit replacement and one-owner release.",
+    "normal_entrypoints": "Real MediaAudio and MediaCapture MiniAppDefinitions in generated normal host; MediaIntegration bridge; normal Counter/Reminder unchanged.",
+    "invalidation": "Operation/session/lifetime generation; stop joins in-flight start/event/native work; shared audio release completion; explicit recovery on failure.",
+    "review": "Parent reviewed initial and two corrective submissions plus combined bridge. See docs/verification/2026-09-16-p2-media.md; source additions confined to Audio/Capture. Local generator/validator5 + workflow1 + continuing5 tests pass; Swift/native execution pending. Initial CI normal/shared passed. Repair affects two diagnostic Audio fixture statements only; no production/shared/normal target change. Second failure isolated to typed catch in nonthrowing native test closure; app compilation repaired. Other typed catches reviewed against enclosing throwing methods. Three-failure investigation: crash source observed but root cause unproven; same Vision assertions moved to explicit Task; source unchanged outside native harness/parser/docs. Fourth comparison retained crash, so add finer instrumentation before first delegate cancellation; no speculative production patch. Unsupported native construction proven by phase markers. Hardware factory/delegate binding separated from shared presentation ownership for simulator tests; public unsupported guard test added. Physical actual VisionKit success remains open."
+  },
+  "dependencies": {
+    "P2-L": "Published0.8.2/main52a29ff; run35075825942 normal and actual Feature state regression passed. docs/verification/2026-09-16-p2-continuing-surfaces-evidence.json. Live B historical discrepancy remains unexplained and P2-5 partial; media does not depend on resolving it."
+  },
+  "planned_ci_runs": 6,
+  "budget_exception": "Three failures diagnosed before extra run: app compile, native-test compile, now one Vision SDK/delegate async XCTest crash in swift_task_dealloc/XCTSwiftErrorObservation. Preserve expectations, use explicit Task from synchronous XCTest plus phase markers. Structured xcresult replaces interleaved console parsing. One additional media run closes remaining native test + unreached Release IPA; normal/shared success reused. See docs/verification/2026-09-16-p2-media.md. Fourth run does not support async XCTest entry alone as root cause. Added startup phase markers/support value/controller-init boundaries and explicit diagnostic export for fifth observation run; fixed proven NaN test-wait condition without weakening playback assertion. Production unchanged. Fifth markers isolate constructor: real SDK support=false, initializer entered but never returned. Replace invalid forced-hardware test with shared production presentation/cancel path via Testing SPI and add public unsupported guard regression. iOS adapter factored, so sixth run recombines normal/shared and full26native/Release packaging. Real document scan remains physical-only. Reassess at sixth failure if needed.",
+  "jobs": [
+    {
+      "id": "media-native",
+      "kind": "simulator",
+      "command": "python3 Tools/verify-media.py --simulator-id <selected iOS26 simulator>; MediaNativeTests all Audio/Capture/Integration methods; then Release device build/sign/IPA CRC",
+      "criteria": [
+        "P2-1.integration",
+        "P2-2.integration"
+      ],
+      "expected_minutes": 23,
+      "timeout_minutes": 30
+    },
+    {
+      "id": "shared-and-normal-recheck",
+      "kind": "unit",
+      "command": "build-ios.yml: full shared tests + normal IPA after iOS adapter factoring, no filters",
+      "criteria": [
+        "P2-1.ownership",
+        "P2-2.ownership"
+      ],
+      "expected_minutes": 10,
+      "timeout_minutes": 30
+    }
+  ],
+  "runs": [
+    {
+      "id": "35084419728/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35084419728",
+      "source": "e14ef1bdb83e99e90699203e0b7ea46f558d2468",
+      "conclusion": "failure (normal passed; media fixture compile failed)"
+    },
+    {
+      "id": "35085398836/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35085398836",
+      "source": "1db472e8d29589ebb7367db1c36f80b03df485ad",
+      "conclusion": "failure (native XCTest compile; app errors fixed)"
+    },
+    {
+      "id": "35086253825/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35086253825",
+      "source": "8c6106e123d5c0be00627c9e643fab552b59e323",
+      "conclusion": "failure (24 native tests passed; Vision XCTest SIGABRT; Release not reached)"
+    },
+    {
+      "id": "35088156403/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35088156403",
+      "source": "535186347930c65cee15381486d993c838df457e",
+      "conclusion": "failure (23/25 passed; Vision crash persists; audio NaN wait bug)"
+    },
+    {
+      "id": "35089221757/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35089221757",
+      "source": "d242fbe92d97bc06c1e7e437c92959f0aba1f4a3",
+      "conclusion": "failure (24/25 passed; crash inside unsupported Vision controller init)"
+    },
+    {
+      "id": "35090872646/1",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "conclusion": "success"
+    }
+  ],
+  "evidence": [
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-1.integration",
+      "kind": "simulator",
+      "source": "0d255f2b83d72a17da549a0489f73b66e8d5907f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34814352424/job/103881819596",
+      "observation": "Two normal lifetime UI methods passed33.151/15.376s.",
+      "review": "Parent matched individual method pass markers in full failed-step log. Run7 failed in HTTP/Web; these P0 methods completed successfully.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-2.presentation",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests both owned presentation/external route and generation replacement/B preservation passed.",
+      "review": "Two XCTest pass markers and native presentation fixture assertions reviewed. Inbox interaction was corrected and verified in later source-scoped followup; no pending inbox check remains.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-2.uikit",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0BPresentationUITests owned SwiftUI/UIKit presentation paths passed.",
+      "review": "Tests exercise presentation probe native UIViewController and ownership teardown, not OS share-sheet handoff.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-3.integration",
+      "kind": "simulator",
+      "source": "7906bd9b774c76cf24e19daf6fc0e4710b3b394f",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34746211458/job/103694516186",
+      "observation": "P0ARecordsUITests and P0ASQLiteUITests actual host maintenance passed.",
+      "review": "Records attachment restore/B preservation and native DB close/reopen/rollback/B preservation checked via actual probe assertions.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-3.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed selected Counter restore, JSON/attachment and SQLite diagnostic expected strings, B preservation; normal IPA update retains changed Counter/Reminder.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-4.onboarding",
+      "kind": "simulator",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Notes standalone and host build/launch; v1 actual A/B files, A-source-only v2 update in same installed container, old defaults/write/relaunch/corrupt rejection/preservation/repair and unchanged B/resources pass.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-4.docs",
+      "kind": "inspection",
+      "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-16-0.8.2-release.md",
+      "observation": "README links to mini-app integration/build/update/restore/compatibility remain valid; added Live/Alarm guides and versioned scope. Changed relative links inspected.",
+      "review": "Affected-path patch review at31478f2 with release followup. Not a full minor audit. Reviewed changed docs, all touched relative links and verified runtime/source scope.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-5.ui",
+      "kind": "simulator",
+      "source": "4eb784d3f8f313eef9c6566f5729006e655af164",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34979381516; docs/verification/2026-09-15-p2-widget-control.md",
+      "observation": "Normal combined passed: full shared290 with2 skipped/0failures, including all8 new management/shared-state tests; Records11, separate-process300 updates/interrupted writer, normal UI13 and separate Files selected-Counter JSON roundtrip1. Normal IPA/native metadata/signatures passed.",
+      "review": "Inspected complete log and individual8 management pass markers, suite summaries13+1, process result and successful normal job steps. Interactive compilation failures are separate and not reported as integration success.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-5.device",
+      "kind": "device",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-13-0.7-device-check.md",
+      "observation": "User confirmed consent rejection, disable/enable with Widget/Shortcut status, cancel/delete/failure/retry/reregister and other Feature preservation; presentation external URL and lifetime failure/restart also confirmed.",
+      "review": "User reports on2026-09-13 refer to both verified baa041f IPAs. No Widget latency measured; Records/SQLite checks are expected-string observation, not independent internal analysis. Parent reconciled fixture assertions and CI evidence.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-1.os",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Earlier6beb877 OS discovery/positive-negative add/owner entity candidates/saved workflow/relaunch/management were successful.4e6a3f4 adds real20sec-delay cancellation old A/B retention, injected save error old values and next identical run A-only Amount increment.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-1.metadata",
+      "kind": "unit",
+      "source": "6dd95ccc1861d4609747d1f3f7227885e5d55109",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34881183837; docs/verification/2026-09-15-p1-input-native-evidence.json",
+      "observation": "8 native execution tests including reconstructed diagnostic controls and1 managed UI pass. IndependentA/B metadata matches combined actions and both App Shortcuts.",
+      "review": "Dedicated source/run evidence records8+1 zero failures and native identities. git diff6dd95cc..71ef1ff shows no PackageAppIntents/CounterIntent source changes. Device OS results separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-2.widget",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Both Widget kinds added and match app values, A/B changes render; A disable hides/re-enable retains, removal/reregister empty with B retained. No precise latency measurement. App update/Refresh reopens preserve A-empty/B values.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-2.device",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Same diagnosticIPA overwrite and Refresh retain Widget A-empty/B; return to normal retains CounterWidget matching/tap and CounterShortcut. Diagnostic home widgets retain old display and tap top; binary normal has no diagnostic kind/resource, cache cause unproven.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-3.os",
+      "kind": "device",
+      "source": "4e6a3f4b1358ea4859aa70cc119fc9d58f2d6dac",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "Text/URL/file share saved then imported A1->3, B imported; destination-before-selection cancel no extra pending; after injected post-save failure/retry A4/B unchanged and no pending; force relaunch and overwrite/Refresh retained. Files direct-open cancel no extra, direct import A5/B unchanged. Intermediate failed pending row not explicitly observed separately; full-host CI34958712557 covers failure/retry assertions.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-4.os",
+      "kind": "device",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "At6beb877: delivered attachment, mark/reply, A unregister/removal preserves B delivered notification card, A/B foreground silent/banner policies. Focus-mode delivery was unconfirmed and excluded.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "simulator",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34816553410/job/103888319522",
+      "observation": "Real embedded HTTP normal-host method passed334.018s: A/B credentials/cookies/cache, restart, failure preservation, cancellation/no late cookie, stopped logout, removal/reregistration and B retention.",
+      "review": "Individual pass marker, network suite zero failures and successful focused selector validator checked; separate native7 logs and packaged IPA also checked.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-5.device",
+      "kind": "device",
+      "source": "6beb87760ffbd0dedd7aab9f98dee3dcde6b8604",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-14-0.8-device-check.md",
+      "observation": "At6beb877: local HTTP login/cache, relaunch Cookie/password retention, cancellation/logout/B preservation, same diagnosticIPA overwrite and Refresh credentials retention. Precommit fault injection is CI evidence; no independent device failure-injection claim. URLCache durability across relaunch is not required.",
+      "review": "User reports received stepwise; unreported intermediate states/absolute values are not invented. Canonical record separates old candidate and4e6a3f4 results.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-6.storage",
+      "kind": "simulator",
+      "source": "b62a2e635993900b47cf3738570b3f1d2825893b",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34819734774/job/103898309278; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Actual embedded-loopback WKWebView storage/restart/removal219.107s, held-writer cancellation136.873s and management drain/removal152.546s passed. Separate disable205.202s passed on0a3fb21/run34823801940. Other owner preserved.",
+      "review": "Individual pass lines and assertions checked. The failed run9 disable is retained; run11 first disable passed without prewarming and auth succeeded. Native cleanup delay remains unexplained, physical result at6beb877 recorded separately.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P1-6.auth",
+      "kind": "simulator",
+      "source": "0a3fb2148986070b4f7311ae9351e655564891d4",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34823801940/job/103911167894; docs/verification/2026-09-14-p1-b.md",
+      "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
+      "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
+      "reuse_reason": "Original source and source-specific review retained from 0.8/P2-L evidence. Since52a29ff, production changes only add Audio/Capture modules; existing stores/schema/Features/management/backup/Widget/Intent/HTTP/Web unchanged. Optional native code not invoked by old Features. Current306874f shared/normal build passed; no claim that prior physical actions were repeated."
+    },
+    {
+      "criterion": "P2-1.docs",
+      "kind": "inspection",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "docs/guides/audio.md; docs/verification/2026-09-16-p2-media.md",
+      "observation": "Documented ownership, integration, failure/recovery, OS/device limits and pending native/device verification. Diagnostic path is optional; no production feature behavior changed.",
+      "review": "Guides and verification record matched candidate code. Separate26native success from unconfirmed device OS actions; preserve unsupported SDK boundary and LiveB history."
+    },
+    {
+      "criterion": "P2-2.docs",
+      "kind": "inspection",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "docs/guides/capture.md; docs/verification/2026-09-16-p2-media.md",
+      "observation": "Documented ownership, integration, failure/recovery, OS/device limits and pending native/device verification. Diagnostic path is optional; no production feature behavior changed.",
+      "review": "Guides and verification record matched candidate code. Separate26native success from unconfirmed device OS actions; preserve unsupported SDK boundary and LiveB history."
+    },
+    {
+      "criterion": "P2-1.ownership",
+      "kind": "unit",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646",
+      "observation": "14/14 MiniAppAudioSessionCoordinatorTests passed; all shared359 with0failures and2knownKeychain skips.",
+      "review": "Current full shared run passed; no replay claim for physical behavior."
+    },
+    {
+      "criterion": "P2-2.ownership",
+      "kind": "unit",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646",
+      "observation": "19/19 MiniAppCaptureOwnerTests passed; all shared359 with0failures and2knownKeychain skips.",
+      "review": "Current full shared run passed; no replay claim for physical behavior."
+    },
+    {
+      "criterion": "P2-1.integration",
+      "kind": "simulator",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646/artifacts/10444457577",
+      "observation": "All26declared MediaNativeTests passed once in structured xcresult; real Feature lifetime/permissions/failure/one-owner retention, native AVPlayer/profile/NowPlaying and shared audio-capture bridge. Capture document ownership injects UIKit; actual camera/scan is NOT exercised.",
+      "review": "Downloaded result.json, test-summary.json, test-tests.json and timings; require_test_passes validates exact identities, total26, Passed and0skip/fail. Release diagnostic IPA/build/plist/signature/CRC succeeded. OS physical acceptance remains deferred."
+    },
+    {
+      "criterion": "P2-2.integration",
+      "kind": "simulator",
+      "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646/artifacts/10444457577",
+      "observation": "All26declared MediaNativeTests passed once in structured xcresult; real Feature lifetime/permissions/failure/one-owner retention, native AVPlayer/profile/NowPlaying and shared audio-capture bridge. Capture document ownership injects UIKit; actual camera/scan is NOT exercised.",
+      "review": "Downloaded result.json, test-summary.json, test-tests.json and timings; require_test_passes validates exact identities, total26, Passed and0skip/fail. Release diagnostic IPA/build/plist/signature/CRC succeeded. OS physical acceptance remains deferred."
+    }
+  ],
+  "deferred_device": {
+    "P2-1.device": "1.0.0",
+    "P2-2.device": "1.0.0"
+  },
+  "documents": [],
+  "document_review": {
+    "source": "",
+    "summary": "",
+    "unresolved": []
+  },
+  "release": {},
+  "metrics": {
+    "review_rounds": 3,
+    "parent_messages": 0,
+    "ci_job_minutes": 0
+  },
+  "acceptance": {
+    "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
+    "P0-1.integration": "通常Feature経路でA終了/失敗/再開、Bの処理と保存を保持",
+    "P0-2.presentation": "画面切替・戻る・提示中外部遷移・取消で所有先と保持状態が一貫",
+    "P0-2.uikit": "UIKit提示/終了を同じ所有契約へ接続、A終了時のB保持",
+    "P0-3.failure": "破損・取消・stop/apply/resume失敗、移行/リセット、通常アクセス競合とB保持",
+    "P0-3.integration": "JSON/添付とSQLiteの実接続で保存・復元・移行・リセットを通す",
+    "P0-3.device": "候補IPAで選択復元/リセットの通常操作と他Feature保持をまとめて確認",
+    "P0-4.diagnostics": "欠けた依存/登録・異値設定の拒否と解消手順、互換更新",
+    "P0-4.onboarding": "手順だけで独立Featureを追加・単独/host build・更新。二Packageの資源保持",
+    "P0-4.docs": "READMEから追加・更新・復旧・衝突解消まで辿れる",
+    "P0-5.ownership": "所有登録/処理/データの後始末、失敗/再試行、他owner保持",
+    "P0-5.ui": "アプリ内の同意説明、無効化/再有効化/削除確認・取消・失敗を通常経路で操作",
+    "P0-5.device": "候補IPAで同意拒否・無効化・削除・他Feature保持を一括確認",
+    "P0-6.diagnostics": "終了待ちが続く所有処理を識別、虚偽の完了や他owner取消なし",
+    "P0-6.local": "global/登録/外部資源のない具体的な局所処理を比較し補完不要の根拠を残す",
+    "P1-1.os": "OS Shortcutsの発見/候補/引数/実行/戻り値と他owner保持。直接performのみ不可",
+    "P1-1.metadata": "独立A/Bと統合の識別子・参照・削除後保持",
+    "P1-2.widget": "二静的Widgetの追加・描画・A更新/削除後B保持、出荷構成の接続",
+    "P1-2.device": "候補IPAでWidgetの通常追加/更新/他方保持",
+    "P1-3.routing": "所有先・曖昧/未知/取消・権限解放・一時ファイル寿命とB保持",
+    "P1-3.os": "OS外部ファイル/共有シートから受信先選択・成功/取消/失敗と再起動保持",
+    "P1-4.ownership": "foreground方針/添付削除寿命/予約と取消の交差でB保持",
+    "P1-4.os": "通知action/文字入力/foreground表示/添付・他方通知と画面の保持",
+    "P1-5.http": "実HTTPの認証/Cookie/cache、終了後logout、取消/失敗とB保持",
+    "P1-5.device": "候補IPAの再起動・上書き更新/署名更新で資格情報/状態保持とlogout",
+    "P1-6.storage": "通常Webデータの再起動保持と片側削除、書込中・取消・失敗時B保持",
+    "P1-6.auth": "OS Web認証の開始/取消/返却先と他ownerの要求・状態保持",
+    "P2-2.ownership": "権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+    "P2-2.integration": "通常Featureと実OS入口で権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持",
+    "P2-2.device": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+    "P2-2.docs": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期",
+    "P2-1.ownership": "録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続。独立時との差分と通常同時要求・片側失敗/取消・終了の所有を検証",
+    "P2-1.integration": "通常Featureと実OS入口で録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続",
+    "P2-1.device": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+    "P2-1.docs": "独立/統合の接続手順、対象source別証拠、未対応と署名/OS制約、互換性と回復手順を同期"
+  },
+  "ci_execution": [
+    {
+      "id": "combined-media-and-normal",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-media-integration source=e14ef1bdb83e99e90699203e0b7ea46f558d2468 media_validation=true simulator_tests=false feature_validation=false records_validation=false; all other inputs default. Normal shared tests unfiltered; MediaNativeTests all declared methods in MediaAudioNativeTests,MediaCaptureNativeTests,MediaIntegrationNativeTests. No UI/device actions inferred.",
+      "estimate_basis": "Previous35075825942 normal3m41 and continuing-state9m17 (one Debug simulator host). Media adds device Release build and packaging: budget23min including checkout/tool setup/simulator/upload; normal10min parallel, no dependency. Step24min/job30min limits. New-media duration is estimate, runner queue measured separately. Initial boundary budget3 total attempts, one currently planned.",
+      "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "repair-media-native",
+      "inputs_and_filters": "native-surface.yml ref=codex/p2-media-integration source=1db472e8d29589ebb7367db1c36f80b03df485ad surface=media ios_major=26 simulator_runtime empty. All methods in MediaAudioNativeTests,MediaCaptureNativeTests,MediaIntegrationNativeTests; diagnostic device Release IPA; no normal/shared rerun.",
+      "estimate_basis": "Initial35084419728 normal5m32 passed and reused unchanged; media6m38 stopped during fixture compilation (prepare0.5s,generation73s,build105s). Full native tests and Release build still unmeasured; retain23min including setup/upload from combined-host estimates. No serial job dependencies.",
+      "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "repair2-media-native",
+      "inputs_and_filters": "native-surface.yml source=8c6106e123d5c0be00627c9e643fab552b59e323 ref=codex/p2-media-integration surface=media ios_major=26 simulator_runtime empty. Same whole MediaNativeTests + diagnostic Release IPA.",
+      "estimate_basis": "Previous attempt compiled app after fixing seek/style, then stopped at XCTest callback type error. Native execution and Release IPA unmeasured; keep23min preparation/upload-inclusive estimate, job30min limit. Normal/shared success35084419728 unchanged and reused.",
+      "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "diagnosed-vision-harness",
+      "inputs_and_filters": "native-surface.yml ref=codex/p2-media-integration source=535186347930c65cee15381486d993c838df457e surface=media ios_major=26 simulator_runtime empty; whole MediaNativeTests with structured results; Release diagnostic IPA.",
+      "estimate_basis": "Lastjob13m12: native test/build441s including3automaticcrash restarts. New synchronous test wrapper20s bound removes async XCTest call frame for comparison. Full Release stage not measured; retain23min including setup/upload, timeout30. No normal job dependency/repetition.",
+      "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "vision-startup-observation",
+      "inputs_and_filters": "native-surface.yml source=d242fbe92d97bc06c1e7e437c92959f0aba1f4a3 ref=codex/p2-media-integration surface=media ios_major=26 simulator_runtime empty; all25native tests, failed-result diagnostic export, then diagnostic Release IPA only if passed.",
+      "estimate_basis": "Same native target/build as prior13min boundary. FixedNaNwait atmost5s; diagnostics export budget90s. Keep23min expected/30minjob bound includingsetupupload. Normal/shared reused unchanged.",
+      "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "correct-document-test-boundary",
+      "inputs_and_filters": "build-ios.yml source=306874f232849fa81de20985f3e2f90bf2da5a09 ref=codex/p2-media-integration media_validation=true simulator_tests=false feature_validation=false records_validation=false; other defaults. Full shared/normal IPA + all26MediaNativeTests/diagnostic Release IPA in parallel.",
+      "estimate_basis": "Normal previous5m32; media previous13m04 included unsupported SDK crash retries, generation260s/native336s. New test avoids known unavailable camera constructor, adds one fast denial test. Release still unmeasured;23min includes setup/upload and signature/package, parallel normal10min.",
+      "expected_elapsed_minutes": 23
+    }
+  ],
+  "normal_ipa": {
+    "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+    "run": "35090872646",
+    "shared_tests": 359,
+    "known_skips": 2,
+    "failed": 0,
+    "job_seconds": 222
+  },
+  "native_evidence": {
+    "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
+    "run": "35090872646",
+    "tests": 26,
+    "passed": 26,
+    "skipped": 0,
+    "failed": 0,
+    "job_seconds": 534,
+    "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35090872646/artifacts/10444457577",
+    "scope": "Real Feature/AVPlayer/native profile/NowPlaying owner/capture UIKit ownership/public unsupported gate and audio bridge. Actual camera/document/QR/recording/system remote commands remain device checks."
+  },
+  "device_assets": {
+    "release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-c-device-check-20260916",
+    "status": "prepared; publication verification recorded separately",
+    "inventory": [
+      {
+        "ipa": "JibunKit-P2-C-306874f.ipa",
+        "zip": "JibunKit-P2-C-306874f.zip",
+        "ipa_sha256": "0639f35687bc11f5f65ed1935c32a34cd900e810090d4368e77f9864d43b287d",
+        "zip_sha256": "ae98a6382874149db843061032704a03ebcc9f3378ee8e8c6c195ed8444579d4",
+        "products": [
+          {
+            "CFBundleIdentifier": "com.jibunkit.app.Share",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          },
+          {
+            "CFBundleIdentifier": "com.jibunkit.app.Widget",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          },
+          {
+            "CFBundleIdentifier": "com.jibunkit.app",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          }
+        ]
+      },
+      {
+        "ipa": "JibunKit-normal-306874f.ipa",
+        "zip": "JibunKit-normal-306874f.zip",
+        "ipa_sha256": "5dd485779dc5900296f42126d29a3b76e8930e881b818921f626a608891af9e7",
+        "zip_sha256": "77352b83db237d2a0bcf5d4bb40fde9b9b139fc7adc0cc9fc09ffc00e0e96a55",
+        "products": [
+          {
+            "CFBundleIdentifier": "com.jibunkit.app.Share",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          },
+          {
+            "CFBundleIdentifier": "com.jibunkit.app.Widget",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          },
+          {
+            "CFBundleIdentifier": "com.jibunkit.app",
+            "CFBundleShortVersionString": "0.8.2",
+            "CFBundleVersion": "12"
+          }
+        ]
+      }
+    ]
+  },
+  "next_action": "Grouped physical checks in docs/verification/2026-09-16-p2-media-device.md. User notification after publication/hash verification. No version bump/main merge yet."
+}

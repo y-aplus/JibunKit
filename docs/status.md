@@ -2,7 +2,7 @@
 
 更新日: 2026-09-16。公開安定版は[0.8.2/build12](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)（直前0.8.1）。P0/P1・P2-Wに加え、Live Activities/AlarmKitの接続と対象別実機、自動状態保持試験を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.2出荷記録](verification/2026-09-16-0.8.2-release.md)。Live Bの単発の値差分は原因未特定・限定再確認で再現なしとして残す。以下の旧版節はsourceを明記した既存証拠。
 
-現在は`codex/p2-media-integration`でP2-C（音声・撮影/scan）を実装中。[共通契約](delivery/P2-media-contract.md)に基づく両担当の初回提出を取り込み、レビュー修正中。親の共通host生成は成功したが、native build/CI/実機は未確認。[作業記録](verification/2026-09-16-p2-media.md)。管理・復元の組合せは実Featureの自動試験へ寄せ、実機は新しいOS動作の代表例に絞る。
+現在は`codex/p2-media-integration`でP2-C（音声・撮影/scan）の実機確認準備まで進んだ。source306874fの[CI35090872646](https://github.com/y-aplus/JibunKit/actions/runs/35090872646)で共有359件（既存skip2）、native26件（skipなし）、通常/診断IPAが成功。[作業記録](verification/2026-09-16-p2-media.md)と[実機手順](verification/2026-09-16-p2-media-device.md)。実装は未公開branch上であり、P2-1/P2-2は実機未確認のためpartial。管理・復元の組合せを繰り返さず、新しいOS動作の代表例を確認する。
 
 ## 0.8.0公開版
 

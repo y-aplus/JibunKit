@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- 開発branchでAudioSessionのowner別調停・明示競合切替・停止/復旧待ち、Now Playing操作配送、camera予約とcapture/VisionKitの寿命接続を追加。実Featureと共有音声付き撮影fixture、接続guideを整備。CI35090872646で通常/診断IPAとnative26件が成功。実機未確認で、安定版0.8.2の出荷済み機能にはまだ含めない。
+
 ## [0.8.2] - 2026-09-16
 
 0.8.2/build12を公開。CI35075825942で通常IPAと実Feature状態保持試験が成功。

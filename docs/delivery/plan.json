@@ -403,8 +403,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "音声・Now Playing",
-      "existing": "既存lease/owner APIと背景処理の部分成果。台帳D21/D22を参照",
-      "remaining": "録音/再生・背景・通話/経路中断/復帰・互換/非互換AudioSession要求とremote commandを通常Featureへ接続",
+      "existing": "開発branch306874f: AudioSession互換/競合/停止/復旧・Now Playing ownerと実Feature接続。CI35090872646でcore14件、音声native13件とbridge2件、通常/診断IPA成功。未公開。",
+      "remaining": "実機の実録音/再生・背景・OS中断/経路変更・Now Playing配送の代表確認、結果と制限の記録。",
       "deferred": "特殊多経路/機器・任意engineの一般共存",
       "criteria": [
         {
@@ -449,8 +449,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "撮影・スキャン",
-      "existing": "既存提示/権限説明/寿命を再利用",
-      "remaining": "権限拒否・撮影/文書/コードscan提示・取消・解放・通常中断/復帰・切替時B保持",
+      "existing": "開発branch306874f: camera予約/世代/取消と既存lifetime/scene/presentation/同意接続、音声付き撮影hook。CI35090872646でcore19件、capture native11件とbridge2件、診断IPA成功。文書所有試験はUIKit注入で実scanではない。未公開。",
+      "remaining": "対応実機でcamera/音声付き動画・中断後の成果、文書scan成功/取消、QRの通常操作を確認。実SDK対応条件と制限の記録。",
       "deferred": "高度同時capture・AR world state",
       "criteria": [
         {

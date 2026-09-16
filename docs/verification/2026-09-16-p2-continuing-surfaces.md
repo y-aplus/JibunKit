@@ -25,7 +25,7 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 | Python Tools試験 | 82件成功（Windows、11.771秒、追加Tools試験込み）。Swift実行検証とは別 |
 | 既存操作Widget診断host生成 | 3件成功。hostがeffectiveExternalAccessを利用する変更へ既存assertionを更新 |
 | `check-delivery.py` plan検査 | 25単位/12境界で成功。P2-Lの証拠合格や出荷合格ではない |
-| 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
+| 共通Swift試験 | e6155ac / run35046154290で共通10件・Live10件・Alarm16件を含む全326件成功（既知Keychain skip2、失敗0） |
 | Native adapter / A/B fixture | 両review1を統合。Live親補修・Alarm review2統合済み。Swift/native検証結果はまだない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
 | CI / 実機 | 初回2runを70c2ca4で投入。通常版・native3jobとも同じCoreコンパイル3点で失敗。実機未実施 |
@@ -102,3 +102,11 @@ CIの入力・時間予算は上記2run構成で確定。独立/Combined両famil
 初回予算2runから追加2run（累計4run）を使う。理由は新Coreのcompile不備で全検証が未到達のため。修正はread closureの接続/不変capture/明示selfだけで、受入条件・操作assertion・期待値を緩めない。native3jobと通常版を同一の新SHAで、初回と同じworkflow入力/filterにより並列再実行する。成功済みのnative/IPA証拠はまだないため、今回のCore変更の影響を受けない旧P0/P1証拠以外は再利用しない。
 
 見積りは初回と同じnative最長23分/通常10分、nativejob30分上限。初回実測の生成/初期compileに最大7分を要した点を踏まえ、成功後は残りのnative tests/IPAまでのtimingsを照合する。同じ受入条件でさらに失敗した場合は、今回の3点との同一性/初めて到達した工程を切り分けてから再実行する。
+
+## 2回目の通常版結果・SDK隔離の修正
+
+[35046154290](https://github.com/y-aplus/JibunKit/actions/runs/35046154290)はe6155ac88c55c42d2d31a42ba359311b77334112。job4分03秒でiOS Release buildに失敗した。前回3点は解消し、共通326件（skip2・失敗0、うち新規共通10/Live10/Alarm16）、Records11件、Feature build requirements、独立package、backup memory別process、Tuist生成は成功した。native UI/IPAはまだ未完で、run全体を成功扱いしない。
+
+新しい失敗はActivityKitLiveActivityDriverのSDKオブジェクト隔離。Activity<Attributes>をdiscovery taskからactor.watchへ渡し、さらにTaskへcaptureすることをSwift6が拒否した（3診断、同じ原因）。fake coordinator試験ではSDK型を使わないため検出しない。Activityへunchecked Sendableを付けず、watchにはString IDとSendable continuationだけを渡し、活動の列挙・SDKインスタンス取得・async sequence消費を監視Task内へ揃える。終了済taskを一覧から除き、cancel後に遅れてwatchが届いても再生成しないclosed flagも加える。
+
+今回も進行中sourceを動かさず、修正はcodex/p2-live-sdk-repairへ保存。35046152156のnative3jobが終わるまで追加dispatchしない。Core compile阻害を直した後に初めて到達したiOS SDK段階での失敗であり、前回と同じエラーの再現ではない。次の結果に同じSDK隔離の指摘が残るなら、追加の全CI前に標準ActivityKitの最小async sequence比較へ切り分ける。

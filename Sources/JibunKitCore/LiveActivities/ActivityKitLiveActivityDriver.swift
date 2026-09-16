@@ -24,16 +24,28 @@ public struct ActivityKitLiveActivityEnd<State: Codable & Hashable & Sendable>: 
 
 private actor ActivityKitChangeTasks<Attributes: MiniAppLiveActivityAttributes> {
     private var tasks: [String: Task<Void, Never>] = [:]
-    func watch(_ activity: Activity<Attributes>, continuation: AsyncStream<Void>.Continuation) {
-        guard tasks[activity.id] == nil else { return }
-        tasks[activity.id] = Task {
-            for await _ in activity.activityStateUpdates {
-                if Task.isCancelled { break }
-                continuation.yield(())
+    private var closed = false
+
+    // Activity is not Sendable. Cross the actor boundary with its immutable ID,
+    // then retrieve and consume the SDK object within the observation task.
+    func watch(_ systemID: String, continuation: AsyncStream<Void>.Continuation) {
+        guard !closed, tasks[systemID] == nil else { return }
+        tasks[systemID] = Task { [weak self] in
+            if let activity = Activity<Attributes>.activities.first(where: { $0.id == systemID }) {
+                for await _ in activity.activityStateUpdates {
+                    if Task.isCancelled { break }
+                    continuation.yield(())
+                }
             }
+            await self?.finished(systemID)
         }
     }
-    func cancel() { tasks.values.forEach { $0.cancel() }; tasks.removeAll() }
+    private func finished(_ systemID: String) { tasks[systemID] = nil }
+    func cancel() {
+        closed = true
+        tasks.values.forEach { $0.cancel() }
+        tasks.removeAll()
+    }
 }
 
 public struct ActivityKitLiveActivityDriver<Attributes: MiniAppLiveActivityAttributes>:
@@ -79,12 +91,12 @@ public struct ActivityKitLiveActivityDriver<Attributes: MiniAppLiveActivityAttri
         return AsyncStream { continuation in
             let discovery = Task {
                 for activity in Activity<Attributes>.activities {
-                    await watchers.watch(activity, continuation: continuation)
+                    await watchers.watch(activity.id, continuation: continuation)
                 }
                 for await activity in Activity<Attributes>.activityUpdates {
                     if Task.isCancelled { break }
                     continuation.yield(())
-                    await watchers.watch(activity, continuation: continuation)
+                    await watchers.watch(activity.id, continuation: continuation)
                 }
             }
             continuation.onTermination = { _ in

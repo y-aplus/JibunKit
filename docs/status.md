@@ -1,6 +1,6 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-16。公開安定版は[0.8.1/build11](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)（直前0.8.0）。P0/P1とP2-Wの実装・接続・CI・対象別実機を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.1出荷記録](verification/2026-09-16-0.8.1-release.md)。以下の0.8.0節は引き継いだP0/P1証拠。
+更新日: 2026-09-16。0.8.2公開直前の安定版は[0.8.1/build11](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)（直前0.8.0）。P0/P1とP2-Wの実装・接続・CI・対象別実機を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.1出荷記録](verification/2026-09-16-0.8.1-release.md)。以下の0.8.0節は引き継いだP0/P1証拠。
 
 ## 0.8.0公開版
 
@@ -29,7 +29,7 @@
 
 ## 1.0の決定と文書
 
-1.0は未達。2026-09-15にユーザーが[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の推奨境界を採用した。P2-A全体とP2-B通常範囲、採用したP2-Cを実装/接続/検証/説明まで閉じる。操作Widget/Controlは0.8.1で完了。P2-Lは対象別実機と通常版復帰を確認し、0.8.2出荷候補の検証中。Live Bの単発の値差分は原因未特定で、P2-5はpartialを維持する。
+1.0は未達。2026-09-15にユーザーが[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の推奨境界を採用した。P2-A全体とP2-B通常範囲、採用したP2-Cを実装/接続/検証/説明まで閉じる。操作Widget/Controlは0.8.1で完了。P2-Lは対象別実機と通常版復帰を確認し、0.8.2出荷CI/IPA検査も完了し、公開準備中。Live Bの単発の値差分は原因未特定で、P2-5はpartialを維持する。
 
 P単位の状態は[plan.json](delivery/plan.json)、D全体の残件は[台帳](coexistence-ledger.md)、責任は[共存原則](coexistence-boundaries.md)、版境界は[優先実装](implementation-priorities.md)が正本。過去のCI待ちや公開状態は、日付付き検証記録・履歴・過去release notesの当時の記録として読む。
 
@@ -47,4 +47,4 @@ e984d44の診断IPAで一括実機確認が完了。Widget/Control各二候補�
 
 ## 0.8.2に向けたP2-L候補
 
-Live Activities/AlarmKitの共通所有・寿命・照合、通常管理/復元接続を実装。共通326件（skip2）、Records11件、独立A/B/Combinedのapp/Widget/metadata、Live native4/Alarm native2、通常診断host管理UI1、通常/診断IPAが成功。OS開始/更新/停止・Alarm標準stop callback・片側管理/復元・通常版復帰の一括実機を確認。Live Bが上書き前に期待230ではなく200と表示された観測は原因未特定で、210からの限定再確認では再現しなかった。P2-5はpartialを維持。0.8.2/build12は公開候補で、版更新後CI/IPA検査と公開は未完。[一括実機手順](verification/2026-09-16-p2-continuing-surfaces-device.md)・[source別証拠](verification/2026-09-16-p2-continuing-surfaces.md)。
+Live Activities/AlarmKitの共通所有・寿命・照合、通常管理/復元接続を実装。共通326件（skip2）、Records11件、独立A/B/Combinedのapp/Widget/metadata、Live native4/Alarm native2、通常診断host管理UI1、通常/診断IPAが成功。OS開始/更新/停止・Alarm標準stop callback・片側管理/復元・通常版復帰の一括実機を確認。Live Bが上書き前に期待230ではなく200と表示された観測は原因未特定で、210からの限定再確認では再現しなかった。P2-5はpartialを維持。0.8.2/build12はCI35075825942と取得IPA検査が成功し、公開準備中。実4Featureの非初期値/世代について片側管理・JSON復元後の他方保持を自動試験で確認した。[一括実機手順](verification/2026-09-16-p2-continuing-surfaces-device.md)・[source別証拠](verification/2026-09-16-p2-continuing-surfaces.md)。

@@ -141,7 +141,11 @@
       "id": "35075825942",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35075825942",
       "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
-      "conclusion": "pending"
+      "conclusion": "success",
+      "job_seconds": {
+        "normal": 221,
+        "continuing-state": 557
+      }
     }
   ],
   "evidence": [
@@ -361,7 +365,7 @@
       "source": "b1d379bf5179564230299d02295d3c130efd7866",
       "result": "passed",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35046699862 ; complete shared test log; docs/verification/2026-09-16-p2-continuing-surfaces.md",
-      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim.",
+      "observation": "Complete macOS shared suite326 declarations, skip2 existing Keychain, failures0. New common continuing10, Live10, Alarm16 passed. Unit ownership/admission/lifecycle assertions only; no native OS behavior claim. Additional31478f2/35075825942 native real four Feature state regression passed (one method,0.984s), checking all other payload bytes+generation after A disable/delete/JSON restore. See state_regression for source and log artifact limitation.",
       "review": "Source and actual suite counts/assertions matched. New ownership tests cover old/foreign identity refusal, pending/partial native failure, cleanup/recovery/B retention, observer and gate lifecycle. SDK and physical checks remain separate.",
       "reuse_reason": "Only diagnostic host factory type, Live native assertion helper, CI job selection and docs changed. No Sources, normal host, Package, Alarm fixture, pure tests or schemas changed; passed shared/normal/Alarm retained at original source. 0.8.2 candidate31478f2: production Sources/Feature logic unchanged from device5678a41; Project changes only bundle version/build. Added state regression/test target and CI selection do not enter normal IPA. Reuse original source; do not claim new test passed."
     },
@@ -374,6 +378,44 @@
       "observation": "User confirmed real Live start/update and OS Intent, A end/management/selected restore, Alarm timer/pause/resume/native stop callback/fixed+weekly registrations and A management/restore, normal IPA return. See per-step observation limits.",
       "review": "This proves exercised OS entrypoints and integration, not universal durability: Live B later showed200 instead of expected230 before overwrite. Cause unknown; subsequent210 retained across restart and Alarm A management/restore. P2-5.device remains unclosed and unit remains partial; no further repetitive manual requests scheduled.",
       "reuse_reason": "Candidate31478f2 changes production bundle version only; no Feature/Core runtime change. Same device source retained; new native state regression is pending and is not this evidence."
+    },
+    {
+      "criterion": "P0-6.local",
+      "kind": "inspection",
+      "source": "cd45ea814e7160bfe0e6843d955bee2299806832",
+      "result": "passed",
+      "reference": "docs/guides/runtime-shutdown-progress.md; docs/guides/feature-lifetime.md",
+      "observation": "Bounded in-memory validation/formatting/value transforms own no persistent/global/native resource. Unbounded CPU/I/O/callback lifetime is separated and requires owned asynchronous handling. No wrapper added for pure transforms.",
+      "review": "Parent source/doc review at cd45ea8; not runtime or device evidence.",
+      "reuse_reason": "Reviewed0.8.0 source-specific evidence, not re-execution: underlying P0/P1 Feature stores/fixtures, native packages, HTTP/Web/incoming/lifetime/presentation implementations are unchanged through4eb784d. This patch adds optional external admission to Management/Definition, with nil defaults for these existing Features. Its shared and normal management/backup regression is scheduled separately; grouped device management/static Widget/Shortcut checks are repeated. Original source retained. See final criterion/source comparison in docs/verification/2026-09-15-0.8-release.md: P0 stores/navigation/presentations/onboarding remain unchanged; lifetime/management changes have later scoped regression. Incoming provider/store and diagnostic Intent controls are covered by current native/full-host/device evidence. 4e6a3f4..71ef1ff changes product version only. This is evidence reuse, not re-execution at the candidate. 0.8.2 comparison: P2-L adds optional continuing adapters; the referenced local transforms/onboarding/template/requirement helper implementations are unchanged. Current35075825942 repeats build-requirement rejection/resolution and compatible-package probes successfully. No generated UI re-execution claimed."
+    },
+    {
+      "criterion": "P0-4.diagnostics",
+      "kind": "inspection",
+      "source": "baa041f2115d84ddb94ae4d8e6882c7eea29e9b7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/34705653297",
+      "observation": "Six actual Swift/Tuist declaration cases pass; build requirement/privacy conflicts reject; Registry omission/recovery verified in generated UI.",
+      "review": "Parent reviewed actual full log, source invariants, downloaded native results and iOS v1/v2 A/B JSON bytes. docs/verification/2026-09-12-p0-c.md.",
+      "reuse_reason": "Reviewed0.8.0 source-specific evidence, not re-execution: underlying P0/P1 Feature stores/fixtures, native packages, HTTP/Web/incoming/lifetime/presentation implementations are unchanged through4eb784d. This patch adds optional external admission to Management/Definition, with nil defaults for these existing Features. Its shared and normal management/backup regression is scheduled separately; grouped device management/static Widget/Shortcut checks are repeated. Original source retained. See final criterion/source comparison in docs/verification/2026-09-15-0.8-release.md: P0 stores/navigation/presentations/onboarding remain unchanged; lifetime/management changes have later scoped regression. Incoming provider/store and diagnostic Intent controls are covered by current native/full-host/device evidence. 4e6a3f4..71ef1ff changes product version only. This is evidence reuse, not re-execution at the candidate. 0.8.2 comparison: P2-L adds optional continuing adapters; the referenced local transforms/onboarding/template/requirement helper implementations are unchanged. Current35075825942 repeats build-requirement rejection/resolution and compatible-package probes successfully. No generated UI re-execution claimed."
+    },
+    {
+      "criterion": "P0-4.docs",
+      "kind": "inspection",
+      "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-16-0.8.2-release.md",
+      "observation": "README links to mini-app integration/build/update/restore/compatibility remain valid; added Live/Alarm guides and versioned scope. Changed relative links inspected.",
+      "review": "Affected-path patch review at31478f2 with release followup. Not a full minor audit. Reviewed changed docs, all touched relative links and verified runtime/source scope."
+    },
+    {
+      "criterion": "P2-5.docs",
+      "kind": "inspection",
+      "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
+      "result": "passed",
+      "reference": "docs/verification/2026-09-16-0.8.2-release.md",
+      "observation": "Live/Alarm guides, device record, plan/ledger/status and0.8.2 notes distinguish native/physical/source reuse, OS limits, partial status and unexplained score discrepancy. Automated/manual split is explicit.",
+      "review": "Affected-path patch review at31478f2 with release followup. Not a full minor audit. Reviewed changed docs, all touched relative links and verified runtime/source scope."
     }
   ],
   "deferred_device": {
@@ -402,7 +444,7 @@
       "implementation": 2,
       "correction": 3
     },
-    "ci_job_minutes": 89.25
+    "ci_job_minutes": 102.217
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -490,7 +532,7 @@
   ],
   "monitor": "OS scheduled tasks registered for both runs; one completion message each; no model polling",
   "repair_branch": "codex/p2-live-sdk-repair",
-  "next_action": "Await one completion notification for35075825942. Inspect normal0.8.2 IPA and state-only native assertions; fix only demonstrated failures. No new device check pending. P2-5 stays partial due unexplained/unreproduced Live B discrepancy;0.8.2 intermediate release can describe confirmed scope.",
+  "next_action": "CI35075825942 success and IPA CRC/IDs/version/fixtures checked. Integrate verified core into main and publish0.8.2; preserve P2-5 partial/unexplained historical Live B observation. No additional device request or CI needed for docs/upload-path-only followup.",
   "normal_ipa": {
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
     "run": "35046699862",
@@ -774,5 +816,54 @@
     "reference": "docs/verification/2026-09-16-p2-continuing-surfaces-device.md",
     "reported_pass": "Live/Alarm OS operations, native stop callbacks, one-owner management/restore, restart/overwrite/Refresh and normal return. Read step-specific limits in reference.",
     "unresolved": "Live B expected230, observed200 before IPA overwrite. Persisted score display; cause unknown. Fresh210 survived app restart and Alarm A deletion/disable/restore. User suggested forgotten interaction but not established. Do not classify as fixed or user error."
+  },
+  "state_regression": {
+    "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
+    "run": "35075825942",
+    "method": "testRealFeatureManagementAndJSONRestorePreserveOtherOwners",
+    "passed": true,
+    "test_seconds": 0.984,
+    "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35075825942/job/104727889550",
+    "scope": "Real four Feature state/providers and public management/restore composition, nondefault other-owner payload+generation preservation. No native OS activity started, no real process restart; factory re-prepare only.",
+    "evidence_limit": "Continuing-state directory omitted from upload paths: Actions full log contains exact passing method and TEST SUCCEEDED, archived locally. xcresult/result.json unavailable as artifacts. Upload path repaired for next run, no rerun of passing test."
+  },
+  "release_082_inventory": {
+    "source": "31478f2da9f4262e36e84b6ec4e4c9c1b1685c78",
+    "run": "35075825942",
+    "bundles": [
+      {
+        "id": "com.jibunkit.app",
+        "version": "0.8.2",
+        "build": "12",
+        "group": "group.com.jibunkit.shared"
+      },
+      {
+        "id": "com.jibunkit.app.Widget",
+        "version": "0.8.2",
+        "build": "12",
+        "group": "group.com.jibunkit.shared"
+      },
+      {
+        "id": "com.jibunkit.app.Share",
+        "version": "0.8.2",
+        "build": "12",
+        "group": "group.com.jibunkit.shared"
+      }
+    ],
+    "files": [
+      {
+        "name": "JibunKit-0.8.2.ipa",
+        "size": 2874016,
+        "sha256": "da0f273226f765297be94f6fa282da42a672e392e47a11fa06f037a503c55de9",
+        "crc": "passed"
+      },
+      {
+        "name": "JibunKit-0.8.2.zip",
+        "size": 2839157,
+        "sha256": "e44c4edd82ff0b220bbb3afbd5ed5fa1212bc2b161e6c7b2fd033b6b6cff7ac8",
+        "crc": "passed"
+      }
+    ],
+    "diagnostic_fixtures": "not found in paths/executables; normal Counter kind present"
   }
 }

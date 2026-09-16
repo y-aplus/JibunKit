@@ -220,6 +220,7 @@ jobs:
             ${{ runner.temp }}/Continuing-live
             ${{ runner.temp }}/Continuing-alarm
             ${{ runner.temp }}/Continuing-host
+            ${{ runner.temp }}/Continuing-state
             ${{ runner.temp }}/Interactive-native
             ${{ runner.temp }}/Interactive-host
             ${{ runner.temp }}/platform.txt

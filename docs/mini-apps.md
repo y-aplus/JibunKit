@@ -1,7 +1,6 @@
 # ミニアプリの追加
 
-
-0.8.2/build12は公開候補です（最新公開版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
+0.8.2/build12は出荷検証済み・公開準備中です（公開直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
 操作可能Widget/Controlを追加する場合は[標準型の登録・共有状態・管理/復元接続](guides/interactive-widgets.md)へ進む。0.8.1以降の追加経路で、0.8.0以前には含まれない。
 
 JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。
@@ -246,7 +245,6 @@ IntegrationはonNotificationActionへasyncハンドラを任意登録できる�
 
 `await context.removeAllOwnedNotifications()`は、そのFeatureのnamespaceに属する予約中・配信済み通知のみを取り消す。従来の単一request IDも対象。他Featureや名前空間外の通知は保持する。取得したID一覧に対する操作なので、新規予約との原子的な停止は保証しない。復元・削除時に新規予約を止める必要がある場合はFeature runtimeで受付を調停する。Records復元後の取消が使用例。
 
-
 ### 前面通知の表示方針
 
 `MiniAppDefinition.notificationPresentation` は通知所有Featureの同期MainActor callbackです。
@@ -256,7 +254,6 @@ callback内で長時間処理をしないでください。これはhostが前�
 
 所有者別方針・既定値の単体テストと実foreground通知の二Feature比較は検証済みです。P1-Bの通常hostでもAの非表示/Bのbannerと添付をCIで確認し、OSカードの操作と今回の実機条件は[通知添付ガイド](guides/notification-attachments.md)で区別しています。
 
-
 ### 実行中の通知カテゴリ更新
 
 `try context.replaceNotificationCategories(with: categories)` は、そのFeatureの登録だけを置き換えます。空配列でそのFeatureのカテゴリだけを解除できます。hostは起動時に有効なFeatureを`MiniAppNotificationCategoryRegistry.shared`へ登録し、更新時には他Featureのカテゴリを保った全体集合をOSに渡します。各識別子は`context.notificationCategoryIdentifier(for:)`で作成してください。所有者不一致・重複・未登録Featureの更新はthrowし、既存登録を変更しません。
@@ -264,7 +261,6 @@ callback内で長時間処理をしないでください。これはhostが前�
 MainActor上で同期的に検証・合成・標準API呼出しを行います。OS側の適用完了通知は標準APIにないため、このメソッドの成功はOS内の適用完了を保証しません。動的な登録はプロセス内の状態です。次回起動時に必要なカテゴリはFeatureが定義または永続化した情報から再登録してください。カテゴリ解除は通知要求自体の取消ではありません。
 
 Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き換わるため、この経路を使用します。独立したアプリで得られていたカテゴリ登録範囲の分離を補う仕組みで、任意の直接呼出しを遮断するsandboxではありません。
-
 
 ### Feature所有のKeychain
 
@@ -274,9 +270,7 @@ Featureから`setNotificationCategories`を直接呼ぶと全体集合が置き�
 
 `accessGroup`は署名で許可されたグループを明示する場合に指定します。省略時は追加が標準group、検索がアプリに許可されたgroup群という[Appleの仕様](https://developer.apple.com/documentation/Security/sharing-access-to-keychain-items-among-a-collection-of-apps)に従うため、複数groupを使い分ける場合は明示してください。namespaceは同一process内での協調的な所有権管理であり、任意のSecItem呼出しを隔離するものではありません。iOS再起動・A logout後のB保持、アクセス属性、userPresence項目の非対話拒否と認証後の値保持は検証済みです（[証拠](verification/2026-09-10-keychain-access-control.md)）。通常HTTP用Cookie/パスワード資格情報は6beb877で署名更新後の保持を確認しました。userPresence項目の再署名後継続、端末ロック・パスコード変更等は未検証です。
 
-
 `set(data, for: account, accessibility: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly)`のように、標準のaccessibility定数を指定できます。新規保存と既存項目の変更に適用し、省略した更新では既存属性を維持します。バックグラウンド利用のためのafter-first-unlockは、[最初の端末ロック解除後に利用可能となるAppleの保護条件](https://developer.apple.com/documentation/security/ksecattraccessibleafterfirstunlockthisdeviceonly)に従います。利用可能性を事前判定して成功を保証せず、OSエラーを処理してください。端末ロック・再起動・パスコード変更の実機検証は未完です。
-
 
 ### WebViewの永続データ分離
 
@@ -286,20 +280,17 @@ WebView生成前に`configuration.websiteDataStore = context.websiteDataStore()`
 
 所有データの削除はそのストアの`removeData`を使います。使用中WebViewの処理をFeature lifetimeと通常StoreAccessへ登録し、管理側が停止・終了待ち・排他予約を終えた後にremoval providerから削除します。この接続によるCookie/localStorage/IndexedDBの再起動保持、書込取消・終了待ち・A削除後のB保持は通常hostで検証済みで、6beb877の実機でも保存・再起動・認証取消・片側削除・B保持と上書き/Refresh保持を確認しました（[接続と範囲](guides/web-storage-ownership.md)）。ストアfactoryが任意のWebViewやJavaScriptを自動停止するわけではなく、識別子付きストア自体の破棄、任意の認証provider、即時永続化、全Webデータ種別の検証は別に残ります。この通常接続は0.8.0で公開しました。0.7.0へ追加したという意味ではありません。
 
-
 ### 自動ロック抑止の共存
 
 iOSでは`MiniAppIdleTimer.shared.preventSleep(for: context.id)`の返すleaseを処理の間保持し、終了時に`lease.release()`します。複数Feature・同じFeatureの複数操作の要求を数え、最後の要求が終了したときだけ自動ロック抑止を解除します。releaseは繰返し呼べます。lease解放時にもMainActor上で後始末しますが即時とは限らないため、終了時刻が重要なら明示releaseを使ってください。
 
 hostが一つの共有調停器を保持し、Featureは`UIApplication.isIdleTimerDisabled`を直接書き換えずこの経路を使います。独自の調停器を複数作って同じOS設定へ書き込む使い方は共存できません。画面非表示・background・Feature無効化のどの時点で要求を終了するかは操作側の寿命管理に接続する必要があります。これは常時点灯のOS保証ではなく、共有設定への要求の合成です。実際の端末自動ロック動作は未検証です。
 
-
 ### Runtimeの終了境界
 
 `MiniAppRuntime`はFeatureの処理単位が所有します。`try runtime.start { ... }`でTaskを登録し、`try runtime.onShutdown { ... }`で共有資源のreleaseなどを登録します。`await runtime.shutdown()`は最初に新規受付を閉じ、所有Taskへ取消を要求して完了を待ち、登録と逆順に後始末します。終了後のstart/onShutdownはthrowし、再開時は新しいruntimeを作ります。複数のshutdown呼出しは同じ終了処理を待ちます。
 
 shutdownは所有Task自身から呼ばず、外部の調整役から呼んでください。協調しないTaskを強制終了する機能ではありません。解放時にも同じ順序の後始末を試みますが、明示shutdownが待機可能な境界です。登録closureやTaskがruntime/ownerを強く保持すると循環参照になり得るため、明示終了やweak captureを使います。登録されたrestoreLifecycleを呼ぶhostの復元経路は接続済みです。画面非表示・Feature無効化でいつ終了するか、個々のFeatureが通常書込みやDB接続をどう止めるかは、Featureの所有者が接続します。
-
 
 ### 復元前後の処理停止と再開
 
@@ -345,7 +336,6 @@ background連携は[短時間の処理継続](guides/background-execution-owners
 [background URLSession再接続](guides/background-urlsession-reconnect.md)、
 [共有refresh枠](background-refresh-coordination.md)に分けて接続します。
 登録API・注入試験の成功を、実OSの起動や期限配送の保証に置き換えません。
-
 
 ## 共有入力と静的Widget（0.8.0のP1-A追加）
 

@@ -214,6 +214,31 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         XCTAssertEqual(owner.state, .idle)
     }
 
+    func testMovieStyleInterruptionStopsInsteadOfRestarting() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("movie-interruption"), coordinator: coordinator,
+                                        permissions: CapturePermissions(), consent: allow)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("movie-interruption"))
+        let pair = AsyncStream<MiniAppCaptureNativeEvent>.makeStream()
+        let generation = UUID()
+        let events = CaptureEvents()
+        try await owner.start(.init(
+            resources: [.camera, .microphone],
+            acquireAudio: { { events.append("audio-release") } },
+            nativeEvents: { .init(generation: generation, stream: pair.stream) },
+            restartNative: { events.append("unexpected-restart") },
+            stopsOnInterruption: true,
+            startNative: { { _ in events.append("movie-stop") } }
+        ))
+        pair.continuation.yield(.interrupted(generation: generation, reason: "audio-lost"))
+        await eventually { coordinator.currentCameraOwner == nil }
+        XCTAssertEqual(events.values, ["movie-stop", "audio-release"])
+        XCTAssertEqual(owner.state, .suspended(.interrupted("audio-lost")))
+        pair.continuation.yield(.interruptionEnded(generation: generation))
+        await Task.yield()
+        XCTAssertEqual(events.values, ["movie-stop", "audio-release"])
+    }
+
     func testRuntimeFailureStopsOnlyCurrentOwnerAndRejectsOldGenerationEvent() async throws {
         let coordinator = MiniAppCaptureCoordinator()
         let owner = MiniAppCaptureOwner(id: MiniAppID("runtime"), coordinator: coordinator,

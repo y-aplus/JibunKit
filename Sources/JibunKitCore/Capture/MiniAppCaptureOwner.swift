@@ -166,6 +166,11 @@ public final class MiniAppCaptureOwner {
         case .interrupted(_, let reason):
             guard self.operation === pending, !pending.closed else { return }
             state = .suspended(.interrupted(reason))
+            if request.stopsOnInterruption {
+                Task { @MainActor [weak self] in
+                    await self?.stop(reason: .interrupted(reason), final: false)
+                }
+            }
         case .interruptionEnded:
             guard self.operation === pending, !pending.closed, !explicitEnd, isVisible,
                   runtime?.isClosed == false,

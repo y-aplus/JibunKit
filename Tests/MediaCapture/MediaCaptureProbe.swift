@@ -47,6 +47,7 @@ final class MediaCaptureFixtureState: ObservableObject {
     @Published var documentPages: [Data] = []
     @Published var code: String?
     @Published var movieURL: URL?
+    @Published var movieOutcome: String?
 }
 
 @MainActor
@@ -143,12 +144,13 @@ final class PhotoFixture {
         movieProducer = producer
         if let old = state.movieURL { try? FileManager.default.removeItem(at: old) }
         state.movieURL = nil
+        state.movieOutcome = nil
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("media-capture-\(UUID().uuidString).mov")
         let operation = MiniAppCaptureOperation(
             resources: [.camera, .microphone], acquireAudio: acquireAudio,
             nativeEvents: { try await producer.events() },
-            restartNative: { try await producer.restartAfterInterruption() },
+            stopsOnInterruption: true,
             startNative: { [weak self] in
                 do {
                     try await producer.start()
@@ -179,6 +181,7 @@ final class PhotoFixture {
                 state.resultCount = max(0, state.resultCount - 1)
             }
             state.status = "音声付き動画失敗: \(error)"
+            state.movieOutcome = "動画失敗: \(error)"
         }
     }
 
@@ -199,9 +202,11 @@ final class PhotoFixture {
             state.movieURL = url
             state.resultCount += 1
             state.status = "動画成功・camera解放"
+            state.movieOutcome = "部分成果を含む動画を保存しました"
         case .failed(let url, let reason):
             try? FileManager.default.removeItem(at: url)
             state.status = "動画失敗・camera解放: \(reason)"
+            state.movieOutcome = "動画失敗: \(reason)"
         }
     }
 }
@@ -336,6 +341,7 @@ private struct PhotoProbeView: View {
                     Label("保存した動画を共有して確認", systemImage: "square.and.arrow.up")
                 }
             }
+            if let outcome = state.movieOutcome { Text(outcome) }
         }
         .onAppear { fixture.consentGate.store = consentStore }
     }

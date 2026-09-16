@@ -96,12 +96,14 @@ public struct MiniAppCaptureOperation: Sendable {
     public let acquireAudio: AcquireAudio?
     public let nativeEvents: Events?
     public let restartNative: Restart?
+    public let stopsOnInterruption: Bool
 
     public init(
         resources: Set<MiniAppCaptureResource>,
         acquireAudio: AcquireAudio? = nil,
         nativeEvents: Events? = nil,
         restartNative: Restart? = nil,
+        stopsOnInterruption: Bool = false,
         startNative: @escaping Start
     ) {
         precondition(resources.contains(.camera), "Capture operations require camera ownership.")
@@ -109,6 +111,7 @@ public struct MiniAppCaptureOperation: Sendable {
         self.acquireAudio = acquireAudio
         self.nativeEvents = nativeEvents
         self.restartNative = restartNative
+        self.stopsOnInterruption = stopsOnInterruption
         self.startNative = startNative
     }
 }

@@ -276,7 +276,8 @@ final class MediaAudioProbeState {
             case .play:
                 do { try await self.coordinator.activateForUserAction(lease); localPlayer?.play() } catch { return false }
             case .pause: localPlayer?.pause(); try? self.coordinator.updateIntent(.stoppedByUser, for: lease)
-            case .changePlaybackPosition(let seconds): localPlayer?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+            case .changePlaybackPosition(let seconds):
+                guard let localPlayer, await localPlayer.seek(to: CMTime(seconds: seconds, preferredTimescale: 600)) else { return false }
             }
             self.playerCommandCount += 1; return true
         }, onCompletion: { [weak self] _, completed in self?.playerStatus = completed ? "remote操作完了" : "remote操作失敗" })

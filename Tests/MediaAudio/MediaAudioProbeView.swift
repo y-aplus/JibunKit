@@ -19,7 +19,7 @@ struct MediaAudioProbeView: View {
                 Text(state.detail).accessibilityIdentifier("media-audio.detail")
                 Text(state.sceneSummary).accessibilityIdentifier("media-audio.scene")
                 let error = recorder ? state.recorderError : state.playerError
-                Text(error).foregroundStyle(error == "なし" ? .secondary : .red)
+                Text(error).foregroundStyle(error == "なし" ? Color.secondary : Color.red)
                     .accessibilityIdentifier("media-audio.error")
                 Button("AudioSessionを復旧") { Task { await state.recoverAudioSession() } }
                     .accessibilityIdentifier("media-audio.recover")

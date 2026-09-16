@@ -178,6 +178,7 @@ final class MediaAudioNativeTests: XCTestCase {
         _ = await owner.deliverForTesting(.play) { _ in
             do { try await owner.invalidate() }
             catch let failure as MiniAppNowPlayingOwner.Failure { result.failure = failure }
+            catch { XCTFail("Unexpected invalidation error: \(error)") }
             return false
         }
         XCTAssertEqual(result.failure, .recursiveInvalidation)

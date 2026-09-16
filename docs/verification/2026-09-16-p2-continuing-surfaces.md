@@ -1,6 +1,6 @@
 # P2-L / 0.8.2 開発・検証記録
 
-更新日: 2026-09-16。**実装中。Swift/native CI・実機未確認、0.8.2未公開。**
+更新日: 2026-09-16。**対象Swift/native CI・通常/診断IPA確認済み。実機確認待ち、0.8.2未公開。**
 
 対象はP2-5 / D28のLive Activities・AlarmKit。公開済み0.8.1は[出荷記録](2026-09-16-0.8.1-release.md)のまま。通常checkoutのローカル変更・Zaikoは変更しない。
 
@@ -137,3 +137,13 @@ artifactをローカルへ取得してIPA全entry CRCを再検査し、実際の
 host factory引数へ@MainActor @Sendableを保持し、Live async assertion helperとそのclosure引数を@MainActorへ揃えた。actor検査を無効化しない。これ以外のSources、package、Alarm fixtureに変更なし。
 
 追加は1run（累計7run）に削減し、`native-surface.yml surface=continuing-live-host ios_major=26 simulator_runtime=''`の独立2jobだけを実行する。新choiceは既存Live/host verifierと同じ入力・assertionを使い、Alarmを除外するだけ。Live20分/host23分、並列最長23分見込み。通常版/Alarmはb1d379bの成功を差分レビュー付きで再利用する。ローカル準備/証拠checker5件、Simulator選択3件、YAML parse、diff checkは成功。累計6runの実行済job時間は64分53秒。
+
+## 残るLive/host成功・実機候補
+
+[35047576529](https://github.com/y-aplus/JibunKit/actions/runs/35047576529)は`5678a41d504a0b3c97117ef833653a30f0d670a7`で成功。Live7分56秒/host16分26秒。取得result.jsonのsource/passed、実行済method一覧、署名/CRC/hashを照合した。Live独立A/B/Combined・metadataに加えnative4件、通常診断hostの管理UI1件、診断IPAが成功。host UIは実OS活動を開始せず管理接続を確認する試験であり、端末での表示/操作は未確認。
+
+診断IPAは3,312,191 bytes、SHA-256 `4bb1bb6787624dfd5f46edb85fd3ac1cf2a246b1359be2b05e692879dba759b0`。通常IPAはb1d379bの成功物を再利用。両IPAの全entry CRC、既存3bundle ID、同じApp Group、0.8.1/build11を再確認。各IPAだけを入れたZIPをZIP64なしで作成し、外側CRC・内側完全一致を確認した。
+
+累計7run、job時間89分15秒。最終のrun最長経路はhost16分26秒で30分目標内。失敗をまとめたレビューと成功済通常/Alarmの再利用によって最終retryは2job・1runに限定した。一方、親/workerのsource reviewでcompilerのactor指定不備を残した点は改善対象。管理コスト/料金の節約率は未計測なので断定しない。次境界ではfixture factory/async helper/SDK observerのactor入力を共通契約の具体例に含める。
+
+非実機検証はここまで揃った。残るOS許可/表示/標準操作・cold復帰・片側管理/復元とB保持・通常版復帰は[一括実機手順](2026-09-16-p2-continuing-surfaces-device.md)で確認する。P2-5はpartialを維持し、0.8.2の版更新/公開は実機成功後。CIを実機証拠として代用しない。

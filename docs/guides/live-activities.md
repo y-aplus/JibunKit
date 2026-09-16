@@ -1,7 +1,7 @@
 # Live Activities integration
 
-Development status: targeted for 0.8.2; native build and device evidence are not
-yet complete. See `docs/verification/2026-09-16-p2-continuing-surfaces.md`.
+Development status: targeted for 0.8.2; native build, metadata, and fixture tests
+passed. Physical OS behavior is pending grouped device verification. See `docs/verification/2026-09-16-p2-continuing-surfaces.md`.
 
 JibunKit keeps ActivityKit payloads in the Feature module. Define a concrete
 `MiniAppLiveActivityAttributes` type, its business-specific `ContentState`, an

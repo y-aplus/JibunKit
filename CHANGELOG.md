@@ -4,7 +4,7 @@
 
 ## [Unreleased]
 
-次はP2-L（Live Activities/AlarmKit）。
+P2-L（Live Activities/AlarmKit）のowner別調停・再起動照合・管理/復元接続を追加。独立/統合CIは成功し、一括実機確認待ち。0.8.2未公開。
 
 ## [0.8.1] - 2026-09-16
 

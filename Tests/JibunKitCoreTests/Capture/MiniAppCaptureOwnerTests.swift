@@ -1,0 +1,270 @@
+import XCTest
+@testable import JibunKitCore
+
+@MainActor
+final class MiniAppCaptureOwnerTests: XCTestCase {
+    func testCameraConflictRejectsWithoutStoppingFirstOwnerThenExplicitSwitchJoinsStop() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions()
+        let a = MiniAppCaptureOwner(id: MiniAppID("capture-a"), coordinator: coordinator, permissions: permissions)
+        let b = MiniAppCaptureOwner(id: MiniAppID("capture-b"), coordinator: coordinator, permissions: permissions)
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        a.receive(active("capture-a")); b.receive(active("capture-b"))
+        let events = CaptureEvents()
+        try await a.start(operation(events: events, label: "a"))
+
+        await XCTAssertThrowsErrorAsync(try await b.start(operation(events: events, label: "b"))) {
+            XCTAssertEqual($0 as? MiniAppCaptureFailure, .cameraInUse(by: MiniAppID("capture-a")))
+        }
+        XCTAssertEqual(a.state, .running([.camera]))
+        XCTAssertEqual(events.values, ["start-a"])
+
+        try await b.start(operation(events: events, label: "b"), switching: .stopCurrent)
+        XCTAssertEqual(events.values, ["start-a", "stop-a-switched", "start-b"])
+        XCTAssertEqual(coordinator.currentCameraOwner, MiniAppID("capture-b"))
+        XCTAssertEqual(a.state, .suspended(.switched(to: MiniAppID("capture-b"))))
+        XCTAssertEqual(b.state, .running([.camera]))
+    }
+
+    func testMicrophoneRequiresHookAndReleasesAudioAfterNative() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("video"), coordinator: coordinator, permissions: permissions)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("video"))
+        let events = CaptureEvents()
+        let missing = MiniAppCaptureOperation(resources: [.camera, .microphone]) { return { _ in } }
+        await XCTAssertThrowsErrorAsync(try await owner.start(missing)) {
+            XCTAssertEqual($0 as? MiniAppCaptureFailure, .missingAudioHook)
+        }
+        XCTAssertNil(coordinator.currentCameraOwner)
+
+        let operation = MiniAppCaptureOperation(
+            resources: [.camera, .microphone],
+            acquireAudio: {
+                events.append("audio-acquire")
+                return { events.append("audio-release") }
+            },
+            startNative: {
+                events.append("native-start")
+                return { _ in events.append("native-stop") }
+            }
+        )
+        try await owner.start(operation)
+        await owner.stop()
+        XCTAssertEqual(events.values, ["audio-acquire", "native-start", "native-stop", "audio-release"])
+    }
+
+    func testCameraOnlyNeverRequestsMicrophone() async throws {
+        let permissions = CapturePermissions()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("still"), coordinator: .init(), permissions: permissions)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("still"))
+        try await owner.start(operation(events: CaptureEvents(), label: "still"))
+        XCTAssertEqual(permissions.requestedResources, [.camera])
+    }
+
+    func testPresentationOrNativeStartFailureReleasesAudioAndCameraForOtherOwner() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions()
+        let a = MiniAppCaptureOwner(id: MiniAppID("failed"), coordinator: coordinator, permissions: permissions)
+        let b = MiniAppCaptureOwner(id: MiniAppID("next"), coordinator: coordinator, permissions: permissions)
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        a.receive(active("failed")); b.receive(active("next"))
+        let events = CaptureEvents()
+        let failing = MiniAppCaptureOperation(
+            resources: [.camera, .microphone],
+            acquireAudio: { events.append("audio-acquire"); return { events.append("audio-release") } },
+            startNative: { throw MiniAppCaptureFailure.native("presentation") }
+        )
+        await XCTAssertThrowsErrorAsync(try await a.start(failing)) { _ in }
+        XCTAssertEqual(events.values, ["audio-acquire", "audio-release"])
+        XCTAssertNil(coordinator.currentCameraOwner)
+        try await b.start(operation(events: events, label: "next"))
+        XCTAssertEqual(coordinator.currentCameraOwner, MiniAppID("next"))
+    }
+
+    func testStopDuringPermissionRequestRejectsLateCallbackAndReleasesNothingElse() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions(blocked: true)
+        let owner = MiniAppCaptureOwner(id: MiniAppID("late"), coordinator: coordinator, permissions: permissions)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("late"))
+        let events = CaptureEvents()
+        let starting = Task { @MainActor in try await owner.start(operation(events: events, label: "late")) }
+        await permissions.waitUntilRequested()
+        await owner.stop()
+        permissions.resolve(true)
+        await XCTAssertThrowsErrorAsync(try await starting.value) {
+            XCTAssertTrue($0 is MiniAppCaptureFailure || $0 is CancellationError)
+        }
+        XCTAssertTrue(events.values.isEmpty)
+        XCTAssertNil(coordinator.currentCameraOwner)
+    }
+
+    func testCancelledStartRejectsLatePermissionAndAllowsRetry() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions(blocked: true)
+        let owner = MiniAppCaptureOwner(id: MiniAppID("cancel"), coordinator: coordinator, permissions: permissions)
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("cancel"))
+        let first = Task { @MainActor in try await owner.start(operation(events: CaptureEvents(), label: "first")) }
+        await permissions.waitUntilRequested()
+        first.cancel()
+        permissions.resolve(true)
+        await XCTAssertThrowsErrorAsync(try await first.value) { _ in }
+        let events = CaptureEvents()
+        try await owner.start(operation(events: events, label: "retry"))
+        XCTAssertEqual(events.values, ["start-retry"])
+    }
+
+    func testStopDuringNativeStartStopsLateProducerAndDoesNotBecomeRunning() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("slow"), coordinator: coordinator,
+                                        permissions: CapturePermissions())
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("slow"))
+        let gate = NativeStartGate()
+        let events = CaptureEvents()
+        let operation = MiniAppCaptureOperation(resources: [.camera]) {
+            await gate.wait()
+            events.append("start-returned")
+            return { _ in events.append("late-native-stop") }
+        }
+        let starting = Task { @MainActor in try await owner.start(operation) }
+        await gate.waitUntilEntered()
+        await owner.stop()
+        gate.open()
+        await XCTAssertThrowsErrorAsync(try await starting.value) { _ in }
+        XCTAssertEqual(events.values, ["start-returned", "late-native-stop"])
+        XCTAssertNotEqual(owner.state, .running([.camera]))
+        XCTAssertNil(coordinator.currentCameraOwner)
+    }
+
+    func testSceneAggregationKeepsCaptureUntilLastActiveSelectedSceneEnds() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("scenes"), coordinator: coordinator, permissions: CapturePermissions())
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime)
+        let first = UUID(), second = UUID()
+        owner.receive(activity("scenes", first, .active, true))
+        owner.receive(activity("scenes", second, .active, true))
+        let events = CaptureEvents()
+        try await owner.start(operation(events: events, label: "scene"))
+        owner.receive(activity("scenes", first, .background, true))
+        await Task.yield()
+        XCTAssertEqual(owner.state, .running([.camera]))
+        owner.receive(activity("scenes", second, .inactive, true))
+        await eventually { owner.state == .suspended(.sceneInactive) }
+        XCTAssertEqual(events.values, ["start-scene", "stop-scene-sceneInactive"])
+    }
+
+    func testRuntimeShutdownOnlyStopsItsOwnerAndPreservesOtherGeneration() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let permissions = CapturePermissions()
+        let a = MiniAppCaptureOwner(id: MiniAppID("a"), coordinator: coordinator, permissions: permissions)
+        let b = MiniAppCaptureOwner(id: MiniAppID("b"), coordinator: coordinator, permissions: permissions)
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        a.receive(active("a")); b.receive(active("b"))
+        let bState = CaptureEvents(); bState.append("non-initial")
+        try await a.start(operation(events: CaptureEvents(), label: "a"))
+        await runtimeA.shutdown()
+        XCTAssertEqual(a.state, .stopped)
+        XCTAssertFalse(runtimeB.isClosed)
+        XCTAssertEqual(bState.values, ["non-initial"])
+        try await b.start(operation(events: bState, label: "b"))
+        XCTAssertEqual(b.state, .running([.camera]))
+    }
+
+    func testUserStopIsNotUndoneByInterruptionEnd() async throws {
+        let owner = MiniAppCaptureOwner(id: MiniAppID("intent"), coordinator: .init(), permissions: CapturePermissions())
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime); owner.receive(active("intent"))
+        try await owner.start(operation(events: CaptureEvents(), label: "intent"))
+        await owner.stop()
+        let restarted = CaptureEvents()
+        try await owner.handleInterruptionEnded { restarted.append("restart") }
+        XCTAssertTrue(restarted.values.isEmpty)
+    }
+}
+
+@MainActor
+private final class CapturePermissions: MiniAppCapturePermissionClient {
+    private var blocked: Bool
+    private var continuation: CheckedContinuation<Bool, Never>?
+    private var requested = false
+    private(set) var requestedResources: [MiniAppCaptureResource] = []
+    init(blocked: Bool = false) { self.blocked = blocked }
+    func request(_ resource: MiniAppCaptureResource) async -> Bool {
+        requested = true
+        requestedResources.append(resource)
+        guard blocked else { return true }
+        return await withCheckedContinuation { continuation = $0 }
+    }
+    func waitUntilRequested() async {
+        while !requested { await Task.yield() }
+    }
+    func resolve(_ value: Bool) {
+        blocked = false
+        continuation?.resume(returning: value)
+        continuation = nil
+    }
+}
+
+@MainActor
+private final class CaptureEvents {
+    private(set) var values: [String] = []
+    func append(_ value: String) { values.append(value) }
+}
+
+@MainActor
+private final class NativeStartGate {
+    private var entered = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async {
+        entered = true
+        await withCheckedContinuation { continuation = $0 }
+    }
+    func waitUntilEntered() async {
+        while !entered { await Task.yield() }
+    }
+    func open() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+@MainActor
+private func operation(events: CaptureEvents, label: String) -> MiniAppCaptureOperation {
+    MiniAppCaptureOperation(resources: [.camera]) {
+        events.append("start-\(label)")
+        return { reason in
+            let text: String = switch reason {
+            case .switched: "switched"
+            case .sceneInactive: "sceneInactive"
+            default: "other"
+            }
+            events.append("stop-\(label)-\(text)")
+        }
+    }
+}
+
+private func active(_ owner: String) -> MiniAppSceneActivity {
+    activity(owner, UUID(), .active, true)
+}
+
+private func activity(_ owner: String, _ scene: UUID, _ phase: MiniAppSceneActivity.Phase?, _ selected: Bool) -> MiniAppSceneActivity {
+    .init(featureID: MiniAppID(owner), sceneID: scene, phase: phase, isSelected: selected)
+}
+
+@MainActor
+private func eventually(_ condition: @MainActor () -> Bool) async {
+    for _ in 0..<100 where !condition() { await Task.yield() }
+    XCTAssertTrue(condition())
+}
+
+@MainActor
+private func XCTAssertThrowsErrorAsync<T>(
+    _ expression: @autoclosure () async throws -> T,
+    _ handler: (Error) -> Void,
+    file: StaticString = #filePath, line: UInt = #line
+) async {
+    do { _ = try await expression(); XCTFail("expected error", file: file, line: line) }
+    catch { handler(error) }
+}

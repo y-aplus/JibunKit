@@ -35,6 +35,15 @@ public final class MiniAppAudioSessionCoordinator {
         public let reason: String
     }
 
+    public enum SessionState: Sendable, Equatable {
+        case inactive
+        case active(MiniAppAudioProfile)
+        case interrupted(MiniAppAudioProfile)
+        case resetRequired(MiniAppAudioProfile)
+        case deactivationFailed(MiniAppAudioProfile, String)
+        case recoveryFailed(MiniAppAudioProfile, String)
+    }
+
     public enum Failure: Error, Sendable, Equatable {
         case invalidRequest
         case ownerAlreadyActive
@@ -46,6 +55,9 @@ public final class MiniAppAudioSessionCoordinator {
         case stopReentry
         case producerStop(String)
         case driver(String)
+        case driverChangeFailed(change: String, recovery: String?)
+        case sessionRecoveryRequired
+        case resumeNotAllowed
         case partialStop(PartialStop)
     }
 
@@ -59,6 +71,7 @@ public final class MiniAppAudioSessionCoordinator {
         let receive: Receive
         var intent: MiniAppAudioIntent = .paused
         var interruptedGeneration: UInt64?
+        var producerStopped = false
     }
 
     private let driver: any MiniAppAudioSessionDriver
@@ -68,16 +81,20 @@ public final class MiniAppAudioSessionCoordinator {
     private var revision: UInt64 = 0
     private var transactionInProgress = false
     private var stoppingTokens: Set<UUID> = []
+    public private(set) var sessionState: SessionState = .inactive
 
     public init(driver: any MiniAppAudioSessionDriver) { self.driver = driver }
 
     public var activeOwners: Set<MiniAppID> { Set(entries.values.map(\.lease.owner)) }
+    public var stoppedOwners: Set<MiniAppID> { Set(entries.values.filter(\.producerStopped).map(\.lease.owner)) }
     public var activeProfile: MiniAppAudioProfile? { currentProfile }
 
     public func acquire(owner: MiniAppID, request: MiniAppAudioRequest,
                         stop: @escaping Stop, receive: @escaping Receive) async throws -> Admission {
         try Task.checkCancellation()
         guard !transactionInProgress else { throw Failure.coordinatorBusy }
+        if case .recoveryFailed = sessionState { throw Failure.sessionRecoveryRequired }
+        if case .deactivationFailed = sessionState { throw Failure.sessionRecoveryRequired }
         guard owner.isValid, !request.acceptableProfiles.isEmpty,
               Set(request.acceptableProfiles).count == request.acceptableProfiles.count
         else { throw Failure.invalidRequest }
@@ -92,9 +109,7 @@ public final class MiniAppAudioSessionCoordinator {
         }
         if let profile = commonProfile(adding: request) {
             if profile != currentProfile {
-                do { try driver.apply(profile) }
-                catch { throw Failure.driver(String(describing: error)) }
-                currentProfile = profile
+                try changeProfile(to: profile)
             }
             return .acquired(try install(owner: owner, request: request, stop: stop, receive: receive,
                                          profile: profile, activatesDriver: false))
@@ -142,11 +157,12 @@ public final class MiniAppAudioSessionCoordinator {
             try driver.apply(profile)
             if entries.isEmpty { try driver.setActive(true, notifyOthersOnDeactivation: false) }
             currentProfile = profile
+            sessionState = .active(profile)
             return try install(owner: conflict.requester, request: conflict.request,
                                stop: conflict.stop, receive: conflict.receive,
                                profile: profile, activatesDriver: false)
         } catch {
-            if entries.isEmpty { currentProfile = nil }
+            if let profile = currentProfile { sessionState = .recoveryFailed(profile, String(describing: error)) }
             throw Failure.partialStop(.init(stoppedOwners: stopped, remainingOwners: activeOwners,
                                             reason: "AudioSession reconfiguration failed: \(error)"))
         }
@@ -155,21 +171,28 @@ public final class MiniAppAudioSessionCoordinator {
     /// Stops this lease's producer and joins completion before removing it.
     /// A stop callback must never call release for the same lease.
     public func release(_ lease: Lease) async throws {
-        guard let entry = entries[lease.token], entry.lease == lease else { throw Failure.unknownLease }
+        guard var entry = entries[lease.token], entry.lease == lease else { throw Failure.unknownLease }
         if stoppingTokens.contains(lease.token) { throw Failure.stopReentry }
         guard !transactionInProgress else { throw Failure.coordinatorBusy }
         transactionInProgress = true
         stoppingTokens.insert(lease.token)
         defer { transactionInProgress = false; stoppingTokens.remove(lease.token) }
-        do { try await Task { @MainActor in try await entry.stop() }.value }
-        catch { throw Failure.producerStop(String(describing: error)) }
+        if !entry.producerStopped {
+            do { try await Task { @MainActor in try await entry.stop() }.value }
+            catch { throw Failure.producerStop(String(describing: error)) }
+            entry.producerStopped = true
+            entries[lease.token] = entry
+        }
+        if entries.count == 1 {
+            do { try driver.setActive(false, notifyOthersOnDeactivation: true) }
+            catch {
+                if let profile = currentProfile { sessionState = .deactivationFailed(profile, String(describing: error)) }
+                throw Failure.driver(String(describing: error))
+            }
+        }
         entries[lease.token] = nil
         revision &+= 1
-        if entries.isEmpty {
-            do { try driver.setActive(false, notifyOthersOnDeactivation: true) }
-            catch { throw Failure.driver(String(describing: error)) }
-            currentProfile = nil
-        }
+        if entries.isEmpty { currentProfile = nil; sessionState = .inactive }
     }
 
     public func updateIntent(_ intent: MiniAppAudioIntent, for lease: Lease) throws {
@@ -179,7 +202,41 @@ public final class MiniAppAudioSessionCoordinator {
         entries[lease.token] = entry
     }
 
+    /// Reapplies and activates the current profile after a valid interruption end or media-services reset.
+    /// User/route stop intents are never overridden.
+    public func reactivate(_ lease: Lease) throws {
+        guard var entry = entries[lease.token], entry.lease == lease, !entry.producerStopped,
+              entry.intent == .active, let profile = currentProfile else { throw Failure.resumeNotAllowed }
+        let allowed: Bool
+        switch sessionState {
+        case .interrupted: allowed = entry.interruptedGeneration == lease.generation
+        case .resetRequired, .recoveryFailed: allowed = true
+        case .active: allowed = entry.interruptedGeneration == lease.generation
+        default: allowed = false
+        }
+        guard allowed else { throw Failure.resumeNotAllowed }
+        do { try driver.apply(profile); try driver.setActive(true, notifyOthersOnDeactivation: false) }
+        catch { sessionState = .recoveryFailed(profile, String(describing: error)); throw Failure.driver(String(describing: error)) }
+        entry.interruptedGeneration = nil
+        entries[lease.token] = entry
+        sessionState = .active(profile)
+    }
+
+    /// Repairs an unknown native state. With no owners it deactivates; otherwise it restores the accepted profile.
+    public func recoverSession() throws {
+        if entries.isEmpty {
+            do { try driver.setActive(false, notifyOthersOnDeactivation: true) }
+            catch { throw Failure.driver(String(describing: error)) }
+            currentProfile = nil; sessionState = .inactive
+        } else if let profile = currentProfile {
+            do { try driver.apply(profile); try driver.setActive(true, notifyOthersOnDeactivation: false) }
+            catch { sessionState = .recoveryFailed(profile, String(describing: error)); throw Failure.driver(String(describing: error)) }
+            sessionState = .active(profile)
+        }
+    }
+
     public func receiveInterruptionBegan() {
+        if let profile = currentProfile { sessionState = .interrupted(profile) }
         for token in Array(entries.keys) {
             guard var entry = entries[token] else { continue }
             entry.interruptedGeneration = entry.intent == .active && entry.request.allowsInterruptionResume
@@ -194,7 +251,7 @@ public final class MiniAppAudioSessionCoordinator {
             guard var entry = entries[token] else { continue }
             let candidate = shouldResume && entry.intent == .active
                 && entry.interruptedGeneration == entry.lease.generation
-            entry.interruptedGeneration = nil
+            if !candidate { entry.interruptedGeneration = nil }
             entries[token] = entry
             entry.receive(.interruptionEnded(resumeCandidate: candidate))
         }
@@ -205,6 +262,8 @@ public final class MiniAppAudioSessionCoordinator {
     }
 
     public func receiveMediaServicesReset() {
+        if let profile = currentProfile { sessionState = .resetRequired(profile) }
+        revision &+= 1
         entries.values.forEach { $0.receive(.mediaServicesReset) }
     }
 
@@ -213,8 +272,13 @@ public final class MiniAppAudioSessionCoordinator {
                          activatesDriver: Bool) throws -> Lease {
         if activatesDriver {
             do { try driver.apply(profile); try driver.setActive(true, notifyOthersOnDeactivation: false) }
-            catch { currentProfile = nil; throw Failure.driver(String(describing: error)) }
+            catch {
+                currentProfile = profile
+                sessionState = .recoveryFailed(profile, String(describing: error))
+                throw Failure.driver(String(describing: error))
+            }
             currentProfile = profile
+            sessionState = .active(profile)
         }
         let generation = (generations[owner] ?? 0) &+ 1
         generations[owner] = generation
@@ -226,6 +290,25 @@ public final class MiniAppAudioSessionCoordinator {
 
     private func commonProfile(adding request: MiniAppAudioRequest) -> MiniAppAudioProfile? {
         firstCommonProfile(requests: entries.values.map(\.request) + [request])
+    }
+
+    private func changeProfile(to profile: MiniAppAudioProfile) throws {
+        let previous = currentProfile
+        do { try driver.apply(profile); currentProfile = profile; sessionState = .active(profile) }
+        catch {
+            let change = String(describing: error)
+            guard let previous else { throw Failure.driverChangeFailed(change: change, recovery: nil) }
+            do {
+                try driver.apply(previous); try driver.setActive(true, notifyOthersOnDeactivation: false)
+                currentProfile = previous; sessionState = .active(previous)
+                throw Failure.driverChangeFailed(change: change, recovery: nil)
+            } catch let failure as Failure { throw failure }
+            catch {
+                let recovery = String(describing: error)
+                sessionState = .recoveryFailed(previous, recovery)
+                throw Failure.driverChangeFailed(change: change, recovery: recovery)
+            }
+        }
     }
 
     private func firstCommonProfile(requests: [MiniAppAudioRequest]) -> MiniAppAudioProfile? {

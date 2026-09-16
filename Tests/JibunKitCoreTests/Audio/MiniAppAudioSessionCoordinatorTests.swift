@@ -7,6 +7,16 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
     private let duplex = MiniAppAudioProfile(category: .playAndRecord, mode: .spokenAudio)
     private let measurement = MiniAppAudioProfile(category: .playAndRecord, mode: .measurement)
 
+    func testProfilePreservesUnknownStandardRawValuesAndOptionBits() {
+        let profile = MiniAppAudioProfile(category: .init(rawValue: "future-category"),
+            mode: .init(rawValue: "future-mode"), policy: .init(rawValue: 91),
+            options: .init(rawValue: UInt.max))
+        XCTAssertEqual(profile.category.rawValue, "future-category")
+        XCTAssertEqual(profile.mode.rawValue, "future-mode")
+        XCTAssertEqual(profile.policy.rawValue, 91)
+        XCTAssertEqual(profile.options.rawValue, UInt.max)
+    }
+
     func testCompatibleOwnersShareExplicitProfileAndLastReleaseDeactivates() async throws {
         let driver = FakeAudioSessionDriver()
         let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
@@ -97,6 +107,45 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
         }
     }
 
+    func testPartialApplyFailureRollsBackExistingOwnersProfile() async throws {
+        let driver = FakeAudioSessionDriver()
+        let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
+        _ = try acquired(await coordinator.acquire(owner: MiniAppID("a"), request: request([playback, duplex]), stop: {}, receive: { _ in }))
+        driver.failingProfiles = [duplex]
+        do { _ = try await coordinator.acquire(owner: MiniAppID("b"), request: request([duplex]), stop: {}, receive: { _ in }); XCTFail("Expected failure") }
+        catch MiniAppAudioSessionCoordinator.Failure.driverChangeFailed(_, let recovery) { XCTAssertNil(recovery) }
+        XCTAssertEqual(driver.appliedProfile, playback)
+        XCTAssertEqual(coordinator.sessionState, .active(playback))
+        XCTAssertEqual(coordinator.activeOwners, [MiniAppID("a")])
+    }
+
+    func testRollbackFailureIsExplicit() async throws {
+        let driver = FakeAudioSessionDriver()
+        let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
+        _ = try acquired(await coordinator.acquire(owner: MiniAppID("a"), request: request([playback, duplex]), stop: {}, receive: { _ in }))
+        driver.failingProfiles = [duplex, playback]
+        do { _ = try await coordinator.acquire(owner: MiniAppID("b"), request: request([duplex]), stop: {}, receive: { _ in }); XCTFail("Expected failure") }
+        catch MiniAppAudioSessionCoordinator.Failure.driverChangeFailed(_, let recovery) { XCTAssertNotNil(recovery) }
+        guard case .recoveryFailed(let profile, _) = coordinator.sessionState else { return XCTFail("Missing recovery failure") }
+        XCTAssertEqual(profile, playback)
+    }
+
+    func testDeactivateFailureRetainsStoppedLeaseForRetryWithoutStoppingTwice() async throws {
+        let driver = FakeAudioSessionDriver()
+        let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
+        let stops = StopCountBox()
+        let lease = try acquired(await coordinator.acquire(owner: MiniAppID("a"), request: request([playback]), stop: { stops.value += 1 }, receive: { _ in }))
+        driver.failNextDeactivation = true
+        do { try await coordinator.release(lease); XCTFail("Expected deactivate failure") } catch { }
+        XCTAssertEqual(stops.value, 1)
+        XCTAssertEqual(coordinator.activeOwners, [MiniAppID("a")])
+        XCTAssertEqual(coordinator.stoppedOwners, [MiniAppID("a")])
+        guard case .deactivationFailed = coordinator.sessionState else { return XCTFail("Missing deactivation state") }
+        try await coordinator.release(lease)
+        XCTAssertEqual(stops.value, 1)
+        XCTAssertTrue(coordinator.activeOwners.isEmpty)
+    }
+
     func testUserStopAndRouteStopPreventInterruptionResume() async throws {
         let driver = FakeAudioSessionDriver()
         let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
@@ -113,6 +162,20 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
         try coordinator.updateIntent(.stoppedForRouteChange, for: lease)
         coordinator.receiveInterruptionEnded(shouldResume: true)
         XCTAssertEqual(events.values.last, .interruptionEnded(resumeCandidate: false))
+    }
+
+    func testEligibleInterruptionAndMediaResetRequireExplicitDriverReactivation() async throws {
+        let driver = FakeAudioSessionDriver()
+        let coordinator = MiniAppAudioSessionCoordinator(driver: driver)
+        let lease = try acquired(await coordinator.acquire(owner: MiniAppID("a"), request: request([playback]), stop: {}, receive: { _ in }))
+        try coordinator.updateIntent(.active, for: lease)
+        coordinator.receiveInterruptionBegan(); coordinator.receiveInterruptionEnded(shouldResume: true)
+        let before = driver.events.count
+        try coordinator.reactivate(lease)
+        XCTAssertEqual(Array(driver.events.suffix(from: before)), ["apply-playback-spokenAudio", "active-true"])
+        coordinator.receiveMediaServicesReset()
+        try coordinator.reactivate(lease)
+        XCTAssertEqual(coordinator.sessionState, .active(playback))
     }
 
     func testStopCannotRecursivelyReleaseSameLease() async throws {
@@ -147,15 +210,22 @@ final class MiniAppAudioSessionCoordinatorTests: XCTestCase {
 @MainActor
 private final class FakeAudioSessionDriver: MiniAppAudioSessionDriver {
     var events: [String] = []
-    var failingProfile: MiniAppAudioProfile?
+    var failingProfiles: [MiniAppAudioProfile] = []
+    var failingProfile: MiniAppAudioProfile? { get { failingProfiles.first } set { failingProfiles = newValue.map { [$0] } ?? [] } }
+    var appliedProfile: MiniAppAudioProfile?
+    var failNextDeactivation = false
     func apply(_ profile: MiniAppAudioProfile) throws {
-        if profile == failingProfile { throw FakeFailure.apply }
-        events.append("apply-\(profile.category.rawValue)-\(profile.mode.rawValue)")
+        appliedProfile = profile
+        if failingProfiles.first == profile { failingProfiles.removeFirst(); throw FakeFailure.apply }
+        let category = profile.category == .playback ? "playback" : "playAndRecord"
+        let mode = profile.mode == .spokenAudio ? "spokenAudio" : "measurement"
+        events.append("apply-\(category)-\(mode)")
     }
     func setActive(_ active: Bool, notifyOthersOnDeactivation: Bool) throws {
+        if !active, failNextDeactivation { failNextDeactivation = false; throw FakeFailure.deactivate }
         events.append("active-\(active)")
     }
-    private enum FakeFailure: Error { case apply }
+    private enum FakeFailure: Error { case apply, deactivate }
 }
 
 @MainActor
@@ -184,6 +254,7 @@ private final class AsyncGate {
 }
 
 @MainActor private final class EventBox { var values: [MiniAppAudioEvent] = [] }
+@MainActor private final class StopCountBox { var value = 0 }
 @MainActor private final class ReentryBox {
     var lease: MiniAppAudioSessionCoordinator.Lease?
     var failure: MiniAppAudioSessionCoordinator.Failure?

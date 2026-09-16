@@ -38,57 +38,29 @@ public final class MiniAppNativeAudioSessionDriver: MiniAppAudioSessionDriver {
     }
 
     public func apply(_ profile: MiniAppAudioProfile) throws {
-        try session.setCategory(category(profile.category), mode: mode(profile.mode),
-                                policy: policy(profile.policy), options: options(profile.options))
+        guard let policy = AVAudioSession.RouteSharingPolicy(rawValue: profile.policy.rawValue) else {
+            throw NativeFailure.unsupportedRouteSharingPolicy(profile.policy.rawValue)
+        }
+        try session.setCategory(.init(rawValue: profile.category.rawValue),
+                                mode: .init(rawValue: profile.mode.rawValue), policy: policy,
+                                options: .init(rawValue: profile.options.rawValue))
     }
 
     public func setActive(_ active: Bool, notifyOthersOnDeactivation: Bool) throws {
         try session.setActive(active, options: active || !notifyOthersOnDeactivation ? [] : .notifyOthersOnDeactivation)
     }
 
-    private func category(_ value: MiniAppAudioProfile.Category) -> AVAudioSession.Category {
-        switch value {
-        case .ambient: .ambient
-        case .soloAmbient: .soloAmbient
-        case .playback: .playback
-        case .record: .record
-        case .playAndRecord: .playAndRecord
-        case .multiRoute: .multiRoute
-        }
-    }
+    private enum NativeFailure: Error { case unsupportedRouteSharingPolicy(UInt) }
+}
 
-    private func mode(_ value: MiniAppAudioProfile.Mode) -> AVAudioSession.Mode {
-        switch value {
-        case .default: .default
-        case .voiceChat: .voiceChat
-        case .gameChat: .gameChat
-        case .videoRecording: .videoRecording
-        case .measurement: .measurement
-        case .moviePlayback: .moviePlayback
-        case .videoChat: .videoChat
-        case .spokenAudio: .spokenAudio
-        }
-    }
-
-    private func policy(_ value: MiniAppAudioProfile.RouteSharingPolicy) -> AVAudioSession.RouteSharingPolicy {
-        switch value {
-        case .default: .default
-        case .longFormAudio: .longFormAudio
-        case .longFormVideo: .longFormVideo
-        case .independent: .independent
-        }
-    }
-
-    private func options(_ value: MiniAppAudioProfile.Options) -> AVAudioSession.CategoryOptions {
-        var result: AVAudioSession.CategoryOptions = []
-        if value.contains(.mixWithOthers) { result.insert(.mixWithOthers) }
-        if value.contains(.duckOthers) { result.insert(.duckOthers) }
-        if value.contains(.interruptSpokenAudioAndMixWithOthers) { result.insert(.interruptSpokenAudioAndMixWithOthers) }
-        if value.contains(.allowBluetoothHFP) { result.insert(.allowBluetoothHFP) }
-        if value.contains(.allowBluetoothA2DP) { result.insert(.allowBluetoothA2DP) }
-        if value.contains(.allowAirPlay) { result.insert(.allowAirPlay) }
-        if value.contains(.defaultToSpeaker) { result.insert(.defaultToSpeaker) }
-        return result
-    }
+/// The one production AVAudioSession owner. Feature and Capture bridges share this coordinator.
+@MainActor
+public enum MiniAppNativeAudio {
+    private static let driver = MiniAppNativeAudioSessionDriver()
+    public static let coordinator: MiniAppAudioSessionCoordinator = {
+        let value = MiniAppAudioSessionCoordinator(driver: driver)
+        try! driver.connect(to: value)
+        return value
+    }()
 }
 #endif

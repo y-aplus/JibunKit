@@ -4,40 +4,70 @@ import JibunKitCore
 import MediaPlayer
 import Observation
 
+@MainActor protocol MediaAudioRecordingBackend: AnyObject {
+    func start(at url: URL) throws
+    func stopAndPlay(at url: URL) throws -> AVAudioFramePosition
+    func stop()
+}
+
+@MainActor final class MediaAudioNativeRecordingBackend: MediaAudioRecordingBackend {
+    private var recorder: AVAudioRecorder?
+    private var player: AVAudioPlayer?
+    func start(at url: URL) throws {
+        try? FileManager.default.removeItem(at: url)
+        let value = try AVAudioRecorder(url: url, settings: [
+            AVFormatIDKey: Int(kAudioFormatLinearPCM), AVSampleRateKey: 16_000,
+            AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false])
+        guard value.prepareToRecord(), value.record() else { throw MediaAudioProbeError.recordingDidNotStart }
+        recorder = value
+    }
+    func stopAndPlay(at url: URL) throws -> AVAudioFramePosition {
+        let frames = AVAudioFramePosition((recorder?.currentTime ?? 0) * 16_000)
+        recorder?.stop(); recorder = nil
+        let value = try AVAudioPlayer(contentsOf: url)
+        guard value.prepareToPlay(), value.play() else { throw MediaAudioProbeError.playbackDidNotStart }
+        player = value; return frames
+    }
+    func stop() { recorder?.stop(); recorder = nil; player?.stop(); player = nil }
+}
+
+enum MediaAudioProbeError: Error { case recordingDidNotStart, playbackDidNotStart, explicitSwitchRequired }
+
 @MainActor @Observable
 final class MediaAudioProbeState {
-    let driver = MiniAppNativeAudioSessionDriver()
     let coordinator: MiniAppAudioSessionCoordinator
-    var status = "待機中"
+    var playerStatus = "待機中"
+    var recorderStatus = "待機中"
     var detail = "owners=0"
-    var microphoneConsent = UserDefaults.standard.bool(forKey: "media-audio.microphone-consent")
     var playerGeneration: UInt64 = 0
     var recorderGeneration: UInt64 = 0
     var playerCommandCount = 0
     var recorderSampleCount: AVAudioFramePosition = 0
-    var errorText = "なし"
+    var playerError = "なし"
+    var recorderError = "なし"
     var sceneSummary = "scene未接続"
 
     private(set) var playerLease: MiniAppAudioSessionCoordinator.Lease?
     private(set) var recorderLease: MiniAppAudioSessionCoordinator.Lease?
-    private var player: AVPlayer?
+    private var player: AVQueuePlayer?
+    private var looper: AVPlayerLooper?
     private var nowPlaying: MiniAppNowPlayingOwner?
-    private var recorder: AVAudioRecorder?
-    private var recordedPlayer: AVAudioPlayer?
+    private let permission: @MainActor @Sendable () async -> Bool
+    private let recording: any MediaAudioRecordingBackend
+    private let beforePlayerStop: @MainActor @Sendable () async throws -> Void
+    private var playerOperation: UInt64 = 0
+    private var recorderOperation: UInt64 = 0
     @ObservationIgnored private var pendingRecorderConflict: MiniAppAudioSessionCoordinator.Conflict?
 
     var playerTime: Double { player?.currentTime().seconds ?? 0 }
     var nowPlayingTitle: String? { nowPlaying?.session.nowPlayingInfoCenter.nowPlayingInfo?[MPMediaItemPropertyTitle] as? String }
 
-    init() {
-        coordinator = MiniAppAudioSessionCoordinator(driver: driver)
-        try! driver.connect(to: coordinator)
-    }
-
-    func setMicrophoneConsent(_ allowed: Bool) {
-        microphoneConsent = allowed
-        UserDefaults.standard.set(allowed, forKey: "media-audio.microphone-consent")
-        status = allowed ? "Feature microphone同意済み" : "Feature microphone未同意"
+    init(coordinator: MiniAppAudioSessionCoordinator = MiniAppNativeAudio.coordinator,
+         permission: @escaping @MainActor @Sendable () async -> Bool = { await AVAudioApplication.requestRecordPermission() },
+         recording: any MediaAudioRecordingBackend = MediaAudioNativeRecordingBackend(),
+         beforePlayerStop: @escaping @MainActor @Sendable () async throws -> Void = {}) {
+        self.coordinator = coordinator; self.permission = permission; self.recording = recording
+        self.beforePlayerStop = beforePlayerStop
     }
 
     func receiveSceneActivity(_ activity: MiniAppSceneActivity) {
@@ -45,43 +75,60 @@ final class MediaAudioProbeState {
     }
 
     func startPlayer() async {
-        guard playerLease == nil else { return }
+        guard playerLease == nil else {
+            if let lease = playerLease {
+                do { try coordinator.reactivate(lease); player?.play(); playerStatus = "再生再開" }
+                catch { playerError = "再開: \(error)" }
+            }
+            return
+        }
+        playerOperation &+= 1; let operation = playerOperation
+        var acquiredLease: MiniAppAudioSessionCoordinator.Lease?
         do {
             let playback = MiniAppAudioProfile(category: .playback, mode: .spokenAudio)
             let duplex = MiniAppAudioProfile(category: .playAndRecord, mode: .spokenAudio)
             let admission = try await coordinator.acquire(owner: MiniAppID("media-audio-player"),
                 request: .init(acceptableProfiles: [playback, duplex], purpose: "ローカル音声の再生"),
-                stop: { [weak self] in self?.stopPlayerProducer() },
-                receive: { [weak self] in self?.handlePlayer($0) })
-            guard case .acquired(let lease) = admission else { status = "再生競合: 明示切替が必要"; return }
-            let localPlayer = AVPlayer(url: try Self.makeToneFile())
+                stop: { [weak self] in await self?.stopPlayerProducer() }, receive: { [weak self] in self?.handlePlayer($0) })
+            guard operation == playerOperation else { if case .acquired(let lease) = admission { try? await coordinator.release(lease) }; return }
+            guard case .acquired(let lease) = admission else { playerStatus = "再生競合"; return }
+            acquiredLease = lease
+            let item = AVPlayerItem(url: try Self.makeToneFile())
+            let localPlayer = AVQueuePlayer()
+            let localLooper = AVPlayerLooper(player: localPlayer, templateItem: item)
             let owner = MiniAppNowPlayingOwner(id: lease.owner, players: [localPlayer])
-            owner.session.nowPlayingInfoCenter.nowPlayingInfo = [
-                MPMediaItemPropertyTitle: "JibunKit Local Tone", MPMediaItemPropertyArtist: "MediaAudioProbe",
-                MPNowPlayingInfoPropertyPlaybackRate: 1.0, MPNowPlayingInfoPropertyPlaybackDuration: 8.0]
-            owner.installStandardHandlers { [weak self, weak localPlayer] command in
-                guard let self else { return false }
+            owner.session.nowPlayingInfoCenter.nowPlayingInfo = [MPMediaItemPropertyTitle: "JibunKit Loop Tone",
+                MPMediaItemPropertyArtist: "MediaAudioProbe", MPNowPlayingInfoPropertyPlaybackRate: 1.0]
+            owner.installStandardHandlers({ [weak self, weak localPlayer] command in
+                guard let self, self.playerLease == lease else { return false }
                 switch command {
                 case .play: localPlayer?.play(); try? self.coordinator.updateIntent(.active, for: lease)
                 case .pause: localPlayer?.pause(); try? self.coordinator.updateIntent(.stoppedByUser, for: lease)
-                case .changePlaybackPosition(let seconds):
-                    localPlayer?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
+                case .changePlaybackPosition(let seconds): localPlayer?.seek(to: CMTime(seconds: seconds, preferredTimescale: 600))
                 }
-                self.playerCommandCount += 1
-                return true
-            }
-            player = localPlayer; nowPlaying = owner; playerLease = lease; playerGeneration = lease.generation
+                self.playerCommandCount += 1; return true
+            }, onCompletion: { [weak self] _, completed in
+                self?.playerStatus = completed ? "remote操作完了" : "remote操作失敗"
+            })
+            player = localPlayer; looper = localLooper; nowPlaying = owner
+            playerLease = lease; playerGeneration = lease.generation
             try coordinator.updateIntent(.active, for: lease)
             localPlayer.play(); _ = await owner.requestActivation()
-            status = "再生中"; refreshDetail()
-        } catch { fail("再生開始", error) }
+            playerStatus = "loop再生中"; playerError = "なし"; refreshDetail()
+        } catch {
+            if let acquiredLease { try? await coordinator.release(acquiredLease) }
+            playerLease = nil; playerError = "再生開始: \(error)"; playerStatus = "失敗"
+        }
     }
 
     func stopPlayer() async {
+        playerOperation &+= 1
         guard let lease = playerLease else { return }
-        do { try coordinator.updateIntent(.stoppedByUser, for: lease); try await coordinator.release(lease) }
-        catch { fail("再生停止", error) }
-        playerLease = nil; refreshDetail()
+        do {
+            try coordinator.updateIntent(.stoppedByUser, for: lease); try await coordinator.release(lease)
+            playerLease = nil; playerStatus = "停止済み"
+        } catch { playerError = "再生停止: \(error)"; playerStatus = "停止失敗" }
+        refreshDetail()
     }
 
     func reserveRecorderAudio() async throws {
@@ -89,100 +136,93 @@ final class MediaAudioProbeState {
         let duplex = MiniAppAudioProfile(category: .playAndRecord, mode: .spokenAudio)
         let admission = try await coordinator.acquire(owner: MiniAppID("media-audio-recorder"),
             request: .init(acceptableProfiles: [duplex], purpose: "microphone録音", allowsInterruptionResume: false),
-            stop: { [weak self] in self?.stopRecorderProducer() },
-            receive: { [weak self] in self?.handleRecorder($0) })
+            stop: { [weak self] in self?.stopRecorderProducer() }, receive: { [weak self] in self?.handleRecorder($0) })
         switch admission {
         case .acquired(let lease): recorderLease = lease; recorderGeneration = lease.generation
         case .conflict(let conflict):
-            pendingRecorderConflict = conflict
-            status = "AudioSession競合: 明示切替が必要"
-            errorText = "停止対象: \(conflict.incumbentOwners.map(\.rawValue).sorted().joined(separator: ", ")) / \(conflict.reason)"
-            throw ProbeError.explicitSwitchRequired
+            pendingRecorderConflict = conflict; recorderStatus = "AudioSession競合: 明示切替が必要"
+            recorderError = "停止対象: \(conflict.incumbentOwners.map(\.rawValue).sorted().joined(separator: ", "))"
+            throw MediaAudioProbeError.explicitSwitchRequired
         }
         refreshDetail()
     }
 
-    func confirmRecorderReplacement() async {
+    func confirmRecorderReplacement(featureConsent: Bool) async {
         guard let conflict = pendingRecorderConflict else { return }
         do {
             let lease = try await coordinator.resolve(conflict, as: .replaceOwners(conflict.incumbentOwners))
             pendingRecorderConflict = nil; recorderLease = lease; recorderGeneration = lease.generation
-            await startRecording()
-        } catch { pendingRecorderConflict = nil; fail("明示切替", error) }
+            if conflict.incumbentOwners.contains(MiniAppID("media-audio-player")) { playerLease = nil }
+            await startRecording(featureConsent: featureConsent)
+        } catch { pendingRecorderConflict = nil; recorderError = "明示切替: \(error)"; recorderStatus = "失敗" }
     }
 
-    func startRecording() async {
-        guard microphoneConsent else { errorText = "Feature microphone同意が必要"; status = "録音拒否"; return }
-        guard await AVAudioApplication.requestRecordPermission() else {
-            errorText = "OS microphone許可なし（設定で変更可能）"; status = "録音拒否"; return
+    func startRecording(featureConsent: Bool) async {
+        guard featureConsent else { recorderError = "Feature microphone同意が必要"; recorderStatus = "録音拒否"; return }
+        recorderOperation &+= 1; let operation = recorderOperation
+        let granted = await permission()
+        guard operation == recorderOperation else { return }
+        guard granted else {
+            if recorderLease != nil { await releaseRecorder() }
+            recorderError = "OS microphone許可なし"; recorderStatus = "録音拒否"
+            return
         }
+        var acquiredHere = false
         do {
-            try await reserveRecorderAudio()
-            try? FileManager.default.removeItem(at: Self.recordingURL)
-            let value = try AVAudioRecorder(url: Self.recordingURL, settings: [
-                AVFormatIDKey: Int(kAudioFormatLinearPCM), AVSampleRateKey: 16_000,
-                AVNumberOfChannelsKey: 1, AVLinearPCMBitDepthKey: 16, AVLinearPCMIsFloatKey: false])
-            guard value.prepareToRecord(), value.record() else { throw ProbeError.recordingDidNotStart }
-            recorder = value
+            if recorderLease == nil { try await reserveRecorderAudio(); acquiredHere = true }
+            guard operation == recorderOperation else { if acquiredHere { await releaseRecorder() }; return }
+            try recording.start(at: Self.recordingURL)
+            guard operation == recorderOperation else { recording.stop(); if acquiredHere { await releaseRecorder() }; return }
             if let lease = recorderLease { try coordinator.updateIntent(.active, for: lease) }
-            status = "録音中"; errorText = "なし"; refreshDetail()
-        } catch ProbeError.explicitSwitchRequired {
-            // The reason and selected incumbents remain visible until explicit confirmation.
-        } catch { fail("録音開始", error) }
+            recorderStatus = "録音中"; recorderError = "なし"; refreshDetail()
+        } catch MediaAudioProbeError.explicitSwitchRequired {
+        } catch {
+            if acquiredHere { await releaseRecorder() }
+            recorderError = "録音開始: \(error)"; recorderStatus = "失敗"
+        }
     }
 
     func stopRecordingAndPlay() async {
-        recorderSampleCount = AVAudioFramePosition((recorder?.currentTime ?? 0) * 16_000)
-        recorder?.stop(); recorder = nil
-        do {
-            let value = try AVAudioPlayer(contentsOf: Self.recordingURL)
-            guard value.prepareToPlay(), value.play() else { throw ProbeError.playbackDidNotStart }
-            recordedPlayer = value; status = "録音再生中 samples=\(recorderSampleCount)"
-        } catch { fail("録音再生", error) }
+        do { recorderSampleCount = try recording.stopAndPlay(at: Self.recordingURL); recorderStatus = "録音再生中 samples=\(recorderSampleCount)" }
+        catch { recorderError = "録音再生: \(error)"; recorderStatus = "失敗" }
     }
 
     func releaseRecorder() async {
+        recorderOperation &+= 1
         guard let lease = recorderLease else { return }
-        do { try coordinator.updateIntent(.stoppedByUser, for: lease); try await coordinator.release(lease) }
-        catch { fail("録音解放", error) }
-        recorderLease = nil; refreshDetail()
-    }
-
-    func reset() async {
-        await stopPlayer()
-        await releaseRecorder()
-        pendingRecorderConflict = nil
-        status = "待機中"; errorText = "なし"; refreshDetail()
-    }
-
-    private func stopPlayerProducer() {
-        player?.pause(); nowPlaying?.invalidate(); nowPlaying = nil; player = nil; playerLease = nil
+        do {
+            try coordinator.updateIntent(.stoppedByUser, for: lease); try await coordinator.release(lease)
+            recorderLease = nil; recorderStatus = "停止済み"
+        } catch { recorderError = "録音解放: \(error)"; recorderStatus = "停止失敗" }
         refreshDetail()
     }
-    private func stopRecorderProducer() {
-        recorder?.stop(); recorder = nil; recordedPlayer?.stop(); recordedPlayer = nil; recorderLease = nil
-        refreshDetail()
+
+    func reset() async { await stopPlayer(); await releaseRecorder(); pendingRecorderConflict = nil }
+
+    private func stopPlayerProducer() async throws {
+        try await beforePlayerStop()
+        player?.pause(); await nowPlaying?.invalidate(); nowPlaying = nil; looper = nil; player = nil
     }
+    private func stopRecorderProducer() { recording.stop() }
     private func handlePlayer(_ event: MiniAppAudioEvent) {
         switch event {
-        case .interruptionBegan: player?.pause(); status = "再生中断"
-        case .interruptionEnded(let candidate): status = candidate ? "再開候補（自動再生なし）" : "再開不可"
+        case .interruptionBegan: player?.pause(); playerStatus = "再生中断"
+        case .interruptionEnded(let candidate): playerStatus = candidate ? "再開可能（操作待ち）" : "再開不可"
         case .routeChanged(let reason):
             if reason == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue {
                 player?.pause(); if let playerLease { try? coordinator.updateIntent(.stoppedForRouteChange, for: playerLease) }
             }
-            status = "経路変更 reason=\(reason)"
-        case .mediaServicesReset: status = "media services reset（再構築必要）"
+            playerStatus = "経路変更 reason=\(reason)"
+        case .mediaServicesReset: player?.pause(); playerStatus = "media reset: 再開操作待ち"
         }
     }
     private func handleRecorder(_ event: MiniAppAudioEvent) {
-        if case .interruptionBegan = event { recorder?.stop(); status = "録音中断" }
+        if case .interruptionBegan = event { recording.stop(); recorderStatus = "録音中断" }
+        if case .mediaServicesReset = event { recording.stop(); recorderStatus = "media reset: 再構築待ち" }
     }
     private func refreshDetail() {
-        detail = "owners=\(coordinator.activeOwners.count) playerGen=\(playerGeneration) recorderGen=\(recorderGeneration) commands=\(playerCommandCount)"
+        detail = "owners=\(coordinator.activeOwners.count) playerGen=\(playerGeneration) recorderGen=\(recorderGeneration) commands=\(playerCommandCount) state=\(coordinator.sessionState)"
     }
-    private func fail(_ operation: String, _ error: Error) { errorText = "\(operation): \(error)"; status = "失敗"; refreshDetail() }
-
     private static let recordingURL = FileManager.default.temporaryDirectory.appendingPathComponent("media-audio-recording.caf")
     private static func makeToneFile() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("media-audio-tone.wav")
@@ -196,6 +236,5 @@ final class MediaAudioProbeState {
         for index in 0..<count { append(Int16(sin(2 * .pi * 440 * Double(index) / Double(rate)) * 2_000)) }
         try data.write(to: url, options: .atomic); return url
     }
-    private enum ProbeError: Error { case recordingDidNotStart, playbackDidNotStart, explicitSwitchRequired }
 }
 #endif

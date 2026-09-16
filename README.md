@@ -1,6 +1,6 @@
-> [0.8.1](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)を公開済み。P0/P1に加え、操作Widget/Control・別process共有状態・管理/復元の接続をCIと一括実機で確認しました。1.0は未達です。
+> [0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)を公開済み。Live Activities/AlarmKitの接続基盤と実Feature状態保持試験を追加しました。Live Bの単発の値差分は原因未特定として残しています。1.0は未達です。
 
-0.8.2/build12は出荷検証済み・公開準備中です（公開直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](docs/verification/2026-09-16-0.8.2-release.md)を参照してください。
+0.8.2/build12を公開済みです（直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](docs/verification/2026-09-16-0.8.2-release.md)を参照してください。
 # JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。
@@ -9,7 +9,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開直前の正式版は[0.8.1](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.1の変更と検証範囲](release-notes-0.8.1.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.2の変更と検証範囲](release-notes-0.8.2.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。前回の出荷検証は[0.8.1公開記録](docs/verification/2026-09-16-0.8.1-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
 
@@ -17,7 +17,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 0.8.1/build11は操作Widget/Controlと共有状態の実機確認、版変更後CI、公開IPA/ZIP再取得を完了しています。[出荷範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。通常IPAへ診断A/Bは含めません。
 
-## 公開版0.8.1とmain
+## 公開版0.8.2とmain
 
 通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
@@ -35,7 +35,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.8.1の出荷範囲、開発状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.8.2の出荷範囲、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |

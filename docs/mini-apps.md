@@ -1,6 +1,6 @@
 # ミニアプリの追加
 
-0.8.2/build12は出荷検証済み・公開準備中です（公開直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
+0.8.2/build12を公開済みです（直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
 操作可能Widget/Controlを追加する場合は[標準型の登録・共有状態・管理/復元接続](guides/interactive-widgets.md)へ進む。0.8.1以降の追加経路で、0.8.0以前には含まれない。
 
 JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。

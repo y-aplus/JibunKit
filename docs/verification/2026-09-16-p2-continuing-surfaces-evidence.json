@@ -532,7 +532,7 @@
   ],
   "monitor": "OS scheduled tasks registered for both runs; one completion message each; no model polling",
   "repair_branch": "codex/p2-live-sdk-repair",
-  "next_action": "CI35075825942 success and IPA CRC/IDs/version/fixtures checked. Integrate verified core into main and publish0.8.2; preserve P2-5 partial/unexplained historical Live B observation. No additional device request or CI needed for docs/upload-path-only followup.",
+  "next_action": "0.8.2 published and verified; continue P2-C audio/capture planning and implementation. P2-5 remains partial with nonreproduced score observation; do not repeat manual matrix without new evidence.",
   "normal_ipa": {
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
     "run": "35046699862",
@@ -865,5 +865,25 @@
       }
     ],
     "diagnostic_fixtures": "not found in paths/executables; normal Counter kind present"
-  }
+  },
+  "release_082_public_assets": [
+    {
+      "name": "JibunKit-0.8.2.ipa",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/0.8.2/JibunKit-0.8.2.ipa",
+      "status": 200,
+      "size": 2874016,
+      "sha256": "da0f273226f765297be94f6fa282da42a672e392e47a11fa06f037a503c55de9",
+      "unauthenticated_exact_match": true,
+      "crc": "passed"
+    },
+    {
+      "name": "JibunKit-0.8.2.zip",
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/0.8.2/JibunKit-0.8.2.zip",
+      "status": 200,
+      "size": 2839157,
+      "sha256": "e44c4edd82ff0b220bbb3afbd5ed5fa1212bc2b161e6c7b2fd033b6b6cff7ac8",
+      "unauthenticated_exact_match": true,
+      "crc": "passed"
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 # 公開・release手順
 
-更新日: 2026-09-16。最新公開版はGitHub Releasesを正本とする。0.8.1を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
-現在準備中のVERSIONは0.8.2/build12、PREVIOUSは公開済み0.8.1/build11。[候補と未解決事項](verification/2026-09-16-0.8.2-release.md)。以下は前回0.8.1公開時の記録。e984d44のP2-W一括実機確認を受領し、版更新後のbuild/IPA検査、main統合・公開・IPA/ZIP無認証再取得を完了した（[今回の記録](verification/2026-09-16-0.8.1-release.md)）。0.8.0のP0/P1出荷証拠は[当時の記録](verification/2026-09-15-0.8-release.md)へ保持する。
+更新日: 2026-09-16。最新公開版はGitHub Releasesを正本とする。0.8.2を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
+今回公開済みのVERSIONは0.8.2/build12、PREVIOUSは0.8.1/build11。[出荷結果と未解決事項](verification/2026-09-16-0.8.2-release.md)。以下は前回0.8.1公開時の記録。e984d44のP2-W一括実機確認を受領し、版更新後のbuild/IPA検査、main統合・公開・IPA/ZIP無認証再取得を完了した（[今回の記録](verification/2026-09-16-0.8.1-release.md)）。0.8.0のP0/P1出荷証拠は[当時の記録](verification/2026-09-15-0.8-release.md)へ保持する。
 
 ## 版ごとの出荷判断
 

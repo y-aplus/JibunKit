@@ -147,3 +147,5 @@ host factory引数へ@MainActor @Sendableを保持し、Live async assertion hel
 累計7run、job時間89分15秒。最終のrun最長経路はhost16分26秒で30分目標内。失敗をまとめたレビューと成功済通常/Alarmの再利用によって最終retryは2job・1runに限定した。一方、親/workerのsource reviewでcompilerのactor指定不備を残した点は改善対象。管理コスト/料金の節約率は未計測なので断定しない。次境界ではfixture factory/async helper/SDK observerのactor入力を共通契約の具体例に含める。
 
 非実機検証はここまで揃った。残るOS許可/表示/標準操作・cold復帰・片側管理/復元とB保持・通常版復帰は[一括実機手順](2026-09-16-p2-continuing-surfaces-device.md)で確認する。P2-5はpartialを維持し、0.8.2の版更新/公開は実機成功後。CIを実機証拠として代用しない。
+
+確認用[prerelease p2-l-device-check-20260916](https://github.com/y-aplus/JibunKit/releases/tag/p2-l-device-check-20260916)を検証済み5678a41へ固定して公開した。正式0.8.2やlatestにはしていない。診断/通常のIPA・単一IPA入りZIPの4assetを認証なしで公開URLから再取得し、すべてHTTP200・ローカルとの全byte一致・外側/内側CRC成功を確認。現在は一括実機結果待ちであり、CI待ちではない。

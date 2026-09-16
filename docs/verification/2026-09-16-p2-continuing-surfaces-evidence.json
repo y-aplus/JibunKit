@@ -465,7 +465,7 @@
   ],
   "monitor": "OS scheduled tasks registered for both runs; one completion message each; no model polling",
   "repair_branch": "codex/p2-live-sdk-repair",
-  "next_action": "Publish verified prerelease diagnostic/normal assets and require grouped physical P2-L observations. P2-5 remains partial; do not bump/release0.8.2 before device completion.",
+  "next_action": "Await grouped physical P2-L checks from user using published diagnostic5678a41 and normalb1d379b. Non-device checks complete for this boundary. Do not bump0.8.2 or markP2-5 complete before device results.",
   "normal_ipa": {
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
     "run": "35046699862",
@@ -498,7 +498,6 @@
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
     "run": "35046697413",
     "alarm": "A/B/Combined app+Widget Release;2 definitions preserved in app/widget and widget->app;native2 pass;artifact result source/true verified",
-    "live": "A/B/Combined app+Widget Release and2 definitions preserved; native XCTest not run due helper compile",
     "reuse_review": "Next change only Tests/ContinuingSurfaces/ContinuingProbe.swift actor type, Tests/ContinuingLiveActivities/NativeTests.swift actor test helper, workflow selection, docs. No Sources/package/Alarm fixture changes; reuse normal and Alarm completely. Live/host rerun.",
     "live_final": {
       "source": "5678a41d504a0b3c97117ef833653a30f0d670a7",
@@ -506,7 +505,10 @@
       "native_tests": 4,
       "host_ui_tests": 1,
       "result_source_matched": true
-    }
+    },
+    "live_initial_attempt": "A/B/Combined app+Widget Release and2 definitions preserved; native XCTest not run due helper compile",
+    "live": "5678a41 /35047576529: A/B/Combined Release and metadata, native4 passed; result source true verified",
+    "host": "5678a41 /35047576529: normal diagnostic host UI1, metadata, signatures, IPA CRC passed; no real OS activity started in UI test"
   },
   "device_assets": [
     {
@@ -617,5 +619,128 @@
         }
       ]
     }
-  ]
+  ],
+  "public_assets": [
+    {
+      "name": "JibunKit-P2-L-5678a41.ipa",
+      "source": "5678a41d504a0b3c97117ef833653a30f0d670a7",
+      "size": 3312191,
+      "sha256": "4bb1bb6787624dfd5f46edb85fd3ac1cf2a246b1359be2b05e692879dba759b0",
+      "crc": "passed",
+      "bundles": [
+        {
+          "id": "com.jibunkit.app.Share",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app.Widget",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        }
+      ],
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-l-device-check-20260916/JibunKit-P2-L-5678a41.ipa",
+      "http": 200,
+      "unauthenticated_exact_match": true
+    },
+    {
+      "name": "JibunKit-P2-L-5678a41.zip",
+      "source": "5678a41d504a0b3c97117ef833653a30f0d670a7",
+      "size": 3271881,
+      "sha256": "3ff77e0d8658eeacca132646cdf36aa4ba0c80dba21dc9ccec5c40fa25f32f6a",
+      "crc": "passed",
+      "bundles": [
+        {
+          "id": "com.jibunkit.app.Share",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app.Widget",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        }
+      ],
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-l-device-check-20260916/JibunKit-P2-L-5678a41.zip",
+      "http": 200,
+      "unauthenticated_exact_match": true
+    },
+    {
+      "name": "JibunKit-normal-b1d379b.ipa",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "size": 2874006,
+      "sha256": "a72dbcce4f57959a41af7188cf4ecd3014032067dacff8c949b58b7183115de1",
+      "crc": "passed",
+      "bundles": [
+        {
+          "id": "com.jibunkit.app.Share",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app.Widget",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        }
+      ],
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-l-device-check-20260916/JibunKit-normal-b1d379b.ipa",
+      "http": 200,
+      "unauthenticated_exact_match": true
+    },
+    {
+      "name": "JibunKit-normal-b1d379b.zip",
+      "source": "b1d379bf5179564230299d02295d3c130efd7866",
+      "size": 2839228,
+      "sha256": "86084301574cf792aed6f2e19801af53cf6d950f27cc61539f1f6412974f5598",
+      "crc": "passed",
+      "bundles": [
+        {
+          "id": "com.jibunkit.app.Share",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app.Widget",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        },
+        {
+          "id": "com.jibunkit.app",
+          "version": "0.8.1",
+          "build": "11",
+          "group": "group.com.jibunkit.shared"
+        }
+      ],
+      "url": "https://github.com/y-aplus/JibunKit/releases/download/p2-l-device-check-20260916/JibunKit-normal-b1d379b.zip",
+      "http": 200,
+      "unauthenticated_exact_match": true
+    }
+  ],
+  "device_release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-l-device-check-20260916"
 }

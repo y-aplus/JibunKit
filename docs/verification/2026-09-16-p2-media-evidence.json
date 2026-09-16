@@ -516,7 +516,7 @@
   },
   "device_assets": {
     "release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-c-device-check-20260916",
-    "status": "prepared; publication verification recorded separately",
+    "status": "published prerelease; all four assets retrieved without authentication, SHA256 and CRC matched",
     "inventory": [
       {
         "ipa": "JibunKit-P2-C-306874f.ipa",
@@ -564,7 +564,37 @@
           }
         ]
       }
+    ],
+    "public_verification": [
+      {
+        "name": "JibunKit-P2-C-306874f.ipa",
+        "bytes": 3571172,
+        "sha256": "0639f35687bc11f5f65ed1935c32a34cd900e810090d4368e77f9864d43b287d",
+        "unauthenticated_get": true,
+        "crc_passed": true
+      },
+      {
+        "name": "JibunKit-P2-C-306874f.zip",
+        "bytes": 3571320,
+        "sha256": "ae98a6382874149db843061032704a03ebcc9f3378ee8e8c6c195ed8444579d4",
+        "unauthenticated_get": true,
+        "crc_passed": true
+      },
+      {
+        "name": "JibunKit-normal-306874f.ipa",
+        "bytes": 3441240,
+        "sha256": "5dd485779dc5900296f42126d29a3b76e8930e881b818921f626a608891af9e7",
+        "unauthenticated_get": true,
+        "crc_passed": true
+      },
+      {
+        "name": "JibunKit-normal-306874f.zip",
+        "bytes": 3441392,
+        "sha256": "77352b83db237d2a0bcf5d4bb40fde9b9b139fc7adc0cc9fc09ffc00e0e96a55",
+        "unauthenticated_get": true,
+        "crc_passed": true
+      }
     ]
   },
-  "next_action": "Grouped physical checks in docs/verification/2026-09-16-p2-media-device.md. User notification after publication/hash verification. No version bump/main merge yet."
+  "next_action": "User physical checkpoint (docs/verification/2026-09-16-p2-media-device.md), starting with Audio Player background/lock-screen controls. No active CI. No version bump/main merge yet."
 }

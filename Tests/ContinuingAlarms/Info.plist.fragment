@@ -1,0 +1,5 @@
+<!-- Merge into every fixture app target; localize the usage text in production. -->
+<key>NSAlarmKitUsageDescription</key>
+<string>登録した予定やタイマーを、重要なアラームとして知らせます。</string>
+<key>NSSupportsLiveActivities</key>
+<true/>

@@ -1,0 +1,8 @@
+// Parent integration example after MiniAppDefinition.continuingSurfaces lands:
+// let surface = try await featureAAlarmRuntime.surface()
+// MiniAppDefinition(
+//   id: FeatureAAlarm.owner, title: "Alarm A", systemImage: "alarm",
+//   continuingSurfaces: [surface],
+//   // Disable/remove: host closes, drains, then calls surface.endOwned().
+//   // Restore: close/endOwned/apply business payload/reconcile/open. Never reschedule here.
+//   makeRootView: { _ in AlarmDiagnosticViewFactory.featureA() })

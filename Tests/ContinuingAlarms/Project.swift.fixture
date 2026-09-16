@@ -1,0 +1,44 @@
+import ProjectDescription
+
+let variants: [(name: String, flags: String)] = [
+    ("AlarmStandaloneA", "ALARM_FEATURE_A"),
+    ("AlarmStandaloneB", "ALARM_FEATURE_B"),
+    ("AlarmCombined", "ALARM_FEATURE_A ALARM_FEATURE_B"),
+]
+var targets: [Target] = []
+for variant in variants {
+    let bundleID = "com.jibunkit.alarm.\(variant.name.lowercased())"
+    let group = "group.\(bundleID)"
+    let settings: Settings = .settings(base: [
+        "SWIFT_VERSION": "6.0",
+        "SWIFT_STRICT_CONCURRENCY": "complete",
+        "SWIFT_ACTIVE_COMPILATION_CONDITIONS": .string("$(inherited) \(variant.flags)"),
+    ])
+    targets.append(.target(name: "\(variant.name)Widgets", destinations: .iOS, product: .appExtension,
+        bundleId: "\(bundleID).widgets", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: [
+            "JibunKitAppGroup": .string(group),
+            "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
+        ]),
+        sources: ["AlarmFeatures.swift", "AlarmFixtureWidget.swift"],
+        entitlements: .dictionary(["com.apple.security.application-groups": .array([.string(group)])]),
+        dependencies: [.package(product: "JibunKitCore")], settings: settings))
+    targets.append(.target(name: variant.name, destinations: .iOS, product: .app,
+        bundleId: bundleID, deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: [
+            "CFBundleDisplayName": .string(variant.name),
+            "JibunKitAppGroup": .string(group),
+            "NSAlarmKitUsageDescription": .string("登録した予定やタイマーを重要なアラームとして知らせます。"),
+            "NSSupportsLiveActivities": true,
+            "UILaunchScreen": [:],
+        ]),
+        sources: ["AlarmFeatures.swift", "AlarmDiagnosticView.swift", "AlarmFixtureHost.swift"],
+        entitlements: .dictionary(["com.apple.security.application-groups": .array([.string(group)])]),
+        dependencies: [.target(name: "\(variant.name)Widgets"), .package(product: "JibunKitCore")],
+        settings: settings))
+}
+
+let project = Project(name: "ContinuingAlarms",
+    packages: [.package(path: "__JIBUNKIT_PATH__")],
+    targets: targets,
+    schemes: variants.map { .scheme(name: $0.name, shared: true, buildAction: .buildAction(targets: [.target($0.name)])) })

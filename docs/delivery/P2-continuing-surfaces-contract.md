@@ -41,3 +41,26 @@ P2-L初回実装予算2run。初回の同一sourceで独立/統合native build�
 - MiniAppSharedState.updateのclosureは同期で、native async request/update/endをNSFileCoordinatorの保有中へ入れない。OSと永続表を原子的にcommitできると仮定せず、途中終了の段階と再照合/重複拒否を検証する。Featureコード全体の強制隔離は保証しない。
 
 両CLIワーカーは同一baseline bcfde0dで起動済み。実行記録からsol/low、承認never・full accessが既定で継承されたことを確認し、起動時の権限上書きは行っていない。履歴IDと監視設定はローカル運用記録へ保存。完了時の一回通知を登録済みで、定期的に進捗を読み返さない。
+
+## 実装契約の固定（2026-09-16、両設計レビュー後）
+
+設計提出は c0ed629 までに統合した。以下は両提出の提案より優先する。共通宣言の初版を製品sourceへ追加したが、WindowsではSwift未コンパイル。子ごとにCIは投入しない。
+
+- 共通identityは `MiniAppContinuingIdentity(owner: MiniAppID, localID: String, generation: UUID, registrationID: UUID)`。保存上ownerはString。世代はFeature業務データの世代、registrationIDは同世代内の作り直しも分離するUUID。Intentは全identityと必要なOS IDを照合する。
+- `MiniAppContinuingJournal(owner:namespace:containerURL:)` の `read()` / 同期 `update` をOS対応表に使う。登録はidentity/systemID?/phase(starting,active,ending)。業務データのbackupには含めない。管理中も読み書きできる。OS呼出し前にpendingを永続化し、失敗・中断で記録を失わない。異なるowner/namespaceの更新は禁止。未知OS登録は診断対象で、推測で他ownerへ配送・削除しない。
+- `MiniAppContinuingOperationGate` はアプリprocessでの直列化を担当。通常 `perform`、管理 `close`（進行中をdrain）、`performMaintenance`、`open`。actorの再入だけを排他と誤認しない。singleton serviceをowner/native種別ごとに共有し、extensionで別gateを作ってOS開始しない。LiveActivityIntentはapp実行。通常operation内でFeature提供のadmission/世代検証を必ず行う。gate/journalだけで任意Featureコードの強制隔離を保証しない。
+- `MiniAppContinuingSurface(owner:id:close:reconcile:endOwned:open:)` をadapterが提供。Definitionの `continuingSurfaces: [MiniAppContinuingSurface]`、effectiveExternalAccess/restore、host起動/再開接続は親が実装する。closeは受付閉鎖/drain、endOwnedは管理中でも動く冪等OS解除、reconcileは再照合であり暗黙の再登録をしない。画面のtask終了と無関係。失敗はthrowで残す。openだけで過去の活動を再開しない。
+- native非同期終了は無期限待機にしない。ActivityKit end(.immediate)後は終了/消失の観測とOS画面の消失を区別し、boundedな未収束を再試行として扱う。OSが無効化後に業務操作を実行できないことを優先し、確認していないdismissedの必達を仮定しない。
+- Alarmの同一ID再scheduleやatomic replacementは保証しない。代替新規→旧解除を採る場合は部分成功と両IDを残し、即時countdownも「初版だから禁止」とせず非原子的な結果を正直に返す。固定/繰返し予定・countdown・pause/resume/stop/cancelをnative APIの意味のまま扱う。期限切れ復元の自動再発火は禁止。
+- Alarm authorizationはOS上app単位である。AだけOS許可を拒否してBは許可済みという試験は不正確。Feature別受付拒否とapp全体OS拒否を分離する。
+- 既存最低OSは26。iOS25 fallbackの追加は不要。通常local Live Activityを本境界で実装し、APNs経路は後続P2-Bと接続する。OSの型付きpayload/表示自由度を削らない。
+
+所有path:
+
+| レーン | 実装・検証・文書 |
+|---|---|
+| 親 | 上記共通3ファイル、Definition/Registry/管理・復元・host起動、Package/Project/CI/Tools、共通試験、統合diagnostic注入、台帳/出荷 |
+| Live Activity | Sources/JibunKitCore/LiveActivities/、Tests/JibunKitCoreTests/LiveActivities/、Tests/ContinuingLiveActivities/（FeatureA/Bのnative display/Intent/diagnostic Viewとfixture）、docs/guides/live-activities.md |
+| Alarm | Sources/JibunKitCore/Alarms/、Tests/JibunKitCoreTests/Alarms/、Tests/ContinuingAlarms/（FeatureA/Bのnative display/Intent/diagnostic Viewとfixture）、docs/guides/alarms.md |
+
+両子は共通baselineの宣言を変更せず、typed native adapterからFeature固有表示・Intentまでと失敗試験をまとめて提出する。共有Package/Project/CIや通常Registryは変更せず、必要なtarget/source/plist/metadata/host wiringをworkの提出へ列挙。各fixtureは独立A/Bと統合を同じsourceで構成可能にする。Swift未実行を隠さず、根拠のあるAPIを使いcompile未確認を明示する。初回提出と一括レビューで揃えてからnative CIを行う。

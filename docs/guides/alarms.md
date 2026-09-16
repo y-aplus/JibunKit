@@ -1,6 +1,6 @@
 # AlarmKit 接続ガイド
 
-状態: **0.8.2候補・実機確認待ち**。b1d379bでXcode26.6の独立/統合build・metadata・native2件が成功。実機AlarmKitの許可/表示/操作は未確認。[証拠](../verification/2026-09-16-p2-continuing-surfaces.md)。
+状態: **0.8.2候補・対象別実機確認済み**。b1d379bでXcode26.6の独立/統合build・metadata・native2件が成功。5678a41診断版で許可、固定/繰返し/countdown、pause/resume、OS標準stop callback、cold復帰、片側管理/復元とB保持、上書き/Refresh/端末再起動、通常版復帰を確認。Focus/silent条件は独立に試していない。Live Bの単発差分は別途未解決として保持し、P2-5全体はpartial。[証拠](../verification/2026-09-16-p2-continuing-surfaces.md)。
 
 JibunKitのAlarmKit境界は、Feature固有の`AlarmMetadata`、表示、schedule、業務状態を型付きのまま保つ。共通coordinatorはowner、local ID、業務世代、registration ID、AlarmKit UUID、操作排他、永続journal、OS集合との照合だけを扱う。汎用timerや任意payloadへ変換しない。
 

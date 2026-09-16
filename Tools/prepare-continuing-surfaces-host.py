@@ -59,9 +59,19 @@ def prepare(host):
     dependencies = "".join(f', .package(product: "{m}")' for m in MODULES)
     text = once(text, '.target(name: "JibunKitShare-Extension")',
                 '.target(name: "JibunKitShare-Extension")' + dependencies)
-    changes[project] = once(text,
+    text = once(text,
         'entitlements: .dictionary(widgetBuild.entitlements),\n            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]',
         'entitlements: .dictionary(widgetBuild.entitlements),\n            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")' + dependencies + ']')
+    text = once(text, '    targets: [\n', '    targets: [\n'
+        '        .target(name: "ContinuingStateNativeTests", destinations: .iOS, product: .unitTests,\n'
+        '            bundleId: "com.jibunkit.continuing-state-tests", deploymentTargets: .iOS("26.0"),\n'
+        '            infoPlist: .default, sources: ["Tests/ContinuingSurfaces/ContinuingStateNativeTests.swift"],\n'
+        '            dependencies: [.target(name: "JibunKit-App"), .package(product: "JibunKitCore")'
+        + dependencies + ']),\n')
+    changes[project] = once(text, '    schemes: [\n', '    schemes: [\n'
+        '        .scheme(name: "ContinuingStateNativeTests", shared: true,\n'
+        '            buildAction: .buildAction(targets: ["JibunKit-App"]),\n'
+        '            testAction: .targets(["ContinuingStateNativeTests"], configuration: .debug)),\n')
 
     registry = host / "Sources/JibunKit/MiniAppRegistry.swift"
     changes[registry] = once(registry.read_text(encoding="utf-8"),

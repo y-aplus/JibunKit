@@ -1,5 +1,7 @@
 # ビルドと検証
 
+
+0.8.2/build12は公開候補です（最新公開版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
 開発中のCIは[事前に固定した大きな境界](ci-boundaries.md)で実行する。小commitや担当者の提出ごとに起動しない。以下の入力例は実行方法であり、全変更への一律実行指示ではない。
 
 標準のiOSビルドはTuist 4.207.0とXcode 26.6を使う。WindowsからはGitHub Actionsを実行でき、Mac購入は前提にしない。SwiftのあるmacOS／Linux／WSLでは`swift test`でFoundationロジックを確認できる。xtoolによるIPA生成経路は廃止した。

@@ -1,7 +1,7 @@
 # 公開・release手順
 
 更新日: 2026-09-16。最新公開版はGitHub Releasesを正本とする。0.8.1を公開済み。版の対象範囲は[Issue #5の優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
-今回のVERSIONは0.8.1/build11、PREVIOUSは0.8.0/build10。e984d44のP2-W一括実機確認を受領し、版更新後のbuild/IPA検査、main統合・公開・IPA/ZIP無認証再取得を完了した（[今回の記録](verification/2026-09-16-0.8.1-release.md)）。0.8.0のP0/P1出荷証拠は[当時の記録](verification/2026-09-15-0.8-release.md)へ保持する。
+現在準備中のVERSIONは0.8.2/build12、PREVIOUSは公開済み0.8.1/build11。[候補と未解決事項](verification/2026-09-16-0.8.2-release.md)。以下は前回0.8.1公開時の記録。e984d44のP2-W一括実機確認を受領し、版更新後のbuild/IPA検査、main統合・公開・IPA/ZIP無認証再取得を完了した（[今回の記録](verification/2026-09-16-0.8.1-release.md)）。0.8.0のP0/P1出荷証拠は[当時の記録](verification/2026-09-15-0.8-release.md)へ保持する。
 
 ## 版ごとの出荷判断
 
@@ -48,6 +48,7 @@ PATH_TO_REVIEWED_REPORTには今回の0.8.0出荷reportを指定する。toolの
 3. 共有・Module tests、単独Feature/生成host、App Intents metadata、本体/Widget、IPAを検証する。UIは変更の影響範囲を含む試験を行い、必要なら通常hostと生成hostを分割してjob上限内に収める。限定filterを全回帰成功とは記載しない。
 4. 直前の検証済みsourceから版番号・文書・版検査値だけを変更した場合、差分を確認したうえでそのUI証拠を参照できる。候補のビルド/IPA検査は省略しない。参照元source/runと候補source/runを分けて記録する。
 5. 新しい実機確認が必要な挙動があれば、複数項目をまとめて依頼する。過去の実機成功を別sourceの実機成功へ読み替えない。Simulatorだけの既知の失敗も、その範囲・実機証拠・未解明部分を明示する。
+   実機は新規OS動作と代表的な他Feature保持へ絞る。保存値・世代・無効化/削除/選択復元の組合せは実Feature接続の自動試験を使い、同じ基盤を使うFeatureごとに全手順を反復しない。試験追加だけで成功済み実機を再依頼しない。詳細は[実機との分担](ci-boundaries.md#証拠と実機の区切り)。
 6. run.headShaを確認して通常構成のIPAを取得する。全ZIP entryの展開/CRC、bundle ID、版番号、App Group/署名構造、CI fixtureの混入がないことを確認する。source・run・SHA-256を検証記録とrelease notesへ残す。
 
 publication boundaryは追跡ファイルの鍵・証明書・provisioning・pairing材料、SDK archive、IPA等を検査する。ignoredの個人Featureや実データを出荷物へ含めない。通常IPAはCounter/Reminder、Recordsは参照ソース。CI専用Featureを含む確認用構成と区別する。

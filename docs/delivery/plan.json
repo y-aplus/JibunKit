@@ -583,8 +583,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "Live Activities・AlarmKit",
-      "existing": "既存所有ID/寿命/Intents/管理境界を再利用",
-      "remaining": "開始/更新/停止、再起動照合、所有Featureへの操作配送、片側取消/削除とB保持",
+      "existing": "typed Live/Alarm adapters、journal/gate、通常管理/復元、独立/統合CI、対象別OS実機・通常版復帰を確認",
+      "remaining": "Live Bの上書き前の値差分（期待230/観測200）が原因未特定。210からのcold再起動・Alarm A削除/無効化/復元では再現せず。保持の完全完了判定を留保し、次の統合境界で永続値/世代を追跡する回帰検証を補強",
       "deferred": "大量同時要求の高度最適化/特殊表示面",
       "criteria": [
         {

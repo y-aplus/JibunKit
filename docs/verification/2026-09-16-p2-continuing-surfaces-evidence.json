@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-W": "Published0.8.1; docs/verification/2026-09-16-0.8.1-release.md and docs/verification/2026-09-15-p2-widget-control-evidence.json; source88ab7cb normal CI plus e984d44 native/device."
   },
-  "planned_ci_runs": 7,
-  "budget_exception": "Initial2 runs all failed on same3 Core compiler diagnostics; all logs reviewed together. Additional2 same-scope runs needed because every native/normal test and IPA remains unexecuted. ec24756 fixes adapter scope, immutable Sendable snapshot and explicit self; no timeout/assertion relaxation. Second pair passed shared326/Records11 and requirements but all iOS builds blocked by same ActivityKit object crossing actor/task boundary. af484a1 passes String IDs only and retrieves SDK object inside observer task; retain strict Swift6 checking. Additional2 runs required for unexecuted iOS/IPA/native checks; unchanged unit evidence retained, normal workflow reexecutes its short shared prerequisites. Third boundary: normal and Alarm succeeded; Live native test helper and host factory parameter lose MainActor. Three-failure root-cause comparison recorded using successful direct factory/native builds as minimal comparison. Correct actor annotations only; one2-job run continuing-live-host, reuse unchanged normal/Alarm.",
+  "planned_ci_runs": 8,
+  "budget_exception": "Initial2 runs all failed on same3 Core compiler diagnostics; all logs reviewed together. Additional2 same-scope runs needed because every native/normal test and IPA remains unexecuted. ec24756 fixes adapter scope, immutable Sendable snapshot and explicit self; no timeout/assertion relaxation. Second pair passed shared326/Records11 and requirements but all iOS builds blocked by same ActivityKit object crossing actor/task boundary. af484a1 passes String IDs only and retrieves SDK object inside observer task; retain strict Swift6 checking. Additional2 runs required for unexecuted iOS/IPA/native checks; unchanged unit evidence retained, normal workflow reexecutes its short shared prerequisites. Third boundary: normal and Alarm succeeded; Live native test helper and host factory parameter lose MainActor. Three-failure root-cause comparison recorded using successful direct factory/native builds as minimal comparison. Correct actor annotations only; one2-job run continuing-live-host, reuse unchanged normal/Alarm. Eighth boundary: one workflow with parallel normal versioned IPA and new real-Feature state regression only, approved after device checkpoint. Reuse unchanged independent builds/metadata/native/UI/device; no repeated manual matrix.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -55,6 +55,16 @@
       "command": "Review current P2-L guides/contract/status/verification and unchanged Feature onboarding/local diagnostic paths; check-delivery preflight. Patch affected-doc review; no minor-wide audit or release success claimed.",
       "expected_minutes": 15,
       "timeout_minutes": 20
+    },
+    {
+      "id": "real-feature-state",
+      "kind": "unit",
+      "criteria": [
+        "P2-5.ownership"
+      ],
+      "command": "native-surface continuing-state: real four Feature stores/providers with management and selected JSON restore, native XCTest one method; no OS activity creation",
+      "expected_minutes": 15,
+      "timeout_minutes": 30
     }
   ],
   "runs": [
@@ -461,11 +471,17 @@
       "inputs_and_filters": "native-surface.yml surface=continuing-live-host ios_major=26 simulator_runtime empty. Live A/B/Combined + ContinuingLiveActivityNativeTests all4; host build+MigrationUITests/ContinuingHostUITests all1+IPA. No normal/Alarm dispatch.",
       "estimate_basis": "Last Live9m25 ended at test compile; host4m47 ended at factory compile. Earlier same-host P2W833s. Live20min/host23min includes setup/upload/native tests, two independent jobs; longest23min.",
       "expected_elapsed_minutes": 23
+    },
+    {
+      "id": "release-082-and-state",
+      "inputs_and_filters": "build-ios.yml continuing_state_validation=true simulator_tests=false feature_validation=false records_validation=false simulator_runtime empty; other defaults. Parallel normal IPA and native-surface continuing-state (ContinuingStateNativeTests one method only).",
+      "estimate_basis": "Normal35046699862=233s, budget10min. Previous whole host35047576529=986s; new state-only path omits Release/native comparisons/UI/diagnostic packaging, adds Debug native test target; setup/upload included estimate15min (not measured yet). Independent two jobs, no dependency, max15min.",
+      "expected_elapsed_minutes": 15
     }
   ],
   "monitor": "OS scheduled tasks registered for both runs; one completion message each; no model polling",
   "repair_branch": "codex/p2-live-sdk-repair",
-  "next_action": "Await grouped physical P2-L checks from user using published diagnostic5678a41 and normalb1d379b. Non-device checks complete for this boundary. Do not bump0.8.2 or markP2-5 complete before device results.",
+  "next_action": "0.8.2 build12 candidate prepared; dispatch single parallel normal-IPA/state-only boundary after source review. Grouped physical operations and normal return complete; isolated Live B score discrepancy remains unexplained/not reproduced. P2-5 stays partial, do not mark fixed.",
   "normal_ipa": {
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
     "run": "35046699862",
@@ -492,7 +508,7 @@
         "build": "11"
       }
     ],
-    "publication": "not published; build version0.8.1 retained for diagnostic checkpoint"
+    "publication": "Published as normal comparison asset in p2-l-device-check-20260916, not formal0.8.2."
   },
   "native_evidence": {
     "source": "b1d379bf5179564230299d02295d3c130efd7866",
@@ -742,5 +758,12 @@
       "unauthenticated_exact_match": true
     }
   ],
-  "device_release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-l-device-check-20260916"
+  "device_release": "https://github.com/y-aplus/JibunKit/releases/tag/p2-l-device-check-20260916",
+  "device_observations": {
+    "source": "5678a41d504a0b3c97117ef833653a30f0d670a7",
+    "normal_source": "b1d379bf5179564230299d02295d3c130efd7866",
+    "reference": "docs/verification/2026-09-16-p2-continuing-surfaces-device.md",
+    "reported_pass": "Live/Alarm OS operations, native stop callbacks, one-owner management/restore, restart/overwrite/Refresh and normal return. Read step-specific limits in reference.",
+    "unresolved": "Live B expected230, observed200 before IPA overwrite. Persisted score display; cause unknown. Fresh210 survived app restart and Alarm A deletion/disable/restore. User suggested forgotten interaction but not established. Do not classify as fixed or user error."
+  }
 }

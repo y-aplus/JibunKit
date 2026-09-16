@@ -33,7 +33,9 @@ class ContinuingHostTests(unittest.TestCase):
         MODULE.prepare(root)
         project = (root / "Project.swift").read_text(encoding="utf-8")
         for name in MODULE.MODULES:
-            self.assertEqual(project.count(f'.package(product: "{name}")'), 2)
+            self.assertEqual(project.count(f'.package(product: "{name}")'), 3)
+        self.assertIn('sources: ["Tests/ContinuingSurfaces/ContinuingStateNativeTests.swift"]', project)
+        self.assertIn('testAction: .targets(["ContinuingStateNativeTests"]', project)
         self.assertIn('"NSSupportsLiveActivities": true', project)
         self.assertIn('"NSAlarmKitUsageDescription"', project)
         self.assertIn('.target(name: "JibunKitShare-Extension")', project)

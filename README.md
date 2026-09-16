@@ -1,5 +1,7 @@
 > [0.8.1](https://github.com/y-aplus/JibunKit/releases/tag/0.8.1)を公開済み。P0/P1に加え、操作Widget/Control・別process共有状態・管理/復元の接続をCIと一括実機で確認しました。1.0は未達です。
 
+
+0.8.2/build12は公開候補です（最新公開版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](docs/verification/2026-09-16-0.8.2-release.md)を参照してください。
 # JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。

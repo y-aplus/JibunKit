@@ -11,6 +11,10 @@ on:
         description: Run integration UI checks on an iOS simulator
         type: boolean
         default: false
+      continuing_state_validation:
+        description: Run P2-L real Feature storage/management/restore regression in parallel with the normal IPA
+        type: boolean
+        default: false
       feature_validation:
         description: Verify standalone Features, template generation and host integration
         type: boolean
@@ -100,6 +104,13 @@ permissions:
   contents: read
 
 jobs:
+  continuing-state:
+    if: inputs.continuing_state_validation && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: continuing-state
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   interactive-widgets:
     if: inputs.interactive_widgets_validation && inputs.simulator_tests && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml
@@ -792,10 +803,10 @@ jobs:
             "com.jibunkit.app.Widget"
           require_equal "app short version" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)" \
-            "0.8.1"
+            "0.8.2"
           require_equal "app build version" \
             "$(plist_value "$app/Info.plist" CFBundleVersion)" \
-            "11"
+            "12"
           require_equal "widget short version" \
             "$(plist_value "$widget/Info.plist" CFBundleShortVersionString)" \
             "$(plist_value "$app/Info.plist" CFBundleShortVersionString)"
@@ -1124,8 +1135,8 @@ jobs:
           app="$derived/Build/Products/Release-iphoneos/JibunKit_App.app"
           widget="$app/PlugIns/JibunKitWidget_Extension.appex"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")" = com.jibunkit.app
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.8.1
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 11
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Info.plist")" = 0.8.2
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Info.plist")" = 12
           entitlements_root="$RUNNER_TEMP/template-check/Derived"
           app_entitlements="$(find "$entitlements_root" -type f -name 'JibunKit-App.entitlements')"
           widget_entitlements="$(find "$entitlements_root" -type f -name 'JibunKitWidget-Extension.entitlements')"
@@ -1147,7 +1158,7 @@ jobs:
           unzip -t "$ipa"
           shasum --algorithm 256 "$ipa"
           if [[ "$CANDIDATE_KIND" == P1 ]]; then
-            python3 Tools/verify-p1-device-ipa.py "$ipa" --version 0.8.1 --build 11 \
+            python3 Tools/verify-p1-device-ipa.py "$ipa" --version 0.8.2 --build 12 \
               --output artifacts/P1-device-inventory.json
           fi
 

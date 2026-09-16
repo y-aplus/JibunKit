@@ -4,7 +4,10 @@
 
 ## [Unreleased]
 
-P2-L（Live Activities/AlarmKit）のowner別調停・再起動照合・管理/復元接続を追加。独立/統合CIは成功し、一括実機確認待ち。0.8.2未公開。
+0.8.2/build12の公開候補。版更新後のbuild/IPA検査と公開は未完。
+
+- Live Activities/AlarmKitの型付きadapter、owner別journal/受付調停、再起動照合、通常管理/復元接続を追加。独立/統合CI、OS操作・標準停止callback・片側管理/復元・通常IPA復帰の実機結果を記録。診断Featureは通常IPAに含めない。
+- Live Bが上書き前に期待230ではなく200と表示された観測は原因未特定。210へ更新後の再起動とAlarm Aの削除/無効化/復元では再現しなかった。保存保証の全面合格や修正済みとは扱わず、P2-5はpartialを維持する。
 
 ## [0.8.1] - 2026-09-16
 

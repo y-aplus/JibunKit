@@ -49,7 +49,7 @@ def require_test_passes(log, source):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=["live", "alarm", "host"], required=True)
+    parser.add_argument("--mode", choices=["live", "alarm", "host", "state"], required=True)
     parser.add_argument("--simulator-id", required=True)
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
@@ -158,7 +158,15 @@ def main():
                     shutil.copyfile(repo / name, destination)
                 run(["python3", root / "Tools/prepare-continuing-surfaces-host.py", "--host", root], root, "prepare")
                 run(["tuist", "generate", "--no-open"], root, "generate")
+                if args.mode == "state":
+                    test(root, "JibunKit.xcworkspace", "ContinuingStateNativeTests", derived,
+                         "ContinuingStateNativeTests", root / "Tests/ContinuingSurfaces/ContinuingStateNativeTests.swift", "state-tests")
+                    (evidence / "result.json").write_text(json.dumps({"mode": args.mode, "source": source,
+                        "passed": True, "physical_os_actions": "not exercised; reuse source-specific device evidence"}, indent=2) + "\n")
+                    return
                 build(root, "JibunKit.xcworkspace", "JibunKit-App", derived)
+                test(root, "JibunKit.xcworkspace", "ContinuingStateNativeTests", derived,
+                     "ContinuingStateNativeTests", root / "Tests/ContinuingSurfaces/ContinuingStateNativeTests.swift", "state-tests")
                 test(root, "JibunKit.xcworkspace", "MigrationUITests", derived,
                      "MigrationUITests/ContinuingHostUITests", root / "UITests/ContinuingHostUITests.swift", "host-tests")
                 app = derived / "Build/Products/Release-iphoneos/JibunKit_App.app"

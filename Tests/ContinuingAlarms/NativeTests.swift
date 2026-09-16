@@ -29,8 +29,10 @@ final class ContinuingAlarmNativeTests: XCTestCase {
         let journal = try MiniAppContinuingJournal.shared(owner: FeatureAAlarmModel.owner, namespace: "alarmkit")
         try journal.update { $0 = [.init(identity: identity, systemID: systemID.uuidString, phase: .active)] }
         defer { try? journal.update { $0 = [] } }
-        let before = try JSONEncoder().encode(service.store.read().value)
-        let bBefore = try JSONEncoder().encode(serviceB.store.read().value)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let before = try encoder.encode(service.store.read().value)
+        let bBefore = try encoder.encode(serviceB.store.read().value)
 
         let inputs = [
             try MiniAppContinuingIdentity(owner: FeatureBAlarmModel.owner, localID: identity.localID,
@@ -45,12 +47,12 @@ final class ContinuingAlarmNativeTests: XCTestCase {
         for input in inputs {
             do { try await service.handleSystemStop(identity: input, systemID: systemID); XCTFail("stale callback accepted") }
             catch {}
-            XCTAssertEqual(try JSONEncoder().encode(service.store.read().value), before)
-            XCTAssertEqual(try JSONEncoder().encode(serviceB.store.read().value), bBefore)
+            XCTAssertEqual(try encoder.encode(service.store.read().value), before)
+            XCTAssertEqual(try encoder.encode(serviceB.store.read().value), bBefore)
         }
         do { try await service.handleSystemStop(identity: identity, systemID: UUID()); XCTFail("wrong system ID accepted") }
         catch {}
-        XCTAssertEqual(try JSONEncoder().encode(service.store.read().value), before)
-        XCTAssertEqual(try JSONEncoder().encode(serviceB.store.read().value), bBefore)
+        XCTAssertEqual(try encoder.encode(service.store.read().value), before)
+        XCTAssertEqual(try encoder.encode(serviceB.store.read().value), bBefore)
     }
 }

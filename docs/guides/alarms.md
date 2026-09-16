@@ -65,3 +65,15 @@ Xcode 26 / iOS 26ではStandalone A、Standalone B、Combined、通常host、Wid
 - [AlarmPresentationState.Mode](https://developer.apple.com/documentation/alarmkit/alarmpresentationstate/mode-swift.enum)
 - [WWDC25: Wake up to the AlarmKit API](https://developer.apple.com/videos/play/wwdc2025/230/)
 - [NSAlarmKitUsageDescription](https://developer.apple.com/documentation/bundleresources/information-property-list/nsalarmkitusagedescription)
+
+
+### SDK configuration and concurrency
+
+The native adapter accepts `MiniAppAlarmKitConfiguration<Metadata>`, a Sendable
+factory that creates the full typed `AlarmManager.AlarmConfiguration` at the
+request site. Capture immutable Sendable Feature inputs and construct the native
+configuration inside this closure; do not claim the SDK configuration itself is
+Sendable or erase its metadata. This preserves all native options.
+
+Primary declaration checks: [AlarmConfiguration](https://developer.apple.com/documentation/alarmkit/alarmmanager/alarmconfiguration),
+[AppIntent](https://developer.apple.com/documentation/appintents/appintent).

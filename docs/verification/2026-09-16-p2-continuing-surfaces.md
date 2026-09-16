@@ -8,7 +8,7 @@
 
 [固定した契約](../delivery/P2-continuing-surfaces-contract.md)を正本とする。設計提出の提案は、この文書と契約の採否決定が優先する。設計baselineはbcfde0d、実装baselineはe46209cc5a4563b09026421dce0d1b035ddef19b。
 
-CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出。Live修正be4451a・Alarm修正1160c2eを受領・統合済み。Live残件は親で補修し、Alarmの通知順序/購読寿命/異owner保存先拒否は同じCLI担当の2往復目で修正中（理由は末尾）。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
+CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装を受領した。親の一括レビューで検証前の業務変更、再起動時の永続状態、未完成の通常Definition接続等を指摘し、79ce9deの共通baselineから一括修正中。初回設計各1提出、実装各1提出。Live修正be4451a・Alarm修正1160c2eを受領・統合済み。Live残件は親で補修し、Alarmの通知順序/購読寿命/異owner保存先拒否は同じCLI担当の2往復目bc6b99dで修正済み（理由は末尾）。[レビュー全文](../delivery/P2-continuing-surfaces-review.md)を参照。親は共通保存/直列化・通常管理/復元・host接続と統合検証を担当する。workerごとのCIは起動していない。
 
 ## 親の実装
 
@@ -26,7 +26,7 @@ CLI sol/lowの二レーンから、Live d731cc6 / Alarm cb00b00の初回実装�
 | 既存操作Widget診断host生成 | 3件成功。hostがeffectiveExternalAccessを利用する変更へ既存assertionを更新 |
 | `check-delivery.py` plan検査 | 25単位/12境界で成功。P2-Lの証拠合格や出荷合格ではない |
 | 共通Swift試験 | `MiniAppContinuingSurfaceTests` 10件を追加。WindowsにSwift/Xcodeがなく未実行 |
-| Native adapter / A/B fixture | 両review1を統合。Live親補修済み、Alarm残件修正中。現状を合格扱いしない |
+| Native adapter / A/B fixture | 両review1を統合。Live親補修・Alarm review2統合済み。Swift/native検証結果はまだない |
 | P2-L準備・証拠チェック | 追加Python5件成功。4モジュール組込み、欠落/再実行時の部分変更防止、support依存維持、metadata所有者混入、XCTest未実行/skip/重複/失敗の拒否。既存Simulator選択3件も再成功 |
 | CI / 実機 | 本境界では未投入・未実施 |
 
@@ -58,7 +58,7 @@ Alarm review1は888164eとして統合した。初回のtyped package/永続業�
 
 親のツールは実fixtureに合わせ、AlarmのschemeをStandaloneA/StandaloneB/Combined、host status IDをalarm-feature-a.status / alarm-feature-b.statusへ修正した。実tracked copyのhost注入で、4Featureとsupport依存、既存通常Feature/extensionを保持する構成を確認。Python全82件が成功した。生成ソースの構造確認だけでXcode build成功とはしない。
 
-次の残件はAlarm修正版の該当差分確認、fixture packageの相対パス依存名とmanifestの最終照合、対象sourceを固定したpreflight report、上記2runの投入。worker完了は既存OS通知で受信し、モデルpollを行わない。
+この時点の残件だったAlarm修正版は下記で統合した。次は対象sourceを固定したpreflight reportと上記2runの投入。CI完了は既存OS通知で受信し、モデルpollを行わない。
 
 ## 実機手順の準備範囲（依頼前の草案）
 
@@ -68,3 +68,15 @@ CI後に実際の候補IPAと表示文言へ合わせ、モバイルで一項目
 - Alarm A/Bの許可・固定予定/タイマー・pause/resume/標準stop配送、app終了後の既存登録回復。OSが許可しない場合はエラー/署名条件と実装不備を分ける。
 - 動作中の片側無効化/再有効化、削除/再登録、業務backupの片側復元をまとめて確認。OS活動の解除、暗黙再開始なし、他方の業務値/OS活動保持を観測する。
 - 通常IPAへの上書きでCounter/Reminder/既存保存値を保持。診断OS面の残存は有無と操作結果を記録し、残存を成功と決めつけない。
+
+## CI用実装の固定前確認
+
+Alarm bc6b99dを67ce68eとして統合し、繰り返し照合後の標準stop配送、明示再登録後の旧callback拒否、兄弟なしending拒否、異owner store不変、observer再生成制御、unknown拒否の対応差分を確認した。親で以下を追加修正した。
+
+- AppleのAlarmConfiguration宣言にはSendable保証がないため、typed native configurationを呼出し側から転送せず、Sendableなfactory `MiniAppAlarmKitConfiguration<Metadata>`をnative request内で評価する。属性/metadata/標準設定は保持する。型宣言の再確認先はAlarmKitガイドに記録。
+- Alarm support packageの参照名を明示し、checkoutの末尾名に依存しないJibunKit package名を両fixtureへ設定。
+- unknown状態のpending retryをactive成功にしない。observer試験の10回yield依存をXCTestの通知待ちへ変更。native比較用JSONはsortedKeysで固定し、辞書順序による偽失敗を避ける。
+
+投入するSwift試験は共通10件、Live10件、Alarm18件（正確な実行数・skipはCI出力で照合）。独立nativeはLive4件/Alarm2件、通常診断host UI1件。操作Widget/Control等の以前のOS実操作は本CIで再証明せず、0.8.1証拠と変更経路を照合して再利用する。通常Counter/ReminderのcontinuingSurfacesは空であり、既存のexternalAccess/restoreLifecycleへ空のgroupを合成してもOS操作は加わらない。共通swift全体と通常IPAは再実行する。
+
+CIの入力・時間予算は上記2run構成で確定。独立/Combined両familyのschemeはStandaloneA/StandaloneB/Combined、native test filterはContinuingLiveActivityNativeTests / ContinuingAlarmNativeTests、通常hostはMigrationUITests/ContinuingHostUITests。preflightの完全SHA/再利用理由はローカルreportへ固定し、結果受領後に公開の証拠記録へ移す。Swift/Xcode実行前のため0.8.2完了・実機準備完了とはしない。

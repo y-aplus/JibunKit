@@ -94,8 +94,10 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
             return existing
         }
         let identity = try await coordinator.schedule(localID: F.localID, generation: snapshot.generation) { identity, id in
-            ContinuingAlarmConfiguration.make(feature: F.self, identity: identity, schedule: schedule,
-                                               stopIntent: stopIntent(identity, id))
+            MiniAppAlarmKitConfiguration {
+                ContinuingAlarmConfiguration.make(feature: F.self, identity: identity, schedule: schedule,
+                                                   stopIntent: stopIntent(identity, id))
+            }
         }
         let result = try await requiredCurrent(identity)
         setStatus("登録済み \(result.systemID.uuidString.prefix(8))")
@@ -106,8 +108,10 @@ public final class ContinuingAlarmFeatureService<F: ContinuingAlarmFixtureFeatur
                              stopIntent: @escaping @Sendable (MiniAppContinuingIdentity, UUID) -> any LiveActivityIntent)
         async throws {
         try await coordinator.retryPending(identity) { identity, id in
-            ContinuingAlarmConfiguration.make(feature: F.self, identity: identity, schedule: schedule,
-                                               stopIntent: stopIntent(identity, id))
+            MiniAppAlarmKitConfiguration {
+                ContinuingAlarmConfiguration.make(feature: F.self, identity: identity, schedule: schedule,
+                                                   stopIntent: stopIntent(identity, id))
+            }
         }
         setStatus("pendingを再試行")
     }

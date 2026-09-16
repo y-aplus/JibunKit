@@ -156,7 +156,8 @@ public final class MiniAppAlarmCoordinator<Native: MiniAppAlarmNative>: Sendable
             try await admission(identity.localID, identity.generation)
             let record = try exactRecord(identity, phase: .starting)
             let id = try systemID(record)
-            if try await native.snapshots().contains(where: { $0.id == id }) {
+            if let existing = try await native.snapshots().first(where: { $0.id == id }) {
+                guard existing.state != .unknown else { throw MiniAppAlarmError.staleRegistration }
                 try update(identity: identity, systemID: id, phase: .active)
                 return
             }

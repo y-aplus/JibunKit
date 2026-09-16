@@ -4,8 +4,8 @@ import PackageDescription
 let package = Package(name: "ContinuingAlarmFeatureA", platforms: [.iOS("26.0")],
     products: [.library(name: "ContinuingAlarmFeatureA", targets: ["ContinuingAlarmFeatureA"])],
     dependencies: [
-        .package(path: "../Support"),
-        .package(path: "__JIBUNKIT_PATH__"),
+        .package(name: "ContinuingAlarmSupport", path: "../Support"),
+        .package(name: "JibunKit", path: "__JIBUNKIT_PATH__"),
     ],
     targets: [.target(name: "ContinuingAlarmFeatureA", dependencies: [
         .product(name: "ContinuingAlarmSupport", package: "ContinuingAlarmSupport"),

@@ -1,16 +1,26 @@
-#if canImport(AlarmKit) && canImport(AppIntents)
+#if os(iOS) && canImport(AlarmKit) && canImport(AppIntents)
 import AlarmKit
 import AppIntents
 import Foundation
 
+/// Build the SDK configuration at the native request site. AlarmConfiguration
+/// itself does not promise Sendable; immutable Feature inputs/factory do.
+@available(iOS 26.0, *)
+public struct MiniAppAlarmKitConfiguration<Metadata: AlarmMetadata>: Sendable {
+    fileprivate let make: @Sendable () throws -> AlarmManager.AlarmConfiguration<Metadata>
+    public init(_ make: @escaping @Sendable () throws -> AlarmManager.AlarmConfiguration<Metadata>) {
+        self.make = make
+    }
+}
+
 @available(iOS 26.0, *)
 public struct MiniAppAlarmKitNative<Metadata: AlarmMetadata>: MiniAppAlarmNative {
-    public typealias Configuration = AlarmManager.AlarmConfiguration<Metadata>
+    public typealias Configuration = MiniAppAlarmKitConfiguration<Metadata>
 
     public init() {}
 
     public func schedule(id: UUID, configuration: Configuration) async throws {
-        _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+        _ = try await AlarmManager.shared.schedule(id: id, configuration: try configuration.make())
     }
 
     public func perform(_ action: MiniAppAlarmAction, id: UUID) async throws {

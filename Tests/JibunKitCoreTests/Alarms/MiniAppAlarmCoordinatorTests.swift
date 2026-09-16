@@ -296,7 +296,12 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
     }
 
     func testReconcileIsPassiveAndObserveCreatesOneProducerUntilReopened() async throws {
-        let native = CountingUpdateNative()
+        let firstStarted = expectation(description: "first native producer")
+        let secondStarted = expectation(description: "reopened native producer")
+        let native = CountingUpdateNative { count in
+            if count == 1 { firstStarted.fulfill() }
+            if count == 2 { secondStarted.fulfill() }
+        }
         let store = MemoryAlarmStore()
         let service = MiniAppAlarmCoordinator(owner: MiniAppID("alarm-a"), native: native, store: store,
             confirmationAttempts: 1, confirmationDelayNanoseconds: 0) { _, _ in }
@@ -306,11 +311,11 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         XCTAssertEqual(native.starts, 0)
         try await service.observe()
         try await service.observe()
-        for _ in 0..<10 where native.starts == 0 { await Task.yield() }
+        await fulfillment(of: [firstStarted], timeout: 5)
         XCTAssertEqual(native.starts, 1)
         await service.close()
         try await service.open()
-        for _ in 0..<10 where native.starts == 1 { await Task.yield() }
+        await fulfillment(of: [secondStarted], timeout: 5)
         XCTAssertEqual(native.starts, 2)
         await service.close()
     }
@@ -341,6 +346,8 @@ final class MiniAppAlarmCoordinatorTests: XCTestCase {
         await native.seed(id: pendingID, state: .unknown)
         let result = try await service.reconcile()
         XCTAssertFalse(result.recoveredStarting.contains(pending))
+        await XCTAssertThrowsErrorAsync(try await service.retryPending(pending) { _, _ in "must-not-start" })
+
         XCTAssertEqual(try store.read().first?.phase, .starting)
     }
 
@@ -399,6 +406,8 @@ private final class CountingUpdateNative: MiniAppAlarmNative, @unchecked Sendabl
     private let lock = NSLock()
     private var startCount = 0
     private var continuations: [UUID: AsyncStream<Void>.Continuation] = [:]
+    private let onStart: @Sendable (Int) -> Void
+    init(onStart: @escaping @Sendable (Int) -> Void) { self.onStart = onStart }
     var starts: Int { lock.withLock { startCount } }
 
     func schedule(id: UUID, configuration: String) async throws {}
@@ -407,10 +416,12 @@ private final class CountingUpdateNative: MiniAppAlarmNative, @unchecked Sendabl
     func updates() -> AsyncStream<Void> {
         AsyncStream { continuation in
             let id = UUID()
-            lock.withLock {
+            let count = lock.withLock {
                 startCount += 1
                 continuations[id] = continuation
+                return startCount
             }
+            onStart(count)
             continuation.onTermination = { [weak self] _ in
                 guard let self else { return }
                 self.lock.withLock { self.continuations[id] = nil }

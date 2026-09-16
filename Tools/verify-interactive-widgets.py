@@ -144,7 +144,7 @@ def main():
             compare([widget / "Metadata.appintents/extract.actionsdata"], app / "Metadata.appintents/extract.actionsdata", "widget-host")
             info = plistlib.loads((app / "Info.plist").read_bytes())
             assert info["CFBundleIdentifier"] == "com.jibunkit.app"
-            assert info["CFBundleShortVersionString"] == "0.8.0" and info["CFBundleVersion"] == "10"
+            assert info["CFBundleShortVersionString"] == "0.8.1" and info["CFBundleVersion"] == "11"
             assert {p.name for p in (app / "PlugIns").glob("*.appex")} == {"JibunKitWidget_Extension.appex", "JibunKitShare_Extension.appex"}
             entitlements = root / "Derived"
             def entitlement(name):

@@ -1,12 +1,12 @@
-# P2-C 音声・撮影の実機確認（文書scanで中断）
+# P2-C 音声・撮影の実機確認（文書scan修正版の再確認待ち）
 
-source `306874f232849fa81de20985f3e2f90bf2da5a09`、0.8.2/build12。CI35090872646で通常版と診断26件・診断IPAが成功。実機確認後に版を進める。
+現在の候補はsource `a14210815b4c312ab28ade2fddcfc7eec11360fb`、0.8.2/build12。CI35102558612で通常通知UI、通常版と診断28件・診断IPAが成功。実機確認後に版を進める。
 
-[診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-c-device-check-20260916/JibunKit-P2-C-306874f.ipa) ／ [診断ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-c-device-check-20260916/JibunKit-P2-C-306874f.zip)
+[診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-c-scene-check-20260916/JibunKit-P2-C-a142108.ipa) ／ [診断ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-c-scene-check-20260916/JibunKit-P2-C-a142108.zip)
 
-[戻す通常IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-c-device-check-20260916/JibunKit-normal-306874f.ipa) ／ [通常ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-c-device-check-20260916/JibunKit-normal-306874f.zip)
+[戻す通常IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-c-scene-check-20260916/JibunKit-normal-a142108.ipa) ／ [通常ZIP](https://github.com/y-aplus/JibunKit/releases/download/p2-c-scene-check-20260916/JibunKit-normal-a142108.zip)
 
-アプリを削除せず上書きする。各ZIPの中身は同名IPA一つ。管理・復元の組合せ、再インストール、Refreshの反復は求めない。1〜4は会話でも一まとまりずつ案内し、個々の返答ごとにはpushしない。異常時は該当画面の文言と操作だけを記録する。以下の結果を一括記録した。文書scanは失敗しており、現在のIPAでの再試行は不要。
+アプリを削除せず上書きする。各ZIPの中身は同名IPA一つ。管理・復元の組合せ、再インストール、Refreshの反復は求めない。1〜4は会話でも一まとまりずつ案内し、個々の返答ごとにはpushしない。異常時は該当画面の文言と操作だけを記録する。306874fの結果は末尾へ一括記録した。1〜3の成功項目は繰り返さず、修正版を上書きして4の文書保存と再表示/取消から再開する。旧IPAでの再試行は不要。
 
 ## 1. 再生・背景・OS操作
 
@@ -48,7 +48,7 @@ source `306874f232849fa81de20985f3e2f90bf2da5a09`、0.8.2/build12。CI3509087264
 
 ## 自動試験との境界
 
-共有359件（既存Keychain2skip）とnative26件（skipなし）が成功。互換/非互換音声要求、失敗・取消・遅着・世代・片側停止と他owner保持、実Feature lifetime、共有capture/audio接続、SDK raw値、UIKit提示の所有を自動確認済み。文書SDK非対応時は実controllerを作らず拒否する。提示所有の試験では通常UIViewControllerを注入しており、実VisionKit画面や実scan成功の証拠ではない。
+修正版では共有359件（既存Keychain2skip）とnative28件（skipなし）、通常通知UIが成功。互換/非互換音声要求、失敗・取消・遅着・世代・片側停止と他owner保持、実Feature lifetime、共有capture/audio接続、SDK raw値、UIKit提示の所有を自動確認済み。文書SDK非対応時は実controllerを作らず拒否する。提示所有の試験では通常UIViewControllerを注入しており、実VisionKit画面や実scan成功の証拠ではない。
 
 実機の結果は上の各項目へまとめて追記する。未実施や観測できなかった項目を成功にしない。過去のLive B単発差分は今回の結果で解決扱いしない。
 
@@ -62,3 +62,7 @@ source `306874f232849fa81de20985f3e2f90bf2da5a09`、0.8.2/build12。CI3509087264
 - 未確認: 文書成功/取消、QR、イヤホン経路変更、通常IPAへの復帰。音声付き動画と別playerの同時共存は今回会話で案内しておらず、独立した実機成功として追加しない。
 
 再確認は修正IPAの文書/QRと残項目に絞る。成功済みの録音・動画や管理/復元の全組合せを繰り返さない。版は0.8.2/build12のままで、0.8.3出荷完了ではない。
+
+## a142108で今回確認する範囲
+
+診断IPAを上書きして「Scan Probe」→「文書scanner」で1枚保存し、画像と件数を確認する。もう一度開いてキャンセルで閉じる。まずはここまでを会話で案内する。文書scan成功後にQR、可能なら経路変更、通常版復帰を残項目として案内する。上記306874fでの不明な写真初回エラーを文書修正で解決済みとは扱わない。

@@ -2,7 +2,7 @@
 
 更新日: 2026-09-16。公開安定版は[0.8.2/build12](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)（直前0.8.1）。P0/P1・P2-Wに加え、Live Activities/AlarmKitの接続と対象別実機、自動状態保持試験を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.2出荷記録](verification/2026-09-16-0.8.2-release.md)。Live Bの単発の値差分は原因未特定・限定再確認で再現なしとして残す。以下の旧版節はsourceを明記した既存証拠。
 
-現在は`codex/p2-media-integration`でP2-C（音声・撮影/scan）の診断prereleaseを配布し、実機確認で見つかった文書scan失敗を修正中。source306874fの[CI35090872646](https://github.com/y-aplus/JibunKit/actions/runs/35090872646)で共有359件（既存skip2）、native26件（skipなし）、通常/診断IPAが成功。[作業記録](verification/2026-09-16-p2-media.md)と[実機手順](verification/2026-09-16-p2-media-device.md)。実装は未公開branch上であり、P2-1/P2-2はpartial。再生/録音・写真/音声動画は実機確認済みだが、文書scanは`no active selected scene`/`stopped`で失敗。hostの全画面提示とscene切断の区別を修正し、追加native回帰とIPA検証を準備している。QR/経路変更/通常版復帰も未確認。管理・復元の組合せを繰り返さず、新しいOS動作の代表例を確認する。
+現在は`codex/p2-media-integration`でP2-C（音声・撮影/scan）を検証中。306874f実機で再生/録音・写真/音声動画を確認し、文書scanの`no active selected scene`/`stopped`を発見。全画面表示とscene切断を区別した修正版a142108は[CI35102558612](https://github.com/y-aplus/JibunKit/actions/runs/35102558612)で共有359件（既存skip2）、native28件（skipなし）、通常通知UI、通常/診断IPAが成功。[修正版prerelease](https://github.com/y-aplus/JibunKit/releases/tag/p2-c-scene-check-20260916)の全asset公開取得を検証済み。[実機手順](verification/2026-09-16-p2-media-device.md)の文書成功/取消・QR/経路変更/通常版復帰が残る。P2-1/P2-2はpartial、正式0.8.3・main統合は未実施。確認済み項目を全件再試験しない。
 
 ## 0.8.0公開版
 

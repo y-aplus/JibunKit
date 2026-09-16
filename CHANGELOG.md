@@ -5,7 +5,7 @@
 ## [Unreleased]
 
 - 開発branchでAudioSessionのowner別調停・明示競合切替・停止/復旧待ち、Now Playing操作配送、camera予約とcapture/VisionKitの寿命接続を追加。実Featureと共有音声付き撮影fixture、接続guideを整備。CI35090872646で通常/診断IPAとnative26件が成功。実機で再生/録音・写真/音声動画を確認し、文書scan開始失敗を調査・修正中。安定版0.8.2の出荷済み機能にはまだ含めない。
-- 全画面提示で背後のhostが隠れる際、sceneを切断してcamera操作を停止する経路を修正。実UIKit全画面表示・再表示とscene切断/再接続の自動回帰を追加。修正後CI・実機は未確認。
+- 全画面提示で背後のhostが隠れる際、sceneを切断してcamera操作を停止する経路を修正。実UIKit全画面表示・再表示とscene切断/再接続の自動回帰を追加。CI35102558612で追加を含むnative28件と通常通知UI/IPAが成功。文書scanの実機再確認待ち。
 
 ## [0.8.2] - 2026-09-16
 

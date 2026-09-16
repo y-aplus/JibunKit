@@ -48,4 +48,4 @@ P0-Bでは[Feature所有の提示](guides/feature-owned-presentations.md)を追�
 
 ### P2-Cで見つかった全画面提示時の切断
 
-306874fの文書scan実機で`unavailable("no active selected scene")`と`stopped`を観測した。旧hostは`onDisappear`からsceneを切断していた。Appleの[全画面提示の説明](https://developer.apple.com/library/archive/featuredarticles/ViewControllerPGforiPhoneOS/PresentingaViewController.html)では、fullScreen提示は背後のviewを一時的に階層から外す。これは[UISceneの切断](https://developer.apple.com/documentation/uikit/uiscenedelegate/scenediddisconnect(_:))とは別である。開発branchはこの境界を分離し、実UIKit全画面提示と再提示、同一sceneの切断/再接続と他scene通知の無視をnative回帰へ追加した。実機事象の解消はCIおよび修正IPAでの確認待ち。
+306874fの文書scan実機で`unavailable("no active selected scene")`と`stopped`を観測した。旧hostは`onDisappear`からsceneを切断していた。Appleの[全画面提示の説明](https://developer.apple.com/library/archive/featuredarticles/ViewControllerPGforiPhoneOS/PresentingaViewController.html)では、fullScreen提示は背後のviewを一時的に階層から外す。これは[UISceneの切断](https://developer.apple.com/documentation/uikit/uiscenedelegate/scenediddisconnect(_:))とは別である。開発branchはこの境界を分離し、実UIKit全画面提示と再提示、同一sceneの切断/再接続と他scene通知の無視をnative回帰へ追加した。CI35102558612で実UIKit全画面表示/再表示・切断/再接続の追加2試験と通常通知UIが成功。修正IPAでの実文書scanの再確認は未完。

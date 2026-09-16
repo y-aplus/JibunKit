@@ -48,6 +48,18 @@ public actor MiniAppAVCaptureSessionProducer {
         // acquireAudio hook. Never create a private AVAudioSession to bypass it.
         session.usesApplicationAudioSession = true
         session.automaticallyConfiguresApplicationAudioSession = !includesAudio
+        try configure(session)
+        self.session = session
+        session.startRunning()
+        guard session.isRunning else {
+            self.session = nil
+            photoOutput = nil
+            movieOutput = nil
+            throw MiniAppCaptureFailure.native("capture session did not start")
+        }
+    }
+
+    private func configure(_ session: AVCaptureSession) throws {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
         guard let camera = AVCaptureDevice.default(for: .video) else {
@@ -84,8 +96,6 @@ public actor MiniAppAVCaptureSessionProducer {
             session.addOutput(output)
             movieOutput = output
         }
-        self.session = session
-        session.startRunning()
     }
 
     public func stop() async {

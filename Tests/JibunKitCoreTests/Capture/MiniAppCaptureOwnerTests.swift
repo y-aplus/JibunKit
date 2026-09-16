@@ -130,10 +130,14 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         }
         let starting = Task { @MainActor in try await owner.start(operation) }
         await gate.waitUntilEntered()
-        await owner.stop()
+        let stopping = Task { @MainActor in await owner.stop(); events.append("stop-returned") }
+        await eventually { owner.state == .stopping(.user) }
+        XCTAssertEqual(coordinator.currentCameraOwner, MiniAppID("slow"))
+        XCTAssertFalse(events.values.contains("stop-returned"))
         gate.open()
+        await stopping.value
         await XCTAssertThrowsErrorAsync(try await starting.value) { _ in }
-        XCTAssertEqual(events.values, ["start-returned", "late-native-stop"])
+        XCTAssertEqual(events.values, ["start-returned", "late-native-stop", "stop-returned"])
         XCTAssertNotEqual(owner.state, .running([.camera]))
         XCTAssertNil(coordinator.currentCameraOwner)
     }
@@ -181,6 +185,43 @@ final class MiniAppCaptureOwnerTests: XCTestCase {
         let restarted = CaptureEvents()
         try await owner.handleInterruptionEnded { restarted.append("restart") }
         XCTAssertTrue(restarted.values.isEmpty)
+    }
+
+    func testConsentDenialPrecedesOSPermissionAndNativeAcquisition() async throws {
+        let permissions = CapturePermissions()
+        let coordinator = MiniAppCaptureCoordinator()
+        let owner = MiniAppCaptureOwner(id: MiniAppID("denied"), coordinator: coordinator,
+                                        permissions: permissions, consent: { _ in false })
+        let runtime = MiniAppRuntime()
+        try owner.connect(to: runtime)
+        owner.receive(active("denied"))
+        await XCTAssertThrowsErrorAsync(try await owner.start(operation(events: .init(), label: "denied"))) {
+            XCTAssertEqual($0 as? MiniAppCaptureFailure, .featureConsentDenied(.camera))
+        }
+        XCTAssertTrue(permissions.requestedResources.isEmpty)
+        XCTAssertNil(coordinator.currentCameraOwner)
+    }
+
+    func testShutdownJoiningSuspensionEndsRuntimeAndAllowsReconnect() async throws {
+        let owner = MiniAppCaptureOwner(id: MiniAppID("restart"), coordinator: .init(), permissions: CapturePermissions())
+        let runtime = MiniAppRuntime()
+        try owner.connect(to: runtime)
+        owner.receive(active("restart"))
+        let gate = NativeStartGate()
+        try await owner.start(.init(resources: [.camera]) { { _ in await gate.wait() } })
+        let suspension = Task { @MainActor in await owner.suspend(.background) }
+        await gate.waitUntilEntered()
+        let shutdown = Task { @MainActor in await runtime.shutdown() }
+        await eventually { runtime.isClosed }
+        gate.open()
+        await suspension.value
+        await shutdown.value
+        XCTAssertEqual(owner.state, .stopped)
+        let next = MiniAppRuntime()
+        try owner.connect(to: next)
+        try await owner.start(operation(events: .init(), label: "restart"))
+        XCTAssertEqual(owner.state, .running([.camera]))
+        await next.shutdown()
     }
 }
 

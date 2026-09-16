@@ -3,28 +3,38 @@ import Foundation
 @MainActor
 public final class MiniAppCaptureOwner {
     public nonisolated let id: MiniAppID
-    public private(set) var state: MiniAppCaptureState = .idle
-
+    public private(set) var state: MiniAppCaptureState = .idle {
+        didSet { stateChanged?(state) }
+    }
+    public var stateChanged: (@MainActor @Sendable (MiniAppCaptureState) -> Void)?
+    private struct Started: Sendable {
+        let stop: MiniAppCaptureOperation.Stop
+        let releaseAudio: (@MainActor @Sendable () async -> Void)?
+    }
+    @MainActor private final class Operation {
+        let generation = UUID()
+        var closed = false
+        var startup: Task<Started, Error>?
+    }
     private let coordinator: MiniAppCaptureCoordinator
     private let permissions: any MiniAppCapturePermissionClient
+    private let consent: @MainActor @Sendable (MiniAppCaptureResource) -> Bool
     private weak var runtime: MiniAppRuntime?
     private var runtimeGeneration: UUID?
-    private var operationGeneration: UUID?
+    private var operation: Operation?
     private var scenes: [UUID: MiniAppSceneActivity] = [:]
-    private var stopNative: MiniAppCaptureOperation.Stop?
-    private var releaseAudio: (@MainActor @Sendable () async -> Void)?
     private var stopTask: Task<Void, Never>?
+    private var endingRuntime = false
     private var explicitEnd = false
 
-    public init(
-        id: MiniAppID,
-        coordinator: MiniAppCaptureCoordinator = .shared,
-        permissions: any MiniAppCapturePermissionClient
-    ) {
+    public init(id: MiniAppID, coordinator: MiniAppCaptureCoordinator = .shared,
+                permissions: any MiniAppCapturePermissionClient,
+                consent: @escaping @MainActor @Sendable (MiniAppCaptureResource) -> Bool = { _ in true }) {
         precondition(id.isValid)
         self.id = id
         self.coordinator = coordinator
         self.permissions = permissions
+        self.consent = consent
     }
 
     public func connect(to runtime: MiniAppRuntime) throws {
@@ -33,93 +43,83 @@ public final class MiniAppCaptureOwner {
         let generation = UUID()
         self.runtime = runtime
         runtimeGeneration = generation
-        state = .idle
+        endingRuntime = false
         explicitEnd = false
+        state = .idle
         try runtime.onShutdownAsync { [weak self] in
-            await self?.stop(reason: .featureStopped, final: true, runtimeGeneration: generation)
+            guard let self, self.runtimeGeneration == generation else { return }
+            await self.stop(reason: .featureStopped, final: true)
         }
     }
 
-    /// Feed every scene callback to this owner. Capture remains eligible while
-    /// at least one connected scene is active and selected.
     public func receive(_ activity: MiniAppSceneActivity) {
         guard activity.featureID == id else { return }
         if activity.isConnected { scenes[activity.sceneID] = activity }
         else { scenes[activity.sceneID] = nil }
-        guard isVisible else {
-            let reason: MiniAppCaptureStopReason
-            if activity.phase == nil { reason = .disconnected }
-            else if activity.phase == .background { reason = .background }
-            else if !activity.isSelected { reason = .notSelected }
-            else { reason = .sceneInactive }
-            Task { @MainActor [weak self] in
-                guard let self, !self.isVisible else { return }
-                await self.suspend(reason)
-            }
-            return
+        guard !isVisible else { return }
+        let reason: MiniAppCaptureStopReason
+        if activity.phase == nil { reason = .disconnected }
+        else if activity.phase == .background { reason = .background }
+        else if !activity.isSelected { reason = .notSelected }
+        else { reason = .sceneInactive }
+        Task { @MainActor [weak self] in
+            guard let self, !self.isVisible else { return }
+            await self.suspend(reason)
         }
     }
 
-    public func start(
-        _ operation: MiniAppCaptureOperation,
-        switching: MiniAppCaptureSwitch = .reject
-    ) async throws {
+    public func start(_ request: MiniAppCaptureOperation,
+                      switching: MiniAppCaptureSwitch = .reject) async throws {
         while let stopTask { await stopTask.value }
         guard let runtimeGeneration, runtime?.isClosed == false else { throw MiniAppCaptureFailure.stopped }
-        guard operationGeneration == nil else { throw MiniAppCaptureFailure.unavailable("capture already active") }
+        guard operation == nil else { throw MiniAppCaptureFailure.unavailable("capture already active") }
         guard isVisible else { throw MiniAppCaptureFailure.unavailable("no active selected scene") }
+        let pending = Operation()
+        operation = pending
         explicitEnd = false
-        let generation = UUID()
-        operationGeneration = generation
-        state = .requesting(operation.resources)
-
+        state = .requesting(request.resources)
         do {
-            for resource in [MiniAppCaptureResource.camera, .microphone] where operation.resources.contains(resource) {
-                guard await permissions.request(resource) else {
-                    throw MiniAppCaptureFailure.osPermissionDenied(resource)
-                }
-                try check(generation: generation, runtimeGeneration: runtimeGeneration)
+            for resource in [MiniAppCaptureResource.camera, .microphone] where request.resources.contains(resource) {
+                guard consent(resource) else { throw MiniAppCaptureFailure.featureConsentDenied(resource) }
+                let allowed = await permissions.request(resource)
+                try check(pending, runtimeGeneration)
+                guard allowed else { throw MiniAppCaptureFailure.osPermissionDenied(resource) }
             }
-            if operation.resources.contains(.microphone), operation.acquireAudio == nil {
+            guard request.resources.contains(.microphone) == (request.acquireAudio != nil) else {
                 throw MiniAppCaptureFailure.missingAudioHook
             }
-            try await coordinator.reserveCamera(
-                owner: id, generation: generation, switching: switching,
-                stopProducer: { [weak self] reason in await self?.stop(reason: reason, final: false) }
-            )
-            try check(generation: generation, runtimeGeneration: runtimeGeneration)
-
-            if let acquireAudio = operation.acquireAudio {
-                guard operation.resources.contains(.microphone) else {
-                    throw MiniAppCaptureFailure.native("audio hook supplied to camera-only operation")
-                }
-                let acquiredAudio = try await acquireAudio()
-                do { try check(generation: generation, runtimeGeneration: runtimeGeneration) }
-                catch {
-                    await acquiredAudio()
+            try await coordinator.reserveCamera(owner: id, generation: pending.generation,
+                switching: switching, accepting: { [weak self] in
+                    !pending.closed && self?.runtime?.isClosed == false
+                }, stopProducer: { [weak self] reason in
+                    await self?.stop(reason: reason, final: false)
+                })
+            try check(pending, runtimeGeneration)
+            state = .starting
+            // Stop joins this phase before handing camera/audio to another owner.
+            let startup = Task { @MainActor in
+                let audio = try await request.acquireAudio?()
+                do {
+                    guard !pending.closed else { throw MiniAppCaptureFailure.stopped }
+                    let stop = try await request.startNative()
+                    return Started(stop: stop, releaseAudio: audio)
+                } catch {
+                    await audio?()
                     throw error
                 }
-                releaseAudio = acquiredAudio
             }
-            state = .starting
-            let startedNative = try await operation.startNative()
-            do { try check(generation: generation, runtimeGeneration: runtimeGeneration) }
-            catch {
-                await startedNative(.failure("start completed after cancellation"))
-                throw error
-            }
-            stopNative = startedNative
-            state = .running(operation.resources)
+            pending.startup = startup
+            _ = try await startup.value
+            try check(pending, runtimeGeneration)
+            state = .running(request.resources)
         } catch {
             let failure = error as? MiniAppCaptureFailure ?? .native(String(describing: error))
-            if operationGeneration == generation {
-                operationGeneration = nil
-                await releasePartial(generation: generation, reason: .failure(String(describing: error)))
-                if self.runtimeGeneration == runtimeGeneration { state = .failed(failure) }
+            if operation === pending {
+                await stop(reason: .failure(String(describing: error)), final: false)
+                if self.runtimeGeneration == runtimeGeneration,
+                   case .suspended(.failure(_)) = state { state = .failed(failure) }
             } else {
-                // A stop/new generation already released this operation. The
-                // generation check prevents this late callback touching it.
-                coordinator.releaseCamera(owner: id, generation: generation)
+                coordinator.releaseCamera(owner: id, generation: pending.generation)
             }
             throw failure
         }
@@ -134,69 +134,50 @@ public final class MiniAppCaptureOwner {
         await stop(reason: reason, final: false)
     }
 
-    public func handleInterruptionEnded(
-        restart: @MainActor @Sendable () async throws -> Void
-    ) async throws {
-        guard !explicitEnd, isVisible, case .suspended(.interrupted(_)) = state else { return }
+    public func handleInterruptionEnded(restart: @MainActor @Sendable () async throws -> Void) async throws {
+        guard !explicitEnd, isVisible, runtime?.isClosed == false,
+              case .suspended(.interrupted(_)) = state else { return }
         try await restart()
     }
 
-    private var isVisible: Bool {
-        scenes.values.contains { $0.phase == .active && $0.isSelected }
-    }
+    private var isVisible: Bool { scenes.values.contains { $0.phase == .active && $0.isSelected } }
 
-    private func check(generation: UUID, runtimeGeneration: UUID) throws {
-        guard self.runtimeGeneration == runtimeGeneration else { throw MiniAppCaptureFailure.staleGeneration }
-        guard operationGeneration == generation, runtime?.isClosed == false else { throw MiniAppCaptureFailure.stopped }
-        guard !Task.isCancelled else { throw CancellationError() }
-    }
-
-    private func stop(
-        reason: MiniAppCaptureStopReason,
-        final: Bool,
-        runtimeGeneration expectedRuntimeGeneration: UUID? = nil
-    ) async {
-        if let expectedRuntimeGeneration, runtimeGeneration != expectedRuntimeGeneration { return }
-        if let stopTask { await stopTask.value; return }
-        guard let generation = operationGeneration else {
-            if final {
-                runtime = nil
-                runtimeGeneration = nil
-                scenes.removeAll()
-                state = .stopped
-            }
-            return
+    private func check(_ pending: Operation, _ generation: UUID) throws {
+        guard runtimeGeneration == generation else { throw MiniAppCaptureFailure.staleGeneration }
+        guard operation === pending, !pending.closed, runtime?.isClosed == false else {
+            throw MiniAppCaptureFailure.stopped
         }
-        operationGeneration = nil // close admission before awaiting native work
+        guard isVisible else { throw MiniAppCaptureFailure.unavailable("no active selected scene") }
+        try Task.checkCancellation()
+    }
+
+    private func stop(reason: MiniAppCaptureStopReason, final: Bool) async {
+        if final { endingRuntime = true }
+        if let stopTask { await stopTask.value; finishRuntimeIfNeeded(); return }
+        guard let pending = operation else { finishRuntimeIfNeeded(); return }
+        pending.closed = true
         state = .stopping(reason)
-        let task = Task { @MainActor [weak self] in
-            guard let self else { return }
-            await self.releasePartial(generation: generation, reason: reason)
-            if final {
-                self.runtime = nil
-                self.runtimeGeneration = nil
-                self.scenes.removeAll()
-                self.state = .stopped
-            } else {
-                self.state = reason == .user ? .idle : .suspended(reason)
+        let task = Task { @MainActor in
+            if let startup = pending.startup, case .success(let started) = await startup.result {
+                await started.stop(reason)
+                await started.releaseAudio?()
             }
+            self.coordinator.releaseCamera(owner: self.id, generation: pending.generation)
+            if self.operation === pending { self.operation = nil }
+            self.state = reason == .user ? .idle : .suspended(reason)
             self.stopTask = nil
+            self.finishRuntimeIfNeeded()
         }
         stopTask = task
         await task.value
     }
 
-    /// Required order: producer stop, then its presentation-aware native stop
-    /// closure returns, then audio lease, then camera reservation.
-    private func releasePartial(generation: UUID, reason: MiniAppCaptureStopReason) async {
-        if let stopNative {
-            self.stopNative = nil
-            await stopNative(reason)
-        }
-        if let releaseAudio {
-            self.releaseAudio = nil
-            await releaseAudio()
-        }
-        coordinator.releaseCamera(owner: id, generation: generation)
+    private func finishRuntimeIfNeeded() {
+        guard endingRuntime else { return }
+        runtime = nil
+        runtimeGeneration = nil
+        // Preserve scene observations across restart in an unchanged host scene.
+        state = .stopped
+        endingRuntime = false
     }
 }

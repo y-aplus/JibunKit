@@ -90,7 +90,8 @@ public final class MiniAppCaptureCoordinator {
 
     private var reservations: [MiniAppID: Reservation] = [:]
     private var cameraOwner: MiniAppID?
-    private var transition: Task<Void, Never>?
+    private var transition: Task<Void, Error>?
+    private var transitionID: UUID?
 
     public init() {}
 
@@ -102,26 +103,47 @@ public final class MiniAppCaptureCoordinator {
         owner: MiniAppID,
         generation: UUID,
         switching: MiniAppCaptureSwitch,
+        accepting: @escaping @MainActor @Sendable () -> Bool,
         stopProducer: @escaping @MainActor @Sendable (MiniAppCaptureStopReason) async -> Void
     ) async throws {
-        if let transition { await transition.value }
-        if cameraOwner == owner {
-            reservations[owner] = Reservation(generation: generation, stopProducer: stopProducer)
-            return
+        let predecessor = transition
+        let expectedOwner = cameraOwner
+        let expectedGeneration = cameraOwner.flatMap { reservations[$0]?.generation }
+        let ticket = UUID()
+        let task = Task { @MainActor in
+            _ = await predecessor?.result
+            guard accepting() else { throw MiniAppCaptureFailure.stopped }
+            try await self.performReservation(owner: owner, generation: generation,
+                switching: switching, expectedOwner: expectedOwner,
+                expectedGeneration: expectedGeneration, accepting: accepting, stopProducer: stopProducer)
         }
+        transition = task
+        transitionID = ticket
+        defer {
+            if transitionID == ticket { transition = nil; transitionID = nil }
+        }
+        try await task.value
+    }
+
+    private func performReservation(
+        owner: MiniAppID, generation: UUID, switching: MiniAppCaptureSwitch,
+        expectedOwner: MiniAppID?, expectedGeneration: UUID?,
+        accepting: @MainActor @Sendable () -> Bool,
+        stopProducer: @escaping @MainActor @Sendable (MiniAppCaptureStopReason) async -> Void
+    ) async throws {
         if let occupied = cameraOwner {
-            guard switching == .stopCurrent, let reservation = reservations[occupied]
+            guard occupied != owner, switching == .stopCurrent,
+                  let reservation = reservations[occupied]
             else { throw MiniAppCaptureFailure.cameraInUse(by: occupied) }
-            let task = Task { @MainActor in
-                await reservation.stopProducer(.switched(to: owner))
+            guard expectedOwner == occupied, expectedGeneration == reservation.generation else {
+                throw MiniAppCaptureFailure.staleGeneration
             }
-            transition = task
-            await task.value
-            transition = nil
+            await reservation.stopProducer(.switched(to: owner))
             guard cameraOwner == nil else {
                 throw MiniAppCaptureFailure.switchFailed(owner: occupied, reason: "producer did not release camera")
             }
         }
+        guard accepting() else { throw MiniAppCaptureFailure.stopped }
         cameraOwner = owner
         reservations[owner] = Reservation(generation: generation, stopProducer: stopProducer)
     }

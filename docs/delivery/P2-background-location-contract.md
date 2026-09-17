@@ -99,3 +99,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 この実機観測を理由に初回予算3runへ1runを追加する。即時開始`.fail`/待機可`.queue`の明示、NSError domain/code、時刻付きの要求・受付・callback・取消・完了記録を一括追加する。記録は診断process中の最新32件で、cold配送の永続証拠ではない。共通Coreにも取消/submit失敗後の遅着callbackと重複launchを拒否する受付状態を追加し、Featureへの配送前に閉じる。Feature側にもjob一致と取消join中の開始拒否を残す。
 
 新規Core2件・native2件を既存全件と共に同じ通常/native2job境界で検証する。準備upload込み25分見積り、OS監視から一回通知。通常product Coreも変わるため通常jobの再利用はしない。ローカルhost/media/workflowの7試験と差分検査は成功。SwiftはCI前で未実行。既存physical結果を新sourceのOS成功へ転記しない。配布はIPAのみとし、既存ZIPは保持する。
+
+4回目CI35231831131/source8b3584aは通常15分43秒・native11分35秒で成功。共有395件（既存2skip）、Records11件、検索38.205秒、native21件（skipなし）、両IPAと公開GET/hash/CRCを照合した。診断は即時開始の実機結果待ち。待機中に位置の時刻/app状態/process別記録とRegion画面の停止入口を別変更として実装したが、Swift試験は未実施で今回の公開IPAへ混入させていない。

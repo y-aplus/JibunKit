@@ -19,19 +19,30 @@ The existing background components remain the normal implementation:
 - `MiniAppBackgroundExecution` remains the short UIKit grace-time API and is not presented as a
   scheduler.
 
-The missing iOS 26 path is implemented as `MiniAppContinuedProcessingCenter`. It keeps exact
-identifier ownership, forwards `.queue`/`.fail`, title and subtitle, exposes native progress and
-title updates, hops expiration to `MainActor`, retains each launched execution through asynchronous
-cleanup, and completes the native task exactly once. Pending cancellation is exact and owner
-checked. The wrapper intentionally excludes optional GPU resources and does not turn user-initiated
-work into automatic maintenance.
+The missing iOS 26 path is implemented as `MiniAppContinuedProcessingCenter`. Each foreground
+action supplies a wildcard base and a new UUID. The center dynamically registers and submits the
+fully composed `base.UUID` identifier, keeps exact owner/job ownership, forwards `.queue`/`.fail`,
+title and subtitle, exposes native progress and title updates, hops expiration to `MainActor`,
+retains each launched execution through asynchronous cleanup, and completes the native task exactly
+once. Pending cancellation is exact and owner checked. A launch after center release is explicitly
+failed instead of abandoned. The wrapper intentionally excludes optional GPU resources and does
+not turn user-initiated work into automatic maintenance.
 
-`P2BackgroundProbe.definitions` supplies two real Feature definitions. Each launch hook registers
-an ordinary refresh/processing identifier, one owner in the durable shared-refresh journal, a
-background URLSession reconnect factory, and a continued-processing identifier. Its UI submits
-continued work from a button, reports measurable progress, handles expiration/cancellation, and
-uses a generation check so a stale job cannot finish a replacement. This is a diagnostic Feature,
-not product data storage.
+`P2BackgroundProbe.definitions` supplies two real Feature definitions with
+`MiniAppFeatureLifetime`, `onUnregister`, and restore lifecycle. Each launch hook registers an
+ordinary refresh/processing identifier, one owner in the durable shared-refresh journal, and a
+background URLSession reconnect factory. Continued registration occurs later at the explicit user
+action, as required by this API. Runtime shutdown first closes admission, cancels the exact pending
+job, cancels and awaits the worker, and then idempotently completes the native task. A late launch
+is failed. Restore starts a new Feature generation but never restarts business work.
+
+The diagnostic UI can submit ordinary refresh/processing and shared refresh, inspect pending or
+recovery journal generations, and start a real background `URLSessionDownloadTask` from an input
+URL. Downloads use stable owner/profile session identifiers and move results into owner-specific
+Application Support directories. The UI reports delegate completion counts and distinguishes
+transfer completion from `urlSessionDidFinishEvents`/host-completion release. The continued job
+runs for about 60 seconds so progress and system cancellation are observable; tests replace only
+that work loop with a deterministic gate.
 
 ## Acceptance coverage
 
@@ -41,10 +52,11 @@ not product data storage.
 | Refresh/processing request options and scoped cancellation | Existing `MiniAppBackgroundTasksTests` and `BackgroundTasksNative` fixture | Core regression; signed device still required for accepted native pending requests |
 | Shared refresh cold recovery, batch expiration, acknowledgement failure, other-owner retention | Existing `MiniAppSharedRefreshTests` and journal tests | Durable model/provider coverage |
 | Background transfer owner/profile, duplicate callback join, delegate-finish completion | Existing `MiniAppBackgroundURLSessionReconnectTests` and signed Simulator HTTP comparison | Warm host and real HTTP are proven; cold OS callback is not |
-| Continued request presentation and queue/fail strategy | New Core test and `P2BackgroundNativeTests.testCurrentSDKConstructsContinuedRequestsWithPresentationAndStrategies` | Core forwarding plus current iOS SDK construction |
-| Continued progress, displayed title, expiration cleanup, completion once | New `MiniAppContinuedProcessingTests` and real Feature probe | Provider behavior and Feature integration; system Live Activity/expiration remains device evidence |
+| Continued wildcard base, unique job, presentation and queue/fail strategy | New `MiniAppContinuedProcessingTests.testSubmissionRegistersUniqueComposedIdentifierAndPreservesPresentation`; Xcode native build | Core forwarding plus current SDK compilation; native admission remains device evidence |
+| Continued progress, displayed title, expiration cleanup, completion once | Core tests and gated real-Feature native tests | Feature lifetime and provider behavior; system Live Activity/expiration remains device evidence |
 | Rejected registration and cross-owner submit/cancel | New Core failure tests | No ownership claim or foreign cancellation on failure |
-| Real Feature launch hooks | `P2BackgroundNativeTests.testDefinitionsExposeTwoIndependentHostLaunchRegistrations` | Definition wiring; host must invoke hooks at launch |
+| Stop, pending cancel, cleanup join, late launch, restore, other-owner retention | `P2BackgroundNativeTests` gated Feature tests | Real Definition/lifetime path without waiting 60 seconds |
+| Ordinary/shared/transfer normal entrances | Buttons and observable state in `P2BackgroundProbe`; existing Core/native HTTP tests | Real OS launch/cold callback still requires device run |
 
 ## Shared integration changes requested from the parent
 
@@ -63,13 +75,20 @@ owned files:
    `com.jibunkit.app.p2-background-a.ordinary`,
    `com.jibunkit.app.p2-background-b.ordinary`,
    `com.jibunkit.app.p2-background.shared-refresh`,
-   `com.jibunkit.app.p2-background-a.export`, and
-   `com.jibunkit.app.p2-background-b.export`. Keep `processing` in `UIBackgroundModes` for the
-   processing/shared-refresh paths. No continued-processing GPU entitlement is requested.
+   `com.jibunkit.app.p2-background-a.export.*`, and
+   `com.jibunkit.app.p2-background-b.export.*`. The literal wildcard entries authorize each
+   dynamically registered and submitted `base.UUID` job. Keep both `fetch` and `processing` in
+   `UIBackgroundModes`: owner A/shared refresh use app refresh, and owner B uses processing. Apple’s
+   continued-processing setup requires the permitted wildcard; no additional mode is asserted for
+   that API and no optional continued-processing GPU entitlement is requested.
 4. In the existing `UIApplicationDelegate.application(_:handleEventsForBackgroundURLSession:
    completionHandler:)`, forward the identifier and completion to
    `MiniAppBackgroundURLSessionReconnectRegistry.shared.handleEvents(...)`. This must run after
    launch hooks have registered factories and must not call the completion separately.
+5. Reuse `Tests/Fixtures/network_server.py` and the URL injection pattern from
+   `Tools/verify-background-urlsession-native.py` for the diagnostic input field. Use its
+   `/hold/<token>`, `/await-start/<token>`, and `/release/<token>` routes for A-cancel/B-continue;
+   do not add a synthetic URL protocol or a second server fixture.
 
 ## Verification performed in this lane
 
@@ -90,8 +109,8 @@ owned files:
 On a signed physical iOS 26 device, the parent should run the diagnostic host and distinguish the
 following observations:
 
-1. A foreground tap submits each continued task; an actual system launch displays its Live
-   Activity and advances 1 through 10. This is OS launch evidence. Directly invoking a handler is
+1. A foreground tap registers/submits a unique continued task; an actual system launch displays its
+   Live Activity and advances 1 through 60 over about one minute. This is OS launch evidence. Directly invoking a handler is
    not.
 2. Cancel owner A from the system interface while B runs. A must finish cleanup as unsuccessful;
    B must continue and complete. Repeat Feature-side cancellation for exact pending ownership.

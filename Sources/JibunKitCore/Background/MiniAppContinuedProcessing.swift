@@ -1,27 +1,31 @@
 import Foundation
 
-public enum MiniAppContinuedProcessingStrategy: Equatable, Sendable {
-    case queue
-    case fail
-}
+public enum MiniAppContinuedProcessingStrategy: Equatable, Sendable { case queue, fail }
 
+/// One user-initiated job. `baseIdentifier` is the Info.plist wildcard without
+/// its trailing `.*`; `jobIdentifier` supplies the required unique suffix.
 public struct MiniAppContinuedProcessingRequest: Equatable, Sendable {
-    public let identifier: String
+    public let baseIdentifier: String
+    public let jobIdentifier: UUID
     public let title: String
     public let subtitle: String
     public let strategy: MiniAppContinuedProcessingStrategy
+    public var identifier: String { "\(baseIdentifier).\(jobIdentifier.uuidString.lowercased())" }
+    public var permittedIdentifier: String { "\(baseIdentifier).*" }
 
-    public init(
-        identifier: String,
-        title: String,
-        subtitle: String,
-        strategy: MiniAppContinuedProcessingStrategy = .queue
-    ) {
-        self.identifier = identifier
+    public init(baseIdentifier: String, jobIdentifier: UUID = UUID(), title: String,
+                subtitle: String, strategy: MiniAppContinuedProcessingStrategy = .queue) {
+        self.baseIdentifier = baseIdentifier
+        self.jobIdentifier = jobIdentifier
         self.title = title
         self.subtitle = subtitle
         self.strategy = strategy
     }
+}
+
+public struct MiniAppContinuedProcessingReceipt: Equatable, Sendable {
+    public let identifier: String
+    public let jobIdentifier: UUID
 }
 
 @MainActor
@@ -34,37 +38,28 @@ protocol MiniAppContinuedProcessingNative: AnyObject {
 
 @MainActor
 protocol MiniAppContinuedProcessingScheduling: AnyObject {
-    func register(
-        identifier: String,
-        launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void
-    ) -> Bool
+    func register(identifier: String,
+                  launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void) -> Bool
     func submit(_ request: MiniAppContinuedProcessingRequest) throws
     func cancel(identifier: String)
 }
 
-/// One user-initiated continued-processing job delivered by the system. The
-/// Feature owns its work and checkpoints; this object owns only native progress,
-/// expiration, and completion. Expiration requests cleanup and never reports
-/// completion on the Feature's behalf.
 @MainActor
 public final class MiniAppContinuedProcessingExecution {
     public let identifier: String
+    public let jobIdentifier: UUID
     public private(set) var isExpired = false
     public private(set) var isCompleted = false
-    public var onExpiration: (@MainActor () -> Void)? {
-        didSet { deliverExpirationIfNeeded() }
-    }
-
+    public var onExpiration: (@MainActor () -> Void)? { didSet { deliverExpirationIfNeeded() } }
     private let native: any MiniAppContinuedProcessingNative
     private var deliveredExpiration = false
     private var releaseFromCenter: (@MainActor () -> Void)?
 
-    fileprivate init(
-        identifier: String,
-        native: any MiniAppContinuedProcessingNative,
-        releaseFromCenter: @escaping @MainActor () -> Void
-    ) {
+    fileprivate init(identifier: String, jobIdentifier: UUID,
+                     native: any MiniAppContinuedProcessingNative,
+                     releaseFromCenter: @escaping @MainActor () -> Void) {
         self.identifier = identifier
+        self.jobIdentifier = jobIdentifier
         self.native = native
         self.releaseFromCenter = releaseFromCenter
         native.expirationHandler = { [weak self] in self?.expire() }
@@ -82,7 +77,6 @@ public final class MiniAppContinuedProcessingExecution {
         native.updateTitle(title, subtitle: subtitle)
     }
 
-    /// Idempotently completes exactly this native task after Feature cleanup.
     @discardableResult
     public func complete(success: Bool) -> Bool {
         guard !isCompleted else { return false }
@@ -109,97 +103,89 @@ public final class MiniAppContinuedProcessingExecution {
     }
 }
 
-/// Process-shared registration boundary for iOS 26 continued processing.
-/// Register stable or fully composed permitted identifiers from the Feature's
-/// normal integration point, then submit only in direct response to user action.
+/// Process-shared owner boundary. Continued-processing handlers are registered
+/// dynamically for each fully composed identifier immediately before submission.
 @MainActor
 public final class MiniAppContinuedProcessingCenter {
     public enum Failure: Error, Equatable {
-        case invalidIdentifier
-        case invalidPresentation
-        case identifierAlreadyRegistered
-        case nativeRegistrationRejected
-        case identifierNotOwned
+        case invalidBaseIdentifier, invalidPresentation, identifierAlreadyRegistered
+        case nativeRegistrationRejected, identifierNotOwned
     }
-
-    private struct Registration { let owner: String }
-
+    private struct Registration { let owner: String; let jobIdentifier: UUID }
     private let scheduler: any MiniAppContinuedProcessingScheduling
     private var registrations: [String: Registration] = [:]
     private var inFlight: [UUID: MiniAppContinuedProcessingExecution] = [:]
 
-    init(scheduler: any MiniAppContinuedProcessingScheduling) {
-        self.scheduler = scheduler
-    }
+    init(scheduler: any MiniAppContinuedProcessingScheduling) { self.scheduler = scheduler }
 
     public func tasks(for context: MiniAppContext) -> MiniAppContinuedProcessingTasks {
         MiniAppContinuedProcessingTasks(owner: context.id.storageNamespace, center: self)
     }
 
-    fileprivate func register(
-        owner: String,
-        identifier: String,
-        handler: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void
-    ) throws {
-        guard !identifier.isEmpty else { throw Failure.invalidIdentifier }
-        guard registrations[identifier] == nil else { throw Failure.identifierAlreadyRegistered }
-        let accepted = scheduler.register(identifier: identifier) { [weak self] native in
-            guard let self else { return }
-            let executionID = UUID()
-            let execution = MiniAppContinuedProcessingExecution(
-                identifier: identifier,
-                native: native,
-                releaseFromCenter: { [weak self] in self?.inFlight.removeValue(forKey: executionID) }
-            )
-            inFlight[executionID] = execution
-            handler(execution)
-        }
-        guard accepted else { throw Failure.nativeRegistrationRejected }
-        registrations[identifier] = Registration(owner: owner)
-    }
-
-    fileprivate func submit(owner: String, request: MiniAppContinuedProcessingRequest) throws {
-        guard registrations[request.identifier]?.owner == owner else {
-            throw Failure.identifierNotOwned
+    fileprivate func submit(owner: String, request: MiniAppContinuedProcessingRequest,
+                            handler: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void)
+        throws -> MiniAppContinuedProcessingReceipt {
+        guard Self.isValidBaseIdentifier(request.baseIdentifier) else {
+            throw Failure.invalidBaseIdentifier
         }
         guard !request.title.isEmpty, !request.subtitle.isEmpty else {
             throw Failure.invalidPresentation
         }
+        let identifier = request.identifier
+        guard registrations[identifier] == nil else { throw Failure.identifierAlreadyRegistered }
+        let accepted = scheduler.register(identifier: identifier) { [weak self] native in
+            guard let self else {
+                native.setTaskCompleted(success: false)
+                return
+            }
+            guard let registration = registrations[identifier], registration.owner == owner else {
+                native.setTaskCompleted(success: false)
+                return
+            }
+            let executionID = UUID()
+            let execution = MiniAppContinuedProcessingExecution(
+                identifier: identifier, jobIdentifier: registration.jobIdentifier, native: native,
+                releaseFromCenter: { [weak self] in self?.inFlight.removeValue(forKey: executionID) })
+            inFlight[executionID] = execution
+            handler(execution)
+        }
+        guard accepted else { throw Failure.nativeRegistrationRejected }
+        registrations[identifier] = Registration(owner: owner, jobIdentifier: request.jobIdentifier)
         try scheduler.submit(request)
+        return .init(identifier: identifier, jobIdentifier: request.jobIdentifier)
     }
 
     fileprivate func cancel(owner: String, identifier: String) throws {
         guard registrations[identifier]?.owner == owner else { throw Failure.identifierNotOwned }
         scheduler.cancel(identifier: identifier)
     }
+
+    private static func isValidBaseIdentifier(_ identifier: String) -> Bool {
+        guard !identifier.isEmpty, !identifier.hasSuffix("."), !identifier.contains("*"),
+              identifier.split(separator: ".").count >= 3 else { return false }
+        return identifier.unicodeScalars.allSatisfy {
+            CharacterSet.alphanumerics.contains($0) || CharacterSet(charactersIn: ".-").contains($0)
+        }
+    }
 }
 
-/// Owner-limited view of continued-processing registrations and requests.
 @MainActor
 public final class MiniAppContinuedProcessingTasks {
     public let ownerIdentifier: String
     private let center: MiniAppContinuedProcessingCenter
-
     fileprivate init(owner: String, center: MiniAppContinuedProcessingCenter) {
-        ownerIdentifier = owner
-        self.center = center
+        ownerIdentifier = owner; self.center = center
     }
 
-    public func register(
-        identifier: String,
-        handler: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void
-    ) throws {
-        try center.register(owner: ownerIdentifier, identifier: identifier, handler: handler)
+    /// Dynamically registers the unique identifier and submits it. Call only
+    /// from the foreground action which starts this exact job.
+    @discardableResult
+    public func submit(_ request: MiniAppContinuedProcessingRequest,
+                       launch: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void)
+        throws -> MiniAppContinuedProcessingReceipt {
+        try center.submit(owner: ownerIdentifier, request: request, handler: launch)
     }
 
-    /// Call from a foreground user action. Automatic maintenance and refresh
-    /// work belongs in the existing refresh/processing APIs instead.
-    public func submit(_ request: MiniAppContinuedProcessingRequest) throws {
-        try center.submit(owner: ownerIdentifier, request: request)
-    }
-
-    /// Cancels a queued request for this identifier. A launched execution is
-    /// still completed by its Feature after cooperative cleanup.
     public func cancelPendingRequest(identifier: String) throws {
         try center.cancel(owner: ownerIdentifier, identifier: identifier)
     }

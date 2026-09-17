@@ -1,6 +1,18 @@
 # P2-B 背景処理・位置情報の実機確認（修正版の起動確認済み・対象操作待ち）
 
-## 現在の配布版: iOS27非同期受付と位置受信記録
+## 現在の配布版: 同じhostでのOS直接比較
+
+2026-09-18更新。source `daa49cd28fa611dc3067281c3abbb0a82bdd91f1`、0.8.3/build13。[CI35238784459](https://github.com/y-aplus/JibunKit/actions/runs/35238784459)で背景17＋位置9＝native26件（skip/実行時warningなし）とSDK27診断Releaseが成功。11分18秒。全宣言methodを構造化結果へ照合し、IPAのCRC・3bundle ID/版・署名resource・SDK/診断型を確認。公開IPAの無認証GET/hash/CRCとtag/sourceも一致した。
+
+[OS直接比較用IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-native-compare-20260918/JibunKit-P2-B-daa49cd.ipa)
+
+1. アプリを削除せず、このIPAを上書きする。
+2. Background Aを開き、「OS直接比較」の「OS直接比較を一度実行」を一度押す。
+3. その欄の記録全文を共有する。通常の継続処理の再試行や長時間待機は不要。
+
+この比較は共通center/ID resolver/workerを迂回するが、hostと署名は共通。同じエラーでもOS単独の問題とは断定しない。実機でのOS開始は未確認。位置/Regionの既済操作は反復しない。今回の差分は診断fixtureと文書だけで、通常/共有397件・Records11件・検索/通常IPAは82f61bbの検証を再利用し再ビルドしていない。必要時の[通常IPA（82f61bb・SDK26.5）](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-normal-82f61bb.ipa)。安定版は0.8.3のまま。
+
+## 前候補82f61bb: iOS27非同期受付と位置受信記録
 
 2026-09-18更新。source `82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08`、0.8.3/build13。[CI35235454126](https://github.com/y-aplus/JibunKit/actions/runs/35235454126)で共有397件（既存Keychain2skip）、Records11件、通常検索44.924秒、背景15＋位置9＝native24件（skip/実行時warningなし）が成功。通常18分06秒・native10分50秒。
 
@@ -114,4 +126,10 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 
 ユーザーは全体とJibunKit個別のバックグラウンド更新が有効、Wi-Fi限定だが現在Wi-Fi利用可能な環境と回答。端末がその時点で接続していたことやOS内部サービスが正常なことまで推定しない。設定無効を原因に固定せず、同一host/署名で共通center・ID resolver・execution adapterを通さない直接native経路を準備する。
 
-新しい「OS直接比較」は実際のCFBundleIdentifier＋owner別export namespaceからunique IDを構築し、同じprefixの許可wildcardがなければ未送信として明示する。登録・即時要求・非同期受付結果・OS callbackを記録し、callbackが来たら試験仕事を即完了する。共通実装と異なる経路で同じエラーなら、共通centerの配送処理が原因という可能性を狭められる。単独別appではないため、host構成・署名・OSのどれかを確定する証拠にはしない。取消/Feature停止は直接要求も閉じ、遅い受付応答やcallbackが次の仕事を再開しない。新IPAの配布前で、現版にはこの操作はない。
+新しい「OS直接比較」は実際のCFBundleIdentifier＋owner別export namespaceからunique IDを構築し、同じprefixの許可wildcardがなければ未送信として明示する。登録・即時要求・非同期受付結果・OS callbackを記録し、callbackが来たら試験仕事を即完了する。共通実装と異なる経路で同じエラーなら、共通centerの配送処理が原因という可能性を狭められる。単独別appではないため、host構成・署名・OSのどれかを確定する証拠にはしない。取消/Feature停止は直接要求も閉じ、遅い受付応答やcallbackが次の仕事を再開しない。daa49cd/CI35238784459で自動試験と診断IPAを検証して公開済み。実機結果待ち。
+
+## 時刻付き位置記録の実機観測（82f61bb）
+
+ユーザーの記録に、同一process識別子で次の配送が含まれた（座標は含まれない）。2026-09-17T15:06:01Zは`background`のhost起動hookとOS許可callback/whenInUse。15:16:51Zは`active`のruntime接続。15:17:00Zは`active`で背景位置更新を開始、OS許可callback/whenInUseと位置callback1件が2回。15:17:30Zは`active`で位置更新停止。
+
+この約30秒の確認では背景中の位置callbackは未観測。起動hook・許可callbackのbackground表示を位置の背景受信や位置イベント起因のcold起動へ読み替えない。時刻/app状態を分ける診断と停止記録を実機確認した。歩行は要求しておらず、背景設定のdistanceFilter10mと屋内静止でeventがないことだけでは配送不具合と判定しない。今すぐ同じ操作を反復させず、実移動/region進退の証拠は未確認として残す。

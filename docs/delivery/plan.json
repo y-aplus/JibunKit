@@ -493,8 +493,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "位置・背景更新・監視",
-      "existing": "開発branch da62672/CI35176070341: owner別位置service、native設定/SDK値、永続Region予約/20枠/破損保護、世代/同意/管理/復元を実装。Core24件・native7件成功。未出荷",
-      "remaining": "実OS許可/背景更新・物理geofence/iBeacon配送・cold復帰の観測、代表操作と文書/出荷確認。機材条件と診断のcoldイベント観測を整える",
+      "existing": "開発branch da62672/CI35176070341: owner別位置service、native設定/SDK値、永続Region予約/20枠/破損保護、世代/同意/管理/復元を実装。Core24件・native7件成功。未出荷 3af8e32実機で前景位置、geofence/iBeacon登録・一覧・解除を確認。82f61bbの時刻付きログではactive中の位置受信のみ確認。",
+      "remaining": "背景中の位置配送・実境界通過・iBeacon電波受信・cold配送は未確認。iPadによる電波確認はユーザーが利用可能になってから行う。",
       "deferred": "大量監視枠の透過仮想化/予測最適化",
       "criteria": [
         {
@@ -539,8 +539,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "背景起動・転送再接続・継続処理",
-      "existing": "開発branch da62672/CI35176070341: 継続処理の一意job/owner、通常/shared refresh/URLSessionのlifetime受付・cleanup join。Core continued6件・背景native10件（実HTTP A取消/B保存含む）成功。未出荷",
-      "remaining": "実OS continued開始/取消、refresh/processing/sharedの実起動/期限、URLSession cold再接続、代表復帰操作と文書/出荷確認。注入callbackはOS起動証拠にしない",
+      "existing": "開発branch da62672/CI35176070341: 継続処理の一意job/owner、通常/shared refresh/URLSessionのlifetime受付・cleanup join。Core continued6件・背景native10件（実HTTP A取消/B保存含む）成功。未出荷 f6f6c04/CI35243182556で背景19＋位置9native件、診断IPA成功。実機でbackground URLSession host callback→再接続→保存→host completion解放を確認。",
+      "remaining": "継続処理の実OS開始はnative直接比較でもcode1となり未確認（ユーザー指示で追加追究停止）。通常schedulerの実配送と終了後cold再起動は未実証。背景URLSessionの同一processでの実背景配送は確認済み。P2-B出荷範囲/残件の照合。",
       "deferred": "特殊GPU/複雑scheduler・全OS不具合回避",
       "criteria": [
         {

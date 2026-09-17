@@ -23,3 +23,11 @@ app単位APNs tokenとFeature/server identity、登録失敗・token更新・own
 ## 親の並行作業と検証境界
 
 親は既存通知delegate/宣言合成とCloudKit/APNs署名条件を確認し、二fixtureの使い捨てnative host、全method照合、通常host回帰をまとめる。提出前の重複実装はしない。契約の根幹が変わる問題はまとめて報告し、細かなAPIごとの承認待ちにはしない。CIの正確な入力/filter/時間上限はソース統合後に追記する。
+
+## 開始・親の準備
+
+2026-09-18、JibunKit project `62ddf945-4896-42c1-8418-1721140ee140`を指定してSol lowの別スレッド2本を作成。基点7347b483936e7f8bfe45d36984c32390cdcae2b3、identity/pushの両worktreeで担当sourceの作成を確認。サブエージェントではない。親は`codex/p2-identity-push`へ分岐し、P2-Bの実機残件と分離した。提出完了時に親へ一回通知し、CIはワーカーから起動しない。
+
+親はidentity-push用の使い捨てhost生成と既存native検証へのsurface追加を準備。host生成は本体/Widget/Share IDと通常Featureを保ち、2fixtureとnative test targetを組み込む。途中に欠落・test混入・anchor不一致があれば書込み前に拒否する。fixture未提出の現段階は最小の入力を使う生成試験3件と既存media/background/workflow検査7件が成功しただけで、実Swiftソース接続/iOS成功は未確認。実提出後に同じ生成・全method試験を通す。
+
+診断にはremote-notification background modeのみ追加し、APNs/CloudKit entitlementやcredentialを偽造しない。[APNs登録](https://developer.apple.com/documentation/usernotifications/registering-your-app-with-apns)はapp/device固有tokenと正しい署名を要し、[CloudKit container](https://developer.apple.com/documentation/cloudkit/ckcontainer/init(identifier:))は指定containerのentitlementを要する。通常hostは明示的に機能を組み込むまでOS登録/CloudKit生成を行わず、署名がない状態で起動を落とさない。実native APIとfake配送の試験を区別し、未署名CIからserver同期/APNs配信の成功を主張しない。

@@ -48,14 +48,14 @@ def require_test_passes(report, summary, sources):
 
 
 def check_requirements(info, surface="media"):
-    if surface not in {"media", "background-location"}:
+    if surface not in {"media", "background-location", "identity-push"}:
         raise ValueError("Unknown native host surface")
-    descriptions = (["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
+    descriptions = ([] if surface == "identity-push" else ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
                     else ["NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"])
     for key in descriptions:
         if not isinstance(info.get(key), str) or not info[key].strip():
             raise ValueError(f"Missing media usage description: {key}")
-    modes = {"audio"} if surface == "media" else {"fetch", "processing", "location"}
+    modes = {"remote-notification"} if surface == "identity-push" else {"audio"} if surface == "media" else {"fetch", "processing", "location"}
     if not modes <= set(info.get("UIBackgroundModes", [])):
         raise ValueError("Missing required background modes")
     if surface == "background-location":
@@ -73,13 +73,16 @@ def check_requirements(info, surface="media"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
-    parser.add_argument("--surface", choices=["media", "background-location"], default="media")
+    parser.add_argument("--surface", choices=["media", "background-location", "identity-push"], default="media")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     is_media = args.surface == "media"
-    families = ["MediaAudio", "MediaCapture", "MediaIntegration"] if is_media else ["P2Background", "P2Location"]
-    scheme = "MediaNativeTests" if is_media else "BackgroundLocationNativeTests"
-    evidence = Path(os.environ["RUNNER_TEMP"]) / ("Media" if is_media else "BackgroundLocation")
+    families = {"media": ["MediaAudio", "MediaCapture", "MediaIntegration"],
+                "background-location": ["P2Background", "P2Location"],
+                "identity-push": ["P2Identity", "P2Push"]}[args.surface]
+    label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush"}[args.surface]
+    scheme = label + "NativeTests"
+    evidence = Path(os.environ["RUNNER_TEMP"]) / label
     evidence.mkdir(exist_ok=True)
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
     started = time.monotonic()
@@ -119,7 +122,7 @@ def main():
                 destination = root / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(repo / name, destination)
-            prepare = "prepare-media-host.py" if is_media else "prepare-background-location-host.py"
+            prepare = f"prepare-{args.surface}-host.py"
             run(["python3", root / "Tools" / prepare, "--host", root], root, "prepare")
             run(["tuist", "generate", "--no-open"], root, "generate")
             derived = root / "Build"
@@ -190,7 +193,8 @@ def main():
             payload = root / "Package/Payload"
             payload.mkdir(parents=True)
             run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
-            ipa = evidence / ("JibunKit-P2-C-check.ipa" if is_media else "JibunKit-P2-B-check.ipa")
+            ipa = evidence / {"media": "JibunKit-P2-C-check.ipa", "background-location": "JibunKit-P2-B-check.ipa",
+                              "identity-push": "JibunKit-P2-I-check.ipa"}[args.surface]
             run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
             run(["unzip", "-t", ipa], root, "ipa-crc")
             run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")

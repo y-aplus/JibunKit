@@ -2,6 +2,8 @@
 
 更新日: 2026-09-18。公開安定版は[0.8.3/build13](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)（前版0.8.2/build12）。音声・撮影/scanの対象別実機、CI35169921272、main統合、公開IPA/ZIP無認証取得と整合性確認まで完了。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
 
+P2-I外部データidentity/Pushも`codex/p2-identity-push`で並行開始。Sol lowの2担当が実装中、親はhost生成/まとめたnative CI接続を準備。まだ実装提出・Swift検証前で、公開済み機能には数えない。[共通契約](delivery/P2-identity-push-contract.md)。iBeacon実機はユーザーの起床後以降、継続処理code1の追加追究は停止。
+
 P2-1/P2-2の採用通常範囲はcomplete。306874fで再生/録音・写真/音声動画、a142108で文書保存/取消・QR・イヤホン抜去停止・通常版復帰後の既存データ保持を確認。native28件と通常通知UIはCI35102558612のsource付き証拠を、版変更だけの出荷へ再利用した。写真初回の不明エラー、以前のLive B単発値差分は原因未確定として保持。1.0全体は未完、次の境界は背景実行と位置（P2-B）。以下の旧版節はsourceを明示した履歴。
 
 ## 開発中の背景処理・位置情報

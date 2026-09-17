@@ -120,3 +120,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 7run目: 直接native実機もcode1を受領し、共通経路だけの不具合ではないと切り分けた。継続処理の要求変更を反復せず、別の残件である通常scheduler/共有refresh/URLSessionのcold配送観測を整備する。owner別永続記録・2保存試験・既存実Feature/HTTP配送順序のassertを全28nativeと診断Releaseで一括検証。診断のみのため通常productionは82f61bbを再利用。前回11分18秒をもとに20分予算、30分上限。外部HTTP経路の準備とcold実機証拠はまだ残る。
 
 7回目CI35241889661/source e00ec45は8分18秒で失敗。新テスト500行目のassert間の改行欠落でtest target compileが停止し、実行0件/新IPAなし。診断appのcompileを通ったことと実行成功を区別する。改行を修正し編集箇所に同種の連結がないことを確認、同じ全28件/診断Release境界を8run目として再投入する（この境界の連続失敗は1回）。継続処理のiOS内部原因調査はユーザー指示を踏まえ追加試行を停止。通常/共有/HTTPの独立検証を継続する。
+
+8回目CI35243182556/source f6f6c04は12分48秒で成功。全28native methodがskip/実行時warningなしで成功し、SDK27診断Release/IPAのCRC・ID/版/署名resourceを照合。generate67.988秒、test208.652秒、Release127.176秒。通常/共有の再実行なし。継続処理code1の追加追究は停止したまま、独立したHTTP転送確認へ進む。

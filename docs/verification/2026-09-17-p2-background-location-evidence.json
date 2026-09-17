@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "8cc099b552ad15131fa914417306946a5ff5d54a",
+  "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -110,6 +110,12 @@
       "source": "e00ec459d764a53603b32cf8c30573028d4acbf6",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35241889661",
       "conclusion": "failure: new native test line500 joined two assertions without newline. Test-target compiler stopped before execution; zero tests, no Release IPA. Job498s. App sources compiled. Separate from physical scheduler code1."
+    },
+    {
+      "id": "35243182556",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35243182556",
+      "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
+      "conclusion": "success: all28 native methods, no skips/runtime warnings, SDK27 diagnostic Release/IPA;768s. Unchanged normal/shared82f61bb reused."
     }
   ],
   "evidence": [
@@ -598,18 +604,18 @@
     }
   },
   "assets": {
-    "JibunKit-P2-B-daa49cd.ipa": {
-      "sha256": "b9f619f00c94f2eb32223ee196ba0cfdc1b5ab9da6739996b3be7af97b7560ef",
-      "bytes": 3879877,
+    "JibunKit-P2-B-f6f6c04.ipa": {
+      "sha256": "318b143fc38fa28904e2cd58441c04d1cf0ffacd60858c26231de19d76c2f439",
+      "bytes": 3892641,
       "sdk": "iphoneos27.0"
     }
   },
   "diagnostic_publication": {
-    "tag": "p2-b-native-compare-20260918",
-    "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
+    "tag": "p2-b-delivery-check-20260918",
+    "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
     "prerelease": true,
-    "public_get": "Unauthenticated GET/hash/CRC passed, tag/source matches.3bundle IDs/0.8.3/build13/signature resources/SDK27/native comparison markers verified.",
-    "physical_status": "Direct native comparison reproduces code1; prefix/wildcard match, active, refresh available, lowPower false. No OS launch."
+    "public_get": "Unauthenticated GET/hash/CRC and tag/source verified; SDK27,3bundle ID/version/signature resources and background/location observation types verified.",
+    "physical_status": "Awaiting representative HTTP transfer. No continued-processing retry requested. Earlier code1/location evidence retains original source."
   },
   "physical_failure": {
     "source": "da6267213a15872f3eb3860157edf0840e866bd2",
@@ -941,5 +947,32 @@
     "observation": "User OCR: installed bundle prefix/permitted wildcard match; appState=0, refresh=2, lowPower=false; native registration succeeded; submit response BGTaskSchedulerErrorDomain code1 connection to com.apple.duetactivityscheduler.",
     "conclusion": "Direct native path reproduces wrapper error. Not specific to common center/resolver/execution adapter. Same host/signing; root OS/host/signing cause not isolated. No OS launch success."
   },
-  "continued_processing_investigation_policy": "User2026-09-18: do not pursue iOS internals after sufficient evidence. Additional continued-processing probes paused after wrapper/direct same error, valid prefix/wildcard, active/refresh available/lowPower false. Keep actual OS launch unverified; not a completed device acceptance. Independent normal/shared/HTTP delivery work continues."
+  "continued_processing_investigation_policy": "User2026-09-18: do not pursue iOS internals after sufficient evidence. Additional continued-processing probes paused after wrapper/direct same error, valid prefix/wildcard, active/refresh available/lowPower false. Keep actual OS launch unverified; not a completed device acceptance. Independent normal/shared/HTTP delivery work continues.",
+  "background_delivery_observation_verification": {
+    "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
+    "run": "35243182556",
+    "native_tests": 28,
+    "skipped": 0,
+    "runtime_warnings": 0,
+    "job_seconds": 768,
+    "generate_seconds": 67.988,
+    "native_test_seconds": 208.652,
+    "release_seconds": 127.176,
+    "scope": "Persistent64 owner records, restart/process state, corrupt evidence preservation, real Feature denied admission and HTTP ordering/A cancellation/B file preservation. Simulated reconnect callback is not physical OS cold delivery.",
+    "physical_status": "pending; continued-processing code1 additional investigation stopped per user"
+  },
+  "diagnostic_publication_previous_daa49cd": {
+    "tag": "p2-b-native-compare-20260918",
+    "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
+    "prerelease": true,
+    "public_get": "Unauthenticated GET/hash/CRC passed, tag/source matches.3bundle IDs/0.8.3/build13/signature resources/SDK27/native comparison markers verified.",
+    "physical_status": "Direct native comparison reproduces code1; prefix/wildcard match, active, refresh available, lowPower false. No OS launch."
+  },
+  "assets_previous_daa49cd": {
+    "JibunKit-P2-B-daa49cd.ipa": {
+      "sha256": "b9f619f00c94f2eb32223ee196ba0cfdc1b5ab9da6739996b3be7af97b7560ef",
+      "bytes": 3879877,
+      "sdk": "iphoneos27.0"
+    }
+  }
 }

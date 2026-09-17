@@ -1,6 +1,26 @@
 # P2-B 背景処理・位置情報の実機確認（修正版の起動確認済み・対象操作待ち）
 
-## 現在の配布版: 同じhostでのOS直接比較
+## 現在の配布版: 背景配送記録
+
+2026-09-18更新。source `f6f6c0430df1817801c9e160462e4d19e7ef505c`、0.8.3/build13。[CI35243182556](https://github.com/y-aplus/JibunKit/actions/runs/35243182556)で背景19＋位置9＝全28native method、skip/実行時warningなし。SDK27診断Release/IPAも成功（12分48秒）。公開GET/hash/CRC・tag/source・3bundle ID/版/署名resourceを照合済み。通常productionは変更がない82f61bbの検証/通常IPAを再利用し、再ビルドしていない。
+
+[背景配送記録版IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-delivery-check-20260918/JibunKit-P2-B-f6f6c04.ipa)
+
+継続処理のcode1について追加操作は不要。位置の既済確認も繰り返さない。次は別機構のbackground URLSessionによる通常転送を一度確認する。
+
+1. アプリを削除せず上記IPAを上書きし、Background Aを開く。
+2. 「診断HTTP URL」へ次の公開ファイルURLを貼る。このIPAは単なる転送データとして保存し、インストールしない。
+
+```text
+https://github.com/y-aplus/JibunKit/releases/download/p2-b-native-compare-20260918/JibunKit-P2-B-daa49cd.ipa
+```
+
+3. 「background download開始」を一度押してホームへ戻り、15秒ほどでJibunKitへ戻る。
+4. 「背景配送記録」で「HTTP完了: ファイル保存」の有無と、「host URLSession callback受信」の有無を共有する。失敗ならエラー文を共有する。
+
+強制終了・無期限待機は不要。小さいファイルなので前景中に完了する場合もある。ファイル保存成功と背景/OS再起動配送の成功を分けて記録する。今回は新しいHTTP機構の代表確認で、継続処理エラーの再診断ではない。OS cold配送・位置境界/電波受信は依然未実証。
+
+## 前候補daa49cd: 同じhostでのOS直接比較
 
 2026-09-18更新。source `daa49cd28fa611dc3067281c3abbb0a82bdd91f1`、0.8.3/build13。[CI35238784459](https://github.com/y-aplus/JibunKit/actions/runs/35238784459)で背景17＋位置9＝native26件（skip/実行時warningなし）とSDK27診断Releaseが成功。11分18秒。全宣言methodを構造化結果へ照合し、IPAのCRC・3bundle ID/版・署名resource・SDK/診断型を確認。公開IPAの無認証GET/hash/CRCとtag/sourceも一致した。
 
@@ -142,6 +162,6 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 
 ## 次の独立検証: 通常scheduler/URLSessionの永続受信記録
 
-通常/共有scheduler、host URLSession再接続、delegate完了、runtime受付拒否/cleanupをowner別に最新64件保存する診断を追加。時刻・app状態・processを残し、再起動だけでOS起動理由を断定しない。HTTP URL・内容・NSError userInfoは永続記録へ含めない。保存上限、再読込、A/B分離、破損保持と実Feature配送順序を自動検証する。診断fixtureのみ変更し、通常productionのCIは再利用。これは未配布で、手元のdaa49cdにはない。外部HTTP経路の準備とOS cold配送の実証は別途残る。
+通常/共有scheduler、host URLSession再接続、delegate完了、runtime受付拒否/cleanupをowner別に最新64件保存する診断を追加。時刻・app状態・processを残し、再起動だけでOS起動理由を断定しない。HTTP URL・内容・NSError userInfoは永続記録へ含めない。保存上限、再読込、A/B分離、破損保持と実Feature配送順序を自動検証する。診断fixtureのみ変更し、通常productionのCIは再利用。f6f6c04/CI35243182556で28件と診断IPAを検証・配布済み。daa49cdには含まれない。外部HTTP経路の準備とOS cold配送の実証は別途残る。
 
 2026-09-18追記: ユーザーはiOS側問題への十分な確信があれば追加追究不要と指示。直接比較までの結果をもって継続処理の追加診断は一旦停止する。OS開始を確認済みにはせず、host/署名との完全分離がない限界を残す。独立した通常/共有/HTTP観測のCI35241889661はテスト構文エラーで実行前に停止。修正して同じ28件を再検証する。ユーザーへ追加操作は依頼しない。

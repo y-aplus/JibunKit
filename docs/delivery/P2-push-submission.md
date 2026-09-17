@@ -9,7 +9,7 @@
 - `onHostLaunch` synchronously publishes a dormant owner. Matching cold/background delivery starts the same management-gated lifetime; disabled owners reject without Feature delivery and the host has no Feature-specific branch.
 - Existing `MiniAppNotificationRoute` keys select exactly one owner for foreground/background payload work. Missing, invalid, stopped, or unregistered owners return `noData` rather than broadcasting.
 - `MiniAppRemotePushCompletionAggregator` performs one-shot completion fan-in with `failed > newData > noData` precedence; tickets retain aggregation state even after the host method's local aggregator is released.
-- Incoming APNs JSON is converted to a recursive Sendable snapshot preserving nested objects, arrays and null. Unsupported values fail before delivery instead of degrading to a flattened payload.
+- Incoming APNs JSON is converted to a recursive Sendable snapshot preserving nested objects, arrays, null, exact signed/unsigned integers and finite fractional values. Large integers never pass through `Double`; NaN, infinity and unsupported values fail before delivery.
 - `Tests/P2Push/P2PushProbe.swift` exposes two ordinary `MiniAppDefinition`s using the same local account identifier but separate server identities, lifetimes and unregister hooks.
 
 ## UIApplicationDelegate integration
@@ -35,3 +35,5 @@ Source tests cover same-token recovery after failure, slow token ordering, close
 Implementation commit SHA: `a1315db4f7e9e16a67581b316c7d98f7e0c1124f`
 
 Race-hardening implementation SHA: `e6d53fb3a6b9ac93464be6f92860063b2e98c4d8`
+
+Exact-number snapshot follow-up SHA: `TO_BE_FILLED_AFTER_COMMIT`

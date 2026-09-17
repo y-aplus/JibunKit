@@ -1,11 +1,18 @@
 import Foundation
+#if os(iOS)
+import CoreLocation
+#endif
 
 @MainActor
 public protocol MiniAppLocationNativeClient: AnyObject {
     var authorization: MiniAppLocationAuthorization { get }
     var monitoredRegionIDs: Set<String> { get }
-    var isRegionMonitoringAvailable: Bool { get }
+    func isMonitoringAvailable(for kind: MiniAppLocationMonitoringKind) -> Bool
+    var maximumRegionMonitoringDistance: Double { get }
     var eventHandler: (@MainActor @Sendable (MiniAppLocationNativeEvent) -> Void)? { get set }
+    #if os(iOS)
+    var coreLocationHandler: (@MainActor (UUID, [CLLocation]) -> Void)? { get set }
+    #endif
     func requestAuthorization(_ request: MiniAppLocationAuthorizationRequest)
     func startUpdates(configuration: MiniAppLocationUpdateConfiguration, generation: UUID)
     func stopUpdates(generation: UUID)
@@ -44,6 +51,14 @@ public struct MiniAppUserDefaultsLocationStore: MiniAppLocationRegistrationStore
     }
 }
 
+public final class MiniAppLocationAdmission: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = false
+    public init() {}
+    public func setAllowed(_ allowed: Bool) { lock.lock(); value = allowed; lock.unlock() }
+    public func isAllowed() -> Bool { lock.lock(); defer { lock.unlock() }; return value }
+}
+
 /// App-wide reservation and delivery boundary for Core Location's shared region pool.
 /// A Feature can only remove its own identifiers; unknown/native registrations count
 /// toward the system limit and are never stopped by JibunKit.
@@ -55,30 +70,80 @@ public final class MiniAppLocationCoordinator {
     private let native: any MiniAppLocationNativeClient
     private let store: any MiniAppLocationRegistrationStore
     private var registrations: [String: MiniAppLocationRegistration] = [:]
-    private var consumers: [MiniAppID: @MainActor @Sendable (MiniAppLocationEvent) -> Void] = [:]
+    private struct Consumer {
+        let token: UUID
+        let receive: @MainActor @Sendable (MiniAppLocationEvent) -> Void
+        #if os(iOS)
+        let receiveCoreLocations: @MainActor ([CLLocation], UUID) -> Void
+        #endif
+    }
+    private var consumers: [MiniAppID: Consumer] = [:]
+    private var coldConsumers: [MiniAppID: @MainActor @Sendable (MiniAppLocationEvent) -> Void] = [:]
+    private var admissions: [MiniAppID: MiniAppLocationAdmission] = [:]
     private var updateOwners: [MiniAppID: UUID] = [:]
+    public private(set) var persistenceFailure: String?
 
     public init(native: (any MiniAppLocationNativeClient)? = nil,
                 store: any MiniAppLocationRegistrationStore = MiniAppUserDefaultsLocationStore()) {
         self.native = native ?? MiniAppCoreLocationClient()
         self.store = store
-        if let restored = try? store.read() {
+        do {
+            let restored = try store.read()
+            var localKeys: Set<String> = []
             for registration in restored where registration.owner.isValid && !registration.localID.isEmpty {
+                let key = registration.owner.rawValue + "\u{0}" + registration.localID
+                guard localKeys.insert(key).inserted else {
+                    throw MiniAppLocationFailure.persistenceUnavailable("duplicate owner/localID")
+                }
                 registrations[registration.id] = registration
             }
+        } catch {
+            persistenceFailure = error.localizedDescription
         }
         self.native.eventHandler = { [weak self] event in self?.receive(event) }
+        #if os(iOS)
+        self.native.coreLocationHandler = { [weak self] generation, locations in
+            guard let self, let owner = self.updateOwners.first(where: { $0.value == generation })?.key else { return }
+            self.consumers[owner]?.receiveCoreLocations(locations, generation)
+        }
+        #endif
     }
 
     public var authorization: MiniAppLocationAuthorization { native.authorization }
     public var allRegistrations: [MiniAppLocationRegistration] { Array(registrations.values) }
 
-    public func connect(owner: MiniAppID,
-                        receive: @escaping @MainActor @Sendable (MiniAppLocationEvent) -> Void) {
-        consumers[owner] = receive
+    public func prepare(owner: MiniAppID, admission: MiniAppLocationAdmission,
+                        receiveCold: @escaping @MainActor @Sendable (MiniAppLocationEvent) -> Void) {
+        admissions[owner] = admission
+        coldConsumers[owner] = receiveCold
     }
 
-    public func disconnect(owner: MiniAppID) {
+    public func connect(owner: MiniAppID, token: UUID,
+                        receive: @escaping @MainActor @Sendable (MiniAppLocationEvent) -> Void
+                        #if os(iOS)
+                        , receiveCoreLocations: @escaping @MainActor ([CLLocation], UUID) -> Void = { _, _ in }
+                        #endif
+    ) {
+        if consumers[owner]?.token != token,
+           let generation = updateOwners.removeValue(forKey: owner) {
+            native.stopUpdates(generation: generation)
+        }
+        consumers[owner] = Consumer(token: token, receive: receive
+                                    #if os(iOS)
+                                    , receiveCoreLocations: receiveCoreLocations
+                                    #endif
+        )
+        if let persistenceFailure { receive(.failed(generation: nil, persistenceFailure)) }
+    }
+
+    @discardableResult
+    public func connect(owner: MiniAppID,
+                        receive: @escaping @MainActor @Sendable (MiniAppLocationEvent) -> Void) -> UUID {
+        let token = UUID(); connect(owner: owner, token: token, receive: receive); return token
+    }
+
+    public func disconnect(owner: MiniAppID, token: UUID) {
+        guard consumers[owner]?.token == token else { return }
         consumers.removeValue(forKey: owner)
         if let generation = updateOwners.removeValue(forKey: owner) { native.stopUpdates(generation: generation) }
     }
@@ -120,12 +185,20 @@ public final class MiniAppLocationCoordinator {
     @discardableResult
     public func register(owner: MiniAppID, localID: String, region: MiniAppLocationRegion,
                          featureConsent: Bool) throws -> MiniAppLocationRegistration {
+        try requireWritableStore()
         guard featureConsent else { throw MiniAppLocationFailure.featureConsentDenied }
         let authorization = native.authorization
         guard authorization == .whenInUse || authorization == .always else {
             throw MiniAppLocationFailure.osAuthorizationDenied(authorization)
         }
-        guard native.isRegionMonitoringAvailable else { throw MiniAppLocationFailure.monitoringUnavailable }
+        let kind: MiniAppLocationMonitoringKind
+        switch region { case .geofence: kind = .geofence; case .beacon: kind = .beacon }
+        guard native.isMonitoringAvailable(for: kind) else { throw MiniAppLocationFailure.monitoringUnavailable }
+        if case .geofence(_, _, let radius, _, _) = region,
+           native.maximumRegionMonitoringDistance > 0, radius > native.maximumRegionMonitoringDistance {
+            throw MiniAppLocationFailure.radiusExceedsMaximum(
+                requested: radius, maximum: native.maximumRegionMonitoringDistance)
+        }
         guard !registrations.values.contains(where: { $0.owner == owner && $0.localID == localID }) else {
             throw MiniAppLocationFailure.duplicateLocalID
         }
@@ -147,6 +220,7 @@ public final class MiniAppLocationCoordinator {
     }
 
     public func unregister(owner: MiniAppID, localID: String, generation: UUID? = nil) throws {
+        try requireWritableStore()
         guard let registration = registrations.values.first(where: { $0.owner == owner && $0.localID == localID }) else {
             throw MiniAppLocationFailure.wrongOwner
         }
@@ -158,6 +232,7 @@ public final class MiniAppLocationCoordinator {
     }
 
     public func unregisterAll(owner: MiniAppID) throws {
+        try requireWritableStore()
         let owned = registrations.values.filter { $0.owner == owner }
         for registration in owned { registrations.removeValue(forKey: registration.id) }
         do { try persist() }
@@ -177,27 +252,46 @@ public final class MiniAppLocationCoordinator {
 
     /// Reconnects persisted ownership to the manager during app launch. This does
     /// not invent registrations or restart continuous updates.
-    public func reconnectPersistedMonitoring() {
+    public func registrations(owner: MiniAppID) -> [MiniAppLocationRegistration] {
+        registrations.values.filter { $0.owner == owner }.sorted { $0.localID < $1.localID }
+    }
+
+    public func reconnectPersistedMonitoring(owner: MiniAppID) throws {
+        try requireWritableStore()
+        guard admissions[owner]?.isAllowed() == true else { return }
         guard native.authorization == .whenInUse || native.authorization == .always else { return }
-        let monitored = native.monitoredRegionIDs
-        for registration in registrations.values where !monitored.contains(registration.id) {
+        var occupied = native.monitoredRegionIDs
+        for registration in registrations.values where registration.owner == owner && !occupied.contains(registration.id) {
+            guard occupied.count < Self.regionLimit else {
+                deliver(to: owner, .monitoringFailed(registration, "Core Location region limit \(Self.regionLimit) reached"))
+                continue
+            }
             native.startMonitoring(registration)
+            occupied.insert(registration.id)
         }
     }
 
+    private func requireWritableStore() throws {
+        if let persistenceFailure { throw MiniAppLocationFailure.persistenceUnavailable(persistenceFailure) }
+    }
     private func persist() throws { try store.write(Array(registrations.values)) }
+
+    private func deliver(to owner: MiniAppID, _ event: MiniAppLocationEvent) {
+        if let consumer = consumers[owner] { consumer.receive(event) }
+        else if admissions[owner]?.isAllowed() == true { coldConsumers[owner]?(event) }
+    }
 
     private func receive(_ event: MiniAppLocationNativeEvent) {
         switch event {
         case .locations(let generation, let samples):
             guard let owner = updateOwners.first(where: { $0.value == generation })?.key else { return }
-            consumers[owner]?(.locations(generation: generation, samples: samples))
+            deliver(to: owner, .locations(generation: generation, samples: samples))
         case .authorizationChanged(let status):
             if status != .whenInUse && status != .always {
                 for generation in updateOwners.values { native.stopUpdates(generation: generation) }
                 updateOwners.removeAll()
             }
-            for consumer in consumers.values { consumer(.authorizationChanged(status)) }
+            for owner in Set(consumers.keys).union(coldConsumers.keys) { deliver(to: owner, .authorizationChanged(status)) }
         case .entered(let id): deliver(id) { .entered($0) }
         case .exited(let id): deliver(id) { .exited($0) }
         case .state(let id, let state): deliver(id) { .state($0, state) }
@@ -206,18 +300,20 @@ public final class MiniAppLocationCoordinator {
                 registrations.removeValue(forKey: id)
                 do {
                     try persist()
-                    consumers[registration.owner]?(.monitoringFailed(registration, message))
+                    deliver(to: registration.owner, .monitoringFailed(registration, message))
                 } catch {
                     registrations[id] = registration
-                    consumers[registration.owner]?(.monitoringFailed(
+                    deliver(to: registration.owner, .monitoringFailed(
                         registration, "\(message); registration metadata cleanup failed: \(error.localizedDescription)"))
                 }
-            } else {
-                for consumer in consumers.values { consumer(.monitoringFailed(nil, message)) }
+            } else if id == nil {
+                for owner in Set(consumers.keys).union(coldConsumers.keys) {
+                    deliver(to: owner, .monitoringFailed(nil, message))
+                }
             }
         case .failed(let generation, let message):
             if let generation, let owner = updateOwners.first(where: { $0.value == generation })?.key {
-                consumers[owner]?(.failed(generation: generation, message))
+                deliver(to: owner, .failed(generation: generation, message))
             }
         }
     }
@@ -225,7 +321,7 @@ public final class MiniAppLocationCoordinator {
     private func deliver(_ identifier: String,
                          event: (MiniAppLocationRegistration) -> MiniAppLocationEvent) {
         guard let registration = registrations[identifier] else { return }
-        consumers[registration.owner]?(event(registration))
+        deliver(to: registration.owner, event(registration))
     }
 }
 
@@ -234,38 +330,78 @@ public final class MiniAppLocationService {
     public let owner: MiniAppID
     private let coordinator: MiniAppLocationCoordinator
     private let featureConsent: @MainActor @Sendable () -> Bool
+    private let admission = MiniAppLocationAdmission()
+    private var activeToken: UUID?
     public var receive: (@MainActor @Sendable (MiniAppLocationEvent) -> Void)?
+    #if os(iOS)
+    public var receiveCoreLocations: (@MainActor ([CLLocation], UUID) -> Void)?
+    #endif
 
     public init(owner: MiniAppID, coordinator: MiniAppLocationCoordinator = .shared,
                 featureConsent: @escaping @MainActor @Sendable () -> Bool) {
         precondition(owner.isValid)
         self.owner = owner; self.coordinator = coordinator; self.featureConsent = featureConsent
+        coordinator.prepare(owner: owner, admission: admission) { [weak self] in self?.receive?($0) }
     }
 
     public func connect(to runtime: MiniAppRuntime) throws {
-        coordinator.connect(owner: owner) { [weak self] in self?.receive?($0) }
+        let token = UUID()
         try runtime.onShutdownAsync { [weak self] in
             guard let self else { return }
-            self.coordinator.disconnect(owner: self.owner)
+            self.disconnect(token: token)
         }
+        coordinator.connect(owner: owner, token: token, receive: { [weak self] in self?.receive?($0) }
+                            #if os(iOS)
+                            , receiveCoreLocations: { [weak self] locations, generation in
+                                self?.receiveCoreLocations?(locations, generation)
+                            }
+                            #endif
+        )
+        activeToken = token
     }
 
+    private func disconnect(token: UUID) {
+        coordinator.disconnect(owner: owner, token: token)
+        if activeToken == token { activeToken = nil }
+    }
+    private func requireConnection() throws { guard activeToken != nil else { throw MiniAppLocationFailure.stopped } }
+
     public func requestAuthorization(_ request: MiniAppLocationAuthorizationRequest) throws {
+        try requireConnection()
         try coordinator.requestAuthorization(owner: owner, featureConsent: featureConsent(), request: request)
     }
     public func startUpdates(_ configuration: MiniAppLocationUpdateConfiguration) throws -> UUID {
+        try requireConnection()
         try coordinator.startUpdates(owner: owner, featureConsent: featureConsent(), configuration: configuration)
     }
-    public func stopUpdates(generation: UUID) throws { try coordinator.stopUpdates(owner: owner, generation: generation) }
+    public func stopUpdates(generation: UUID) throws { try requireConnection(); try coordinator.stopUpdates(owner: owner, generation: generation) }
     public func register(localID: String, region: MiniAppLocationRegion) throws -> MiniAppLocationRegistration {
+        try requireConnection()
         try coordinator.register(owner: owner, localID: localID, region: region, featureConsent: featureConsent())
     }
     public func unregister(localID: String, generation: UUID? = nil) throws {
+        try requireConnection()
         try coordinator.unregister(owner: owner, localID: localID, generation: generation)
     }
-    public func unregisterAll() throws { try coordinator.unregisterAll(owner: owner) }
-    public func requestState(localID: String) throws { try coordinator.requestState(owner: owner, localID: localID) }
+    public func unregisterAll() throws { try requireConnection(); try coordinator.unregisterAll(owner: owner) }
+    public func unregisterAllOwned() throws { try coordinator.unregisterAll(owner: owner) }
+    public func requestState(localID: String) throws { try requireConnection(); try coordinator.requestState(owner: owner, localID: localID) }
+    public var registrations: [MiniAppLocationRegistration] { coordinator.registrations(owner: owner) }
+    public func reconnectPersistedMonitoring() throws {
+        guard featureConsent() else { try coordinator.revoke(owner: owner); return }
+        try coordinator.reconnectPersistedMonitoring(owner: owner)
+    }
     public func featureConsentDidChange() throws {
         if !featureConsent() { try coordinator.revoke(owner: owner) }
+    }
+
+    public var externalAccess: MiniAppExternalAccess {
+        let owner = owner, admission = admission, coordinator = coordinator
+        return MiniAppExternalAccess(id: owner, prepare: { admission.setAllowed($0) }, close: {
+            admission.setAllowed(false)
+            try await MainActor.run { try coordinator.revoke(owner: owner) }
+        }, open: {
+            admission.setAllowed(true)
+        }, restoreLifecycle: { inner in inner ?? MiniAppRestoreLifecycle(stop: {}, resume: {}) })
     }
 }

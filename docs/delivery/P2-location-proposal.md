@@ -5,10 +5,13 @@
 ## 実装判断
 
 - `MiniAppLocationService`をFeature ownerの入口にし、同意確認をOS permission requestおよびnative開始より先に行う。OS許可はapp共有、Feature同意はowner単位で分離した。
+- runtime接続はtoken付きで、cleanup登録成功後に公開する。閉じたruntimeは接続を残さず、古いruntimeの遅着cleanupは新世代を切断しない。停止後のservice操作は拒否する。
 - 連続位置更新はgenerationごとに通常の`CLLocationManager`を一つ使う。Feature固有のaccuracy、distance filter、activity、pause、背景indicatorを保持する。停止・許可喪失・runtime shutdownで当該generationを閉じ、遅着を捨てる。他ownerのmanagerは停止しない。
 - geofence/iBeaconはowner、local ID、UUID generationからOS identifierを生成する。OSの`monitoredRegions`がapp内全managerで共有されるため、未知のhost regionも20枠へ計上し、満杯時は既存値を変えず説明可能な`capacityExceeded`を返す。
-- metadataを`UserDefaults`へ永続化してからnative登録する。書込失敗は予約をrollbackする。native登録失敗callbackは予約を解放する。解除・削除はownerの完全なidentifierだけを止める。
-- cold launch hookは永続RegionのうちOS側に欠けるものだけ再接続する。管理／restoreやUI選択ではOS活動を勝手に再開しない。連続更新も自動再開しない。
+- metadataを`UserDefaults`へ永続化してからnative登録する。読込時にもowner、座標、半径、beacon階層、owner/local重複を再検証する。破損は可視化し、そのprocessの破壊的writeを拒否する。取消書込失敗は全ownerのmemory/disk状態をrollbackする。
+- cold launch hookは`externalAccess.prepare`で適用済みの管理状態と永続Feature同意を確認し、画面なしのcold consumerを先に用意してから、OS側に欠けるRegionだけ20枠を再評価して接続する。連続更新は自動再開しない。
+- `startMonitoring`要求Regionをadapterが保持し、登録完了前の取消と遅着`didStartMonitoringFor`を掃除する。未知identifierの失敗はbroadcastせず、nilのmanager全体エラーだけを全ownerへ配送する。
+- value sampleはCLLocationの高度、速度、course、各精度、source情報を保持する。さらにiOS限定`receiveCoreLocations`を同じowner/generation境界から提供する。geofence/beacon availabilityを分離し、過大半径は最大値を含む失敗とする。
 - Region callbackはAppleの仕様どおりobject identityではなくidentifierで配送する。知らないidentifier、解除済みgeneration、停止済み更新generationは破棄する。
 
 ## 実Feature診断
@@ -16,9 +19,9 @@
 `P2LocationProbe.definitions`は通常の`MiniAppDefinition`を二つ返す。
 
 - `p2-location-tracker`: When In Use／Always要求、設定を変えた前景・背景標準更新、明示停止、更新数と最新sampleを表示。
-- `p2-location-regions`: 東京駅geofenceと既知UUID/major/minorの診断iBeacon、最後の担当登録だけの解除、進入／退出／状態／失敗を表示。
+- `p2-location-regions`: 現在地取得または編集可能な緯度・経度・半径によるgeofence、既知UUID/major/minorの診断iBeacon、再起動後も復元されるowner登録一覧と個別解除、進入／退出／状態／失敗を表示。
 
-両Featureは独立したlifetime、同意、owner、非初期stateを持つ。`P2LocationNativeTests`はdefinitionsの実入口、独立start/stop、host launch hookの反復可能性を検査する。
+両Featureは独立したlifetime、同意、owner、非初期stateを持つ。`P2LocationNativeTests`はdefinitionsの実入口、独立start/stop、host launch hook、実Core Location adapter設定、SDK `CLLocation`出口、pending Region取消、実management disable時のB保持を検査する。
 
 ## 合格条件と試験対応
 
@@ -35,7 +38,12 @@
 | OS許可喪失で全ownerの連続更新を止め、durable Region metadataを保持 | `testAuthorizationRevocationStopsEveryUpdateButKeepsDurableRegions` |
 | 非同期monitoring失敗で予約枠を解放 | `testMonitoringFailureReleasesOwnedReservation` |
 | Feature同意取消で当該ownerだけ停止・解除 | `testFeatureConsentRevocationStopsAndRemovesOnlyThatOwner` |
-| 実Featureが二owner・通常lifetime/hookで接続 | `P2LocationNativeTests` 3件 |
+| closed runtime rollback、同owner再接続、古いcleanup遅着 | `testClosedRuntimeConnectionRollsBackAndRejectsOperations`, `testLateOldRuntimeCleanupDoesNotDisconnectNewGeneration` |
+| store破損の可視化・write拒否、取消失敗rollback/B保持 | `testCorruptStoreIsVisibleAndRefusesDestructiveWrite`, `testFailedOwnerRemovalRollsBackAndSurvivesRestartWithOtherOwner`, `testDecodedRegistrationRevalidatesOwnerAndRegion` |
+| 画面前cold配送、disabled/同意取消owner非再開、B保持 | `testColdHookFiltersDisabledOwnerAndDeliversEnabledOwnerBeforeViewConnection`, `testColdServiceDoesNotReconnectWhenFeatureConsentWasRevoked` |
+| 未知monitor失敗の隔離、nil全体失敗 | `testUnknownMonitoringFailureIsNotBroadcastButGlobalFailureIs` |
+| beacon階層と最大半径を説明可能に拒否 | `testBeaconMinorWithoutMajorAndOversizeRadiusAreExplained` |
+| 実Feature二owner、通常lifetime/hook、native adapter、pending取消、management保持 | `P2LocationNativeTests` 6件 |
 
 ## Apple一次資料とSDK条件（2026-09-17確認）
 
@@ -53,10 +61,11 @@
 
 担当所有path外は編集していない。次を共有側へ追加する必要がある。
 
-1. 診断host registryを組み立てる箇所で`P2LocationProbe.definitions`を既存definitionsへ追加する。
+1. 診断host registryを組み立てる箇所で`P2LocationProbe.definitions`を既存definitionsへ追加する。各definitionの`externalAccess`を既存management registrationへそのまま渡す。
 2. hostの`application(_:didFinishLaunchingWithOptions:)`でregistry確定後・scene表示前に各定義の`onHostLaunch`を呼ぶ既存公開hookへ接続する。既に全定義hookを呼ぶ構成なら追加呼出し不要。
 3. 診断host Info.plistへ`NSLocationWhenInUseUsageDescription`、`NSLocationAlwaysAndWhenInUseUsageDescription`を追加し、Background Modesの`location`を有効にする。
 4. `Tests/P2Location/P2LocationProbe.swift`と`P2LocationNativeTests.swift`をiOS native test targetへ追加する。`Package.swift`やProject/workflowは担当境界のため未変更。
+5. 管理画面のFeature同意setterで`location` decisionを保存した直後、対象Featureのlocation service `featureConsentDidChange()`をMainActorで呼ぶ。これにより画面未表示時の取消もnative仕事へ反映する。
 
 ## 検証結果と未解決条件
 

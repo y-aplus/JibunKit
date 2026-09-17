@@ -17,7 +17,7 @@ final class P2LocationFeature {
     let kind: Kind
     let coordinator: MiniAppLocationCoordinator
     let state = P2LocationState()
-    private var consentStore: MiniAppConsentStore?
+    private var consentStore: MiniAppConsentStore? = MiniAppConsentStore(defaults: .standard)
     private var updateGeneration: UUID?
     lazy var service = MiniAppLocationService(owner: id, coordinator: coordinator) { [weak self] in
         guard let self else { return false }
@@ -26,7 +26,6 @@ final class P2LocationFeature {
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
         try self.service.connect(to: runtime)
-        self.service.receive = { [weak self] in self?.receive($0) }
         self.state.generation += 1
         self.state.status = "Feature接続済み・OS許可 \(self.coordinator.authorization.rawValue)"
     }
@@ -36,21 +35,24 @@ final class P2LocationFeature {
     }
 
     var definition: MiniAppDefinition {
-        MiniAppDefinition(
+        service.receive = { [weak self] in self?.receive($0) }
+        return MiniAppDefinition(
             id: id, title: kind == .tracker ? "位置更新Probe" : "Region/iBeacon Probe",
             systemImage: kind == .tracker ? "location" : "mappin.and.ellipse",
             lifetime: lifetime,
+            externalAccess: service.externalAccess,
             permissions: [.init(id: "location", title: "位置情報",
                                 purpose: kind == .tracker ? "選択した精度で前景・背景の位置更新を受け取ります" : "geofenceとiBeaconの出入りを監視します",
                                 deniedBehavior: "OS許可を要求せず、位置処理を開始しません")],
-            onUnregister: { [weak self] in try self?.service.unregisterAll() },
-            onHostLaunch: { [weak self] in self?.coordinator.reconnectPersistedMonitoring() }
+            onUnregister: { [weak self] in try self?.service.unregisterAllOwned() },
+            onHostLaunch: { [weak self] in try self?.service.reconnectPersistedMonitoring() }
         ) { [self] _ in P2LocationView(feature: self) }
     }
 
     func attachConsent(_ store: MiniAppConsentStore?) {
         consentStore = store
         report { try service.featureConsentDidChange() }
+        refreshRegistrations()
     }
     func request(_ request: MiniAppLocationAuthorizationRequest) { report { try service.requestAuthorization(request) } }
     func start(background: Bool) {
@@ -75,10 +77,10 @@ final class P2LocationFeature {
     }
     func registerGeofence() {
         report {
-            let registration = try service.register(localID: "tokyo-station", region: .geofence(
-                latitude: 35.681236, longitude: 139.767125, radius: 150,
+            let registration = try service.register(localID: "geofence-\(state.registrations.count + 1)", region: .geofence(
+                latitude: state.latitude, longitude: state.longitude, radius: state.radius,
                 notifyOnEntry: true, notifyOnExit: true))
-            state.lastRegistration = registration; state.status = "geofence登録 \(registration.localID)"
+            state.status = "geofence登録 \(registration.localID)"; refreshRegistrations()
         }
     }
     func registerBeacon() {
@@ -86,23 +88,24 @@ final class P2LocationFeature {
             let registration = try service.register(localID: "diagnostic-beacon", region: .beacon(
                 uuid: UUID(uuidString: "E2C56DB5-DFFB-48D2-B060-D0F5A71096E0")!, major: 1, minor: 1,
                 notifyOnEntry: true, notifyOnExit: true))
-            state.lastRegistration = registration; state.status = "iBeacon監視登録 \(registration.localID)"
+            state.status = "iBeacon監視登録 \(registration.localID)"; refreshRegistrations()
         }
     }
-    func unregisterLast() {
+    func unregister(_ registration: MiniAppLocationRegistration) {
         report {
-            guard let registration = state.lastRegistration else { return }
             try service.unregister(localID: registration.localID, generation: registration.generation)
-            state.lastRegistration = nil; state.status = "担当Regionを解除"
+            state.status = "担当Regionを解除"; refreshRegistrations()
         }
     }
     private func receive(_ event: MiniAppLocationEvent) {
         state.eventCount += 1
         switch event {
-        case .locations(_, let samples): state.status = "位置更新 \(samples.count)件"; state.lastSample = samples.last
+        case .locations(_, let samples):
+            state.status = "位置更新 \(samples.count)件"; state.lastSample = samples.last
+            if let sample = samples.last { state.latitude = sample.latitude; state.longitude = sample.longitude }
         case .authorizationChanged(let value): state.status = "OS許可変更: \(value.rawValue)"
-        case .entered(let value): state.status = "進入: \(value.localID)"
-        case .exited(let value): state.status = "退出: \(value.localID)"
+        case .entered(let value): state.status = "進入: \(value.localID)"; refreshRegistrations()
+        case .exited(let value): state.status = "退出: \(value.localID)"; refreshRegistrations()
         case .state(let value, let regionState): state.status = "状態 \(value.localID): \(regionState)"
         case .monitoringFailed(_, let message), .failed(_, let message): state.status = "失敗: \(message)"
         }
@@ -110,6 +113,7 @@ final class P2LocationFeature {
     private func report(_ operation: () throws -> Void) {
         do { try operation() } catch { state.status = "拒否/失敗: \(error)" }
     }
+    private func refreshRegistrations() { state.registrations = service.registrations }
 }
 
 @MainActor
@@ -118,7 +122,10 @@ final class P2LocationState: ObservableObject {
     @Published var eventCount = 0
     @Published var generation = 0
     @Published var lastSample: MiniAppLocationSample?
-    @Published var lastRegistration: MiniAppLocationRegistration?
+    @Published var latitude = 0.0
+    @Published var longitude = 0.0
+    @Published var radius = 150.0
+    @Published var registrations: [MiniAppLocationRegistration] = []
 }
 
 private struct P2LocationView: View {
@@ -140,9 +147,19 @@ private struct P2LocationView: View {
                 Button("背景位置更新") { feature.start(background: true) }
                 Button("位置更新停止") { feature.stopUpdates() }
             } else {
-                Button("東京駅geofence登録") { feature.registerGeofence() }
+                Button("現在地を取得") { feature.start(background: false) }
+                TextField("緯度", value: $state.latitude, format: .number)
+                TextField("経度", value: $state.longitude, format: .number)
+                TextField("半径m", value: $state.radius, format: .number)
+                Button("入力地点のgeofence登録") { feature.registerGeofence() }
                 Button("診断iBeacon登録") { feature.registerBeacon() }
-                Button("最後の担当Regionを解除") { feature.unregisterLast() }
+                ForEach(state.registrations) { registration in
+                    HStack {
+                        Text(registration.localID)
+                        Spacer()
+                        Button("解除") { feature.unregister(registration) }
+                    }
+                }
             }
             if let sample = state.lastSample { Text("\(sample.latitude), \(sample.longitude) ±\(sample.horizontalAccuracy)m") }
         }

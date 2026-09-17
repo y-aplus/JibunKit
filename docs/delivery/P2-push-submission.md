@@ -29,4 +29,4 @@ Source tests cover token change/idempotence, separate server identity, registrat
 
 ## Commit
 
-Commit SHA: `TO_BE_FILLED_AFTER_COMMIT`
+Implementation commit SHA: `a1315db4f7e9e16a67581b316c7d98f7e0c1124f`

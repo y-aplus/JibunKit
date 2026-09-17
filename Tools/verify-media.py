@@ -125,12 +125,19 @@ def main():
             derived = root / "Build"
             common = ["-workspace", "JibunKit.xcworkspace", "-derivedDataPath", derived]
             native_error = None
+            timeouts = ([] if is_media else ["-test-timeouts-enabled", "YES",
+                "-default-test-execution-time-allowance", "60",
+                "-maximum-test-execution-time-allowance", "120"])
             try:
-                run(["xcodebuild", "test", *common, "-scheme", scheme,
+                command = ["xcodebuild", "test", *common, "-scheme", scheme,
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                        "-resultBundlePath", evidence / "native-tests.xcresult",
                        f"-only-testing:{scheme}", "-parallel-testing-enabled", "NO",
-                       "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "native-tests")
+                       *timeouts,
+                       "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"]
+                if not is_media:
+                    command = ["python3", root / "Tests/Fixtures/network_server.py", "--run-command", *command]
+                run(command, root, "native-tests")
             except subprocess.CalledProcessError as error:
                 native_error = error
             finally:

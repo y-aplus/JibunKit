@@ -43,6 +43,8 @@ def prepare(host):
         "public static let app = FeatureBuildConfiguration()",
         '''public static let app = FeatureBuildConfiguration(features: [
         FeatureBuildRequirement(owner: "p2-background-probe", infoPlist: [
+            "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
+            "NSLocalNetworkUsageDescription": "所有者別の背景転送をローカルHTTPで検証します。",
             "UIBackgroundModes": ["fetch", "processing"],
             "BGTaskSchedulerPermittedIdentifiers": [
                 "com.jibunkit.app.p2-background-a.ordinary",

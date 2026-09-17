@@ -100,8 +100,14 @@ final class P2BackgroundFeature: ObservableObject {
         receipt = nil
     }
 
-    func submitOrdinary() { ordinaryStatus = P2BackgroundServices.submitOrdinary(owner: id) }
-    func submitSharedRefresh() { sharedStatus = P2BackgroundServices.submitShared(owner: id) }
+    func submitOrdinary() {
+        guard runtime?.isClosed == false else { ordinaryStatus = "受付拒否: Feature停止中"; return }
+        ordinaryStatus = P2BackgroundServices.submitOrdinary(owner: id)
+    }
+    func submitSharedRefresh() {
+        guard runtime?.isClosed == false else { sharedStatus = "受付拒否: Feature停止中"; return }
+        sharedStatus = P2BackgroundServices.submitShared(owner: id)
+    }
     func refreshSharedJournalStatus() { sharedStatus = P2BackgroundServices.sharedStatus(owner: id) }
     func startDownload(urlText: String) async {
         guard let runtime, !runtime.isClosed else { transferStatus = "受付拒否: Feature停止中"; return }
@@ -114,6 +120,7 @@ final class P2BackgroundFeature: ObservableObject {
             guard let self, let execution else { return }
             do {
                 try await lifetime.start()
+                guard !execution.isExpired else { throw CancellationError() }
                 guard let runtime, !runtime.isClosed else { throw P2BackgroundAdmissionFailure.closed }
                 let workID = UUID()
                 let task = try runtime.start { @MainActor [weak self, weak execution] in
@@ -135,6 +142,7 @@ final class P2BackgroundFeature: ObservableObject {
             guard let self, let execution else { return }
             do {
                 try await lifetime.start()
+                guard !execution.isExpired else { throw CancellationError() }
                 guard let runtime, !runtime.isClosed else { throw P2BackgroundAdmissionFailure.closed }
                 let workID = UUID()
                 let task = try runtime.start { @MainActor [weak self, weak execution] in
@@ -222,6 +230,8 @@ final class P2BackgroundFeature: ObservableObject {
 
     private func runOrdinary(workID: UUID, execution: MiniAppBackgroundTaskExecution) async {
         do {
+            try Task.checkCancellation()
+            guard !execution.isExpired else { throw CancellationError() }
             try await backgroundWork(); try Task.checkCancellation()
             execution.complete(success: true); ordinaryStatus = "OS仕事完了"
         } catch {
@@ -232,6 +242,8 @@ final class P2BackgroundFeature: ObservableObject {
 
     private func runShared(workID: UUID, execution: MiniAppSharedRefreshExecution) async {
         do {
+            try Task.checkCancellation()
+            guard !execution.isExpired else { throw CancellationError() }
             try await backgroundWork(); try Task.checkCancellation()
             _ = execution.complete(success: true); sharedStatus = "共有仕事完了"
         } catch {
@@ -371,7 +383,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     nonisolated let destinationDirectory: URL
     private let status: @MainActor (String) -> Void
     private weak var feature: P2BackgroundFeature?
-    private let delegateState = P2URLDelegateState()
+    nonisolated private let delegateState = P2URLDelegateState()
     private var registration: MiniAppBackgroundURLSessionRegistration?
     private var session: URLSession?
     private var events: MiniAppBackgroundURLSessionEvents?
@@ -406,11 +418,11 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     func bind(runtime: MiniAppRuntime) throws {
         let id = ObjectIdentifier(runtime)
         if boundRuntimeID == id { return }
-        self.runtime = runtime
-        boundRuntimeID = id
         try runtime.onShutdownAsync { [weak self, weak runtime] in
             await self?.deactivate(expected: runtime)
         }
+        self.runtime = runtime
+        boundRuntimeID = id
     }
 
     func start(url: URL, runtime expected: MiniAppRuntime) async -> String {
@@ -462,7 +474,12 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 status("OS callback再接続・delegate event待ち")
             } catch {
                 status("OS callback受付拒否: \(error)")
-                events.finish()
+                // This is an owned session even when its Feature is disabled.
+                // Cancel its OS tasks and join delegate invalidation before
+                // releasing the host's completion callback.
+                self.events = events
+                ensureSession(identifier: identifier)
+                await deactivate(expected: nil)
             }
         }
     }
@@ -544,8 +561,9 @@ private final class P2URLDelegateState: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         completionCount += 1
         let message: String
+        let result = locations.removeValue(forKey: taskID)
         if let error { message = "download失敗 events=\(completionCount): \(error)" }
-        else if let result = locations.removeValue(forKey: taskID) {
+        else if let result {
             switch result {
             case .success(let url): message = "download保存 events=\(completionCount): \(url.lastPathComponent)"
             case .failure(let error): message = "保存失敗 events=\(completionCount): \(error)"

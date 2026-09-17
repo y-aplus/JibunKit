@@ -224,6 +224,7 @@ final class P2BackgroundNativeTests: XCTestCase {
             identifier: identifier, completionHandler: rejected.call), .connected)
         await eventually { rejected.count == 1 }
         XCTAssertFalse(connection.hasSession)
+        let rejectedGeneration = connection.sessionGeneration
 
         feature.lifetime.setStartAllowed(true)
         try await feature.lifetime.start()
@@ -232,7 +233,7 @@ final class P2BackgroundNativeTests: XCTestCase {
         XCTAssertEqual(MiniAppBackgroundURLSessionReconnectRegistry.shared.handleEvents(
             identifier: identifier, completionHandler: completion.call), .connected)
         await eventually { connection.hasSession }
-        XCTAssertEqual(connection.sessionGeneration, 1)
+        XCTAssertEqual(connection.sessionGeneration, rejectedGeneration + 1)
 
         let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try Data("transfer-a".utf8).write(to: source)
@@ -254,11 +255,75 @@ final class P2BackgroundNativeTests: XCTestCase {
         let second = P2CompletionCounter()
         XCTAssertEqual(MiniAppBackgroundURLSessionReconnectRegistry.shared.handleEvents(
             identifier: identifier, completionHandler: second.call), .connected)
-        await eventually { connection.sessionGeneration == 2 }
+        await eventually { connection.sessionGeneration == rejectedGeneration + 2 }
         connection.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession.shared)
         await eventually { second.count == 1 }
         await feature.lifetime.stop()
         XCTAssertFalse(connection.hasSession)
+    }
+
+    func testRealHTTPStopAJoinsCancellationWhileBFileSurvives() async throws {
+        let port = try XCTUnwrap(ProcessInfo.processInfo.environment["JIBUNKIT_NETWORK_TEST_PORT"],
+                                 "Native runner must start the loopback HTTP fixture")
+        let base = try XCTUnwrap(URL(string: "http://127.0.0.1:\(port)/"))
+        let token = UUID().uuidString.lowercased()
+        let center = MiniAppContinuedProcessingCenter(scheduler: P2ContinuedSchedulerSpy())
+        let aID = MiniAppID("http-a-\(token)"); let bID = MiniAppID("http-b-\(token)")
+        let a = P2BackgroundFeature(id: aID, title: "HTTP A",
+            continued: center.tasks(for: MiniAppContext(id: aID)), work: { _ in })
+        let b = P2BackgroundFeature(id: bID, title: "HTTP B",
+            continued: center.tasks(for: MiniAppContext(id: bID)), work: { _ in })
+        var aStatuses: [String] = []; var bStatuses: [String] = []
+        let aConnection = P2BackgroundURLConnection(owner: aID, feature: a) { aStatuses.append($0) }
+        let bConnection = P2BackgroundURLConnection(owner: bID, feature: b) { bStatuses.append($0) }
+        try aConnection.register(context: MiniAppContext(id: aID))
+        try bConnection.register(context: MiniAppContext(id: bID))
+        let control = URLSession(configuration: .ephemeral)
+        addTeardownBlock { @MainActor in
+            _ = try? await control.data(from: base.appendingPathComponent("release/\(token)"))
+            await a.lifetime.stop(); await b.lifetime.stop()
+            control.invalidateAndCancel()
+            try? FileManager.default.removeItem(at: aConnection.destinationDirectory)
+            try? FileManager.default.removeItem(at: bConnection.destinationDirectory)
+        }
+        try await a.lifetime.start(); try await b.lifetime.start()
+        let aRuntime = try XCTUnwrap(a.lifetime.runtime); let bRuntime = try XCTUnwrap(b.lifetime.runtime)
+        try aConnection.bind(runtime: aRuntime); try bConnection.bind(runtime: bRuntime)
+        _ = await aConnection.start(url: base.appendingPathComponent("hold/\(token)"), runtime: aRuntime)
+        let (_, started) = try await control.data(from: base.appendingPathComponent("await-start/\(token)"))
+        XCTAssertEqual((started as? HTTPURLResponse)?.statusCode, 200, "A must reach the server before cancellation")
+        _ = await bConnection.start(url: base.appendingPathComponent("file/\(token)"), runtime: bRuntime)
+        a.lifetime.setStartAllowed(false)
+        await a.lifetime.stop()
+        XCTAssertFalse(aConnection.hasSession, "Stop must join native invalidation")
+        XCTAssertTrue(aStatuses.contains { $0.contains("download失敗") })
+        _ = try await control.data(from: base.appendingPathComponent("release/\(token)"))
+        await eventually { bStatuses.contains { $0.contains("download保存") } }
+        XCTAssertTrue(bConnection.hasSession)
+        XCTAssertEqual(b.lifetime.state, .running)
+        let files = try FileManager.default.contentsOfDirectory(at: bConnection.destinationDirectory,
+                                                               includingPropertiesForKeys: nil)
+        XCTAssertEqual(files.count, 1)
+        let saved = try XCTUnwrap(files.first)
+        XCTAssertEqual(try Data(contentsOf: saved), Data("missing".utf8))
+        XCTAssertTrue(try FileManager.default.contentsOfDirectory(atPath: aConnection.destinationDirectory.path).isEmpty)
+        await b.lifetime.stop()
+        XCTAssertEqual(try Data(contentsOf: saved), Data("missing".utf8), "Stopping transport must preserve its completed file")
+    }
+
+    func testExpiredOrdinaryLaunchNeverStartsBusinessWork() async throws {
+        let scheduler = P2BackgroundSchedulerSpy()
+        let center = MiniAppBackgroundTaskCenter(scheduler: scheduler)
+        let continued = MiniAppContinuedProcessingCenter(scheduler: P2ContinuedSchedulerSpy())
+        let gate = P2BackgroundWorkGate()
+        let feature = backgroundFeature("expired-a", continued: continued, gate: gate)
+        let tasks = center.tasks(for: MiniAppContext(id: feature.id))
+        try tasks.register(identifier: "com.example.expired", kind: .appRefresh) { feature.admitOrdinary($0) }
+        let native = scheduler.launch("com.example.expired")
+        native.expirationHandler?()
+        await eventually { native.completions == [false] }
+        XCTAssertFalse(gate.started)
+        await feature.lifetime.stop()
     }
 
     private func feature(_ id: String, center: MiniAppContinuedProcessingCenter,

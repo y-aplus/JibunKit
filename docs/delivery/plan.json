@@ -737,8 +737,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "外部データidentity・同期共存",
-      "existing": "既存保存/復旧・宣言合成とFeatureの外部同期を再利用",
-      "remaining": "利用可能な署名構成でcontainer/account/data所有、同期中の削除/復帰・B保持。条件の根拠を明示",
+      "existing": "owner/container/account/localIDと世代を分離、native CloudKit private zone adapter、停止後削除/復元/account切替。共有9件・統合native6件/host構成をCI35249566535/35253192466で検証。",
+      "remaining": "署名条件を満たす実CloudKit通信と通常OS中断/復帰・管理の確認。fake試験を実通信証拠にしない。",
       "deferred": "任意既存container/schemaの自動移行・汎用同期サービス",
       "criteria": [
         {
@@ -826,8 +826,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "APNs・必要な通知extension",
-      "existing": "通知のowner配送/宣言合成を再利用",
-      "remaining": "app tokenとFeature/server identity、正しい配送・必要extension、失敗/取消/再登録のB維持、署名/server条件説明",
+      "existing": "app token/Feature server identity、Runtime所有配送・cold admission・失敗回復・整数保持、実delegate接続。共有9件・native3件・host3件をCI35249566535/35253192466で検証。",
+      "remaining": "有効署名/providerを使うAPNs登録/配信・背景入口の確認。通知extensionは通常範囲の必要性/接続を文書化、実extension実行とは区別。",
       "deferred": "複数backendを横断する汎用push基盤",
       "criteria": [
         {

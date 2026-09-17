@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-I",
-  "source": "03ae2aa388578e1e71b616a103223d376a65e59b",
+  "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
   "contract": {
     "baseline": "7347b483936e7f8bfe45d36984c32390cdcae2b3",
     "interfaces": "docs/delivery/P2-identity-push-contract.md; standard Feature lifetime/runtime, management/externalAccess, host launch and notification route. Additive owner-scoped external identity and app-token/owner-server push APIs.",
@@ -104,6 +104,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35251510227",
       "source": "03ae2aa388578e1e71b616a103223d376a65e59b",
       "conclusion": "failure: Core/app/test compilation passed. Native12 methods executed with passing assertions but actual-host disable exceeded60s allowance while awaiting Spotlight. Trace reached feature hook and notification completion then spotlight-begin; method returned after138.976s and XCTest reported timeout/relaunch. Not a passing run; Release IPA not produced."
+    },
+    {
+      "id": "35253192466",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35253192466",
+      "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+      "conclusion": "success: native12/12 passed, zero skips/failures, Release diagnostic IPA and signature checks passed. Job13m27 including setup/upload. Source c4703a1. Physical APNs/CloudKit actions not exercised."
     }
   ],
   "evidence": [
@@ -386,6 +392,24 @@
       "observation": "Unfiltered shared415 tests, 2 existing Keychain skips and zero failures. New identity9 and Push9 owner/lifetime/account/payload tests passed. Records11 passed independently.",
       "review": "Full successful job log inspected, not workflow status alone. This is unit evidence; no real APNs/CloudKit communication inferred.",
       "reuse_reason": "After42bb373 only diagnostic fixture capture/assertion code and evidence docs changed. Sources/, Package.swift and normal build configuration are identical."
+    },
+    {
+      "criterion": "P2-8.docs",
+      "kind": "inspection",
+      "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+      "result": "passed",
+      "reference": "docs/guides/external-data-identity.md; docs/guides/remote-push.md; docs/delivery/P2-identity-push-contract.md",
+      "observation": "Connection, owner lifecycle, signing/container/provider requirements, cooperative cancellation limits and fake-versus-real communication explicitly documented.",
+      "review": "Parent reviewed final API and actual delegate opt-in against source, normal compile and native12 results. No current release or complete OS acceptance claimed."
+    },
+    {
+      "criterion": "P2-10.docs",
+      "kind": "inspection",
+      "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+      "result": "passed",
+      "reference": "docs/guides/external-data-identity.md; docs/guides/remote-push.md; docs/delivery/P2-identity-push-contract.md",
+      "observation": "Connection, owner lifecycle, signing/container/provider requirements, cooperative cancellation limits and fake-versus-real communication explicitly documented.",
+      "review": "Parent reviewed final API and actual delegate opt-in against source, normal compile and native12 results. No current release or complete OS acceptance claimed."
     }
   ],
   "deferred_device": {
@@ -486,9 +510,9 @@
     }
   ],
   "pending": [
-    "Dispatch same native scope with observed Spotlight latency allowance; successful normal source remains unchanged.",
-    "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
-    "P2-B pending device observations remain open; this independent work does not close them."
+    "Actual signed CloudKit/APNs communication and associated physical observations remain open. Do not claim P2-8/P2-10 complete from injected fixtures.",
+    "P2-B remaining beacon/background/cold observations remain open. No user request while asleep.",
+    "Implementation, shared regression and native host fixtures verified; continue independent P2-S preparation without main merge or release."
   ],
   "failure_triage": {
     "after_failure_count": 3,
@@ -509,5 +533,36 @@
     "shared_tests": 415,
     "shared_skips": 2,
     "records_tests": 11
-  }
+  },
+  "native_verification": {
+    "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+    "run": "35253192466",
+    "methods": 12,
+    "skips": 0,
+    "elapsed_seconds": 807,
+    "ipa_sha256": "7815bcfa5473a43a5bd33e029c6cfdb96dc51ea1edd6d7c78a2611e5ab127e79",
+    "ipa_bytes": 4211909,
+    "bundles": [
+      "com.jibunkit.app",
+      "com.jibunkit.app.Widget",
+      "com.jibunkit.app.Share"
+    ],
+    "version": "0.8.3",
+    "build": "13",
+    "review": "Downloaded artifact; independently matched all12 method names/results to source, CRC and3 plist IDs/version. CI signature steps passed. Product sources identical to42bb373 normal/shared success. Real APNs/CloudKit communication remains unverified."
+  },
+  "planned_device_checks": [
+    {
+      "criterion": "P2-8.integration",
+      "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+      "checkpoint": "1.0.0",
+      "procedure": "Use entitled signed configuration for actual CloudKit account/record update and removal or APNs registration/provider delivery. Preserve other owner through interruption/resume. Fake native fixture success covers lifecycle/host wiring only."
+    },
+    {
+      "criterion": "P2-10.integration",
+      "source": "c4703a1b6b2b1b9efbdc1e3755c6db47ecead0d2",
+      "checkpoint": "1.0.0",
+      "procedure": "Use entitled signed configuration for actual CloudKit account/record update and removal or APNs registration/provider delivery. Preserve other owner through interruption/resume. Fake native fixture success covers lifecycle/host wiring only."
+    }
+  ]
 }

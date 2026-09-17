@@ -44,6 +44,23 @@ transfer completion from `urlSessionDidFinishEvents`/host-completion release. Th
 runs for about 60 seconds so progress and system cancellation are observable; tests replace only
 that work loop with a deterministic gate.
 
+The follow-up management correction applies the same admission rule to every background entrance,
+not only continued processing. Ordinary and shared OS launches call `lifetime.start()` and fail
+their native execution when persisted management has disabled the owner or restore has suspended
+it. Accepted work is owned by `MiniAppRuntime`, so expiration and shutdown cancel and join cleanup.
+Launch registrations and shared handlers remain passive across disable/enable; deactivation cancels
+only pending owner requests and active native work. This avoids requiring `onHostLaunch` to run a
+second time. The initial submission's narrower application of this rule to continued processing was
+the cause of the follow-up, rather than an OS or CI limitation.
+
+Background URLSession reconnect likewise enters through Feature lifetime admission. Disabled cold
+callbacks release the host completion without constructing a session. Runtime shutdown calls
+`invalidateAndCancel()` and awaits `urlSession(_:didBecomeInvalidWithError:)`; a later enabled
+runtime creates a new native session using the same stable identifier. Delegate file movement is
+synchronous on the dedicated serial delegate queue. Completion, all-events-finished, and invalidated
+records receive monotonic sequence numbers and are buffered on `MainActor`, guaranteeing
+save/result delivery before host completion even if actor tasks are scheduled out of order.
+
 ## Acceptance coverage
 
 | Requirement | Automated/native coverage | Evidence meaning |
@@ -57,6 +74,8 @@ that work loop with a deterministic gate.
 | Rejected registration and cross-owner submit/cancel | New Core failure tests | No ownership claim or foreign cancellation on failure |
 | Stop, pending cancel, cleanup join, late launch, restore, other-owner retention | `P2BackgroundNativeTests` gated Feature tests | Real Definition/lifetime path without waiting 60 seconds |
 | Ordinary/shared/transfer normal entrances | Buttons and observable state in `P2BackgroundProbe`; existing Core/native HTTP tests | Real OS launch/cold callback still requires device run |
+| Management disable, restore, late ordinary/shared launch, cleanup join, B retention | New gated `P2BackgroundNativeTests` | Real Feature lifetime/runtime path; injected work only removes wall-clock delay |
+| URL cold admission, ordered save/completion/all-events, invalidation join, re-enable session | New native Feature test plus existing signed real-HTTP fixture | Native URLSession construction/invalidation and ordered delegate contract; OS cold launch remains device evidence |
 
 ## Shared integration changes requested from the parent
 

@@ -8,10 +8,12 @@ enum P2BackgroundProbe {
     static let center = MiniAppContinuedProcessingCenter()
     static let ownerA = P2BackgroundFeature(
         id: MiniAppID("p2-background-a"), title: "Background A",
-        continued: center.tasks(for: MiniAppContext(id: MiniAppID("p2-background-a"))))
+        continued: center.tasks(for: MiniAppContext(id: MiniAppID("p2-background-a"))),
+        requiresBackgroundServices: true)
     static let ownerB = P2BackgroundFeature(
         id: MiniAppID("p2-background-b"), title: "Background B",
-        continued: center.tasks(for: MiniAppContext(id: MiniAppID("p2-background-b"))))
+        continued: center.tasks(for: MiniAppContext(id: MiniAppID("p2-background-b"))),
+        requiresBackgroundServices: true)
     static let definitions: [MiniAppDefinition] = [ownerA.definition, ownerB.definition]
 }
 
@@ -34,10 +36,13 @@ final class P2BackgroundFeature: ObservableObject {
 
     private let continued: MiniAppContinuedProcessingTasks
     private let work: Work
+    private let backgroundWork: @MainActor @Sendable () async throws -> Void
+    private let requiresBackgroundServices: Bool
     private var runtime: MiniAppRuntime?
     private var receipt: MiniAppContinuedProcessingReceipt?
     private var execution: MiniAppContinuedProcessingExecution?
     private var worker: Task<Void, Never>?
+    private var backgroundWorkers: [UUID: Task<Void, Never>] = [:]
 
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
@@ -45,11 +50,16 @@ final class P2BackgroundFeature: ObservableObject {
     }
 
     init(id: MiniAppID, title: String, continued: MiniAppContinuedProcessingTasks,
-         work: @escaping Work = P2BackgroundFeature.productionWork) {
+         work: @escaping Work = P2BackgroundFeature.productionWork,
+         backgroundWork: @escaping @MainActor @Sendable () async throws -> Void = {
+             try await Task.sleep(for: .seconds(1))
+         }, requiresBackgroundServices: Bool = false) {
         self.id = id
         self.title = title
         self.continued = continued
         self.work = work
+        self.backgroundWork = backgroundWork
+        self.requiresBackgroundServices = requiresBackgroundServices
         continuedBaseIdentifier = "com.jibunkit.app.\(id.rawValue).export"
     }
 
@@ -59,7 +69,7 @@ final class P2BackgroundFeature: ObservableObject {
             onUnregister: { [weak self] in
                 guard let self else { return }
                 await self.disable()
-                P2BackgroundServices.unregister(owner: self.id)
+                await P2BackgroundServices.deactivate(owner: self.id)
             },
             onHostLaunch: { [self] in try P2BackgroundServices.register(feature: self) }
         ) { [self] _ in P2BackgroundProbeView(feature: self) }
@@ -93,29 +103,52 @@ final class P2BackgroundFeature: ObservableObject {
     func submitOrdinary() { ordinaryStatus = P2BackgroundServices.submitOrdinary(owner: id) }
     func submitSharedRefresh() { sharedStatus = P2BackgroundServices.submitShared(owner: id) }
     func refreshSharedJournalStatus() { sharedStatus = P2BackgroundServices.sharedStatus(owner: id) }
-    func startDownload(urlText: String) {
-        transferStatus = P2BackgroundServices.startDownload(owner: id, urlText: urlText)
+    func startDownload(urlText: String) async {
+        guard let runtime, !runtime.isClosed else { transferStatus = "受付拒否: Feature停止中"; return }
+        transferStatus = await P2BackgroundServices.startDownload(
+            owner: id, urlText: urlText, runtime: runtime)
     }
 
-    fileprivate func receiveOrdinary(_ execution: MiniAppBackgroundTaskExecution) {
-        ordinaryStatus = "OS起動・仕事中"
+    func admitOrdinary(_ execution: MiniAppBackgroundTaskExecution) {
         Task { @MainActor [weak self, weak execution] in
-            try? await Task.sleep(for: .seconds(1))
             guard let self, let execution else { return }
-            let success = !execution.isExpired
-            execution.complete(success: success)
-            self.ordinaryStatus = success ? "OS仕事完了" : "expiration cleanup完了"
+            do {
+                try await lifetime.start()
+                guard let runtime, !runtime.isClosed else { throw P2BackgroundAdmissionFailure.closed }
+                let workID = UUID()
+                let task = try runtime.start { @MainActor [weak self, weak execution] in
+                    guard let execution else { return }
+                    await self?.runOrdinary(workID: workID, execution: execution)
+                }
+                backgroundWorkers[workID] = task
+                execution.onExpiration = { [weak self] in self?.backgroundWorkers[workID]?.cancel() }
+                ordinaryStatus = "OS起動・runtime仕事中"
+            } catch {
+                execution.complete(success: false)
+                ordinaryStatus = "OS起動拒否: \(error)"
+            }
         }
     }
 
-    fileprivate func receiveShared(_ execution: MiniAppSharedRefreshExecution) {
-        sharedStatus = execution.request.isRecovery ? "cold recovery仕事中" : "共有refresh仕事中"
+    func admitShared(_ execution: MiniAppSharedRefreshExecution) {
         Task { @MainActor [weak self, weak execution] in
-            try? await Task.sleep(for: .seconds(1))
             guard let self, let execution else { return }
-            let success = !execution.isExpired
-            _ = execution.complete(success: success)
-            self.sharedStatus = success ? "共有仕事完了" : "共有cleanup完了・再試行保持"
+            do {
+                try await lifetime.start()
+                guard let runtime, !runtime.isClosed else { throw P2BackgroundAdmissionFailure.closed }
+                let workID = UUID()
+                let task = try runtime.start { @MainActor [weak self, weak execution] in
+                    guard let execution else { return }
+                    await self?.runShared(workID: workID, execution: execution)
+                }
+                backgroundWorkers[workID] = task
+                execution.onExpiration = { [weak self] in self?.backgroundWorkers[workID]?.cancel() }
+                sharedStatus = execution.request.isRecovery
+                    ? "cold recovery runtime仕事中" : "共有refresh runtime仕事中"
+            } catch {
+                _ = execution.complete(success: false)
+                sharedStatus = "共有OS起動拒否・再試行保持: \(error)"
+            }
         }
     }
 
@@ -123,6 +156,8 @@ final class P2BackgroundFeature: ObservableObject {
     fileprivate func setSharedStatus(_ value: String) { sharedStatus = value }
 
     private func connect(_ runtime: MiniAppRuntime) throws {
+        try P2BackgroundServices.bind(
+            owner: id, runtime: runtime, required: requiresBackgroundServices)
         try runtime.onShutdownAsync { [weak self, weak runtime] in
             await self?.shutdown(runtime: runtime)
         }
@@ -185,6 +220,26 @@ final class P2BackgroundFeature: ObservableObject {
         await cancelWorkerAndJoin(success: false, reason: "停止cleanup完了")
     }
 
+    private func runOrdinary(workID: UUID, execution: MiniAppBackgroundTaskExecution) async {
+        do {
+            try await backgroundWork(); try Task.checkCancellation()
+            execution.complete(success: true); ordinaryStatus = "OS仕事完了"
+        } catch {
+            execution.complete(success: false); ordinaryStatus = "expiration/停止 cleanup完了"
+        }
+        backgroundWorkers.removeValue(forKey: workID)
+    }
+
+    private func runShared(workID: UUID, execution: MiniAppSharedRefreshExecution) async {
+        do {
+            try await backgroundWork(); try Task.checkCancellation()
+            _ = execution.complete(success: true); sharedStatus = "共有仕事完了"
+        } catch {
+            _ = execution.complete(success: false); sharedStatus = "共有cleanup完了・再試行保持"
+        }
+        backgroundWorkers.removeValue(forKey: workID)
+    }
+
     private func cancelWorkerAndJoin(success: Bool, reason: String) async {
         let ownedWorker = worker
         ownedWorker?.cancel()
@@ -218,7 +273,6 @@ private enum P2BackgroundServices {
     static var ordinary: [MiniAppID: MiniAppBackgroundTasks] = [:]
     static var shared: [MiniAppID: MiniAppSharedRefresh] = [:]
     static var urlConnections: [MiniAppID: P2BackgroundURLConnection] = [:]
-    static var registeredOwners: Set<MiniAppID> = []
 
     static func register(feature: P2BackgroundFeature) throws {
         let context = MiniAppContext(id: feature.id)
@@ -227,67 +281,59 @@ private enum P2BackgroundServices {
         let kind: MiniAppBackgroundTaskKind = feature.id == MiniAppID("p2-background-a")
             ? .appRefresh : .processing
         try ordinaryTasks.register(identifier: ordinaryIdentifier, kind: kind) { [weak feature] in
-            guard let feature, registeredOwners.contains(feature.id) else {
-                $0.complete(success: false); return
-            }
-            feature.receiveOrdinary($0)
+            guard let feature else { $0.complete(success: false); return }
+            feature.admitOrdinary($0)
         }
         ordinary[feature.id] = ordinaryTasks
 
         let sharedCenter = try sharedRefreshCenter()
         let sharedTasks = sharedCenter.refreshes(for: context)
         try sharedTasks.register(identifier: "refresh") { [weak feature] in
-            guard let feature, registeredOwners.contains(feature.id) else {
-                _ = $0.complete(success: false); return
-            }
-            feature.receiveShared($0)
+            guard let feature else { _ = $0.complete(success: false); return }
+            feature.admitShared($0)
         }
         shared[feature.id] = sharedTasks
-        registeredOwners.insert(feature.id)
         _ = sharedCenter.reconcile()
         feature.setSharedStatus(sharedStatus(owner: feature.id))
 
-        let connection = P2BackgroundURLConnection(owner: feature.id) { [weak feature] in
+        let connection = P2BackgroundURLConnection(owner: feature.id, feature: feature) { [weak feature] in
             feature?.setTransferStatus($0)
         }
         do { try connection.register(context: context) }
-        catch {
-            registeredOwners.remove(feature.id)
-            sharedTasks.unregister(identifier: "refresh")
-            shared.removeValue(forKey: feature.id)
-            ordinary.removeValue(forKey: feature.id)
-            throw error
-        }
+        catch { throw error }
         urlConnections[feature.id] = connection
     }
 
     static func submitOrdinary(owner: MiniAppID) -> String {
+        guard let tasks = ordinary[owner] else { return "受付拒否: ordinary未登録" }
         do {
-            try ordinary[owner]?.submit(.init(
+            try tasks.submit(.init(
                 identifier: "com.jibunkit.app.\(owner.rawValue).ordinary",
                 requiresNetworkConnectivity: owner == MiniAppID("p2-background-b")))
             return "受付済み（OS起動待ち）"
         } catch { return "受付失敗: \(error)" }
     }
 
-    static func unregister(owner: MiniAppID) {
-        registeredOwners.remove(owner)
-        ordinary[owner]?.cancelAllPendingRequests()
-        ordinary.removeValue(forKey: owner)
-        if let sharedTasks = shared.removeValue(forKey: owner) {
-            try? sharedTasks.cancelAllPendingRequests()
-            sharedTasks.unregister(identifier: "refresh")
-            if let sharedCenter { _ = sharedCenter.reconcile() }
+    static func bind(owner: MiniAppID, runtime: MiniAppRuntime, required: Bool) throws {
+        guard let connection = urlConnections[owner] else {
+            if required { throw P2BackgroundAdmissionFailure.servicesNotRegistered }
+            return
         }
-        // Retain the delegate until URLSession reports that all events finished;
-        // unregistering a Feature must not release the host completion early.
-        urlConnections[owner]?.cancel()
+        try connection.bind(runtime: runtime)
+    }
+
+    static func deactivate(owner: MiniAppID) async {
+        ordinary[owner]?.cancelAllPendingRequests()
+        if let sharedTasks = shared[owner] { try? sharedTasks.cancelAllPendingRequests() }
+        if let sharedCenter { _ = sharedCenter.reconcile() }
+        await urlConnections[owner]?.deactivate()
     }
 
     static func submitShared(owner: MiniAppID) -> String {
+        guard let tasks = shared[owner] else { return "受付拒否: shared refresh未登録" }
         do {
-            let receipt = try shared[owner]?.submit(identifier: "refresh")
-            let generation = receipt.map { String($0.generation.uuidString.prefix(8)) } ?? "missing"
+            let receipt = try tasks.submit(identifier: "refresh")
+            let generation = String(receipt.generation.uuidString.prefix(8))
             return "journal受付 generation=\(generation)"
         } catch { return "journal受付失敗: \(error)" }
     }
@@ -299,11 +345,12 @@ private enum P2BackgroundServices {
         }.joined(separator: ",")
     }
 
-    static func startDownload(owner: MiniAppID, urlText: String) -> String {
+    static func startDownload(owner: MiniAppID, urlText: String,
+                              runtime: MiniAppRuntime) async -> String {
         guard let url = URL(string: urlText), let connection = urlConnections[owner] else {
             return "URL/connection不正"
         }
-        return connection.start(url: url)
+        return await connection.start(url: url, runtime: runtime)
     }
 
     private static func sharedRefreshCenter() throws -> MiniAppSharedRefreshCenter {
@@ -319,18 +366,28 @@ private enum P2BackgroundServices {
 }
 
 @MainActor
-private final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
     let owner: MiniAppID
-    let destinationDirectory: URL
+    nonisolated let destinationDirectory: URL
     private let status: @MainActor (String) -> Void
+    private weak var feature: P2BackgroundFeature?
+    private let delegateState = P2URLDelegateState()
     private var registration: MiniAppBackgroundURLSessionRegistration?
     private var session: URLSession?
     private var events: MiniAppBackgroundURLSessionEvents?
-    private var downloadedLocations: [Int: URL] = [:]
-    private var completedEvents = 0
+    private weak var runtime: MiniAppRuntime?
+    private var boundRuntimeID: ObjectIdentifier?
+    private var isInvalidating = false
+    private var invalidationWaiters: [CheckedContinuation<Void, Never>] = []
+    private var pendingRecords: [Int: P2URLDelegateRecord] = [:]
+    private var nextRecord = 1
+    private(set) var sessionGeneration = 0
+    var hasSession: Bool { session != nil }
 
-    init(owner: MiniAppID, status: @escaping @MainActor (String) -> Void) {
+    init(owner: MiniAppID, feature: P2BackgroundFeature,
+         status: @escaping @MainActor (String) -> Void) {
         self.owner = owner
+        self.feature = feature
         self.status = status
         destinationDirectory = FileManager.default.urls(for: .applicationSupportDirectory,
                                                          in: .userDomainMask)[0]
@@ -342,24 +399,43 @@ private final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDeleg
         registration = try MiniAppBackgroundURLSessionReconnectRegistry.shared.register(
             context: context, profile: "diagnostic") { [weak self] identifier, events in
                 guard let self else { throw P2BackgroundConnectionFailure.released }
-                self.events = events
-                self.ensureSession(identifier: identifier)
-                self.status("OS callback再接続・delegate event待ち")
+                self.beginReconnect(identifier: identifier, events: events)
             }
     }
 
-    func start(url: URL) -> String {
+    func bind(runtime: MiniAppRuntime) throws {
+        let id = ObjectIdentifier(runtime)
+        if boundRuntimeID == id { return }
+        self.runtime = runtime
+        boundRuntimeID = id
+        try runtime.onShutdownAsync { [weak self, weak runtime] in
+            await self?.deactivate(expected: runtime)
+        }
+    }
+
+    func start(url: URL, runtime expected: MiniAppRuntime) async -> String {
         guard let identifier = registration?.identifier else { return "未登録" }
+        guard runtime === expected, !expected.isClosed else { return "受付拒否: runtime停止中" }
         ensureSession(identifier: identifier)
         let task = session!.downloadTask(with: url)
         task.resume()
         return "download開始 task=\(task.taskIdentifier) owner=\(owner.rawValue)"
     }
 
-    func cancel() {
-        registration?.cancel()
-        registration = nil
-        session?.invalidateAndCancel()
+    func deactivate() async { await deactivate(expected: runtime) }
+
+    private func deactivate(expected: MiniAppRuntime?) async {
+        guard expected == nil || runtime === expected else { return }
+        runtime = nil
+        boundRuntimeID = nil
+        guard let session else { return }
+        await withCheckedContinuation { continuation in
+            invalidationWaiters.append(continuation)
+            if !isInvalidating {
+                isInvalidating = true
+                session.invalidateAndCancel()
+            }
+        }
     }
 
     private func ensureSession(identifier: String) {
@@ -369,40 +445,130 @@ private final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDeleg
         configuration.isDiscretionary = false
         let queue = OperationQueue(); queue.maxConcurrentOperationCount = 1
         session = URLSession(configuration: configuration, delegate: self, delegateQueue: queue)
+        sessionGeneration += 1
+    }
+
+    private func beginReconnect(identifier: String, events: MiniAppBackgroundURLSessionEvents) {
+        Task { @MainActor [weak self] in
+            guard let self, let feature = self.feature else { events.finish(); return }
+            do {
+                try await feature.lifetime.start()
+                guard let runtime = feature.lifetime.runtime, !runtime.isClosed else {
+                    throw P2BackgroundAdmissionFailure.closed
+                }
+                try bind(runtime: runtime)
+                self.events = events
+                ensureSession(identifier: identifier)
+                status("OS callback再接続・delegate event待ち")
+            } catch {
+                status("OS callback受付拒否: \(error)")
+                events.finish()
+            }
+        }
+    }
+
+    private func receive(_ record: P2URLDelegateRecord) {
+        pendingRecords[record.sequence] = record
+        while let record = pendingRecords.removeValue(forKey: nextRecord) {
+            nextRecord += 1
+            switch record.kind {
+            case .completion(let message): status(message)
+            case .finishedEvents:
+                let finished = events
+                events = nil
+                status("全delegate event完了・host completion解放")
+                finished?.finish()
+            case .invalidated(let reason):
+                session = nil
+                isInvalidating = false
+                status("native session無効化完了" + (reason.map { ": \($0)" } ?? ""))
+                let finished = events
+                events = nil
+                finished?.finish()
+                let waiters = invalidationWaiters
+                invalidationWaiters.removeAll()
+                waiters.forEach { $0.resume() }
+            }
+        }
     }
 
     nonisolated func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                                didFinishDownloadingTo location: URL) {
         let destination = destinationDirectory.appendingPathComponent(
             "\(downloadTask.taskIdentifier)-\(UUID().uuidString).download")
-        do {
-            try FileManager.default.moveItem(at: location, to: destination)
-            Task { @MainActor in downloadedLocations[downloadTask.taskIdentifier] = destination }
-        } catch { Task { @MainActor in status("保存失敗: \(error)") } }
+        delegateState.store(taskID: downloadTask.taskIdentifier, location: location,
+                            destination: destination)
     }
 
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask,
                                didCompleteWithError error: Error?) {
-        Task { @MainActor in
-            completedEvents += 1
-            if let error { status("download失敗 events=\(completedEvents): \(error)") }
-            else if let saved = downloadedLocations.removeValue(forKey: task.taskIdentifier) {
-                status("download保存 events=\(completedEvents): \(saved.lastPathComponent)")
-            } else { status("download完了だが保存先なし events=\(completedEvents)") }
-        }
+        let record = delegateState.complete(taskID: task.taskIdentifier, error: error)
+        Task { @MainActor [weak self] in self?.receive(record) }
     }
 
     nonisolated func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        Task { @MainActor in
-            let finished = events
-            events = nil
-            status("全delegate event完了・host completion解放")
-            finished?.finish()
-        }
+        let record = delegateState.finishedEvents()
+        Task { @MainActor [weak self] in self?.receive(record) }
+    }
+
+    nonisolated func urlSession(_ session: URLSession, didBecomeInvalidWithError error: Error?) {
+        let record = delegateState.invalidated(error: error)
+        Task { @MainActor [weak self] in self?.receive(record) }
+    }
+}
+
+private struct P2URLDelegateRecord: Sendable {
+    enum Kind: Sendable { case completion(String), finishedEvents, invalidated(String?) }
+    let sequence: Int
+    let kind: Kind
+}
+
+private final class P2URLDelegateState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var nextSequence = 1
+    private var locations: [Int: Result<URL, Error>] = [:]
+    private var completionCount = 0
+
+    func store(taskID: Int, location: URL, destination: URL) {
+        lock.lock(); defer { lock.unlock() }
+        do {
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.moveItem(at: location, to: destination)
+            locations[taskID] = .success(destination)
+        } catch { locations[taskID] = .failure(error) }
+    }
+
+    func complete(taskID: Int, error: Error?) -> P2URLDelegateRecord {
+        lock.lock(); defer { lock.unlock() }
+        completionCount += 1
+        let message: String
+        if let error { message = "download失敗 events=\(completionCount): \(error)" }
+        else if let result = locations.removeValue(forKey: taskID) {
+            switch result {
+            case .success(let url): message = "download保存 events=\(completionCount): \(url.lastPathComponent)"
+            case .failure(let error): message = "保存失敗 events=\(completionCount): \(error)"
+            }
+        } else { message = "download完了だが保存先なし events=\(completionCount)" }
+        return record(.completion(message))
+    }
+
+    func finishedEvents() -> P2URLDelegateRecord { lockedRecord(.finishedEvents) }
+    func invalidated(error: Error?) -> P2URLDelegateRecord {
+        lockedRecord(.invalidated(error.map { String(describing: $0) }))
+    }
+    private func lockedRecord(_ kind: P2URLDelegateRecord.Kind) -> P2URLDelegateRecord {
+        lock.lock(); defer { lock.unlock() }; return record(kind)
+    }
+    private func record(_ kind: P2URLDelegateRecord.Kind) -> P2URLDelegateRecord {
+        defer { nextSequence += 1 }
+        return .init(sequence: nextSequence, kind: kind)
     }
 }
 
 private enum P2BackgroundConnectionFailure: Error { case released }
+private enum P2BackgroundAdmissionFailure: Error { case closed, servicesNotRegistered }
 
 private struct P2BackgroundProbeView: View {
     @ObservedObject var feature: P2BackgroundFeature
@@ -420,7 +586,9 @@ private struct P2BackgroundProbeView: View {
             Divider()
             TextField("診断HTTP URL", text: $downloadURL).textInputAutocapitalization(.never)
             Text(feature.transferStatus).textSelection(.enabled)
-            Button("background download開始") { feature.startDownload(urlText: downloadURL) }
+            Button("background download開始") {
+                Task { await feature.startDownload(urlText: downloadURL) }
+            }
         }
     }
 }

@@ -111,7 +111,11 @@ public final class MiniAppContinuedProcessingCenter {
         case invalidBaseIdentifier, invalidPresentation, identifierAlreadyRegistered
         case nativeRegistrationRejected, identifierNotOwned
     }
-    private struct Registration { let owner: String; let jobIdentifier: UUID }
+    private struct Registration {
+        let owner: String
+        let jobIdentifier: UUID
+        var awaitingLaunch = true
+    }
     private let scheduler: any MiniAppContinuedProcessingScheduling
     private var registrations: [String: Registration] = [:]
     private var inFlight: [UUID: MiniAppContinuedProcessingExecution] = [:]
@@ -138,10 +142,12 @@ public final class MiniAppContinuedProcessingCenter {
                 native.setTaskCompleted(success: false)
                 return
             }
-            guard let registration = registrations[identifier], registration.owner == owner else {
+            guard let registration = registrations[identifier], registration.owner == owner,
+                  registration.awaitingLaunch else {
                 native.setTaskCompleted(success: false)
                 return
             }
+            registrations[identifier]?.awaitingLaunch = false
             let executionID = UUID()
             let execution = MiniAppContinuedProcessingExecution(
                 identifier: identifier, jobIdentifier: registration.jobIdentifier, native: native,
@@ -151,12 +157,17 @@ public final class MiniAppContinuedProcessingCenter {
         }
         guard accepted else { throw Failure.nativeRegistrationRejected }
         registrations[identifier] = Registration(owner: owner, jobIdentifier: request.jobIdentifier)
-        try scheduler.submit(request)
+        do { try scheduler.submit(request) }
+        catch {
+            registrations[identifier]?.awaitingLaunch = false
+            throw error
+        }
         return .init(identifier: identifier, jobIdentifier: request.jobIdentifier)
     }
 
     fileprivate func cancel(owner: String, identifier: String) throws {
         guard registrations[identifier]?.owner == owner else { throw Failure.identifierNotOwned }
+        registrations[identifier]?.awaitingLaunch = false
         scheduler.cancel(identifier: identifier)
     }
 

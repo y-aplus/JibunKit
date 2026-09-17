@@ -90,3 +90,12 @@
 実機da62672は起動直後に終了した。添付ログのapp UUIDを配布IPAと照合し、main threadの起動delegateでSIGTRAPを確認。元のthrow理由は含まれていないため、SideStoreのBG許可ID書換えが直接原因とはまだ断定しない。native IDの整合不備と、fallibleなFeature起動hookを全体のpreconditionFailureへ変換する既知の問題を修正する。hostのbuild時bundle IDと実行時の許可リストを使ってnative register/submit/cancelを統一し、失敗ownerのlifetime開始とhostイベントを閉じて他ownerを継続する。部分成功したOS登録は同processで再試行せず、画面に理由を残す。
 
 Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計画。前回実測14分13秒/7分24秒から準備upload込み25分見積りを維持する。native19件と共有全件/通常検索UI/両IPAを実行し、成功後の実機再確認は起動から再開する。raw crash記録、端末識別子、署名材料はGitHubへ送らない。
+
+
+## 受付後未開始の実機切り分け（4run目の例外）
+
+3回目CI35180204806/source3af8e32は通常11分52秒・native8分52秒で成功。共有393件（既存Keychain2skip）、Records11件、通常検索、native19件、両IPAを確認した。修正版の実機は起動でき、Background Aの受付と取消表示まで進んだが進捗0/60。`.queue`受付成功から開始を断定できず、現表示だけではOS資源待ちと配送不備を分離できない。
+
+この実機観測を理由に初回予算3runへ1runを追加する。即時開始`.fail`/待機可`.queue`の明示、NSError domain/code、時刻付きの要求・受付・callback・取消・完了記録を一括追加する。記録は診断process中の最新32件で、cold配送の永続証拠ではない。共通Coreにも取消/submit失敗後の遅着callbackと重複launchを拒否する受付状態を追加し、Featureへの配送前に閉じる。Feature側にもjob一致と取消join中の開始拒否を残す。
+
+新規Core2件・native2件を既存全件と共に同じ通常/native2job境界で検証する。準備upload込み25分見積り、OS監視から一回通知。通常product Coreも変わるため通常jobの再利用はしない。ローカルhost/media/workflowの7試験と差分検査は成功。SwiftはCI前で未実行。既存physical結果を新sourceのOS成功へ転記しない。配布はIPAのみとし、既存ZIPは保持する。

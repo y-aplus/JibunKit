@@ -51,6 +51,56 @@ final class P2BackgroundNativeTests: XCTestCase {
                        "com.jibunkit.app.p2-background-b.export.*")
     }
 
+    func testImmediateRejectionReportsNativeErrorAndAllowsRetry() async throws {
+        let scheduler = P2ContinuedSchedulerSpy()
+        let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
+        let feature = P2BackgroundFeature(id: MiniAppID("immediate-a"), title: "A",
+            continued: center.tasks(for: MiniAppContext(id: MiniAppID("immediate-a"))))
+        try await feature.lifetime.start()
+        scheduler.submissionError = NSError(domain: "BGTaskSchedulerErrorDomain", code: 4)
+        feature.submitContinued(strategy: .fail)
+        XCTAssertEqual(scheduler.submissions.last?.strategy, .fail)
+        XCTAssertTrue(feature.status.contains("BGTaskSchedulerErrorDomain code=4"))
+        XCTAssertFalse(feature.continuedEvents.contains { $0.contains("submit成功") })
+        XCTAssertEqual(feature.progress, 0)
+        scheduler.submissionError = nil
+        feature.submitContinued(strategy: .fail)
+        XCTAssertEqual(scheduler.submissions.count, 2)
+        XCTAssertNotEqual(scheduler.submissions[0].identifier, scheduler.submissions[1].identifier)
+        XCTAssertTrue(feature.status.contains("OS開始未確認"))
+        await feature.cancelContinued()
+        await feature.lifetime.stop()
+    }
+
+    func testCancelledPendingCallbackCannotStartOrConsumeReplacementJob() async throws {
+        let scheduler = P2ContinuedSchedulerSpy()
+        let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
+        let starts = P2CompletionCounter()
+        let feature = P2BackgroundFeature(id: MiniAppID("pending-a"), title: "A",
+            continued: center.tasks(for: MiniAppContext(id: MiniAppID("pending-a"))),
+            work: { _ in starts.call() })
+        try await feature.lifetime.start()
+        feature.submitContinued()
+        let oldID = try XCTUnwrap(scheduler.submissions.last?.identifier)
+        await feature.cancelContinued()
+        let late = scheduler.launch(oldID)
+        XCTAssertEqual(late.completions, [false])
+        feature.submitContinued(strategy: .fail)
+        let newID = try XCTUnwrap(scheduler.submissions.last?.identifier)
+        let statusBefore = feature.status
+        let repeated = scheduler.launch(oldID)
+        XCTAssertEqual(repeated.completions, [false])
+        XCTAssertEqual(feature.status, statusBefore)
+        let current = scheduler.launch(newID)
+        // Joining cancellation guarantees any admitted worker has finished.
+        await feature.cancelContinued()
+        XCTAssertEqual(starts.count, 1)
+        XCTAssertEqual(current.completions.count, 1)
+        XCTAssertTrue(feature.continuedEvents.contains { $0.contains("OS callback") })
+        XCTAssertEqual(feature.continuedEvents.filter { $0.contains("OS callback") }.count, 1)
+        await feature.lifetime.stop()
+    }
+
     func testStopCancelsPendingAndRejectsLateOSLaunch() async throws {
         let scheduler = P2ContinuedSchedulerSpy()
         let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
@@ -66,7 +116,8 @@ final class P2BackgroundNativeTests: XCTestCase {
         XCTAssertEqual(scheduler.cancellations, [identifier])
         let native = scheduler.launch(identifier)
         XCTAssertEqual(native.completions, [false])
-        XCTAssertTrue(feature.status.contains("遅着OS起動を拒否"))
+        XCTAssertFalse(feature.status.contains("OS起動"))
+        XCTAssertFalse(feature.continuedEvents.contains { $0.contains("OS callback") })
     }
 
     func testAStopJoinsCleanupWhileBProgressAndResultSurvive() async throws {
@@ -519,12 +570,16 @@ private final class P2CompletionCounter {
 private final class P2ContinuedSchedulerSpy: MiniAppContinuedProcessingScheduling {
     var registrations: [String: @MainActor (any MiniAppContinuedProcessingNative) -> Void] = [:]
     var submissions: [MiniAppContinuedProcessingRequest] = []
+    var submissionError: Error?
     var cancellations: [String] = []
     func register(identifier: String,
                   launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void) -> Bool {
         registrations[identifier] = launch; return true
     }
-    func submit(_ request: MiniAppContinuedProcessingRequest) throws { submissions.append(request) }
+    func submit(_ request: MiniAppContinuedProcessingRequest) throws {
+        submissions.append(request)
+        if let submissionError { throw submissionError }
+    }
     func cancel(identifier: String) { cancellations.append(identifier) }
     func launch(_ identifier: String) -> P2ContinuedNativeSpy {
         let native = P2ContinuedNativeSpy(); registrations[identifier]?(native); return native

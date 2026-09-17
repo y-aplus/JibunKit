@@ -78,6 +78,48 @@ final class MiniAppContinuedProcessingTests: XCTestCase {
         XCTAssertEqual(scheduler.cancellations, [receipt.identifier])
     }
 
+    func testCancelledAndDuplicateLaunchCannotRestartWorkOrAffectOtherOwner() throws {
+        let scheduler = ContinuedSchedulerSpy()
+        let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
+        let a = center.tasks(for: context("continued-a"))
+        let b = center.tasks(for: context("continued-b"))
+        var aCalls = 0
+        var bCalls = 0
+        var bExecution: MiniAppContinuedProcessingExecution?
+        let cancelled = try a.submit(request("com.example.app.a")) { _ in aCalls += 1 }
+        let other = try b.submit(request("com.example.app.b")) { bCalls += 1; bExecution = $0 }
+        try a.cancelPendingRequest(identifier: cancelled.identifier)
+        let late = scheduler.launch(cancelled.identifier)
+        XCTAssertEqual(late.completions, [false])
+        XCTAssertEqual(aCalls, 0)
+        let replacement = try a.submit(request("com.example.app.a")) { execution in
+            aCalls += 1; execution.complete(success: true)
+        }
+        let current = scheduler.launch(replacement.identifier)
+        XCTAssertEqual(current.completions, [true])
+        let duplicate = scheduler.launch(replacement.identifier)
+        XCTAssertEqual(duplicate.completions, [false])
+        XCTAssertEqual(aCalls, 1)
+        let nativeB = scheduler.launch(other.identifier)
+        XCTAssertEqual(bCalls, 1)
+        try a.cancelPendingRequest(identifier: cancelled.identifier)
+        XCTAssertEqual(nativeB.completions, [])
+        bExecution?.complete(success: true)
+        XCTAssertEqual(nativeB.completions, [true])
+    }
+
+    func testRejectedSubmissionClosesLaunchAdmissionButNewJobCanRun() throws {
+        let scheduler = ContinuedSchedulerSpy()
+        let tasks = MiniAppContinuedProcessingCenter(scheduler: scheduler).tasks(for: context("continued-a"))
+        scheduler.submissionError = NSError(domain: "BGTaskSchedulerErrorDomain", code: 4)
+        let rejected = request("com.example.app.a")
+        XCTAssertThrowsError(try tasks.submit(rejected) { _ in XCTFail("Rejected job started") })
+        XCTAssertEqual(scheduler.launch(rejected.identifier).completions, [false])
+        scheduler.submissionError = nil
+        let retry = try tasks.submit(request("com.example.app.a")) { $0.complete(success: true) }
+        XCTAssertEqual(scheduler.launch(retry.identifier).completions, [true])
+    }
+
     func testRejectedRegistrationDoesNotSubmitAndInvalidInputsFailEarly() throws {
         let scheduler = ContinuedSchedulerSpy(rejectNextRegistration: true)
         let tasks = MiniAppContinuedProcessingCenter(scheduler: scheduler).tasks(for: context("continued-a"))
@@ -117,6 +159,7 @@ private final class ContinuedSchedulerSpy: MiniAppContinuedProcessingScheduling 
     var registrations: [String: @MainActor (any MiniAppContinuedProcessingNative) -> Void] = [:]
     var submissions: [MiniAppContinuedProcessingRequest] = []
     var cancellations: [String] = []
+    var submissionError: Error?
     var rejectNextRegistration: Bool
     init(rejectNextRegistration: Bool = false) { self.rejectNextRegistration = rejectNextRegistration }
     func register(identifier: String,
@@ -126,7 +169,10 @@ private final class ContinuedSchedulerSpy: MiniAppContinuedProcessingScheduling 
         registrations[identifier] = launch
         return true
     }
-    func submit(_ request: MiniAppContinuedProcessingRequest) throws { submissions.append(request) }
+    func submit(_ request: MiniAppContinuedProcessingRequest) throws {
+        submissions.append(request)
+        if let submissionError { throw submissionError }
+    }
     func cancel(identifier: String) { cancellations.append(identifier) }
     func launch(_ identifier: String) -> ContinuedNativeSpy {
         let native = ContinuedNativeSpy(); registrations[identifier]?(native); return native

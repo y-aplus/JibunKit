@@ -62,6 +62,6 @@ git push origin VERSION
 gh release create VERSION PATH_TO_IPA --repo y-aplus/JibunKit --verify-tag --title "JibunKit VERSION" --notes-file PATH_TO_NOTES
 ```
 
-公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。README・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。
+公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。README・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。以後のユーザー向け配布はIPAを標準とし、IPAを包む追加ZIPは必要な場合だけ作る。既存公開ZIPは保持する。IPA自体のZIP構造・CRC検査とActions内部のartifact梱包は継続する。
 
 0.7.0の公開物・参照証拠は[公開記録](verification/2026-09-13-0.7-release.md)で管理する。過去の[0.3.0公開記録](verification/2026-09-10-0.3-release.md)も保持する。

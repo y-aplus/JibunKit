@@ -50,7 +50,9 @@ work, await or otherwise finish cleanup, then call `complete(success: false)`. C
 idempotent, late expiration is not delivered to a completed execution, and the center retains an
 execution until completion. `cancelPendingRequest` is owner checked and cancels only that exact
 queued identifier; it is not process-wide cancellation and does not silently complete a running
-operation.
+operation. The center closes launch admission before cancelling a pending job and after a
+failed submission. Late or duplicate native deliveries are completed unsuccessfully without
+calling the Feature again; a new job and other owners remain independent.
 
 The wildcard base, including its literal trailing `.*`, must be present in the composed host
 `BGTaskSchedulerPermittedIdentifiers`. The fully composed identifier passed to registration and

@@ -27,6 +27,7 @@ final class P2BackgroundFeature: ObservableObject {
     let title: String
     let continuedBaseIdentifier: String
     @Published private(set) var status = "未開始"
+    @Published private(set) var continuedEvents: [String] = []
     @Published private(set) var progress: Int64 = 0
     @Published private(set) var resultCount = 0
     @Published private(set) var generation = 0
@@ -40,6 +41,8 @@ final class P2BackgroundFeature: ObservableObject {
     private let requiresBackgroundServices: Bool
     private var runtime: MiniAppRuntime?
     private var receipt: MiniAppContinuedProcessingReceipt?
+    private var pendingJobIdentifier: UUID?
+    private var isCancelling = false
     private var execution: MiniAppContinuedProcessingExecution?
     private var worker: Task<Void, Never>?
     private var backgroundWorkers: [UUID: Task<Void, Never>] = [:]
@@ -76,28 +79,50 @@ final class P2BackgroundFeature: ObservableObject {
     }
 
     func submitContinued(strategy: MiniAppContinuedProcessingStrategy = .queue) {
-        guard let runtime, !runtime.isClosed, worker == nil, receipt == nil else {
+        guard let runtime, !runtime.isClosed, !isCancelling, worker == nil, receipt == nil,
+              pendingJobIdentifier == nil else {
             status = "受付拒否: Feature停止中または仕事実行中"
             return
         }
         let request = MiniAppContinuedProcessingRequest(
             baseIdentifier: continuedBaseIdentifier,
             title: title + " export", subtitle: "Waiting to start", strategy: strategy)
+        progress = 0
+        pendingJobIdentifier = request.jobIdentifier
+        recordContinued("要求 \(strategy == .fail ? "即時" : "待機可") job=\(request.jobIdentifier.uuidString.prefix(8))")
         do {
             let submitted = try continued.submit(request) { [weak self, weak runtime] execution in
                 self?.receive(execution, runtime: runtime)
             }
-            if execution == nil {
+            recordContinued("submit成功（OS開始とは別）")
+            if pendingJobIdentifier == request.jobIdentifier {
                 receipt = submitted
-                status = "受付済み job=\(request.jobIdentifier.uuidString.prefix(8))"
+                status = "受付済み・OS開始未確認 job=\(request.jobIdentifier.uuidString.prefix(8))"
             }
-        } catch { status = "受付失敗: \(error)" }
+        } catch {
+            pendingJobIdentifier = nil
+            let native = error as NSError
+            status = "受付失敗: \(error) [\(native.domain) code=\(native.code)]"
+            recordContinued(status)
+        }
     }
 
     func cancelContinued() async {
+        guard !isCancelling else { return }
+        isCancelling = true
+        defer { isCancelling = false }
+        // Close admission before cancellation: the OS may already have queued its callback.
+        pendingJobIdentifier = nil
+        recordContinued("取消要求")
         if let receipt { try? continued.cancelPendingRequest(identifier: receipt.identifier) }
-        await cancelWorkerAndJoin(success: false, reason: "Feature取消済み")
         receipt = nil
+        await cancelWorkerAndJoin(success: false, reason: "Feature取消済み")
+        recordContinued(status)
+    }
+
+    private func recordContinued(_ message: String) {
+        continuedEvents.append("\(Date().ISO8601Format()) \(message)")
+        if continuedEvents.count > 32 { continuedEvents.removeFirst(continuedEvents.count - 32) }
     }
 
     func submitOrdinary() {
@@ -175,11 +200,15 @@ final class P2BackgroundFeature: ObservableObject {
     }
 
     private func receive(_ execution: MiniAppContinuedProcessingExecution, runtime expected: MiniAppRuntime?) {
-        guard let runtime, runtime === expected, !runtime.isClosed, worker == nil else {
+        recordContinued("OS callback job=\(execution.jobIdentifier.uuidString.prefix(8))")
+        guard let runtime, runtime === expected, !runtime.isClosed, !isCancelling,
+              worker == nil, pendingJobIdentifier == execution.jobIdentifier else {
             execution.complete(success: false)
-            status = "遅着OS起動を拒否"
+            recordContinued("遅着OS起動を拒否")
+            if pendingJobIdentifier == nil && self.execution == nil { status = "遅着OS起動を拒否" }
             return
         }
+        pendingJobIdentifier = nil
         self.execution = execution
         receipt = nil
         generation += 1
@@ -191,6 +220,7 @@ final class P2BackgroundFeature: ObservableObject {
             }
         }
         status = "OS起動 generation=\(acceptedGeneration)"
+        recordContinued(status)
         worker = Task { @MainActor [weak self, weak execution, work] in
             guard let self, let execution else { return }
             do {
@@ -210,12 +240,14 @@ final class P2BackgroundFeature: ObservableObject {
                 self.worker = nil
                 self.resultCount += 1
                 self.status = "完了 generation=\(acceptedGeneration)"
+                self.recordContinued(self.status)
             } catch {
                 guard self.execution === execution else { return }
                 execution.complete(success: false)
                 self.execution = nil
                 self.worker = nil
                 self.status = "cleanup完了: \(error)"
+                self.recordContinued(self.status)
             }
         }
     }
@@ -223,6 +255,7 @@ final class P2BackgroundFeature: ObservableObject {
     private func shutdown(runtime expected: MiniAppRuntime?) async {
         guard runtime === expected else { return }
         runtime = nil // close Feature admission before native cancellation/cleanup
+        pendingJobIdentifier = nil
         if let receipt { try? continued.cancelPendingRequest(identifier: receipt.identifier) }
         receipt = nil
         await cancelWorkerAndJoin(success: false, reason: "停止cleanup完了")
@@ -595,8 +628,14 @@ private struct P2BackgroundProbeView: View {
         Form {
             Text(feature.status).accessibilityIdentifier("p2.background.\(feature.id.rawValue).status")
             Text("進捗 \(feature.progress)/60 成果 \(feature.resultCount) 世代 \(feature.generation)")
-            Button("継続処理を開始") { feature.submitContinued() }
+            Button("継続処理を即時開始") { feature.submitContinued(strategy: .fail) }
+            Button("継続処理を待機可で受付") { feature.submitContinued(strategy: .queue) }
+            Text("即時開始できない場合はエラーを表示します。待機可の受付成功だけでは処理開始を意味しません。")
             Button("継続処理を取消") { Task { await feature.cancelContinued() } }
+            DisclosureGroup("継続処理の記録（この起動中・最新32件）") {
+                Text(feature.continuedEvents.joined(separator: "\n"))
+                    .font(.caption).textSelection(.enabled)
+            }
             Divider()
             Text(feature.ordinaryStatus); Button("通常refresh/processingを受付") { feature.submitOrdinary() }
             Text(feature.sharedStatus); Button("共有refreshをjournal受付") { feature.submitSharedRefresh() }

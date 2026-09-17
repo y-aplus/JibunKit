@@ -6,7 +6,7 @@
 
 [新しい診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-P2-B-82f61bb.ipa) ／ [同source・従来SDKの通常IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-normal-82f61bb.ipa)
 
-今回の診断はXcode27/Swift6.4/iOS27 SDK製で、iOS27で新しいcompletion受付を使用する。通常版はXcode26.6/iOS26.5 SDK製で旧同期fallbackを保持する。同一sourceでも両IPAのSDK経路は同じではない。実機での新APIの受付/OS開始成功はまだ未確認。
+今回の診断はXcode27/Swift6.4/iOS27 SDK製で、iOS27で新しいcompletion受付を使用する。通常版はXcode26.6/iOS26.5 SDK製で旧同期fallbackを保持する。同一sourceでも両IPAのSDK経路は同じではない。実機では新APIからBGTaskSchedulerErrorDomain/code1とduetactivityscheduler接続のエラーを受領。受付失敗を画面へ配送できたが、OS開始は未確認。
 
 削除せず診断IPAを上書きし、Background Aで「継続処理を即時開始」を一度押す。「継続処理の記録」に「受付API: 非同期completion」があることと、その後の受付応答/進捗を確認する。進まなければ記録全文を共有し、反復や無期限待機は不要。位置/Regionの既済手順を再要求しない。
 
@@ -101,3 +101,17 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 ユーザー記録は2026-09-17T14:33:53Z「要求 即時 job=DE7832BE」、同時刻「submit成功（OS開始とは別）」のみ。進捗は増えず受付済み・OS開始未確認。明示的に`.fail`を選択したことを確認したが、旧同期APIが返した成功であり、OS側の全受付エラーがないとは言えない。[Apple DTS](https://developer.apple.com/forums/thread/807370)と[新API](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submittaskrequest(_:completionhandler:))は、旧submitに全エラーを返せない場合がありiOS27のcompletion方式で補うと説明する。今回の根本原因をOS不具合と確定しない。
 
 次の一括検証ではXcode27/Swift6.4のSDK宣言を使う非同期受付と、上記の位置受信記録を統合する。通常Xcode26.6の互換経路も同runで検証する。ユーザーへ開始の再連打・無期限待機・端末の初期化等を求めない。
+
+## 新APIで受領した実機エラー（82f61bb）
+
+2026-09-18、ユーザーOCRで`BGTaskSchedulerErrorDomain`、code1、`connection to service ... named com.apple.duetactivityscheduler`を受領。processのpidは診断の比較に必要ないため記録を省略する。新APIが受付失敗をFeature画面へ返すことは実機確認済み。仕事のOS開始成功ではない。
+
+[Appleのunavailable説明](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/error/code/unavailable)はバックグラウンド更新無効等を挙げる。全体/当該appの設定を一度だけ確認依頼し、変更・再試行は要求していない。[一致する接続文言の報告](https://developer.apple.com/forums/thread/838434)ではApple DTSが内部型のNSSecureCoding失敗を説明するが、今回の端末からはその詳細stackを受け取っていないため同一原因とは確定しない。iOS27原因説、署名制限、Feature実装不備のいずれにも固定しない。
+
+次の切り分けは設定の観測を先に反映し、必要なら同一host/署名で共通centerを通さない最小native経路と実際のbundle-prefix/許可list条件を一つの診断境界で比較する。端末初期化、時刻変更、全件のsysdiagnose提出は現時点では依頼しない。既知報告の再現手順をユーザーへそのまま転嫁しない。
+
+## Background Refresh設定の照合と直接比較の準備
+
+ユーザーは全体とJibunKit個別のバックグラウンド更新が有効、Wi-Fi限定だが現在Wi-Fi利用可能な環境と回答。端末がその時点で接続していたことやOS内部サービスが正常なことまで推定しない。設定無効を原因に固定せず、同一host/署名で共通center・ID resolver・execution adapterを通さない直接native経路を準備する。
+
+新しい「OS直接比較」は実際のCFBundleIdentifier＋owner別export namespaceからunique IDを構築し、同じprefixの許可wildcardがなければ未送信として明示する。登録・即時要求・非同期受付結果・OS callbackを記録し、callbackが来たら試験仕事を即完了する。共通実装と異なる経路で同じエラーなら、共通centerの配送処理が原因という可能性を狭められる。単独別appではないため、host構成・署名・OSのどれかを確定する証拠にはしない。取消/Feature停止は直接要求も閉じ、遅い受付応答やcallbackが次の仕事を再開しない。新IPAの配布前で、現版にはこの操作はない。

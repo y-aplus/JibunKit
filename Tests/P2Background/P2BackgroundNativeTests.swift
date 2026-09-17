@@ -7,6 +7,49 @@ import SwiftUI
 
 @MainActor
 final class P2BackgroundNativeTests: XCTestCase {
+    func testDirectNativeControlRequiresInstalledBundleWildcardAndKnownOwner() {
+        let installed = "com.jibunkit.app.SIGNER"
+        var info: [String: Any] = ["CFBundleIdentifier": installed,
+            "BGTaskSchedulerPermittedIdentifiers": [installed + ".p2-background-a.export.*"]]
+        let identifier = P2ContinuedNativeComparison.identifier(owner: "p2-background-a", info: info)
+        XCTAssertTrue(identifier?.hasPrefix(installed + ".p2-background-a.export.") == true)
+        XCTAssertNil(P2ContinuedNativeComparison.identifier(owner: "p2-background-b", info: info))
+        XCTAssertNil(P2ContinuedNativeComparison.identifier(owner: "unknown", info: info))
+        info["BGTaskSchedulerPermittedIdentifiers"] = ["com.jibunkit.app.p2-background-a.export.*"]
+        XCTAssertNil(P2ContinuedNativeComparison.identifier(owner: "p2-background-a", info: info))
+    }
+
+    func testDirectNativeControlRejectsCancelledLaunchAndPreservesReplacement() throws {
+        let calls = P2NativeControlCalls()
+        let probe = P2ContinuedNativeComparison(owner: "p2-background-a", register: { identifier, launch in
+            calls.launches[identifier] = launch; return true
+        }, submit: { identifier, completion in
+            calls.completions[identifier] = completion
+        }, cancel: { calls.cancelled.append($0) })
+        let info: [String: Any] = ["CFBundleIdentifier": "com.example.installed",
+            "BGTaskSchedulerPermittedIdentifiers": ["com.example.installed.p2-background-a.export.*"]]
+        probe.start(info: info)
+        let first = try XCTUnwrap(probe.pendingIdentifier)
+        probe.cancel()
+        probe.start(info: info)
+        let second = try XCTUnwrap(probe.pendingIdentifier)
+        XCTAssertNotEqual(first, second)
+        calls.completions[first]?(.success(()))
+        XCTAssertEqual(probe.pendingIdentifier, second)
+        XCTAssertEqual(calls.launches[first]?(), false)
+        XCTAssertEqual(calls.cancelled, [first, first])
+        calls.completions[second]?(.failure(NSError(domain: "BGTaskSchedulerErrorDomain", code: 1,
+            userInfo: [NSDebugDescriptionErrorKey: "connection to com.apple.duetactivityscheduler"])))
+        XCTAssertNil(probe.pendingIdentifier)
+        XCTAssertEqual(calls.launches[second]?(), false)
+        XCTAssertTrue(probe.events.contains { $0.contains("BGTaskSchedulerErrorDomain code=1") })
+        probe.start(info: info)
+        let third = try XCTUnwrap(probe.pendingIdentifier)
+        XCTAssertEqual(calls.launches[third]?(), true)
+        XCTAssertNil(probe.pendingIdentifier)
+        XCTAssertEqual(calls.launches[third]?(), false)
+    }
+
     func testFailedLaunchOwnerDoesNotAbortOtherRegistrationsOrRepeatPartialWork() async throws {
         enum Rejected: Error { case registration }
         let state = MiniAppLaunchState()
@@ -624,5 +667,11 @@ private final class P2ContinuedNativeSpy: MiniAppContinuedProcessingNative {
     func updateProgress(completed: Int64, total: Int64) {}
     func updateTitle(_ title: String, subtitle: String) {}
     func setTaskCompleted(success: Bool) { completions.append(success) }
+}
+@MainActor
+private final class P2NativeControlCalls {
+    var launches: [String: @MainActor () -> Bool] = [:]
+    var completions: [String: @MainActor @Sendable (Result<Void, Error>) -> Void] = [:]
+    var cancelled: [String] = []
 }
 #endif

@@ -26,6 +26,7 @@ final class P2BackgroundFeature: ObservableObject {
     let id: MiniAppID
     let title: String
     let continuedBaseIdentifier: String
+    let nativeComparison: P2ContinuedNativeComparison
     @Published private(set) var status = "未開始"
     @Published private(set) var continuedEvents: [String] = []
     @Published private(set) var progress: Int64 = 0
@@ -58,6 +59,7 @@ final class P2BackgroundFeature: ObservableObject {
              try await Task.sleep(for: .seconds(1))
          }, requiresBackgroundServices: Bool = false) {
         self.id = id
+        nativeComparison = P2ContinuedNativeComparison(owner: id.rawValue)
         self.title = title
         self.continued = continued
         self.work = work
@@ -80,7 +82,7 @@ final class P2BackgroundFeature: ObservableObject {
 
     func submitContinued(strategy: MiniAppContinuedProcessingStrategy = .queue) {
         guard let runtime, !runtime.isClosed, !isCancelling, worker == nil, receipt == nil,
-              pendingJobIdentifier == nil else {
+              pendingJobIdentifier == nil, nativeComparison.pendingIdentifier == nil else {
             status = "受付拒否: Feature停止中または仕事実行中"
             return
         }
@@ -130,6 +132,15 @@ final class P2BackgroundFeature: ObservableObject {
         return "受付失敗: \(error) [\(native.domain) code=\(native.code)]"
     }
 
+    func compareNative() {
+        guard let runtime, !runtime.isClosed, !isCancelling, worker == nil,
+              receipt == nil, pendingJobIdentifier == nil else {
+            status = "直接比較の受付拒否: Feature停止中または仕事実行中"
+            return
+        }
+        nativeComparison.start()
+    }
+
     func cancelContinued() async {
         guard !isCancelling else { return }
         isCancelling = true
@@ -137,6 +148,7 @@ final class P2BackgroundFeature: ObservableObject {
         // Close admission before cancellation: the OS may already have queued its callback.
         pendingJobIdentifier = nil
         recordContinued("取消要求")
+        nativeComparison.cancel()
         if let receipt { try? continued.cancelPendingRequest(identifier: receipt.identifier) }
         receipt = nil
         await cancelWorkerAndJoin(success: false, reason: "Feature取消済み")
@@ -278,6 +290,7 @@ final class P2BackgroundFeature: ObservableObject {
     private func shutdown(runtime expected: MiniAppRuntime?) async {
         guard runtime === expected else { return }
         runtime = nil // close Feature admission before native cancellation/cleanup
+        nativeComparison.cancel()
         pendingJobIdentifier = nil
         if let receipt { try? continued.cancelPendingRequest(identifier: receipt.identifier) }
         receipt = nil
@@ -659,6 +672,7 @@ private struct P2BackgroundProbeView: View {
                 Text(feature.continuedEvents.joined(separator: "\n"))
                     .font(.caption).textSelection(.enabled)
             }
+            P2ContinuedNativeComparisonView(comparison: feature.nativeComparison, start: feature.compareNative)
             Divider()
             Text(feature.ordinaryStatus); Button("通常refresh/processingを受付") { feature.submitOrdinary() }
             Text(feature.sharedStatus); Button("共有refreshをjournal受付") { feature.submitSharedRefresh() }

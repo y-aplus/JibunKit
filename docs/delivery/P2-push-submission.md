@@ -34,4 +34,4 @@ Source tests cover same-token recovery after failure, slow token ordering, close
 
 Implementation commit SHA: `a1315db4f7e9e16a67581b316c7d98f7e0c1124f`
 
-Race-hardening follow-up SHA: `TO_BE_FILLED_AFTER_COMMIT`
+Race-hardening implementation SHA: `e6d53fb3a6b9ac93464be6f92860063b2e98c4d8`

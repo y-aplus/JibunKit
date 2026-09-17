@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+  "source": "78ce890a6d8107140e23d70bf4e1e3e1a8957cfe",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -308,7 +308,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P0-3.failure",
@@ -317,7 +318,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P0-5.ownership",
@@ -326,7 +328,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P0-6.diagnostics",
@@ -335,7 +338,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P1-3.routing",
@@ -344,7 +348,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P1-4.ownership",
@@ -353,7 +358,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P1-5.http",
@@ -362,7 +368,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P2-3.ownership",
@@ -371,7 +378,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P2-4.ownership",
@@ -380,7 +388,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P2-3.docs",
@@ -389,7 +398,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     },
     {
       "criterion": "P2-4.docs",
@@ -398,7 +408,8 @@
       "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
       "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
-      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source.",
+      "reuse_reason": "Only Tests/P2Background diagnostic fixtures and docs changed after82f61bb. Production Sources, Project.swift, Package.swift and build workflow unchanged. Reuse previous production shared397/Records/Search/normal IPA and existing location coverage; new direct-control behavior is pending the separately planned full native26/diagnostic build. No physical success inferred."
     }
   ],
   "deferred_device": {
@@ -492,7 +503,7 @@
     },
     {
       "id": "direct-native-service-comparison",
-      "inputs_and_filters": "native-surface.yml ref=codex/p2-background-location surface=background-location ios_major=27; all26 declared native methods, Release diagnostic IPA. Normal/shared397/Records/Search/IPA reused from35235454126 because product Sources, Project.swift, Package.swift and native build workflow unchanged. Source pinned before dispatch.",
+      "inputs_and_filters": "native-surface.yml ref=codex/p2-background-location surface=background-location ios_major=27; all26 declared native methods, Release diagnostic IPA. Normal/shared397/Records/Search/IPA reused from35235454126 because product Sources, Project.swift, Package.swift and native build workflow unchanged. Source pinned before dispatch. Fixture source=78ce890a6d8107140e23d70bf4e1e3e1a8957cfe. Documentation-only evidence pin follows.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "Prior SDK27 native10m50 including setup/upload; two deterministic native control tests added, no new shared product or normal build.20min inclusive expectation, existing30min job24min native stage; OS monitor one notification."
     }

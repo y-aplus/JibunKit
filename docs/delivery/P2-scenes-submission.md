@@ -4,15 +4,16 @@
 
 - A process registry separating stable OS session identity from ephemeral connection generation.
 - Exact-session route delivery with stale-generation rejection.
-- Reentrancy-safe scene transitions which publish the new generation before awaiting tracked old cleanup, plus an explicit pending-cleanup join.
+- Reentrancy-safe scene transitions which publish the new generation before awaiting tracked old cleanup, retain owner sets on pending cleanup, and make new connections join prior cleanup for the same session.
 - Scene-scoped, owner-grouped cleanup and `suspendAndRelease(owner:)` for management to close admission and join that owner across every scene while preserving other windows/owners and Feature-global runtimes.
 - UIKit request adapter for OS window creation/destruction without treating request acceptance as successful window creation.
 - Core tests for two-window isolation, close/other-window retention, cleanup order, restoration, late delivery, and stale disconnect.
-- An iOS probe with two normal `MiniAppDefinition` values, per-window `@SceneStorage`, and a native diagnostic that requests, observes, routes, and destroys a second real `UIWindowScene` without manual setup or skip.
+- Optional SwiftUI environment values exposing the current connection and process-shared registry to Feature packages, plus synchronous bootstrap admission for persisted disabled owners.
+- An iOS probe with two normal `MiniAppDefinition` values, per-window `@SceneStorage`, and a native diagnostic that requests, observes, and destroys a second real `UIWindowScene` without manual setup or skip. Actual host delivery remains a parent bridge test, not a claim from an independent registry.
 
 ## Parent-owned integration diff
 
-No parent-owned file was edited. The required host/manifest/test-target changes are listed step by step in [window-scene-ownership.md](../guides/window-scene-ownership.md#host-connection). In summary: enable multiple scenes; create one process-shared registry; add one root-owned connection bridge using the real `UISceneSession.persistentIdentifier`; keep the returned generation; disconnect only on genuine UIScene disconnection; connect management stop/join through `suspendAndRelease(owner:)` and `resume(owner:)`; use explicit session delivery when known; add the two probe definitions to the normal registry; and compile the P2Scenes files in the diagnostic target.
+No parent-owned file was edited. The required host/manifest/test-target changes are listed step by step in [window-scene-ownership.md](../guides/window-scene-ownership.md#host-connection). In summary: enable multiple scenes; create one process-shared registry; synchronously bootstrap persisted disabled owners before scene connection; add one root-owned connection bridge using the real `UISceneSession.persistentIdentifier`; expose its registry/token through the Core SwiftUI environment; keep the returned generation; disconnect only on genuine UIScene disconnection; connect management stop/join through `suspendAndRelease(owner:)` and checked `resume(owner:)`; use explicit session delivery when known; add the two probe definitions to the normal registry; and compile the P2Scenes files in the diagnostic target.
 
 The existing `MiniAppSceneRouter` needs no change: it remains the fallback for process events with no OS session target. The new registry handles the distinct explicit-session contract.
 

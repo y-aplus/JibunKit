@@ -1,4 +1,4 @@
-"""Build/test the combined P2-C host and package one diagnostic IPA.
+"""Build/test a combined native Feature host and package one diagnostic IPA.
 
 No camera, microphone, lock-screen command, or background behavior is inferred
 from simulator success. The result explicitly leaves those device checks open.
@@ -47,12 +47,25 @@ def require_test_passes(report, summary, sources):
     return [f"{name}.{method}" for name, method in expected]
 
 
-def check_requirements(info):
-    for key in ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"]:
+def check_requirements(info, surface="media"):
+    if surface not in {"media", "background-location"}:
+        raise ValueError("Unknown native host surface")
+    descriptions = (["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
+                    else ["NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"])
+    for key in descriptions:
         if not isinstance(info.get(key), str) or not info[key].strip():
             raise ValueError(f"Missing media usage description: {key}")
-    if "audio" not in info.get("UIBackgroundModes", []):
-        raise ValueError("Missing audio background mode")
+    modes = {"audio"} if surface == "media" else {"fetch", "processing", "location"}
+    if not modes <= set(info.get("UIBackgroundModes", [])):
+        raise ValueError("Missing required background modes")
+    if surface == "background-location":
+        required = {"com.jibunkit.app.p2-background-a.ordinary",
+                    "com.jibunkit.app.p2-background-b.ordinary",
+                    "com.jibunkit.app.p2-background.shared-refresh",
+                    "com.jibunkit.app.p2-background-a.export",
+                    "com.jibunkit.app.p2-background-b.export"}
+        if set(info.get("BGTaskSchedulerPermittedIdentifiers", [])) != required:
+            raise ValueError("Background task identifiers differ from the diagnostic contract")
     if info.get("CFBundleIdentifier") != "com.jibunkit.app":
         raise ValueError("Diagnostic app identity changed")
 
@@ -60,9 +73,13 @@ def check_requirements(info):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
+    parser.add_argument("--surface", choices=["media", "background-location"], default="media")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
-    evidence = Path(os.environ["RUNNER_TEMP"]) / "Media"
+    is_media = args.surface == "media"
+    families = ["MediaAudio", "MediaCapture", "MediaIntegration"] if is_media else ["P2Background", "P2Location"]
+    scheme = "MediaNativeTests" if is_media else "BackgroundLocationNativeTests"
+    evidence = Path(os.environ["RUNNER_TEMP"]) / ("Media" if is_media else "BackgroundLocation")
     evidence.mkdir(exist_ok=True)
     source = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
     started = time.monotonic()
@@ -71,7 +88,7 @@ def main():
     def run(command, cwd, label, limit=900):
         remaining = 24 * 60 - (time.monotonic() - started)
         if remaining <= 0:
-            raise TimeoutError("Media validation exhausted its 24 minute step budget")
+            raise TimeoutError("Native host validation exhausted its 24 minute step budget")
         begin, output, code = time.monotonic(), "", None
         try:
             result = subprocess.run([str(value) for value in command], cwd=cwd,
@@ -91,10 +108,10 @@ def main():
             (evidence / "timings.json").write_text(json.dumps(timings, indent=2) + "\n", encoding="utf-8")
             print(output, end="", flush=True)
 
-    result = {"source": source, "passed": False,
+    result = {"source": source, "surface": args.surface, "passed": False,
               "physical_os_actions": "not exercised; grouped device verification required"}
     try:
-        with tempfile.TemporaryDirectory(prefix="jibunkit-media-") as temporary:
+        with tempfile.TemporaryDirectory(prefix=f"jibunkit-{args.surface}-") as temporary:
             root = Path(temporary)
             # Ignored local Features, data and worktree-private files stay out.
             names = subprocess.check_output(["git", "ls-files", "-z"], cwd=repo).decode().split("\0")
@@ -102,16 +119,17 @@ def main():
                 destination = root / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(repo / name, destination)
-            run(["python3", root / "Tools/prepare-media-host.py", "--host", root], root, "prepare")
+            prepare = "prepare-media-host.py" if is_media else "prepare-background-location-host.py"
+            run(["python3", root / "Tools" / prepare, "--host", root], root, "prepare")
             run(["tuist", "generate", "--no-open"], root, "generate")
             derived = root / "Build"
             common = ["-workspace", "JibunKit.xcworkspace", "-derivedDataPath", derived]
             native_error = None
             try:
-                run(["xcodebuild", "test", *common, "-scheme", "MediaNativeTests",
+                run(["xcodebuild", "test", *common, "-scheme", scheme,
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                        "-resultBundlePath", evidence / "native-tests.xcresult",
-                       "-only-testing:MediaNativeTests", "-parallel-testing-enabled", "NO",
+                       f"-only-testing:{scheme}", "-parallel-testing-enabled", "NO",
                        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "native-tests")
             except subprocess.CalledProcessError as error:
                 native_error = error
@@ -139,13 +157,13 @@ def main():
                 json.loads((evidence / "test-summary.json").read_text(encoding="utf-8")), [
 
                 (root / f"Tests/{family}/{family}NativeTests.swift").read_text(encoding="utf-8")
-                for family in ["MediaAudio", "MediaCapture", "MediaIntegration"]])
+                for family in families])
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")
             app = derived / "Build/Products/Release-iphoneos/JibunKit_App.app"
             info = plistlib.loads((app / "Info.plist").read_bytes())
-            check_requirements(info)
+            check_requirements(info, args.surface)
             shutil.copyfile(app / "Info.plist", evidence / "app-Info.plist")
 
             def entitlement(name):
@@ -165,7 +183,7 @@ def main():
             payload = root / "Package/Payload"
             payload.mkdir(parents=True)
             run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
-            ipa = evidence / "JibunKit-P2-C-check.ipa"
+            ipa = evidence / ("JibunKit-P2-C-check.ipa" if is_media else "JibunKit-P2-B-check.ipa")
             run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
             run(["unzip", "-t", ipa], root, "ipa-crc")
             run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")

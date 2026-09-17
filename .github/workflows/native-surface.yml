@@ -6,7 +6,7 @@ on:
       surface:
         required: true
         type: choice
-        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair, interactive-widgets, continuing-surfaces, continuing-live-host, continuing-state, media]
+        options: [spotlight-cold-start, p1-input-repair, incoming-os, incoming-repair, interactive-widgets, continuing-surfaces, continuing-live-host, continuing-state, media, background-location]
       ios_major:
         description: Target OS major for native comparison; 27 uses the preview Xcode image
         type: choice
@@ -56,7 +56,7 @@ jobs:
         shell: bash
         run: |
           case "$IOS_MAJOR" in 26|27) ;; *) echo "Unsupported iOS major" >&2; exit 2 ;; esac
-          case "$SURFACE" in media|continuing-live|continuing-alarm|continuing-host|continuing-state|interactive-native|interactive-host|intents|widgets|incoming|incoming-os|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
+          case "$SURFACE" in background-location|media|continuing-live|continuing-alarm|continuing-host|continuing-state|interactive-native|interactive-host|intents|widgets|incoming|incoming-os|web-authentication|device-http|spotlight-cold-start) ;; *) exit 2 ;; esac
 
       - name: Select matching Xcode
         env:
@@ -128,6 +128,11 @@ jobs:
         run: |
           set -euo pipefail
           case "$SURFACE" in
+            background-location)
+              python3 -m unittest discover -s Tools/tests -p 'test_background_location*.py'
+              python3 -m unittest discover -s Tools/tests -p 'test_media*.py'
+              python3 Tools/verify-media.py --surface background-location --simulator-id "$SIMULATOR_ID"
+              ;;
             media)
               python3 -m unittest discover -s Tools/tests -p 'test_media*.py'
               python3 Tools/verify-media.py --simulator-id "$SIMULATOR_ID"
@@ -226,6 +231,7 @@ jobs:
             ${{ runner.temp }}/Continuing-host
             ${{ runner.temp }}/Continuing-state
             ${{ runner.temp }}/Media
+            ${{ runner.temp }}/BackgroundLocation
             ${{ runner.temp }}/Interactive-native
             ${{ runner.temp }}/Interactive-host
             ${{ runner.temp }}/platform.txt

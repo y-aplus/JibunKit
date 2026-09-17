@@ -3,6 +3,10 @@ name: Build JibunKit IPA
 on:
   workflow_dispatch:
     inputs:
+      background_location_validation:
+        description: P2-B combined background/location native Feature tests and diagnostic IPA
+        type: boolean
+        default: false
       package_sdk_aliases_only:
         description: SDK aliases only; simulator_tests selects iOS host, otherwise macOS (no IPA)
         type: boolean
@@ -108,6 +112,13 @@ permissions:
   contents: read
 
 jobs:
+  background-location:
+    if: inputs.background_location_validation && !inputs.package_sdk_aliases_only
+    uses: ./.github/workflows/native-surface.yml
+    with:
+      surface: background-location
+      simulator_runtime: ${{ inputs.simulator_runtime }}
+
   media:
     if: inputs.media_validation && !inputs.package_sdk_aliases_only
     uses: ./.github/workflows/native-surface.yml

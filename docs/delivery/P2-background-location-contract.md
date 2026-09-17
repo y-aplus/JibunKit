@@ -51,4 +51,14 @@
 | native制約 | [既存scheduler比較](../verification/2026-09-11-backgroundtasks-native-pending.md)はSimulatorでnative/wrapper両方unavailable、後続はcompileのみ。[実HTTP比較](../verification/2026-09-11-background-urlsession-native-http.md)はforeground時の実転送・片側取消のみ。いずれもOS cold起動の合格へ読み替えない |
 | CI見積り | 0.8.3通常job5分29秒、直近media native job12分50秒は参考。位置/背景の新しいfixtureの所要時間を未計測のまま同値としない。両レーン統合後にbuild共有・必要job・timeoutとupload込み予算を固定 |
 
-初回の親指示は各1件。まだ提出/レビュー往復はなく、節約効果は判定していない。
+初回の親指示は各1件。背景`5096980`、位置`ec79a62`を受領して一括レビューし、各1件の修正依頼を送った（親メッセージ計4件、修正往復は進行中）。節約効果は判定していない。
+
+## 初回レビューとCI前修正
+
+両提出は統合branchへ取り込んだが、製品mainへは未統合・CI未投入。以下を一括で修正する。
+
+- 背景: Feature lifetime/管理/復元の受付とworker cleanup join、遅着launchの拒否、実際のrefresh/processing/shared refresh/HTTP操作入口、実機で観測可能な継続処理時間、continued-processing identifierの現SDK条件、既存throwing API呼出しの照合、実Featureを通す自動試験。
+- 位置: runtime接続tokenと停止後操作拒否、画面なしのcold配送と管理/同意反映、破損metadataの保護、pending監視取消と遅着callback、未知identifierの他owner誤配送拒否、位置sampleの標準情報保持、検証地点/登録一覧、実Feature/native設定の試験。
+- 親: `prepare-background-location-host.py`が両Fixtureを使い捨て通常hostへ接続し、`verify-media.py --surface background-location`で既存の署名/IPA/構造化xcresult処理を再利用する。workflowの`background_location_validation`で通常jobと独立実行。新しいmanifestの正確なidentifierは背景担当のSDK照合後に固定する。
+
+親のローカル検査はhost生成/失敗前の非破壊/必須plist3件、既存media5件を通す。Swift/iOS実行やOSイベント配送の証拠ではない。通常hostのAppDelegateには既に必要なlaunch hookとURLSession callback転送があるため、二重登録を追加しない。

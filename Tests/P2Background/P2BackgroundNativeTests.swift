@@ -1,11 +1,44 @@
 #if os(iOS)
 import Foundation
 import XCTest
+import SwiftUI
 @testable import JibunKit_App
 @testable import JibunKitCore
 
 @MainActor
 final class P2BackgroundNativeTests: XCTestCase {
+    func testFailedLaunchOwnerDoesNotAbortOtherRegistrationsOrRepeatPartialWork() async throws {
+        enum Rejected: Error { case registration }
+        let state = MiniAppLaunchState()
+        let aLife = MiniAppFeatureLifetime(id: MiniAppID("launch-a"))
+        let bLife = MiniAppFeatureLifetime(id: MiniAppID("launch-b"))
+        var aCalls = 0, bCalls = 0
+        let a = MiniAppDefinition(id: aLife.id, title: "A", systemImage: "a.circle", lifetime: aLife,
+            onHostLaunch: { aCalls += 1; throw Rejected.registration }) { _ in EmptyView() }
+        let b = MiniAppDefinition(id: bLife.id, title: "B", systemImage: "b.circle", lifetime: bLife,
+            onHostLaunch: { bCalls += 1 }) { _ in EmptyView() }
+        state.register([a, b]); state.register([a, b])
+        XCTAssertEqual(aCalls, 1); XCTAssertEqual(bCalls, 1)
+        XCTAssertNotNil(state.errors[a.id]); XCTAssertNil(state.errors[b.id])
+        do { try await aLife.start(); XCTFail("Failed owner started") }
+        catch MiniAppFeatureLifetime.Failure.launchRegistrationFailed(_) { }
+        try await bLife.start(); XCTAssertEqual(bLife.state, .running)
+        await bLife.stop()
+    }
+
+    func testHostBuildIdentityAllowsRewrittenInstalledManifestResolution() throws {
+        let original = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "JibunKitOriginalBundleIdentifier") as? String)
+        XCTAssertEqual(original, "com.jibunkit.app")
+        let permitted = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "BGTaskSchedulerPermittedIdentifiers") as? [String])
+        let installed = original + ".TESTSIGNER"
+        let info: [String: Any] = ["JibunKitOriginalBundleIdentifier": original, "CFBundleIdentifier": installed,
+            "BGTaskSchedulerPermittedIdentifiers": permitted.map { installed + $0.dropFirst(original.count) }]
+        for value in permitted {
+            let logical = value.replacingOccurrences(of: "*", with: "unique-job")
+            XCTAssertEqual(MiniAppBackgroundTaskIdentifier.resolve(logical, info: info), installed + logical.dropFirst(original.count))
+        }
+    }
+
     func testDefinitionsUseLifetimeUnregisterAndExactWildcardRequirements() throws {
         let definitions = P2BackgroundProbe.definitions
         XCTAssertEqual(definitions.map(\.id), [MiniAppID("p2-background-a"), MiniAppID("p2-background-b")])

@@ -19,6 +19,11 @@ struct MiniAppManagementScreen: View {
                 }
                 ForEach(MiniAppRegistry.all) { definition in
                     Section {
+                        if let failure = MiniAppRegistry.launchState.errors[definition.id] {
+                            Text("起動時の登録に失敗しました: \(failure)").foregroundStyle(.red)
+                            Text("有効化では再登録しません。登録条件を修正した後、アプリを起動し直してください。")
+                                .font(.caption)
+                        }
                         Text(statusText(management.status(for: definition.id)))
                             .accessibilityIdentifier("management.status.\(definition.id.rawValue)")
                         if let failure = management.failures[definition.id] {

@@ -43,7 +43,7 @@ private final class SystemContinuedProcessingScheduler: MiniAppContinuedProcessi
         identifier: String,
         launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void
     ) -> Bool {
-        scheduler.register(forTaskWithIdentifier: identifier, using: .main) { task in
+        scheduler.register(forTaskWithIdentifier: MiniAppBackgroundTaskIdentifier.resolve(identifier), using: .main) { task in
             guard let continued = task as? BGContinuedProcessingTask else {
                 task.setTaskCompleted(success: false)
                 return
@@ -54,7 +54,7 @@ private final class SystemContinuedProcessingScheduler: MiniAppContinuedProcessi
 
     func submit(_ request: MiniAppContinuedProcessingRequest) throws {
         let native = BGContinuedProcessingTaskRequest(
-            identifier: request.identifier,
+            identifier: MiniAppBackgroundTaskIdentifier.resolve(request.identifier),
             title: request.title,
             subtitle: request.subtitle
         )
@@ -63,7 +63,7 @@ private final class SystemContinuedProcessingScheduler: MiniAppContinuedProcessi
     }
 
     func cancel(identifier: String) {
-        scheduler.cancel(taskRequestWithIdentifier: identifier)
+        scheduler.cancel(taskRequestWithIdentifier: MiniAppBackgroundTaskIdentifier.resolve(identifier))
     }
 }
 

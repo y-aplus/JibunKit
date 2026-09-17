@@ -22,7 +22,15 @@ struct MiniAppListScreen: View {
             // A disabled owner's presenting root stays mounted until the
             // departure acknowledgement; it is no longer an admitted entry.
             if let owner, let miniApp = MiniAppRegistry.all.first(where: { $0.id == owner }) {
-                miniApp.makeDestination()
+                Group {
+                    if let failure = MiniAppRegistry.launchState.errors[owner] {
+                        ContentUnavailableView("起動時の準備に失敗しました", systemImage: "exclamationmark.triangle",
+                            description: Text(failure + "\n登録条件を修正した後、アプリを起動し直してください。"))
+                            .accessibilityIdentifier("miniapp.launch.error.\(owner.rawValue)")
+                    } else {
+                        miniApp.makeDestination()
+                    }
+                }
                     .disabled(!MiniAppRegistry.management.isEnabled(owner))
                     .navigationTitle(miniApp.title)
                     .navigationBarTitleDisplayMode(.inline)
@@ -84,9 +92,17 @@ struct MiniAppListScreen: View {
 
     private var launcher: some View {
         List {
+            if let failure = MiniAppRegistry.launchState.hostError {
+                Text("起動時の設定に失敗しました: \(failure)").foregroundStyle(.red)
+            }
             ForEach(matchingApps) { miniApp in
                 Button { navigation.open(miniApp.id) } label: {
-                    Label(miniApp.title, systemImage: miniApp.systemImage)
+                    VStack(alignment: .leading) {
+                        Label(miniApp.title, systemImage: miniApp.systemImage)
+                        if let failure = MiniAppRegistry.launchState.errors[miniApp.id] {
+                            Text("準備失敗: \(failure)").font(.caption).foregroundStyle(.red)
+                        }
+                    }
                 }
                 .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
             }

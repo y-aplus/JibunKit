@@ -9,6 +9,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.8.3",
     "CFBundleVersion": "13", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
+    "JibunKitOriginalBundleIdentifier": "com.jibunkit.app",
     "LSSupportsOpeningDocumentsInPlace": true,
     "CFBundleDocumentTypes": [[
         "CFBundleTypeName": "JibunKit Incoming File",

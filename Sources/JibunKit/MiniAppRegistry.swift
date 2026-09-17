@@ -30,6 +30,7 @@ enum MiniAppRegistry {
     static let management = makeManagement()
     private static var continuingTasks: [MiniAppID: Task<Void, Never>] = [:]
     static let continuingStatus = ContinuingSurfaceStatus()
+    static let launchState = MiniAppLaunchState()
 
     /// App-scoped work: leaving a Feature screen must not cancel OS activities.
     /// A cold launch or foreground transition rechecks daemon state. Per-owner
@@ -163,7 +164,7 @@ enum MiniAppRegistry {
     static var registeredIDs: Set<MiniAppID> { Set(enabled.map(\.id)) }
 
     static func definition(for id: MiniAppID) -> MiniAppDefinition? {
-        guard management.isEnabled(id) else { return nil }
+        guard management.isEnabled(id), launchState.errors[id] == nil else { return nil }
         return all.first { $0.id == id }
     }
 

@@ -13,21 +13,21 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // Apply persisted admission before passive cold-launch registrations.
+        // Registration rejection must not turn a fallible OS operation into an
+        // app-wide trap. Keep the failed owner visible with its launch error.
+        _ = MiniAppRegistry.management
+        MiniAppRegistry.launchState.register(MiniAppRegistry.all)
         do {
-            // Apply persisted admission before passive cold-launch registrations.
-            // Native launch handlers still register OS callbacks at the required
-            // launch time; their work must enter through the Feature lifetime.
-            _ = MiniAppRegistry.management
-            for definition in MiniAppRegistry.all {
-                try definition.onHostLaunch?()
-            }
             let registrations = Dictionary(uniqueKeysWithValues:
                 MiniAppRegistry.all.map { ($0.id, MiniAppRegistry.management.isEnabled($0.id) ? $0.notificationCategories : []) })
             try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
-            MiniAppRegistry.reconcileContinuingSurfaces()
         } catch {
-            preconditionFailure("Invalid Feature launch registration: \(error)")
+            MiniAppRegistry.launchState.hostError = String(describing: error)
+            Logger(subsystem: "com.jibunkit.app", category: "Launch")
+                .error("Notification registration failed: \(String(describing: error))")
         }
+        MiniAppRegistry.reconcileContinuingSurfaces()
         return true
     }
 

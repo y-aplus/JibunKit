@@ -33,7 +33,8 @@ final class P2IdentityNativeTests: XCTestCase {
         let late = Task { try await a.load(old) }
         await backend.waitForHold(); await backend.changeAccount("new")
         _ = try await a.accountDidChange(); await backend.release()
-        await XCTAssertThrowsErrorAsync { try await late.value }
+        do { _ = try await late.value; XCTFail("Expected stale account result rejection") }
+        catch let error as MiniAppExternalIdentityError { XCTAssertEqual(error, .staleGeneration) }
         let fresh = try await a.identity(localID: "same")
         try await a.save(fresh, fields: ["v": "new"])
         let value = try await a.load(fresh)
@@ -44,7 +45,8 @@ final class P2IdentityNativeTests: XCTestCase {
         let backend = P2IdentityBackend(account: "one"), (a, b) = try pair(backend)
         _ = try await b.activate(); let bi = try await b.identity(localID: "same")
         try await b.save(bi, fields: ["v": "B"]); await backend.failOnce()
-        await XCTAssertThrowsErrorAsync { try await a.activate() }
+        do { _ = try await a.activate(); XCTFail("Expected injected activation failure") }
+        catch {}
         _ = try await a.activate()
         let preserved = try await b.load(bi)
         XCTAssertEqual(preserved?.fields["v"], "B")
@@ -154,8 +156,4 @@ private actor P2IdentityBackend: MiniAppExternalIdentityBackend {
     }
 }
 
-private func XCTAssertThrowsErrorAsync<T>(_ operation: () async throws -> T,
-    file: StaticString = #filePath, line: UInt = #line) async {
-    do { _ = try await operation(); XCTFail("Expected error", file: file, line: line) } catch {}
-}
 #endif

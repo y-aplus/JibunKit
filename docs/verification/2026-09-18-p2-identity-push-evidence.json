@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-I",
-  "source": "42bb373f54f6f52bfefe1b12ad4809c0327ac219",
+  "source": "602bb2aff3d4a93c2067da0645137ac3afffba51",
   "contract": {
     "baseline": "7347b483936e7f8bfe45d36984c32390cdcae2b3",
     "interfaces": "docs/delivery/P2-identity-push-contract.md; standard Feature lifetime/runtime, management/externalAccess, host launch and notification route. Additive owner-scoped external identity and app-token/owner-server push APIs.",
@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-B": "Inherited 7347b48; native run35243182556 at f6f6c04 and normal/shared35235454126 at82f61bb passed. Physical background URLSession callback/save/completion passed; same-process only. Continued OS start and beacon/background location remain open; not a completed P2-B or v1 acceptance."
   },
-  "planned_ci_runs": 5,
-  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch. Fifth run is native-only after diagnostic escaping-closure compiler errors. Normal/shared35249566535 uses identical production sources and remains reusable; do not rerun it for a fixture-only correction.",
+  "planned_ci_runs": 6,
+  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch. Fifth run is native-only after diagnostic escaping-closure compiler errors. Normal/shared35249566535 uses identical production sources and remains reusable; do not rerun it for a fixture-only correction. Sixth run follows explicit three-failure diagnosis: initial Core lazy-initializer actor error, fixture capture-list errors, then test helper isolation. These are three compiler layers, not OS/runtime failures. All current native error lines deduplicated; only two helper call sites remain. Remove helper/inline assertions and review new fixtures/helpers together. Production sources unchanged since42bb373; retain ongoing normal run.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -92,6 +92,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249569786",
       "source": "42bb373f54f6f52bfefe1b12ad4809c0327ac219",
       "conclusion": "failure: Core/iOS host compilation progressed past prior actor error; diagnostic P2IdentityProbe escaping save/load/accountChanged closures lack explicit self capture. 10 diagnostics share these 3 sites. No test executed. Repair only fixture capture lists; normal product source unchanged."
+    },
+    {
+      "id": "35250318217",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35250318217",
+      "source": "602bb2aff3d4a93c2067da0645137ac3afffba51",
+      "conclusion": "failure: test target now compiled far enough to expose 2 Swift6 isolation errors in nonisolated XCTAssertThrowsErrorAsync helper; production Core and diagnostic app passed compilation. No XCTest execution. Replace helper with inline do/catch in MainActor test methods; keep full test scope."
     }
   ],
   "evidence": [
@@ -369,11 +375,27 @@
       "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Diagnostic-only retry after 3 explicit capture lists; normal35249566535 continues on identical product source.",
       "expected_elapsed_minutes": 22,
       "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
+    },
+    {
+      "id": "combined-native-retry3",
+      "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Native-only retry after removing nonisolated async assertion helper. Full12 native methods unchanged; no test skip/filter weakening.",
+      "expected_elapsed_minutes": 22,
+      "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
     }
   ],
   "pending": [
-    "Dispatch native-only repair; normal35249566535 remains the normal/shared verification source.",
+    "Retry native-only inline assertion repair; normal35249566535 still in progress at diagnostic triage.",
     "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
     "P2-B pending device observations remain open; this independent work does not close them."
-  ]
+  ],
+  "failure_triage": {
+    "after_failure_count": 3,
+    "layers": [
+      "Core lazy initializer actor isolation (repaired42bb373)",
+      "Diagnostic UI escaping captures (repaired602bb2a)",
+      "Native test nonisolated async assertion helper (current repair)"
+    ],
+    "evidence": "Private full failed logs35249120439/35249569786/35250318217; last native build compiled Core and diagnostic host, failed test module only. No runtime failure inferred.",
+    "scope": "Review all new native fixtures/host tests and async helpers. Keep all12 methods and normal/shared run. No Xcode on Windows; local generation tests do not validate Swift isolation."
+  }
 }

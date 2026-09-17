@@ -78,10 +78,10 @@ operationの型は契約どおり`(@MainActor @Sendable () async throws -> (@Mai
 
 `Tests/MediaCapture/MediaCaptureNativeTests.swift`は注入可能な実Feature factoryとVision adapterを`@testable import JibunKit_App`で検査し、停止join、A停止後のBの非初期値／同一runtime generation、同意拒否、scanner開始失敗、旧delegate拒否、外部dismissと別owner提示保持を確認する。Foundation状態試験は`Tests/JibunKitCoreTests/Capture/`にあり、競合、明示切替、stop中、許可callback遅着、scene集約、Audio解放順、世代付き中断／runtime失敗をfakeで検査する。
 
-実機ではcamera許可の許可／拒否、写真成功と中断終了後の条件付き復帰、文書成功／取消、QR成功、background／foreground、Feature切替、音声統合後の短時間動画と他owner音声保持を確認する。動画中断では録画中表示が終了し、部分fileの成功／失敗が表示され、勝手に同じ録画を再開しないこと、その後の明示的新規録画が成功することを確認する。SimulatorやmacOS試験を実camera、VisionKit対応（DataScannerは対応hardwareが必要）、OS許可UI、音声経路の証拠にしない。
+0.8.3候補の実機は代表操作へ絞った。306874fで写真・音声付き動画/背景移動停止/保存結果、a142108で文書保存/再表示/取消とQR、通常版復帰を確認済み。許可遅着/拒否、scene集約、世代、片側停止と他owner保持は実Feature/nativeおよびFoundation試験を使い、実機全組合せを反復しない。別playerとの実機同時録画、全機器/OS、AR/高度captureまで確認済みとはしない。写真初回の不明エラーは全文/再現条件不明として残す。[出荷照合](../verification/2026-09-17-0.8.3-release.md)。
 
 Apple一次資料: [AVCaptureSession](https://developer.apple.com/documentation/avfoundation/avcapturesession)、[startRunning](https://developer.apple.com/documentation/avfoundation/avcapturesession/startrunning())、[runtimeErrorNotification](https://developer.apple.com/documentation/avfoundation/avcapturesession/runtimeerrornotification)、[AVCaptureFileOutputRecordingDelegate](https://developer.apple.com/documentation/avfoundation/avcapturefileoutputrecordingdelegate)。
 
 外部の音声解放通知などを非同期配送する場合は、取得時の`operationGeneration`を保持し、`suspend(_:ifGeneration:)`へ渡す。旧操作の解放通知が新しい撮影を停止することを防ぐ。写真成功はfinal callbackで確定するが、停止時は未完了要求を取消し、遅着するcallbackを無視する。
 
-文書scanの所有・取消・外部dismiss回帰は、非対応Simulatorに実`VNDocumentCameraViewController`を強制作成しない。Testing SPIから通常の`UIViewController`を注入し、本番と共有するoperation/presentation/cancel経路を検査する。公開`documentOperation`はSDK対応判定→実controller作成→delegate登録を行い、対応判定falseでは作成/提示前に`.unsupported`を返すことを別試験で確認する。このSPI試験はVisionKit画面の成功や実scan結果の証拠ではなく、それらは対応実機に残る。
+文書scanの所有・取消・外部dismiss回帰は、非対応Simulatorに実`VNDocumentCameraViewController`を強制作成しない。Testing SPIから通常の`UIViewController`を注入し、本番と共有するoperation/presentation/cancel経路を検査する。公開`documentOperation`はSDK対応判定→実controller作成→delegate登録を行い、対応判定falseでは作成/提示前に`.unsupported`を返すことを別試験で確認する。実UIKit全画面回帰はCI35102558612、実VisionKit文書の成功/取消はa142108の実機結果をそれぞれ証拠とする。

@@ -413,12 +413,29 @@
       "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35102558612/artifacts/10449625989",
       "observation": "All28MediaNativeTests passed once,0failed/skip. Actual UIKit fullScreen hides host then re-presents twice while keeping capture owner/selected scene. Scene disconnection/reactivation/root teardown and unrelated-scene notification filtering passed. Existing audio/capture/bridge cases retained. Actual VisionKit document scan still requires device.",
       "review": "Downloaded result.json, structured test-summary/test-tests and timings; local require_test_passes validated exact28methods. Fullscreen2.130s, scene-connection0.009s. Release diagnostic IPA/signatures/CRC passed."
+    },
+    {
+      "criterion": "P2-1.device",
+      "kind": "device",
+      "source": "a14210815b4c312ab28ade2fddcfc7eec11360fb",
+      "additional_sources": ["306874f232849fa81de20985f3e2f90bf2da5a09"],
+      "result": "passed",
+      "reference": "docs/verification/2026-09-16-p2-media-device.md",
+      "observation": "306874f playback/background/lock commands/Siri explicit replay/record-playback-release; a142108 headphone removal stops playback and normal return retains Counter/Reminder.",
+      "review": "Sequential user OK receipts, including final combined2points. Host scene/anchor repair does not alter audio/capture producers or stored data. Automated actual Feature tests cover failure/cancel/generation/other-owner combinations; unchanged Refresh and full manual matrix were not repeated under approved burden reduction."
+    },
+    {
+      "criterion": "P2-2.device",
+      "kind": "device",
+      "source": "a14210815b4c312ab28ade2fddcfc7eec11360fb",
+      "additional_sources": ["306874f232849fa81de20985f3e2f90bf2da5a09"],
+      "result": "passed",
+      "reference": "docs/verification/2026-09-16-p2-media-device.md",
+      "observation": "306874f photo/audio-video/Home-stop/saved audio; a142108 document save/image/count/reopen/cancel, QR and normal return. Initial document failure repaired; uncertain first-photo report retained.",
+      "review": "User OK receipts mapped to requested steps, final combined2points included. No physical claim for all models/OS/AR or concurrent second-player video; automated owner/bridge tests remain source-scoped."
     }
   ],
-  "deferred_device": {
-    "P2-1.device": "1.0.0",
-    "P2-2.device": "1.0.0"
-  },
+  "deferred_device": {},
   "documents": [],
   "document_review": {
     "source": "",
@@ -616,7 +633,7 @@
       }
     ]
   },
-  "next_action": "Focused device check on published a142108: document scan save/result and reopen/cancel, then remaining QR/route/normal return. Do not repeat passed306874f audio/recording/video matrix. No active CI; no version bump/main merge.",
+  "next_action": "Physical checkpoint complete2026-09-17. Prepare0.8.3/build13 and one normal IPA verification run. Reuse source-scoped native/UI/device evidence after checking version-only production diff. Publication and main integration pending.",
   "physical_observations": {
     "source": "306874f232849fa81de20985f3e2f90bf2da5a09",
     "record": "docs/verification/2026-09-16-p2-media-device.md",
@@ -631,13 +648,10 @@
       "document start: unavailable(no active selected scene) / stopped"
     ],
     "unresolved": [
-      "first photo error uncertain",
-      "headphone route",
-      "document success/cancel",
-      "QR",
-      "normal IPA return"
+      "first photo error uncertain; no message/reproduction",
+      "no claim for every phone/route variant or simultaneous second-player video"
     ],
-    "repair": "a142108 CI passed; replacement public IPA verified. Physical document success not yet confirmed. Preserve306874f audio/recording/photo/video observations; do not claim reruns."
+    "repair": "a142108 document save/image/count/reopen/cancel and QR passed on device. Headphone removal stops playback and normal IPA preserves Counter/Reminder confirmed2026-09-17. Preserve306874f audio/recording/photo/video observations; do not claim reruns."
   },
   "prior_checkpoint": {
     "source": "306874f232849fa81de20985f3e2f90bf2da5a09",

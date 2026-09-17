@@ -1,6 +1,6 @@
 # 1.0の互換性とFeatureの責任境界
 
-0.8.2/build12を公開済みです（直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](verification/2026-09-16-0.8.2-release.md)を参照してください。
+候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機を完了し、版変更後の通常IPAを検証中です。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
 更新日: 2026-09-16。公開版0.8.2/build12（直前の正式版0.8.1）とmainの区別は[現在状態](status.md)を参照。
 0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。
 0.8.1/build11を公開済み。操作Widget/Controlと共有状態の実機確認、版変更後CIと公開物検査を完了（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。

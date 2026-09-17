@@ -35,4 +35,6 @@ acquireAudio: (@MainActor @Sendable () async throws
     -> (@MainActor @Sendable () async -> Void))?
 ```
 
-診断hostには`Tests/MediaAudio/`の支援Swiftをapp targetへコピーし、`MediaAudioProbe.definitions`をregistryへ追加する。native test targetには`MediaAudioNativeTests.swift`を入れ、`@testable import JibunKit_App`を有効にする。fixtureは外部素材不要のローカルWAVをloop再生する。自動testは注入permission/recording backendで遅着、停止待ち、失敗、中断再開、Bの世代保持を検査し、microphone未許可をskip成功にしない。実録音/録音再生、背景、通話中断、有線/Bluetooth切断、Lock Screen/Control Center配送は署名hostの実機手順として別に合格判定する。
+診断hostには`Tests/MediaAudio/`の支援Swiftをapp targetへコピーし、`MediaAudioProbe.definitions`をregistryへ追加する。native test targetには`MediaAudioNativeTests.swift`を入れ、`@testable import JibunKit_App`を有効にする。fixtureは外部素材不要のローカルWAVをloop再生する。自動testは注入permission/recording backendで遅着、停止待ち、失敗、中断再開、Bの世代保持を検査し、microphone未許可をskip成功にしない。
+
+実機は代表OS操作へ絞る。306874fで実録音/録音再生、背景、Siri割込み後の明示再開、Lock Screen pause/play、a142108でイヤホン抜去停止と通常版復帰を確認済み。通話全種別、有線/Bluetooth全機器やControl Center全操作の確認とはしない。状態/取消/失敗/他owner保持の組合せは自動試験を使う。[0.8.3候補の出荷照合](../verification/2026-09-17-0.8.3-release.md)。

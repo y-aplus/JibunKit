@@ -4,8 +4,15 @@
 
 ## [Unreleased]
 
-- 開発branchでAudioSessionのowner別調停・明示競合切替・停止/復旧待ち、Now Playing操作配送、camera予約とcapture/VisionKitの寿命接続を追加。実Featureと共有音声付き撮影fixture、接続guideを整備。CI35090872646で通常/診断IPAとnative26件が成功。実機で再生/録音・写真/音声動画を確認し、文書scan開始失敗を調査・修正中。安定版0.8.2の出荷済み機能にはまだ含めない。
-- 全画面提示で背後のhostが隠れる際、sceneを切断してcamera操作を停止する経路を修正。実UIKit全画面表示・再表示とscene切断/再接続の自動回帰を追加。CI35102558612で追加を含むnative28件と通常通知UI/IPAが成功。文書scanの実機再確認待ち。
+## [0.8.3] - 出荷候補
+
+0.8.3/build13。対象別CI・実機確認を完了し、版変更後の通常IPAを検証中。未公開。
+
+- AudioSessionのowner別調停、明示競合切替、停止/復旧待ち、Now Playing操作配送を追加。
+- camera予約とcapture/VisionKitの寿命・同意・scene接続、音声付き撮影の共有audio hookを追加。
+- 全画面提示時のhost scene誤切断を修正。実UIKit回帰と実機の文書保存/取消・QRを確認。
+- 共有359件（既存skip2）、native28件、通常通知UIが成功。再生/録音・背景/OS操作/Siri・経路変更、写真/動画/文書/QR、通常版復帰を対象別実機で確認。全組合せの反復は行わない。
+- 写真初回の不明エラーと旧Live Bの値差分は原因未確定として保持。通常IPAへ診断Featureを含めず、既存データIDを維持。
 
 ## [0.8.2] - 2026-09-16
 

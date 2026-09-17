@@ -401,10 +401,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "音声・Now Playing",
       "existing": "開発branch306874f: AudioSession互換/競合/停止/復旧・Now Playing ownerと実Feature接続。CI35090872646でcore14件、音声native13件とbridge2件、通常/診断IPA成功。未公開。 306874f実機で再生/背景/lock操作、Siri後明示再開、実録音/再生を確認。 修正版a142108/CI35102558612でnative28件、通常通知UIと通常/診断IPAが成功。",
-      "remaining": "代表経路変更、残項目後の通常IPA復帰。既存成功をsource別に保持し、未観測の同時音声付き撮影を実機成功と記載しない。",
+      "remaining": "なし（採用通常範囲）。2026-09-17にa142108でイヤホン抜去停止・通常IPA復帰を受領。0.8.3候補へ採用し公開待ち。全経路/全機器や未観測の同時音声付き撮影を実機成功とは記載しない。",
       "deferred": "特殊多経路/機器・任意engineの一般共存",
       "criteria": [
         {
@@ -447,10 +447,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "撮影・スキャン",
       "existing": "開発branch306874f: camera予約/世代/取消と既存lifetime/scene/presentation/同意接続、音声付き撮影hook。CI35090872646でcore19件、capture native11件とbridge2件、診断IPA成功。文書所有試験はUIKit注入で実scanではない。未公開。 306874f実機で写真と背景移動後に停止した音声動画を確認。 修正版a142108/CI35102558612でnative28件、通常通知UIと通常/診断IPAが成功。",
-      "remaining": "306874fの文書scan開始失敗に対し、全画面表示とscene接続を分離したa142108を配布。自動回帰は成功、実文書成功/取消・QR・通常版復帰の確認待ち。写真初回の不明エラーは原因未確定。",
+      "remaining": "なし（採用通常範囲）。2026-09-17にa142108で実文書保存/取消・QR・通常版復帰を受領。0.8.3候補へ採用し公開待ち。写真初回の不明エラーは全文/再現条件不明の観測として維持。AR・高度capture全体の完了ではない。",
       "deferred": "高度同時capture・AR world state",
       "criteria": [
         {

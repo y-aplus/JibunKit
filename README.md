@@ -1,6 +1,6 @@
-> [0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)を公開済み。Live Activities/AlarmKitの接続基盤と実Feature状態保持試験を追加しました。Live Bの単発の値差分は原因未特定として残しています。1.0は未達です。
+> 0.8.3/build13を出荷準備中です。音声・撮影・文書/QRの接続基盤を追加し、対象別実機確認を完了しました。公開安定版は[0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)。1.0は未達です。
 
-0.8.2/build12を公開済みです（直前の正式版は0.8.1）。Live Activities/AlarmKitの接続と対象別実機結果、Live Bの原因未特定・再現なしの値差分を含む出荷範囲は[出荷照合](docs/verification/2026-09-16-0.8.2-release.md)を参照してください。
+候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。[今回の出荷照合](docs/verification/2026-09-17-0.8.3-release.md)と[候補の変更・観測限界](release-notes-0.8.3.md)を参照してください。
 # JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。
@@ -17,7 +17,9 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 0.8.1/build11は操作Widget/Controlと共有状態の実機確認、版変更後CI、公開IPA/ZIP再取得を完了しています。[出荷範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。通常IPAへ診断A/Bは含めません。
 
-## 公開版0.8.2とmain
+## 公開版0.8.2と候補0.8.3
+
+0.8.3候補は[音声](docs/guides/audio.md)と[撮影/scan](docs/guides/capture.md)のFeature接続を追加します。通常IPAへ診断Featureは含めません。対象別実機は完了し、版変更後の通常IPAと公開は検証中です。
 
 通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと

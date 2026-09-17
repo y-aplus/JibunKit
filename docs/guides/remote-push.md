@@ -12,13 +12,21 @@ let service = MiniAppRemotePushService(
     onDelivery: processFeaturePayload
 )
 let lifetime = MiniAppFeatureLifetime(id: id) { runtime in
-    try await service.connect(to: runtime)
+    try service.connect(to: runtime)
 }
 ```
 
-Runtime shutdown disconnects only that owner and invalidates its generation. Management deletion should also expose `onUnregister: { await service.unregister() }`; that callback tells the Feature's server code to remove its identity, while another Feature with the same local account string remains registered. A token change is fanned out to current Feature/server identities. APNs registration failure is reported to each currently connected generation and is distinct from a Feature server request failure.
+For cold/background delivery, publish the owner synchronously from the ordinary definition's launch hook:
 
-Incoming payloads must contain `JibunKitMiniAppID`; optional navigation uses `JibunKitDestination`, matching the existing notification router. `deliver(userInfo:)` resolves exactly one active owner. It never broadcasts an unowned payload. `MiniAppRemotePushMessage.propertyListData` preserves the full nested APNs payload across the async boundary, while `userInfo` is a convenient scalar projection; Feature-specific schema validation and business work belong in `onDelivery`.
+```swift
+onHostLaunch: { service.prepareColdStart(lifetime: lifetime) }
+```
+
+This does not start the Feature at launch. A matching payload asks the same lifetime to start; persisted management admission (`setStartAllowed(false)`) rejects it without calling Feature business code. The host needs no Feature-specific switch.
+
+Runtime shutdown disconnects only that owner and invalidates its generation. Management deletion should expose `onUnregister: { await service.unregister() }`. Active registration/delivery handlers are Runtime-owned; the service's distinct `onUnregister(identity)` server-cleanup closure is instead awaited by management after Runtime stop. An older service lease cannot remove or unregister its replacement. A token change is serialized per current Runtime generation. APNs registration failure is reported separately and a later success with the same token bytes is still accepted.
+
+Incoming payloads must contain `JibunKitMiniAppID`; optional navigation uses `JibunKitDestination`, matching the existing notification router. `deliver(userInfo:)` resolves exactly one active owner. It never broadcasts an unowned payload. `MiniAppRemotePushMessage.payload` is a recursive, Sendable snapshot that preserves APNs JSON strings, numbers, booleans, arrays, objects and null. Unsupported native objects or non-string keys are rejected as `failed` before Feature delivery; there is no lossy fallback. Feature-specific schema validation and business work belong in `onDelivery`.
 
 ## UIApplicationDelegate connection
 
@@ -28,7 +36,7 @@ The host calls `registerForRemoteNotifications()` once after its notification au
 func application(_ application: UIApplication,
   didRegisterForRemoteNotificationsWithDeviceToken token: Data) {
     Task { @MainActor in
-        await MiniAppRemotePushCoordinator.shared
+        MiniAppRemotePushCoordinator.shared
             .didRegisterForRemoteNotifications(deviceToken: token)
     }
 }
@@ -36,7 +44,7 @@ func application(_ application: UIApplication,
 func application(_ application: UIApplication,
   didFailToRegisterForRemoteNotificationsWithError error: Error) {
     Task { @MainActor in
-        await MiniAppRemotePushCoordinator.shared
+        MiniAppRemotePushCoordinator.shared
             .didFailToRegisterForRemoteNotifications(error)
     }
 }

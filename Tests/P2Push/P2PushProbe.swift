@@ -26,11 +26,12 @@ final class P2PushFeature: ObservableObject {
             deliveries += 1
             status = "owner配送: \(message.destination ?? "root")"
             return .newData
-        }
+        },
+        onUnregister: { [weak self] _ in self?.status = "server登録解除済み" }
     )
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
-        try await service.connect(to: runtime)
+        try service.connect(to: runtime)
         status = "runtime接続済み"
     }
 
@@ -41,6 +42,9 @@ final class P2PushFeature: ObservableObject {
                           lifetime: lifetime, onUnregister: { [weak self] in
                               guard let self else { return }
                               await service.unregister()
+                          }, onHostLaunch: { [weak self] in
+                              guard let self else { return }
+                              service.prepareColdStart(lifetime: lifetime)
                           }) {
             [self] _ in P2PushView(feature: self)
         }

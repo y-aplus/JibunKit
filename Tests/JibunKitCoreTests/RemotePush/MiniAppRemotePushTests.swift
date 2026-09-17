@@ -3,126 +3,186 @@ import XCTest
 
 @MainActor
 final class MiniAppRemotePushTests: XCTestCase {
-    private let a = MiniAppID("push-a")
-    private let b = MiniAppID("push-b")
+    private let a = MiniAppID("push-a"), b = MiniAppID("push-b")
 
-    func testAppTokenFansOutWithSeparateServerIdentityAndChangedToken() async throws {
-        let coordinator = MiniAppRemotePushCoordinator()
-        let log = PushLog()
-        let sa = try service(a, "server-a", coordinator, log)
-        let sb = try service(b, "server-b", coordinator, log)
+    func testTokenChangeUsesSeparateIdentityAndFailureAllowsSameTokenRecovery() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), log = PushLog()
+        let sa = try service(a, "server-a", coordinator, log), sb = try service(b, "server-b", coordinator, log)
         let ra = MiniAppRuntime(), rb = MiniAppRuntime()
-        try await sa.connect(to: ra); try await sb.connect(to: rb)
-        await coordinator.didRegisterForRemoteNotifications(deviceToken: Data([1]))
-        await coordinator.didRegisterForRemoteNotifications(deviceToken: Data([1]))
-        await coordinator.didRegisterForRemoteNotifications(deviceToken: Data([2]))
-        XCTAssertEqual(log.tokens[a], [Data([1]), Data([2])])
-        XCTAssertEqual(log.tokens[b], [Data([1]), Data([2])])
+        try sa.connect(to: ra); try sb.connect(to: rb)
+        coordinator.didRegisterForRemoteNotifications(deviceToken: Data([1]))
+        await coordinator.waitForRegistrationCallbacks()
+        coordinator.didFailToRegisterForRemoteNotifications(PushTestError.rejected)
+        await coordinator.waitForRegistrationCallbacks()
+        coordinator.didRegisterForRemoteNotifications(deviceToken: Data([1]))
+        await coordinator.waitForRegistrationCallbacks()
+        XCTAssertEqual(log.tokens[a], [Data([1]), Data([1])])
+        XCTAssertEqual(log.tokens[b], [Data([1]), Data([1])])
         XCTAssertEqual(log.servers[a], ["server-a", "server-a"])
-        XCTAssertEqual(log.servers[b], ["server-b", "server-b"])
+        XCTAssertEqual(log.failures[a]?.count, 1)
         await ra.shutdown(); await rb.shutdown()
     }
 
-    func testRegistrationFailureIsScopedToCurrentConnectedGenerations() async throws {
-        let coordinator = MiniAppRemotePushCoordinator(); let log = PushLog()
-        let runtime = MiniAppRuntime(); try await service(a, "a", coordinator, log).connect(to: runtime)
-        await coordinator.didFailToRegisterForRemoteNotifications(PushTestError.rejected)
-        XCTAssertEqual(log.failures[a]?.count, 1)
+    func testSlowTokenOneNeverArrivesAfterTokenTwo() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), gate = PushGate(), entered = expectation(description: "token1")
+        var values: [Data] = []
+        let service = MiniAppRemotePushService(owner: a,
+            identity: try MiniAppRemotePushIdentity(server: "a", account: "id"), coordinator: coordinator,
+            onRegistration: { event in
+                if case .tokenChanged(let token, _, _) = event {
+                    values.append(token)
+                    if token == Data([1]) { entered.fulfill(); await gate.wait() }
+                }
+            })
+        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        coordinator.didRegisterForRemoteNotifications(deviceToken: Data([1]))
+        await fulfillment(of: [entered], timeout: 2)
+        coordinator.didRegisterForRemoteNotifications(deviceToken: Data([2]))
+        await gate.release(); await coordinator.waitForRegistrationCallbacks()
+        XCTAssertEqual(values, [Data([1]), Data([2])])
         await runtime.shutdown()
-        await coordinator.didFailToRegisterForRemoteNotifications(PushTestError.rejected)
-        XCTAssertEqual(log.failures[a]?.count, 1)
     }
 
-    func testOwnerOnlyDeliveryDoesNotBroadcast() async throws {
-        let coordinator = MiniAppRemotePushCoordinator(); let log = PushLog()
-        let ra = MiniAppRuntime(), rb = MiniAppRuntime()
-        try await service(a, "a", coordinator, log).connect(to: ra)
-        try await service(b, "b", coordinator, log).connect(to: rb)
-        let result = await coordinator.deliver(userInfo: [
-            MiniAppNotificationRoute.miniAppIDUserInfoKey: a.rawValue,
-            MiniAppNotificationRoute.destinationUserInfoKey: "inbox", "value": 7,
-            "aps": ["content-available": 1]])
-        XCTAssertEqual(result, .newData)
-        XCTAssertEqual(log.messages[a]?.map(\.destination), ["inbox"])
-        XCTAssertNil(log.messages[b])
-        XCTAssertEqual(log.messages[a]?.first?.userInfo["value"], "7")
-        let fullPayload = try XCTUnwrap(log.messages[a]?.first).propertyListUserInfo()
-        XCTAssertEqual((fullPayload["aps"] as? [String: Int])?["content-available"], 1)
-        let unowned = await coordinator.deliver(userInfo: ["value": "no owner"])
-        XCTAssertEqual(unowned, .noData)
-        await ra.shutdown(); await rb.shutdown()
-    }
-
-    func testStopAndLateOldGenerationCleanupCannotRemoveReplacement() async throws {
-        let coordinator = MiniAppRemotePushCoordinator(); let log = PushLog()
-        let old = MiniAppRuntime(), replacement = MiniAppRuntime()
+    func testClosedRuntimeCannotLeakRegistration() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), log = PushLog()
+        let runtime = MiniAppRuntime()
         let service = try service(a, "a", coordinator, log)
-        try await service.connect(to: old)
-        await old.shutdown()
-        try await service.connect(to: replacement)
-        await old.shutdown() // idempotent late join
-        let replacementResult = await coordinator.deliver(userInfo: [MiniAppNotificationRoute.miniAppIDUserInfoKey: a.rawValue])
-        XCTAssertEqual(replacementResult, .newData)
-        XCTAssertEqual(log.messages[a]?.count, 1)
-        await replacement.shutdown()
-        let stoppedResult = await coordinator.deliver(userInfo: [MiniAppNotificationRoute.miniAppIDUserInfoKey: a.rawValue])
+        await runtime.shutdown()
+        XCTAssertThrowsError(try service.connect(to: runtime))
+        XCTAssertTrue(coordinator.registeredOwners.isEmpty)
+    }
+
+    func testOldServiceCannotUnregisterNewServiceForSameOwner() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), oldLog = PushLog(), newLog = PushLog()
+        let old = try service(a, "old", coordinator, oldLog), new = try service(a, "new", coordinator, newLog)
+        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime()
+        try old.connect(to: oldRuntime); try new.connect(to: newRuntime)
+        await old.unregister()
+        let result = await coordinator.deliver(userInfo: ownerPayload(a))
+        XCTAssertEqual(result, .newData)
+        XCTAssertNil(oldLog.messages[a]); XCTAssertEqual(newLog.messages[a]?.count, 1)
+        await new.unregister()
+        XCTAssertNil(oldLog.unregistered[a])
+        XCTAssertEqual(newLog.unregistered[a], ["new"])
+        await oldRuntime.shutdown(); await newRuntime.shutdown()
+    }
+
+    func testStoppedHandlerIsJoinedAndItsResultIsRejected() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), gate = PushGate(), entered = expectation(description: "delivery")
+        let service = MiniAppRemotePushService(owner: a,
+            identity: try MiniAppRemotePushIdentity(server: "a", account: "id"), coordinator: coordinator,
+            onDelivery: { _ in entered.fulfill(); await gate.wait(); return .newData })
+        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        let delivery = Task { await coordinator.deliver(userInfo: self.ownerPayload(self.a)) }
+        await fulfillment(of: [entered], timeout: 2)
+        let stopping = Task { await runtime.shutdown() }
+        await Task.yield()
+        XCTAssertFalse(runtime.shutdownProgress.phase == .completed)
+        await gate.release(); await stopping.value
+        let stoppedResult = await delivery.value
         XCTAssertEqual(stoppedResult, .noData)
     }
 
-    func testUnregisterOnlyRemovesOwnerAndPreservesOtherState() async throws {
-        let coordinator = MiniAppRemotePushCoordinator(); let log = PushLog()
-        let sa = try service(a, "a", coordinator, log), sb = try service(b, "b", coordinator, log)
-        let ra = MiniAppRuntime(), rb = MiniAppRuntime()
-        try await sa.connect(to: ra); try await sb.connect(to: rb)
-        await sa.unregister()
-        XCTAssertEqual(log.unregistered[a], ["a"])
-        let resultA = await coordinator.deliver(userInfo: [MiniAppNotificationRoute.miniAppIDUserInfoKey: a.rawValue])
-        let resultB = await coordinator.deliver(userInfo: [MiniAppNotificationRoute.miniAppIDUserInfoKey: b.rawValue])
-        XCTAssertEqual(resultA, .noData)
+    func testStoppingOwnerADoesNotDisturbOwnerBNoninitialStateOrDelivery() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), gate = PushGate(), entered = expectation(description: "A delivery")
+        let aService = MiniAppRemotePushService(owner: a,
+            identity: try MiniAppRemotePushIdentity(server: "a", account: "same"), coordinator: coordinator,
+            onDelivery: { _ in entered.fulfill(); await gate.wait(); return .newData })
+        let bLog = PushLog(), bService = try service(b, "b", coordinator, bLog)
+        let aRuntime = MiniAppRuntime(), bRuntime = MiniAppRuntime()
+        try aService.connect(to: aRuntime); try bService.connect(to: bRuntime)
+        bLog.state = "B noninitial"
+        let deliveryA = Task { await coordinator.deliver(userInfo: self.ownerPayload(self.a)) }
+        await fulfillment(of: [entered], timeout: 2)
+        let stoppingA = Task { await aRuntime.shutdown() }
+        let resultB = await coordinator.deliver(userInfo: ownerPayload(b))
         XCTAssertEqual(resultB, .newData)
-        await ra.shutdown(); await rb.shutdown()
+        XCTAssertEqual(bLog.state, "B noninitial")
+        XCTAssertEqual(bLog.messages[b]?.count, 1)
+        await gate.release(); await stoppingA.value
+        let resultA = await deliveryA.value
+        XCTAssertEqual(resultA, .noData)
+        XCTAssertFalse(bRuntime.isClosed)
+        await bRuntime.shutdown()
     }
 
-    func testCompletionAggregatorCombinesPrecedenceAndCompletesOnce() async {
+    func testColdDeliveryStartsAdmittedLifetimeAndRejectsManagedOffOwner() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), log = PushLog()
+        let service = try service(a, "a", coordinator, log)
+        let lifetime = MiniAppFeatureLifetime(id: a) { runtime in try service.connect(to: runtime) }
+        service.prepareColdStart(lifetime: lifetime)
+        let admitted = await coordinator.deliver(userInfo: ownerPayload(a))
+        XCTAssertEqual(admitted, .newData)
+        await lifetime.stop()
+        lifetime.setStartAllowed(false)
+        let denied = await coordinator.deliver(userInfo: ownerPayload(a))
+        XCTAssertEqual(denied, .noData)
+    }
+
+    func testOwnerOnlyDeliveryPreservesNestedArrayAndNullAndRejectsInvalidPayload() async throws {
+        let coordinator = MiniAppRemotePushCoordinator(), log = PushLog()
+        let runtime = MiniAppRuntime(); try service(a, "a", coordinator, log).connect(to: runtime)
+        var payload = ownerPayload(a)
+        payload["nested"] = ["items": [1, NSNull(), "x"]]
+        let valid = await coordinator.deliver(userInfo: payload)
+        XCTAssertEqual(valid, .newData)
+        let captured = try XCTUnwrap(log.messages[a]?.first)
+        XCTAssertEqual(captured.payload["nested"], .object(["items": .array([.number(1), .null, .string("x")])]))
+        payload["invalid"] = Date()
+        let invalid = await coordinator.deliver(userInfo: payload)
+        XCTAssertEqual(invalid, .failed)
+        XCTAssertEqual(log.messages[a]?.count, 1)
+        let other = await coordinator.deliver(userInfo: ownerPayload(b))
+        XCTAssertEqual(other, .noData)
+        await runtime.shutdown()
+    }
+
+    func testAggregatorSurvivesLocalOwnerAndCompletesOnce() async {
         let completed = expectation(description: "completed")
-        completed.expectedFulfillmentCount = 1
         let values = LockedResults()
-        let aggregator = MiniAppRemotePushCompletionAggregator { value in values.append(value); completed.fulfill() }
-        let a = aggregator.ticket(), b = aggregator.ticket(), c = aggregator.ticket()
-        aggregator.finishAdding()
-        b(.newData); a(.noData); a(.failed); c(.failed)
+        var ticket: (@Sendable (MiniAppRemotePushFetchResult) -> Void)?
+        do {
+            let aggregator = MiniAppRemotePushCompletionAggregator { values.append($0); completed.fulfill() }
+            ticket = aggregator.ticket(); aggregator.finishAdding()
+        }
+        ticket?(.newData); ticket?(.failed)
         await fulfillment(of: [completed], timeout: 2)
-        XCTAssertEqual(values.values, [.failed])
+        XCTAssertEqual(values.values, [.newData])
     }
 
     private func service(_ owner: MiniAppID, _ server: String, _ coordinator: MiniAppRemotePushCoordinator,
                          _ log: PushLog) throws -> MiniAppRemotePushService {
-        let identity = try MiniAppRemotePushIdentity(server: server, account: "shared-local-id")
-        return MiniAppRemotePushService(owner: owner, identity: identity, coordinator: coordinator,
-            onRegistration: { event in log.record(owner, event) },
-            onDelivery: { message in log.messages[owner, default: []].append(message); return .newData })
+        MiniAppRemotePushService(owner: owner,
+            identity: try MiniAppRemotePushIdentity(server: server, account: "shared-local-id"), coordinator: coordinator,
+            onRegistration: { log.record(owner, $0) },
+            onDelivery: { log.messages[owner, default: []].append($0); return .newData },
+            onUnregister: { log.unregistered[owner, default: []].append($0.server) })
+    }
+    private func ownerPayload(_ owner: MiniAppID) -> [AnyHashable: Any] {
+        [MiniAppNotificationRoute.miniAppIDUserInfoKey: owner.rawValue]
     }
 }
 
 private enum PushTestError: Error { case rejected }
-
-@MainActor
-private final class PushLog {
-    var tokens: [MiniAppID: [Data]] = [:]
-    var servers: [MiniAppID: [String]] = [:]
-    var failures: [MiniAppID: [String]] = [:]
+private actor PushGate {
+    private var open = false, waiter: CheckedContinuation<Void, Never>?
+    func wait() async { if open { return }; await withCheckedContinuation { waiter = $0 } }
+    func release() { open = true; waiter?.resume(); waiter = nil }
+}
+@MainActor private final class PushLog {
+    var state = "initial"
+    var tokens: [MiniAppID: [Data]] = [:], servers: [MiniAppID: [String]] = [:]
+    var failures: [MiniAppID: [String]] = [:], messages: [MiniAppID: [MiniAppRemotePushMessage]] = [:]
     var unregistered: [MiniAppID: [String]] = [:]
-    var messages: [MiniAppID: [MiniAppRemotePushMessage]] = [:]
     func record(_ owner: MiniAppID, _ event: MiniAppRemotePushRegistrationEvent) {
         switch event {
         case .tokenChanged(let token, let identity, _):
             tokens[owner, default: []].append(token); servers[owner, default: []].append(identity.server)
         case .registrationFailed(let message, _): failures[owner, default: []].append(message)
-        case .ownerUnregistered(let identity): unregistered[owner, default: []].append(identity.server)
+        case .ownerUnregistered: break
         }
     }
 }
-
 private final class LockedResults: @unchecked Sendable {
     private let lock = NSLock(); private var storage: [MiniAppRemotePushFetchResult] = []
     var values: [MiniAppRemotePushFetchResult] { lock.lock(); defer { lock.unlock() }; return storage }

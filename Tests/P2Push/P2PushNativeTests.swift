@@ -8,14 +8,14 @@ final class P2PushNativeTests: XCTestCase {
     func testProbePublishesTwoOrdinaryDefinitionsWithIndependentLifetimeAndUnregister() {
         let definitions = P2PushProbe.definitions
         XCTAssertEqual(definitions.map(\.id), [MiniAppID("p2-push-alpha"), MiniAppID("p2-push-beta")])
-        XCTAssertTrue(definitions.allSatisfy { $0.lifetime != nil && $0.onUnregister != nil })
+        XCTAssertTrue(definitions.allSatisfy { $0.lifetime != nil && $0.onUnregister != nil && $0.onHostLaunch != nil })
     }
 
     func testTwoFeaturesUseSameLocalAccountButSeparateServerIdentityAndOwnerDelivery() async throws {
         let definitions = P2PushProbe.definitions
         try await definitions[0].lifetime?.start()
         try await definitions[1].lifetime?.start()
-        await P2PushProbe.coordinator.didRegisterForRemoteNotifications(deviceToken: Data([0x12, 0x34]))
+        P2PushProbe.coordinator.didRegisterForRemoteNotifications(deviceToken: Data([0x12, 0x34]))
         let alphaBefore = P2PushProbe.alpha.deliveries
         let betaBefore = P2PushProbe.beta.deliveries
         let result = await P2PushProbe.coordinator.deliver(userInfo: [

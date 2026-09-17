@@ -33,3 +33,22 @@
 親は両提出を一括レビューし、必要な修正をまとめて返す。診断hostの登録/usage descriptions/background modes・通常IPA・全対象試験の実行確認を統合する。CI初回予算3run、通常25分見込み/30分目標。正確なworkflow入力/filter/再利用source/準備upload込み見積りは提出後・投入前のreportで固定する。遅くとも3失敗までに切り分ける。OS監視で完了を一回受け、モデルpollと`gh run watch --interval`は禁止。
 
 実機は今回新しく成立するOS起動・背景/位置イベントと代表操作へ絞る。状態・失敗・管理/復元・他owner保持の組合せは自動化し、0.8.3で成功した音声/撮影全手順を繰り返さない。機材や利用条件の重要な未確定事項は、調査と代替可能範囲を示してからユーザーへ確認する。
+
+## 実行開始と親の統合準備
+
+2026-09-17、作成ツールのJibunKit project指定で背景・位置の2 taskを作成し、両方の実行開始と契約commit `57542e6` を確認した。以前ユーザーが確認したプロジェクト内作成方式を用い、今回はCLI workerからアプリ作成へ切り替えた。リモートでの今回の表示は未確認であり、作成成功から可視性を推定しない。作成呼出しに承認・sandboxの上書きはない。
+
+- 背景: `01a0ad01-1515-7151-a3b1-acd08e94f1ba`、`codex/p2-background-p2-4`、Sol low。
+- 位置: `01a0ad01-1516-7d12-81f4-9653270b1aef`、`codex/p2-location`、Sol low。
+- 親: `codex/p2-background-location`。両レーンの提出後に以下の実接続を確認し、検証済み境界として固定する。まだCI未投入。
+
+| 親の確認対象 | 統合時の扱い |
+| --- | --- |
+| cold launch | 本番`NotificationAppDelegate.didFinishLaunching`の管理受付適用→`onHostLaunch`順序を通す。診断Viewの表示だけで登録した試験をcold起動証拠にしない |
+| background URLSession | 本番`handleEventsForBackgroundURLSession`→既存reconnect registryを通す。foreground download完了とOSの全event完了を分ける |
+| manifest | 通常hostのID/保存先を保つ使い捨て診断hostへ両Probeを接続。usage description、background mode、scheduler identifierを実ビルドplistと照合。通常IPAに診断が混入しないことも検査 |
+| 自動試験 | Core testsの再帰検出に加え、iOS専用の実Feature/native testをhost XCTest targetへ明示登録。構造化xcresultで全期待methodの一回成功・skipなしを照合 |
+| native制約 | [既存scheduler比較](../verification/2026-09-11-backgroundtasks-native-pending.md)はSimulatorでnative/wrapper両方unavailable、後続はcompileのみ。[実HTTP比較](../verification/2026-09-11-background-urlsession-native-http.md)はforeground時の実転送・片側取消のみ。いずれもOS cold起動の合格へ読み替えない |
+| CI見積り | 0.8.3通常job5分29秒、直近media native job12分50秒は参考。位置/背景の新しいfixtureの所要時間を未計測のまま同値としない。両レーン統合後にbuild共有・必要job・timeoutとupload込み予算を固定 |
+
+初回の親指示は各1件。まだ提出/レビュー往復はなく、節約効果は判定していない。

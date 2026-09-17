@@ -615,7 +615,7 @@
     "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
     "prerelease": true,
     "public_get": "Unauthenticated GET/hash/CRC and tag/source verified; SDK27,3bundle ID/version/signature resources and background/location observation types verified.",
-    "physical_status": "Awaiting representative HTTP transfer. No continued-processing retry requested. Earlier code1/location evidence retains original source."
+    "physical_status": "Foreground and background HTTP transfer/save passed; real host URLSession callback/reconnect/completion observed in background. Same process, cold relaunch unverified. Continued-processing additional investigation paused."
   },
   "physical_failure": {
     "source": "da6267213a15872f3eb3860157edf0840e866bd2",
@@ -959,7 +959,7 @@
     "native_test_seconds": 208.652,
     "release_seconds": 127.176,
     "scope": "Persistent64 owner records, restart/process state, corrupt evidence preservation, real Feature denied admission and HTTP ordering/A cancellation/B file preservation. Simulated reconnect callback is not physical OS cold delivery.",
-    "physical_status": "pending; continued-processing code1 additional investigation stopped per user"
+    "physical_status": "Representative real OS background URLSession callback/reconnection/save/completion ordering passed. Not terminated-process cold relaunch evidence. No repeat requested."
   },
   "diagnostic_publication_previous_daa49cd": {
     "tag": "p2-b-native-compare-20260918",
@@ -974,5 +974,15 @@
       "bytes": 3879877,
       "sdk": "iphoneos27.0"
     }
+  },
+  "http_device_observation": {
+    "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
+    "observation": "2026-09-17T16:14:13Z background host hook/registration;16:14:23Z active runtime;16:14:36Z active HTTP request;16:14:37Z active file saved. Same process. No host URLSession callback entry.",
+    "result": "Physical normal HTTP transfer/save passed. Background reconnect/cold delivery not observed; initial host hook does not establish HTTP launch cause. No identical short-transfer retry requested."
+  },
+  "http_background_device_observation": {
+    "source": "f6f6c0430df1817801c9e160462e4d19e7ef505c",
+    "observation": "User log:16:21:10Z active HTTP request;16:21:22Z background host URLSession callback, reconnect admitted, file saved, all delegate events finished and host completion released. Same process.",
+    "result": "Representative real OS background URLSession callback/reconnection/save/completion ordering passed. Not terminated-process cold relaunch evidence. No repeat requested."
   }
 }

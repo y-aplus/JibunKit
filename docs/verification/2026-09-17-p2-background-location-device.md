@@ -165,3 +165,17 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 通常/共有scheduler、host URLSession再接続、delegate完了、runtime受付拒否/cleanupをowner別に最新64件保存する診断を追加。時刻・app状態・processを残し、再起動だけでOS起動理由を断定しない。HTTP URL・内容・NSError userInfoは永続記録へ含めない。保存上限、再読込、A/B分離、破損保持と実Feature配送順序を自動検証する。診断fixtureのみ変更し、通常productionのCIは再利用。f6f6c04/CI35243182556で28件と診断IPAを検証・配布済み。daa49cdには含まれない。外部HTTP経路の準備とOS cold配送の実証は別途残る。
 
 2026-09-18追記: ユーザーはiOS側問題への十分な確信があれば追加追究不要と指示。直接比較までの結果をもって継続処理の追加診断は一旦停止する。OS開始を確認済みにはせず、host/署名との完全分離がない限界を残す。独立した通常/共有/HTTP観測のCI35241889661はテスト構文エラーで実行前に停止。修正して同じ28件を再検証する。ユーザーへ追加操作は依頼しない。
+
+## HTTP転送の実機結果（f6f6c04）
+
+ユーザー記録: 2026-09-17T16:14:13Z backgroundでhost起動hook/背景登録完了、16:14:23Z activeでruntime接続、16:14:36Z activeでHTTP転送要求、16:14:37Z activeでHTTP完了: ファイル保存。同一process。公開IPAを使った通常転送/保存は成功。host URLSession callback受信は記録になく、背景再接続/cold配送は未観測。最初のbackground起動hookをHTTP起因の起動と解釈しない。同じ短い転送を反復するよう依頼しない。
+
+## 次の背景移行確認: 少量の低速応答（再ビルド不要）
+
+小さい公開IPAは実機で1秒で完了したため、同じファイルを反復しない。HTTPテストサービス[httpbingoのdrip](https://httpbingo.org/)へGETし、`https://httpbingo.org/drip?duration=10&numbytes=10&delay=0&code=200` がこのPCからHTTP200・10bytes・11.24秒で完了したことを確認。20秒指定はサービス上限10秒により400、4096bytesの細かい分割は応答が長引いたためローカル試験を中断し、手順には採用しない。
+
+現行f6f6c04で上記10bytesのURLへ差し替え、開始直後にホームへ戻り20秒後に復帰する。背景配送記録の新しい行を共有し、active/backgroundとhost URLSession callbackの有無を分ける。第三者テストサービスへ個人データは送らずGETのみ。OSのcold起動を保証する試験ではなく、前景完了との区別を目的とする。転送の実機結果は未受領。
+
+## 低速HTTPの背景配送実機結果（f6f6c04）
+
+ユーザー記録: 2026-09-17T16:21:10Z activeでHTTP転送要求。16:21:22Z backgroundでhost URLSession callback受信→HTTP再接続受付・delegate待ち→ファイル保存→全delegate完了・host completion解放。同一process73C04016。OSからhostへの背景通知、Feature再接続、ファイル保存、完了通知の順序まで代表実機確認成功。終了したprocessのcold再起動とは区別する。この背景通信手順の反復は不要。継続処理code1の追加追究停止とは別機構の成果である。

@@ -31,3 +31,11 @@ app単位APNs tokenとFeature/server identity、登録失敗・token更新・own
 親はidentity-push用の使い捨てhost生成と既存native検証へのsurface追加を準備。host生成は本体/Widget/Share IDと通常Featureを保ち、2fixtureとnative test targetを組み込む。途中に欠落・test混入・anchor不一致があれば書込み前に拒否する。fixture未提出の現段階は最小の入力を使う生成試験3件と既存media/background/workflow検査7件が成功しただけで、実Swiftソース接続/iOS成功は未確認。実提出後に同じ生成・全method試験を通す。
 
 診断にはremote-notification background modeのみ追加し、APNs/CloudKit entitlementやcredentialを偽造しない。[APNs登録](https://developer.apple.com/documentation/usernotifications/registering-your-app-with-apns)はapp/device固有tokenと正しい署名を要し、[CloudKit container](https://developer.apple.com/documentation/cloudkit/ckcontainer/init(identifier:))は指定containerのentitlementを要する。通常hostは明示的に機能を組み込むまでOS登録/CloudKit生成を行わず、署名がない状態で起動を落とさない。実native APIとfake配送の試験を区別し、未署名CIからserver同期/APNs配信の成功を主張しない。
+
+## Push初回レビューとhost接続
+
+Push初回a1315db/12f7523を受領し開発branchへ統合、CI前の一括修正を同じ担当へ返した。closed/concurrent接続のrollback、generation付き解除、Runtimeによるhandler取消/join、遅いtoken通知と登録失敗後の同値token回復、同期cold owner登録、completion ticketの保持、ネスト/null payloadの非劣化をまとめる。初回契約の通常停止/復帰/世代保証を満たすための修正で、CIを先行投入しない。親の担当メッセージは初回2件＋Push修正1件、レビュー往復Push1/identity未提出。
+
+親は本体UIApplicationDelegateのtoken/失敗/背景payloadの3callbackを接続。受信前に既存managementとlaunch失敗gateを確認し、既知の許可ownerだけcoordinatorへ送る。OS登録要求はbuild-time `JibunKitRemotePushEnabled=true`の明示設定で起動時に行う（正しいaps-environment/profileを代替しない）。通常構成と署名なし診断は未設定なのでOS登録を自動実行しない。通知の表示許可とAPNs登録資格は同義ではない。
+
+親所有Tests/P2IdentityPushHost/HostNativeTests.swiftは実delegate→coordinator→通常Featureの配送、無owner/無効owner拒否、B非初期値保持、callback一回とtoken転送を対象にする。2担当のnative全methodに加えて同じschemeで実行。未提出の最終APIに合わせた照合とSwift実行は今後。

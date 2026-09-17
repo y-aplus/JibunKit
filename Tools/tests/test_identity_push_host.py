@@ -31,6 +31,9 @@ class IdentityPushHostTests(unittest.TestCase):
             target.mkdir(parents=True)
             (target / f"{family}Probe.swift").write_text(f"enum {family}Probe {{}}", encoding="utf-8")
             (target / f"{family}NativeTests.swift").write_text("import XCTest", encoding="utf-8")
+        target = root / "Tests/P2IdentityPushHost/HostNativeTests.swift"
+        target.parent.mkdir(parents=True)
+        target.write_text("import XCTest", encoding="utf-8")
         return root
 
     def test_actual_fixture_sources_join_one_host_with_unchanged_identity(self):

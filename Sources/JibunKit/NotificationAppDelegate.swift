@@ -30,7 +30,45 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
                 .error("Notification registration failed: \(String(describing: error))")
         }
         MiniAppRegistry.reconcileContinuingSurfaces()
+        // Explicit build-time opt-in. It does not replace a valid aps-environment
+        // entitlement/profile. Registration failures still reach the coordinator.
+        if Bundle.main.object(forInfoDictionaryKey: "JibunKitRemotePushEnabled") as? Bool == true {
+            application.registerForRemoteNotifications()
+        }
         return true
+    }
+
+    func application(_ application: UIApplication,
+                     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Task { @MainActor in
+            await MiniAppRemotePushCoordinator.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        Task { @MainActor in
+            await MiniAppRemotePushCoordinator.shared.didFailToRegisterForRemoteNotifications(error)
+        }
+    }
+
+    func application(_ application: UIApplication,
+                     didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+                     fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        Task { @MainActor in
+            guard let route = MiniAppNotificationRoute.candidateRoute(userInfo: userInfo),
+                  MiniAppRegistry.management.isEnabled(route.id),
+                  MiniAppRegistry.launchState.errors[route.id] == nil else {
+                completionHandler(.noData)
+                return
+            }
+            let result = await MiniAppRemotePushCoordinator.shared.deliver(userInfo: userInfo)
+            switch result {
+            case .newData: completionHandler(.newData)
+            case .noData: completionHandler(.noData)
+            case .failed: completionHandler(.failed)
+            }
+        }
     }
 
     func application(

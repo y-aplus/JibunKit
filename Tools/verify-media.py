@@ -167,7 +167,9 @@ def main():
                 json.loads((evidence / "test-summary.json").read_text(encoding="utf-8")), [
 
                 (root / f"Tests/{family}/{family}NativeTests.swift").read_text(encoding="utf-8")
-                for family in families])
+                for family in families] + (
+                    [(root / "Tests/P2IdentityPushHost/HostNativeTests.swift").read_text(encoding="utf-8")]
+                    if args.surface == "identity-push" else []))
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")

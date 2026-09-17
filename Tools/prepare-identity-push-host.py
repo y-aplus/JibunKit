@@ -21,7 +21,10 @@ def once(text, old, new):
 def prepare(host):
     host = host.resolve()
     changes = {}
-    test_sources = []
+    host_test = "Tests/P2IdentityPushHost/HostNativeTests.swift"
+    if not (host / host_test).is_file():
+        raise ValueError("Missing actual host delegate test")
+    test_sources = [host_test]
     for family in FAMILIES:
         directory = host / "Tests" / family
         for filename in [f"{family}Probe.swift", f"{family}NativeTests.swift"]:

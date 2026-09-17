@@ -36,4 +36,4 @@ Implementation commit SHA: `a1315db4f7e9e16a67581b316c7d98f7e0c1124f`
 
 Race-hardening implementation SHA: `e6d53fb3a6b9ac93464be6f92860063b2e98c4d8`
 
-Exact-number snapshot follow-up SHA: `TO_BE_FILLED_AFTER_COMMIT`
+Exact-number snapshot implementation SHA: `79ce409cbaf9d4d89eb6a57c466d2e77a3a4e00b`

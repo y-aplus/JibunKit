@@ -102,8 +102,130 @@ final class MiniAppWindowSceneRegistryTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(releases, [2, 1])
     }
 
+    @MainActor
+    func testReconnectWhileOldCleanupIsHeldCannotOverwriteNewerGenerationOrLoseCleanup() async throws {
+        let registry = MiniAppWindowSceneRegistry()
+        let sessionID = MiniAppWindowSessionID("reentrant-connect")
+        let gate = CleanupGate()
+        let cleanupStarted = expectation(description: "old cleanup started")
+        let old = await registry.connect(sessionID: sessionID, phase: .active, selectedID: a) { _ in }
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: old) {
+            cleanupStarted.fulfill()
+            await gate.wait()
+        })
+
+        let reconnecting = Task { @MainActor in
+            await registry.connect(sessionID: sessionID, phase: .inactive, selectedID: a) { _ in }
+        }
+        await fulfillment(of: [cleanupStarted], timeout: 1)
+        let middle = try XCTUnwrap(registry.snapshot(for: sessionID)?.connection)
+        var middleReleased = false
+        XCTAssertTrue(registry.onDisconnect(owner: b, connection: middle) { middleReleased = true })
+        let newest = await registry.connect(sessionID: sessionID, phase: .active, selectedID: b) { _ in }
+        XCTAssertTrue(middleReleased)
+
+        await gate.release()
+        let returnedMiddle = await reconnecting.value
+        XCTAssertEqual(returnedMiddle, middle)
+        XCTAssertEqual(registry.snapshot(for: sessionID)?.connection, newest)
+        XCTAssertEqual(registry.open(nil, in: sessionID, expected: middle), .staleConnection(current: newest))
+    }
+
+    @MainActor
+    func testConnectDuringHeldDisconnectCleanupSurvivesLateDisconnectCompletion() async {
+        let registry = MiniAppWindowSceneRegistry()
+        let sessionID = MiniAppWindowSessionID("reentrant-disconnect")
+        let gate = CleanupGate()
+        let cleanupStarted = expectation(description: "disconnect cleanup started")
+        let old = await registry.connect(sessionID: sessionID, phase: .active, selectedID: a) { _ in }
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: old) {
+            cleanupStarted.fulfill()
+            await gate.wait()
+        })
+        let disconnecting = Task { @MainActor in await registry.disconnect(old) }
+        await fulfillment(of: [cleanupStarted], timeout: 1)
+        let newest = await registry.connect(sessionID: sessionID, phase: .active, selectedID: b) { _ in }
+        await gate.release()
+
+        let disconnected = await disconnecting.value
+        XCTAssertTrue(disconnected)
+        XCTAssertEqual(registry.snapshot(for: sessionID)?.connection, newest)
+    }
+
+    @MainActor
+    func testOwnerSuspensionReleasesEverySceneAndRejectsNewAdmissionWithoutStoppingOthers() async throws {
+        let registry = MiniAppWindowSceneRegistry()
+        let first = await registry.connect(sessionID: .init("owner-one"), phase: .active, selectedID: a) { _ in }
+        let second = await registry.connect(sessionID: .init("owner-two"), phase: .active, selectedID: b) { _ in }
+        let aRuntime = MiniAppRuntime()
+        let bRuntime = MiniAppRuntime()
+        var released: [String] = []
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: first) { released.append("a-one") })
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: second) { released.append("a-two") })
+        XCTAssertTrue(registry.onDisconnect(owner: b, connection: second) { released.append("b-two") })
+
+        await registry.suspendAndRelease(owner: a)
+        XCTAssertEqual(Set(released), ["a-one", "a-two"])
+        XCTAssertTrue(registry.isSuspended(owner: a))
+        XCTAssertFalse(registry.onDisconnect(owner: a, connection: second) { released.append("late-a") })
+        XCTAssertFalse(aRuntime.isClosed)
+        XCTAssertFalse(bRuntime.isClosed)
+        let disconnected = await registry.disconnect(second)
+        XCTAssertTrue(disconnected)
+        XCTAssertEqual(Set(released), ["a-one", "a-two", "b-two"])
+
+        registry.resume(owner: a)
+        XCTAssertFalse(registry.isSuspended(owner: a))
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: first) { released.append("new-a") })
+        await aRuntime.shutdown()
+        await bRuntime.shutdown()
+    }
+
+    @MainActor
+    func testConcurrentOwnerSuspensionJoinsCleanupAlreadyInProgress() async {
+        let registry = MiniAppWindowSceneRegistry()
+        let connection = await registry.connect(
+            sessionID: .init("owner-join"), phase: .active, selectedID: a
+        ) { _ in }
+        let gate = CleanupGate()
+        let started = expectation(description: "owner cleanup started")
+        XCTAssertTrue(registry.onDisconnect(owner: a, connection: connection) {
+            started.fulfill()
+            await gate.wait()
+        })
+        let first = Task { @MainActor in await registry.suspendAndRelease(owner: a) }
+        await fulfillment(of: [started], timeout: 1)
+        var secondCompleted = false
+        let second = Task { @MainActor in
+            await registry.suspendAndRelease(owner: a)
+            secondCompleted = true
+        }
+        await Task.yield()
+        XCTAssertFalse(secondCompleted)
+        await gate.release()
+        await first.value
+        await second.value
+        XCTAssertTrue(secondCompleted)
+    }
+
     private func route(_ id: MiniAppID, _ destination: String) throws -> MiniAppRoute {
         let url = try XCTUnwrap(MiniAppLink.url(for: id, destination: destination))
         return try XCTUnwrap(MiniAppLink.resolveRoute(url, registeredIDs: [id]))
+    }
+}
+
+private actor CleanupGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+
+    func wait() async {
+        if released { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func release() {
+        released = true
+        continuation?.resume()
+        continuation = nil
     }
 }

@@ -4,20 +4,21 @@
 
 - A process registry separating stable OS session identity from ephemeral connection generation.
 - Exact-session route delivery with stale-generation rejection.
-- Scene-scoped, owner-grouped cleanup; closing/replacing one connection preserves other windows and does not stop Feature-global runtime.
+- Reentrancy-safe scene transitions which publish the new generation before awaiting tracked old cleanup, plus an explicit pending-cleanup join.
+- Scene-scoped, owner-grouped cleanup and `suspendAndRelease(owner:)` for management to close admission and join that owner across every scene while preserving other windows/owners and Feature-global runtimes.
 - UIKit request adapter for OS window creation/destruction without treating request acceptance as successful window creation.
 - Core tests for two-window isolation, close/other-window retention, cleanup order, restoration, late delivery, and stale disconnect.
-- An iOS probe with two normal `MiniAppDefinition` values, per-window `@SceneStorage`, and a native diagnostic that requires two real `UIWindowScene` sessions.
+- An iOS probe with two normal `MiniAppDefinition` values, per-window `@SceneStorage`, and a native diagnostic that requests, observes, routes, and destroys a second real `UIWindowScene` without manual setup or skip.
 
 ## Parent-owned integration diff
 
-No parent-owned file was edited. The required host/manifest/test-target changes are listed step by step in [window-scene-ownership.md](../guides/window-scene-ownership.md#host-connection). In summary: enable multiple scenes, connect the real `UISceneSession.persistentIdentifier` at the existing `WindowGroup` root, keep the returned generation, disconnect only on genuine UIScene disconnection, use explicit session delivery when known, add the two probe definitions to the normal registry, and compile the P2Scenes files in the diagnostic target.
+No parent-owned file was edited. The required host/manifest/test-target changes are listed step by step in [window-scene-ownership.md](../guides/window-scene-ownership.md#host-connection). In summary: enable multiple scenes; create one process-shared registry; add one root-owned connection bridge using the real `UISceneSession.persistentIdentifier`; keep the returned generation; disconnect only on genuine UIScene disconnection; connect management stop/join through `suspendAndRelease(owner:)` and `resume(owner:)`; use explicit session delivery when known; add the two probe definitions to the normal registry; and compile the P2Scenes files in the diagnostic target.
 
 The existing `MiniAppSceneRouter` needs no change: it remains the fallback for process events with no OS session target. The new registry handles the distinct explicit-session contract.
 
 ## Validation boundary
 
-The core tests are meaningful model/ownership checks but are not proof that iPadOS created two windows. `P2ScenesNativeTests.testIPadHostHasTwoDistinctOSWindowSessionsForManualScenario` skips unless it observes two distinct live OS sessions. A parent CI or manual run must separately report iPad Simulator and device evidence.
+The core tests are meaningful model/ownership checks but are not proof that iPadOS created two windows. The native test has no skip path: it requires the parent-selected iPad destination, requests a second session, and fails on explicit rejection, connection timeout, destruction rejection, or removal timeout. Simulator and device evidence remain distinct claims.
 
 This worker ran on Windows where `swift` is unavailable, so no Swift build or test is recorded as executed. `git diff --check` and path-boundary inspection were run. The UIKit signatures were checked against Apple documentation for `UISceneSessionActivationRequest`, `activateSceneSession(for:errorHandler:)`, `requestSceneSessionDestruction(_:options:errorHandler:)`, `openSessions`, and `UISceneSession.persistentIdentifier`; compilation remains for the parent Xcode boundary.
 

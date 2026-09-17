@@ -24,8 +24,8 @@ enum P2ScenesProbe {
 
 private struct P2SceneOwnerView: View {
     let owner: MiniAppID
-    /// SceneStorage proves restoration through the actual WindowGroup scene;
-    /// it is deliberately not a process singleton or a Codable Feature model.
+    /// SceneStorage supplies a value that the OS may restore for this scene. Its
+    /// presence alone is not restoration evidence; the OS reconnect is observed.
     @SceneStorage private var count: Int
 
     init(owner: MiniAppID) {

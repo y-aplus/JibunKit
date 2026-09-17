@@ -59,26 +59,41 @@ public final class MiniAppWindowSceneRegistry {
         var resources: [MiniAppID: [@MainActor () async -> Void]] = [:]
     }
 
+    private struct PendingRelease {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
+
+    private struct PendingOwnerRelease {
+        let id: UUID
+        let task: Task<Void, Never>
+    }
+
     private var scenes: [MiniAppWindowSessionID: Scene] = [:]
+    private var pendingReleases: [MiniAppWindowSessionID: [PendingRelease]] = [:]
+    private var suspendedOwners: Set<MiniAppID> = []
+    private var pendingOwnerReleases: [MiniAppID: PendingOwnerRelease] = [:]
 
     public init() {}
 
-    /// Connects (or reconnects) one OS session. Reconnection invalidates every
-    /// token and scene resource from the previous connection before returning.
+    /// Connects (or reconnects) one OS session. The new generation is published
+    /// before old cleanup can suspend, so a reentrant transition can never be
+    /// overwritten by the older call when its cleanup resumes.
     public func connect(
         sessionID: MiniAppWindowSessionID,
         phase: MiniAppSceneActivity.Phase,
         selectedID: MiniAppID?,
         route: @escaping RouteHandler
     ) async -> MiniAppWindowConnection {
-        if let previous = scenes.removeValue(forKey: sessionID) {
-            await release(previous.resources)
-        }
+        let previous = scenes[sessionID]
         let connection = MiniAppWindowConnection(sessionID: sessionID)
         scenes[sessionID] = Scene(
             snapshot: .init(connection: connection, phase: phase, selectedID: selectedID),
             route: route
         )
+        if let previous {
+            await scheduleAndJoin(previous.resources, for: sessionID)
+        }
         return connection
     }
 
@@ -113,7 +128,7 @@ public final class MiniAppWindowSceneRegistry {
         connection: MiniAppWindowConnection,
         _ cleanup: @escaping @MainActor () async -> Void
     ) -> Bool {
-        guard owner.isValid,
+        guard owner.isValid, !suspendedOwners.contains(owner),
               var scene = scenes[connection.sessionID],
               scene.snapshot.connection == connection
         else { return false }
@@ -148,11 +163,70 @@ public final class MiniAppWindowSceneRegistry {
             return false
         }
         scenes[connection.sessionID] = nil
-        await release(scene.resources)
+        await scheduleAndJoin(scene.resources, for: connection.sessionID)
         return true
     }
 
-    private func release(_ resources: [MiniAppID: [@MainActor () async -> Void]]) async {
+    /// Closes admission for one Feature across every live window, atomically
+    /// detaches its scene resources, and joins their cleanup. Keep the owner
+    /// suspended through global lifetime shutdown and state deletion/restore.
+    public func suspendAndRelease(owner: MiniAppID) async {
+        precondition(owner.isValid)
+        if let pending = pendingOwnerReleases[owner] {
+            await pending.task.value
+            return
+        }
+        suspendedOwners.insert(owner)
+        var releases: [(MiniAppWindowSessionID, [MiniAppID: [@MainActor () async -> Void]])] = []
+        for sessionID in scenes.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
+            guard var scene = scenes[sessionID], let resources = scene.resources.removeValue(forKey: owner) else {
+                continue
+            }
+            scenes[sessionID] = scene
+            releases.append((sessionID, [owner: resources]))
+        }
+        let id = UUID()
+        let task = Task { @MainActor [self] in
+            for (sessionID, resources) in releases {
+                await scheduleAndJoin(resources, for: sessionID)
+            }
+        }
+        pendingOwnerReleases[owner] = .init(id: id, task: task)
+        await task.value
+        if pendingOwnerReleases[owner]?.id == id { pendingOwnerReleases[owner] = nil }
+    }
+
+    /// Reopens scene-resource admission after the existing management layer has
+    /// restarted the Feature. It does not recreate resources automatically.
+    public func resume(owner: MiniAppID) {
+        suspendedOwners.remove(owner)
+    }
+
+    public func isSuspended(owner: MiniAppID) -> Bool {
+        suspendedOwners.contains(owner)
+    }
+
+    /// Joins cleanup already captured by connect/disconnect/owner suspension.
+    /// Do not call this from one of the registered cleanup closures itself.
+    public func waitForPendingCleanup(in sessionID: MiniAppWindowSessionID) async {
+        let releases = pendingReleases[sessionID] ?? []
+        for release in releases { await release.task.value }
+    }
+
+    private func scheduleAndJoin(
+        _ resources: [MiniAppID: [@MainActor () async -> Void]],
+        for sessionID: MiniAppWindowSessionID
+    ) async {
+        guard !resources.isEmpty else { return }
+        let id = UUID()
+        let task = Task { @MainActor in await Self.release(resources) }
+        pendingReleases[sessionID, default: []].append(.init(id: id, task: task))
+        await task.value
+        pendingReleases[sessionID]?.removeAll { $0.id == id }
+        if pendingReleases[sessionID]?.isEmpty == true { pendingReleases[sessionID] = nil }
+    }
+
+    private static func release(_ resources: [MiniAppID: [@MainActor () async -> Void]]) async {
         for owner in resources.keys.sorted(by: { $0.rawValue < $1.rawValue }) {
             for cleanup in (resources[owner] ?? []).reversed() { await cleanup() }
         }

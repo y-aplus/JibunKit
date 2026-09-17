@@ -21,10 +21,11 @@ public final class MiniAppUIKitWindowSceneRequester: MiniAppWindowSceneRequestin
         userActivity: NSUserActivity?,
         onFailure: @escaping @MainActor @Sendable (Error) -> Void
     ) {
-        let request = UISceneSessionActivationRequest(
-            role: .windowApplication, userActivity: userActivity, options: nil
+        // A nil session explicitly requests a new session. The newer role-based
+        // activation API may select an existing matching session instead.
+        application.requestSceneSessionActivation(
+            nil, userActivity: userActivity, options: nil, errorHandler: onFailure
         )
-        application.activateSceneSession(for: request, errorHandler: onFailure)
     }
 
     public func destroyWindow(

@@ -390,12 +390,12 @@ public final class MiniAppLocationService {
     }
     public func startUpdates(_ configuration: MiniAppLocationUpdateConfiguration) throws -> UUID {
         try requireConnection()
-        try coordinator.startUpdates(owner: owner, featureConsent: featureConsent(), configuration: configuration)
+        return try coordinator.startUpdates(owner: owner, featureConsent: featureConsent(), configuration: configuration)
     }
     public func stopUpdates(generation: UUID) throws { try requireConnection(); try coordinator.stopUpdates(owner: owner, generation: generation) }
     public func register(localID: String, region: MiniAppLocationRegion) throws -> MiniAppLocationRegistration {
         try requireConnection()
-        try coordinator.register(owner: owner, localID: localID, region: region, featureConsent: featureConsent())
+        return try coordinator.register(owner: owner, localID: localID, region: region, featureConsent: featureConsent())
     }
     public func unregister(localID: String, generation: UUID? = nil) throws {
         try requireConnection()

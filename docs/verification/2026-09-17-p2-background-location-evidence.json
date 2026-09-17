@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "bac33f0e406b5e972fe34dcd3658dd21ab1f6b9a",
+  "source": "8cc099b552ad15131fa914417306946a5ff5d54a",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -527,7 +527,7 @@
     },
     {
       "id": "persistent-background-delivery-compile-repair",
-      "inputs_and_filters": "Same native-surface.yml background-location/ios_major27; all28 methods and Release IPA. One missing newline between assertions repaired. Product/normal unchanged. Source pinned before dispatch.",
+      "inputs_and_filters": "Same native-surface.yml background-location/ios_major27; all28 methods and Release IPA. One missing newline between assertions repaired. Product/normal unchanged. Source pinned before dispatch. Repair source=8cc099b552ad15131fa914417306946a5ff5d54a; documentation-only pin follows.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "Previous successful full diagnostic11m18, failed test-target compile8m18. Full native boundary retained; no per-method reruns;30min job cap."
     }

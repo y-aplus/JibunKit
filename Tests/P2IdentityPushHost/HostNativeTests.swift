@@ -20,6 +20,9 @@ final class P2IdentityPushHostNativeTests: XCTestCase {
     }
 
     func testActualDelegateRoutesToEnabledFeatureAndRejectsDisabledOwner() async throws {
+        // Real management unregister waits for native Spotlight acknowledgement.
+        // Run35251510227 completed that path in139s; do not skip/prewarm it.
+        executionTimeAllowance = 240
         let delegate = NotificationAppDelegate()
         let a = P2PushProbe.alpha, b = P2PushProbe.beta
         try await MiniAppRegistry.management.enable(a.id)

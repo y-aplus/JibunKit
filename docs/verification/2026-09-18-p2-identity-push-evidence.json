@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-B": "Inherited 7347b48; native run35243182556 at f6f6c04 and normal/shared35235454126 at82f61bb passed. Physical background URLSession callback/save/completion passed; same-process only. Continued OS start and beacon/background location remain open; not a completed P2-B or v1 acceptance."
   },
-  "planned_ci_runs": 6,
-  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch. Fifth run is native-only after diagnostic escaping-closure compiler errors. Normal/shared35249566535 uses identical production sources and remains reusable; do not rerun it for a fixture-only correction. Sixth run follows explicit three-failure diagnosis: initial Core lazy-initializer actor error, fixture capture-list errors, then test helper isolation. These are three compiler layers, not OS/runtime failures. All current native error lines deduplicated; only two helper call sites remain. Remove helper/inline assertions and review new fixtures/helpers together. Production sources unchanged since42bb373; retain ongoing normal run.",
+  "planned_ci_runs": 7,
+  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch. Fifth run is native-only after diagnostic escaping-closure compiler errors. Normal/shared35249566535 uses identical production sources and remains reusable; do not rerun it for a fixture-only correction. Sixth run follows explicit three-failure diagnosis: initial Core lazy-initializer actor error, fixture capture-list errors, then test helper isolation. These are three compiler layers, not OS/runtime failures. All current native error lines deduplicated; only two helper call sites remain. Remove helper/inline assertions and review new fixtures/helpers together. Production sources unchanged since42bb373; retain ongoing normal run. Seventh run follows native execution evidence: management disable waits in existing Spotlight cleanup139s, exceeding60s test allowance. Prior P1/P2 logs also show88s/120s+ native delays. Raise only this test to240s and its surface cap; preserve all assertions and native cleanup. Normal source unchanged and prior success reused.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -103,7 +103,7 @@
       "id": "35251510227",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35251510227",
       "source": "03ae2aa388578e1e71b616a103223d376a65e59b",
-      "conclusion": "pending: full12 native methods after actor-context assertion repair; unchanged production source from successful normal35249566535"
+      "conclusion": "failure: Core/app/test compilation passed. Native12 methods executed with passing assertions but actual-host disable exceeded60s allowance while awaiting Spotlight. Trace reached feature hook and notification completion then spotlight-begin; method returned after138.976s and XCTest reported timeout/relaunch. Not a passing run; Release IPA not produced."
     }
   ],
   "evidence": [
@@ -477,10 +477,16 @@
       "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Native-only retry after removing nonisolated async assertion helper. Full12 native methods unchanged; no test skip/filter weakening.",
       "expected_elapsed_minutes": 22,
       "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
+    },
+    {
+      "id": "combined-native-retry4",
+      "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Same12 methods; only actual management-disable test gets240s allowance (native Spotlight139s observed). Default60s remains; runner cap240 only for identity-push.",
+      "expected_elapsed_minutes": 24,
+      "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests. Allow up to2min extra for observed first-request Spotlight delay; no prewarm or skip."
     }
   ],
   "pending": [
-    "Await native35251510227 completion notification. Normal35249566535 passed; full log inspected.",
+    "Dispatch same native scope with observed Spotlight latency allowance; successful normal source remains unchanged.",
     "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
     "P2-B pending device observations remain open; this independent work does not close them."
   ],
@@ -492,7 +498,8 @@
       "Native test nonisolated async assertion helper (current repair)"
     ],
     "evidence": "Private full failed logs35249120439/35249569786/35250318217; last native build compiled Core and diagnostic host, failed test module only. No runtime failure inferred.",
-    "scope": "Review all new native fixtures/host tests and async helpers. Keep all12 methods and normal/shared run. No Xcode on Windows; local generation tests do not validate Swift isolation."
+    "scope": "Review all new native fixtures/host tests and async helpers. Keep all12 methods and normal/shared run. No Xcode on Windows; local generation tests do not validate Swift isolation.",
+    "runtime_followup": "35251510227: native spotlight cleanup delay, distinct from earlier compiler failures; isolated per-test time allowance, no production workaround or claim OS delay fixed."
   },
   "normal_regression": {
     "source": "42bb373f54f6f52bfefe1b12ad4809c0327ac219",

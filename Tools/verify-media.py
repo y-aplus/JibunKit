@@ -130,7 +130,7 @@ def main():
             native_error = None
             timeouts = ([] if is_media else ["-test-timeouts-enabled", "YES",
                 "-default-test-execution-time-allowance", "60",
-                "-maximum-test-execution-time-allowance", "120"])
+                "-maximum-test-execution-time-allowance", "240" if args.surface == "identity-push" else "120"])
             try:
                 command = ["xcodebuild", "test", *common, "-scheme", scheme,
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",

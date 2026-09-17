@@ -70,3 +70,13 @@
 親は位置のSwift条件付きコンパイル境界、古いserviceからの操作、service解放時のnative停止、破損後callbackによるwrite、選択復元中cold配送を修正した。`MiniAppDefinition.onConsentChange`と保存後の共通hookを追加し、標準管理画面が画面未表示Featureへも同意変更を伝える。拒否後cleanupが失敗しても拒否を保存したままエラーを表示する。位置固有のhost分岐は加えない。Core4件・native1件を追加し、Swift実行は統合CIで確認する。
 
 診断plistはcontinuedの`export.*`、通常の`ordinary`とshared refreshを含む5宣言、`fetch`/`processing`/`location`へ更新した。現在地/編集可能地点と再起動後登録一覧も診断に含む。0.8.3公開済みruntimeはmainに保持し、この未検証変更は統合branchだけへpushする。
+
+## 初回CIの固定境界
+
+背景の再提出`64f0851`まで統合済み。親がcold転送受付拒否時のnative取消join、期限切れ後の業務開始拒否、停止中のsubmit拒否も補い、runtime sourceを`b55f87a`に固定した。背景10件・位置7件のnative試験と、Coreのcontinued6件・位置24件を初回CIで実行する。親の依頼は計5件のままで、背景2往復・位置1往復を終えた。提出は完了したが実装の合格ではない。
+
+新しい背景接続の実HTTP試験は既存`network_server.py --run-command`を使う。serverへ到達したAを保持中に停止し、native invalidationまで待つ間もBの実ファイル保存が成立することを検査する。手動delegate配送試験とは分け、OSによるcold起動証拠とは呼ばない。ローカルでserver起動・環境引渡し・実HTTP応答を確認した。診断だけにlocal networkingのATS設定と用途説明を加える。
+
+[投入前report](../verification/2026-09-17-p2-background-location-evidence.json)に入力・再利用証拠・予算を記録した。通常IPA/全共有試験/検索UIと、背景・位置の全17native試験/診断IPAを2jobで並列実行する。初回計画1run、予算3run、準備・upload込み25分見積り。新しいsurfaceの所要時間は未測定であり、超過・失敗時はstage別時間で切り分ける。個別XCTestにも60秒既定/120秒最大の上限を設定する。
+
+ローカルのhost3件・media5件・workflow command1件と差分検査は成功。Swift/XcodeはWindowsで未実行。実機のOS継続処理、非決定的なrefresh起動、転送cold再接続、位置の実移動・beaconは未確認として残し、今回の自動試験成功だけでP2-3/P2-4を完了にしない。

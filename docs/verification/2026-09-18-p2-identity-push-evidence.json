@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-B": "Inherited 7347b48; native run35243182556 at f6f6c04 and normal/shared35235454126 at82f61bb passed. Physical background URLSession callback/save/completion passed; same-process only. Continued OS start and beacon/background location remain open; not a completed P2-B or v1 acceptance."
   },
-  "planned_ci_runs": 4,
-  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch.",
+  "planned_ci_runs": 5,
+  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch. Fifth run is native-only after diagnostic escaping-closure compiler errors. Normal/shared35249566535 uses identical production sources and remains reusable; do not rerun it for a fixture-only correction.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -79,7 +79,7 @@
       "id": "35249124064",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249124064",
       "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
-      "conclusion": "cancellation requested: same source includes confirmed Core compiler error; avoid spending remaining native preparation/build time. Not a passed test."
+      "conclusion": "cancelled: known Core compiler failure in identical source; no success inferred."
     },
     {
       "id": "35249566535",
@@ -91,7 +91,7 @@
       "id": "35249569786",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249569786",
       "source": "42bb373f54f6f52bfefe1b12ad4809c0327ac219",
-      "conclusion": "pending: same repaired source, same complete normal/native scope"
+      "conclusion": "failure: Core/iOS host compilation progressed past prior actor error; diagnostic P2IdentityProbe escaping save/load/accountChanged closures lack explicit self capture. 10 diagnostics share these 3 sites. No test executed. Repair only fixture capture lists; normal product source unchanged."
     }
   ],
   "evidence": [
@@ -363,10 +363,16 @@
       "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Retry same scope after actor-isolation repair.",
       "expected_elapsed_minutes": 22,
       "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
+    },
+    {
+      "id": "combined-native-retry2",
+      "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Diagnostic-only retry after 3 explicit capture lists; normal35249566535 continues on identical product source.",
+      "expected_elapsed_minutes": 22,
+      "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
     }
   ],
   "pending": [
-    "Await normal35249566535/native35249569786 completion notifications. Both independent monitors registered.",
+    "Dispatch native-only repair; normal35249566535 remains the normal/shared verification source.",
     "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
     "P2-B pending device observations remain open; this independent work does not close them."
   ]

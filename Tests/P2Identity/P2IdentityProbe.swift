@@ -43,17 +43,17 @@ final class P2IdentityFeature: ObservableObject {
         }
     }
 
-    func save() { run {
+    func save() { run { [self] in
         let identity = try await service.coordinator.identity(localID: "same-local-id")
         try await service.coordinator.save(identity, fields: ["value": id.rawValue])
         self.identity = identity; status = "native backend保存完了"
     } }
-    func load() { run {
+    func load() { run { [self] in
         let identity = try await service.coordinator.identity(localID: "same-local-id")
         let value = try await service.coordinator.load(identity)?.fields["value"] ?? "なし"
         self.identity = identity; status = "native backend読込: \(value)"
     } }
-    func accountChanged() { run {
+    func accountChanged() { run { [self] in
         let value = try await service.coordinator.accountDidChange()
         identity = nil; status = "account変更反映 generation=\(value.generation)"
     } }

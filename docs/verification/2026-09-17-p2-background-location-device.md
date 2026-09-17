@@ -10,7 +10,7 @@
 2. Background Aを開き、「OS直接比較」の「OS直接比較を一度実行」を一度押す。
 3. その欄の記録全文を共有する。通常の継続処理の再試行や長時間待機は不要。
 
-この比較は共通center/ID resolver/workerを迂回するが、hostと署名は共通。同じエラーでもOS単独の問題とは断定しない。実機でのOS開始は未確認。位置/Regionの既済操作は反復しない。今回の差分は診断fixtureと文書だけで、通常/共有397件・Records11件・検索/通常IPAは82f61bbの検証を再利用し再ビルドしていない。必要時の[通常IPA（82f61bb・SDK26.5）](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-normal-82f61bb.ipa)。安定版は0.8.3のまま。
+この比較は共通center/ID resolver/workerを迂回するが、hostと署名は共通。同じエラーでもOS単独の問題とは断定しない。実機で直接比較もcode1となった（下記の受領記録）。OS開始は未確認。位置/Regionの既済操作は反復しない。今回の差分は診断fixtureと文書だけで、通常/共有397件・Records11件・検索/通常IPAは82f61bbの検証を再利用し再ビルドしていない。必要時の[通常IPA（82f61bb・SDK26.5）](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-normal-82f61bb.ipa)。安定版は0.8.3のまま。
 
 ## 前候補82f61bb: iOS27非同期受付と位置受信記録
 
@@ -133,3 +133,13 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 ユーザーの記録に、同一process識別子で次の配送が含まれた（座標は含まれない）。2026-09-17T15:06:01Zは`background`のhost起動hookとOS許可callback/whenInUse。15:16:51Zは`active`のruntime接続。15:17:00Zは`active`で背景位置更新を開始、OS許可callback/whenInUseと位置callback1件が2回。15:17:30Zは`active`で位置更新停止。
 
 この約30秒の確認では背景中の位置callbackは未観測。起動hook・許可callbackのbackground表示を位置の背景受信や位置イベント起因のcold起動へ読み替えない。時刻/app状態を分ける診断と停止記録を実機確認した。歩行は要求しておらず、背景設定のdistanceFilter10mと屋内静止でeventがないことだけでは配送不具合と判定しない。今すぐ同じ操作を反復させず、実移動/region進退の証拠は未確認として残す。
+
+## 直接比較の実機結果（daa49cd、2026-09-17T15:36:33Z）
+
+ユーザーOCRで実bundle prefix/許可wildcard一致、appState=0（active）、refresh=2（available）、lowPower=false、native登録成功の後、BGTaskSchedulerErrorDomain code=1、com.apple.duetactivityschedulerへのconnectionエラーを受領。共通center/ID resolver/execution adapterを迂回しても同症状。共通経路だけの不具合ではないが、同じhost/署名なのでOS単独原因や署名条件の完全正常を断定しない。OS開始は未確認のまま。再インストール・設定切替・要求反復は依頼しない。
+
+[Appleの同症状報告とDTS回答](https://developer.apple.com/forums/thread/838434)には内部NSSecureCoding failureが説明されるが、今回その詳細stackを取得しておらず同根とは未確定。[API実行threadについてのDTS回答](https://developer.apple.com/forums/thread/840876)も確認し、off-main必須というguideの断定を訂正した。off-main実装自体を原因扱いして変更する根拠はない。
+
+## 次の独立検証: 通常scheduler/URLSessionの永続受信記録
+
+通常/共有scheduler、host URLSession再接続、delegate完了、runtime受付拒否/cleanupをowner別に最新64件保存する診断を追加。時刻・app状態・processを残し、再起動だけでOS起動理由を断定しない。HTTP URL・内容・NSError userInfoは永続記録へ含めない。保存上限、再読込、A/B分離、破損保持と実Feature配送順序を自動検証する。診断fixtureのみ変更し、通常productionのCIは再利用。これは未配布で、手元のdaa49cdにはない。外部HTTP経路の準備とOS cold配送の実証は別途残る。

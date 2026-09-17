@@ -116,3 +116,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 6run目の例外: 新APIでcode1/duetactivityscheduler接続エラーを実測し、全体/appのBackground Refresh有効も受領した。同じhost/署名で共通centerを迂回する直接native比較と実bundle-prefix/許可wildcard診断、取消/遅着/再要求の2回帰をまとめる。変更は診断fixtureのみなので正常SDK26の共有397/Records/検索/通常IPAは35235454126から再利用し、既存native-surface.ymlのbackground-location/ios_major27だけを投入する。native26件/診断Release、前回10分50秒から準備upload込み20分見積り・job30分。実機の設定変更・再試行を反復させず、一回の直接比較で原因範囲を絞る。
 
 6回目CI35238784459/source daa49cdは11分18秒で成功。背景17＋位置9の全26methodを構造化結果へ照合し、skip/実行時warningなし。generate80.124秒・test165.844秒・Release113.210秒。公開診断IPAのGET/hash/CRC/tagを照合。通常/共有397件・Records11件・検索/通常IPAは82f61bbの証拠を再利用。実機比較は未実施で、OS開始成功へ読み替えない。
+
+7run目: 直接native実機もcode1を受領し、共通経路だけの不具合ではないと切り分けた。継続処理の要求変更を反復せず、別の残件である通常scheduler/共有refresh/URLSessionのcold配送観測を整備する。owner別永続記録・2保存試験・既存実Feature/HTTP配送順序のassertを全28nativeと診断Releaseで一括検証。診断のみのため通常productionは82f61bbを再利用。前回11分18秒をもとに20分予算、30分上限。外部HTTP経路の準備とcold実機証拠はまだ残る。

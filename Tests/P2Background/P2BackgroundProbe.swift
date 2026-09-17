@@ -26,6 +26,7 @@ final class P2BackgroundFeature: ObservableObject {
     let id: MiniAppID
     let title: String
     let continuedBaseIdentifier: String
+    let observations: P2BackgroundObservationLog
     let nativeComparison: P2ContinuedNativeComparison
     @Published private(set) var status = "未開始"
     @Published private(set) var continuedEvents: [String] = []
@@ -59,6 +60,7 @@ final class P2BackgroundFeature: ObservableObject {
              try await Task.sleep(for: .seconds(1))
          }, requiresBackgroundServices: Bool = false) {
         self.id = id
+        observations = P2BackgroundObservationLog(owner: id, persist: requiresBackgroundServices)
         nativeComparison = P2ContinuedNativeComparison(owner: id.rawValue)
         self.title = title
         self.continued = continued
@@ -76,7 +78,11 @@ final class P2BackgroundFeature: ObservableObject {
                 await self.disable()
                 await P2BackgroundServices.deactivate(owner: self.id)
             },
-            onHostLaunch: { [self] in try P2BackgroundServices.register(feature: self) }
+            onHostLaunch: { [self] in
+                observations.record("host起動hook（起動理由は未判定）")
+                try P2BackgroundServices.register(feature: self)
+                observations.record("host背景登録完了")
+            }
         ) { [self] _ in P2BackgroundProbeView(feature: self) }
     }
 
@@ -163,10 +169,12 @@ final class P2BackgroundFeature: ObservableObject {
     func submitOrdinary() {
         guard runtime?.isClosed == false else { ordinaryStatus = "受付拒否: Feature停止中"; return }
         ordinaryStatus = P2BackgroundServices.submitOrdinary(owner: id)
+        observations.record(ordinaryStatus.hasPrefix("受付済み") ? "通常要求: 同期submit成功（OS開始とは別）" : "通常要求: 受付失敗")
     }
     func submitSharedRefresh() {
         guard runtime?.isClosed == false else { sharedStatus = "受付拒否: Feature停止中"; return }
         sharedStatus = P2BackgroundServices.submitShared(owner: id)
+        observations.record(sharedStatus.hasPrefix("journal受付 generation=") ? "共有要求: journal受付（OS開始とは別）" : "共有要求: 受付失敗")
     }
     func refreshSharedJournalStatus() { sharedStatus = P2BackgroundServices.sharedStatus(owner: id) }
     func startDownload(urlText: String) async {
@@ -176,6 +184,7 @@ final class P2BackgroundFeature: ObservableObject {
     }
 
     func admitOrdinary(_ execution: MiniAppBackgroundTaskExecution) {
+        observations.record("通常scheduler callback受信")
         Task { @MainActor [weak self, weak execution] in
             guard let self, let execution else { return }
             do {
@@ -193,11 +202,13 @@ final class P2BackgroundFeature: ObservableObject {
             } catch {
                 execution.complete(success: false)
                 ordinaryStatus = "OS起動拒否: \(error)"
+                observations.record("通常callback: runtime受付拒否")
             }
         }
     }
 
     func admitShared(_ execution: MiniAppSharedRefreshExecution) {
+        observations.record(execution.request.isRecovery ? "共有callback受信: journal再試行" : "共有callback受信")
         Task { @MainActor [weak self, weak execution] in
             guard let self, let execution else { return }
             do {
@@ -216,6 +227,7 @@ final class P2BackgroundFeature: ObservableObject {
             } catch {
                 _ = execution.complete(success: false)
                 sharedStatus = "共有OS起動拒否・再試行保持: \(error)"
+                observations.record("共有callback: runtime受付拒否")
             }
         }
     }
@@ -230,6 +242,7 @@ final class P2BackgroundFeature: ObservableObject {
             await self?.shutdown(runtime: runtime)
         }
         self.runtime = runtime
+        observations.record("runtime接続")
         generation += 1
         status = "利用可能 generation=\(generation)"
     }
@@ -303,8 +316,10 @@ final class P2BackgroundFeature: ObservableObject {
             guard !execution.isExpired else { throw CancellationError() }
             try await backgroundWork(); try Task.checkCancellation()
             execution.complete(success: true); ordinaryStatus = "OS仕事完了"
+            observations.record("通常仕事完了")
         } catch {
             execution.complete(success: false); ordinaryStatus = "expiration/停止 cleanup完了"
+            observations.record("通常仕事: 期限切れ/停止cleanup完了")
         }
         backgroundWorkers.removeValue(forKey: workID)
     }
@@ -315,8 +330,10 @@ final class P2BackgroundFeature: ObservableObject {
             guard !execution.isExpired else { throw CancellationError() }
             try await backgroundWork(); try Task.checkCancellation()
             _ = execution.complete(success: true); sharedStatus = "共有仕事完了"
+            observations.record("共有仕事完了")
         } catch {
             _ = execution.complete(success: false); sharedStatus = "共有cleanup完了・再試行保持"
+            observations.record("共有仕事: cleanup完了・再試行保持")
         }
         backgroundWorkers.removeValue(forKey: workID)
     }
@@ -499,6 +516,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         guard runtime === expected, !expected.isClosed else { return "受付拒否: runtime停止中" }
         ensureSession(identifier: identifier)
         let task = session!.downloadTask(with: url)
+        feature?.observations.record("HTTP転送要求（OS再接続とは別）")
         task.resume()
         return "download開始 task=\(task.taskIdentifier) owner=\(owner.rawValue)"
     }
@@ -530,6 +548,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     }
 
     private func beginReconnect(identifier: String, events: MiniAppBackgroundURLSessionEvents) {
+        feature?.observations.record("host URLSession callback受信")
         Task { @MainActor [weak self] in
             guard let self, let feature = self.feature else { events.finish(); return }
             do {
@@ -540,8 +559,10 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 try bind(runtime: runtime)
                 self.events = events
                 ensureSession(identifier: identifier)
+                feature.observations.record("HTTP再接続受付・delegate待ち")
                 status("OS callback再接続・delegate event待ち")
             } catch {
+                feature.observations.record("HTTP再接続: runtime受付拒否")
                 status("OS callback受付拒否: \(error)")
                 // This is an owned session even when its Feature is disabled.
                 // Cancel its OS tasks and join delegate invalidation before
@@ -558,15 +579,19 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         while let record = pendingRecords.removeValue(forKey: nextRecord) {
             nextRecord += 1
             switch record.kind {
-            case .completion(let message): status(message)
+            case .completion(let message):
+                feature?.observations.record(message.hasPrefix("download保存") ? "HTTP完了: ファイル保存" : "HTTP完了: 失敗/保存未確認")
+                status(message)
             case .finishedEvents:
                 let finished = events
                 events = nil
+                feature?.observations.record(finished == nil ? "HTTP全delegate完了（host callbackなし）" : "HTTP全delegate完了・host completion解放")
                 status("全delegate event完了・host completion解放")
                 finished?.finish()
             case .invalidated(let reason):
                 session = nil
                 isInvalidating = false
+                feature?.observations.record("HTTP native session無効化完了")
                 status("native session無効化完了" + (reason.map { ": \($0)" } ?? ""))
                 let finished = events
                 events = nil
@@ -674,6 +699,7 @@ private struct P2BackgroundProbeView: View {
             }
             P2ContinuedNativeComparisonView(comparison: feature.nativeComparison, start: feature.compareNative)
             Divider()
+            P2BackgroundObservationView(log: feature.observations)
             Text(feature.ordinaryStatus); Button("通常refresh/processingを受付") { feature.submitOrdinary() }
             Text(feature.sharedStatus); Button("共有refreshをjournal受付") { feature.submitSharedRefresh() }
             Button("journal状態を再読込") { feature.refreshSharedJournalStatus() }

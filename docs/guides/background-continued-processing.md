@@ -115,6 +115,9 @@ OS launch separate. It never substitutes foreground work for an OS launch succes
 Apple DTS describes missing errors from the old synchronous API in
 [the accepted response](https://developer.apple.com/forums/thread/807370).
 The [new API documentation](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submittaskrequest(_:completionhandler:))
-requires an off-main invocation and does not give a bounded response time. This
+does not give a bounded response time. Its off-main warning is disputed by
+[Apple DTS clarification](https://developer.apple.com/forums/thread/840876), which
+states the new API supports any thread, including main. This adapter keeps its
+off-main call; that scheduling choice is not evidence of a cause or fix. This
 explains why a synchronous success alone is insufficient; it does not establish
 the cause of the current physical-device failure.

@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-C": "Published0.8.3 c5afccc; normal35169921272 passed, media native35102558612 and physical audio/capture checkpoint passed. docs/verification/2026-09-16-p2-media-evidence.json. No rerun of unchanged physical media matrix."
   },
-  "planned_ci_runs": 6,
-  "budget_exception": "Three initial runs consumed (one missing-return compile failure, two successes). New physical evidence: corrected app opens but continued request stays accepted without progress; queue cannot diagnose immediate resource rejection. Fourth run batches diagnostic fail/queue paths and timestamped native error/event visibility with Core cancellation/rejected-submit/duplicate-launch admission repair and new Core/native regressions. This is an observed device-followup boundary, not per-check CI. Full ordinary/native boundary retained because shared Core changes. Fifth run: explicit fail-mode physical record still has only synchronous submit success. Apple documents lost legacy submission errors and iOS27 completion replacement; combine async admission/cancellation/retry repair with prepared persistent location evidence, rather than testing each separately. Sixth run: async path reveals code1 service-connection error despite enabled background refresh. Batch same-host direct native control, actual installed-prefix/wildcard check, owner cancellation/late-response regressions; diagnostic-only scope reuses verified normal/shared source82f61bb rather than rerunning it.",
+  "planned_ci_runs": 7,
+  "budget_exception": "Three initial runs consumed (one missing-return compile failure, two successes). New physical evidence: corrected app opens but continued request stays accepted without progress; queue cannot diagnose immediate resource rejection. Fourth run batches diagnostic fail/queue paths and timestamped native error/event visibility with Core cancellation/rejected-submit/duplicate-launch admission repair and new Core/native regressions. This is an observed device-followup boundary, not per-check CI. Full ordinary/native boundary retained because shared Core changes. Fifth run: explicit fail-mode physical record still has only synchronous submit success. Apple documents lost legacy submission errors and iOS27 completion replacement; combine async admission/cancellation/retry repair with prepared persistent location evidence, rather than testing each separately. Sixth run: async path reveals code1 service-connection error despite enabled background refresh. Batch same-host direct native control, actual installed-prefix/wildcard check, owner cancellation/late-response regressions; diagnostic-only scope reuses verified normal/shared source82f61bb rather than rerunning it. Seventh boundary: independent normal/shared scheduler and URLSession cold-delivery observability, not another continued-processing tweak. Diagnostic-only persistent owner logs and two storage tests plus existing real Feature/HTTP ordering assertions; reuse unchanged product normal/shared evidence. Full28 native methods and diagnostic build together.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -512,6 +512,12 @@
       "inputs_and_filters": "native-surface.yml ref=codex/p2-background-location surface=background-location ios_major=27; all26 declared native methods, Release diagnostic IPA. Normal/shared397/Records/Search/IPA reused from35235454126 because product Sources, Project.swift, Package.swift and native build workflow unchanged. Source pinned before dispatch. Fixture source=78ce890a6d8107140e23d70bf4e1e3e1a8957cfe. Documentation-only evidence pin follows.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "Prior SDK27 native10m50 including setup/upload; two deterministic native control tests added, no new shared product or normal build.20min inclusive expectation, existing30min job24min native stage; OS monitor one notification."
+    },
+    {
+      "id": "persistent-background-delivery-observations",
+      "inputs_and_filters": "native-surface.yml surface=background-location ios_major=27; all28 native methods, diagnostic Release. Only Tests/P2Background and docs changed; production normal/shared82f61bb reused. Source pinned before dispatch.",
+      "expected_elapsed_minutes": 20,
+      "estimate_basis": "Previous full native26 job11m18; add2 persistence/corruption tests and existing callback/HTTP assertions. One combined native boundary,30min job limit; OS monitor sends once."
     }
   ],
   "planned_device_checks": [
@@ -591,7 +597,7 @@
     "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
     "prerelease": true,
     "public_get": "Unauthenticated GET/hash/CRC passed, tag/source matches.3bundle IDs/0.8.3/build13/signature resources/SDK27/native comparison markers verified.",
-    "physical_status": "Awaiting one same-host direct-native request; old82f61bb error and location results remain source scoped."
+    "physical_status": "Direct native comparison reproduces code1; prefix/wildcard match, active, refresh available, lowPower false. No OS launch."
   },
   "physical_failure": {
     "source": "da6267213a15872f3eb3860157edf0840e866bd2",
@@ -895,7 +901,7 @@
     "runtime_warnings": 0,
     "job_seconds": 678,
     "source_method_match": true,
-    "physical_result": "pending; same-host/signing comparison does not isolate OS from host configuration",
+    "physical_result": "code1 service connection reproduced by direct path; same-host/signing limitation retained.",
     "normal_reuse": "82f61bb/run35235454126; product Sources/Project.swift/Package.swift/workflows unchanged; no new normal build"
   },
   "diagnostic_publication_previous_82f61bb": {
@@ -916,5 +922,11 @@
       "bytes": 3828251,
       "sdk": "iphoneos26.5"
     }
+  },
+  "direct_native_device_observation": {
+    "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
+    "at": "2026-09-17T15:36:33Z",
+    "observation": "User OCR: installed bundle prefix/permitted wildcard match; appState=0, refresh=2, lowPower=false; native registration succeeded; submit response BGTaskSchedulerErrorDomain code1 connection to com.apple.duetactivityscheduler.",
+    "conclusion": "Direct native path reproduces wrapper error. Not specific to common center/resolver/execution adapter. Same host/signing; root OS/host/signing cause not isolated. No OS launch success."
   }
 }

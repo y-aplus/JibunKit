@@ -182,7 +182,7 @@ public actor MiniAppExternalIdentityCoordinator {
         let changes = await backend.accountChanges()
         do {
             try await MainActor.run {
-                try runtime.start { [weak self] in
+                _ = try runtime.start { [weak self] in
                     for await _ in changes {
                         guard !Task.isCancelled else { return }
                         _ = try? await self?.accountDidChange()

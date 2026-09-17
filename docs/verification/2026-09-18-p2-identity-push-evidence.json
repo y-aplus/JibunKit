@@ -9,13 +9,13 @@
     "failure_cases": "Closed runtime, stop/join, old-generation result, account replacement and removal snapshot, same-token registration recovery, stale service unregister, malformed and exact numeric payload, cold owner admission, A removal with B nondefault state retained.",
     "normal_entrypoints": "MiniAppDefinition/lifetime/management/restore, synchronous host launch and actual UIApplicationDelegate callbacks. Native CloudKit API is compiled but real signed communication is separate; injected token/payload is not APNs delivery.",
     "invalidation": "Close owner admission before cancelling/joining operations. Generation and lease checks reject stale results/cleanup. Account match required before destructive external data access; already committed server mutations are not rollbackable.",
-    "review": "Two full submissions and first repairs reviewed jointly before CI. A second grouped follow-up covers account-switch deletion safety and large JSON integer preservation. Parent adds real delegate dormant-owner test. Local host/verifier regression 11 tests passed; Swift/Xcode unavailable on Windows. Both second follow-ups reviewed and integrated; final source to be frozen before dispatch."
+    "review": "Two full submissions and first repairs reviewed jointly before CI. A second grouped follow-up covers account-switch deletion safety and large JSON integer preservation. Parent adds real delegate dormant-owner test. Local host/verifier regression 11 tests passed; Swift/Xcode unavailable on Windows. Both second follow-ups reviewed and integrated; final source to be frozen before dispatch. CI compiler evidence reduced to one unique error and one warning; both repaired in the same change. Native cancelled because it shares the known failing Core source."
   },
   "dependencies": {
     "P2-B": "Inherited 7347b48; native run35243182556 at f6f6c04 and normal/shared35235454126 at82f61bb passed. Physical background URLSession callback/save/completion passed; same-process only. Continued OS start and beacon/background location remain open; not a completed P2-B or v1 acceptance."
   },
-  "planned_ci_runs": 2,
-  "budget_exception": "",
+  "planned_ci_runs": 4,
+  "budget_exception": "Initial two-job boundary exposed one Core actor-isolation compile failure. Cancel companion native run using the same invalid source; repeat the same full normal/native pair after one grouped initialization/warning repair. Four run IDs but only two implementation validation boundaries; no additional functionality or per-test dispatch.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -73,13 +73,13 @@
       "id": "35249120439",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249120439",
       "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
-      "conclusion": "pending: dispatched at 2026-09-17T16:51Z; no result yet"
+      "conclusion": "failure: shared Core compilation stopped on lazy lifetime initialization with conflicting actor isolation at MiniAppExternalIdentityFeature.swift:9. No tests or IPA. Unique secondary diagnostic: unused MainActor.run result. Both repaired together by explicit MainActor initializer and discarded task handle."
     },
     {
       "id": "35249124064",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249124064",
       "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
-      "conclusion": "pending: dispatched at 2026-09-17T16:51Z; no result yet"
+      "conclusion": "cancellation requested: same source includes confirmed Core compiler error; avoid spending remaining native preparation/build time. Not a passed test."
     }
   ],
   "evidence": [
@@ -339,10 +339,22 @@
       "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared.",
       "expected_elapsed_minutes": 22,
       "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
+    },
+    {
+      "id": "normal-shared-retry1",
+      "inputs_and_filters": "build-ios.yml simulator_tests=true ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults; other defaults, no Feature/native optional jobs. Same source as combined-native. Retry same scope after actor-isolation repair.",
+      "expected_elapsed_minutes": 24,
+      "estimate_basis": "Prior normal/shared35235454126 18m06 including preparation/upload; 6min reserve for new tests and CloudKit compilation."
+    },
+    {
+      "id": "combined-native-retry1",
+      "inputs_and_filters": "native-surface.yml surface=identity-push ios_major=26; no test-method filter, unsigned combined diagnostic. Parallel with normal-shared. Retry same scope after actor-isolation repair.",
+      "expected_elapsed_minutes": 22,
+      "estimate_basis": "Previous similarly sized background-location native35243182556 12m48 including setup/test/Release/upload; 9min reserve for new host compilation/tests."
     }
   ],
   "pending": [
-    "Normal35249120439 and native35249124064 dispatched on the same frozen source. Await completion notifications; no model polling.",
+    "Commit repaired source then dispatch same normal/native scope; completion monitor for each run.",
     "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
     "P2-B pending device observations remain open; this independent work does not close them."
   ]

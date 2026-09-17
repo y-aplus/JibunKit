@@ -6,9 +6,7 @@ import Foundation
 public final class MiniAppExternalIdentityFeature {
     public let id: MiniAppID
     public let coordinator: MiniAppExternalIdentityCoordinator
-    public lazy var lifetime = MiniAppFeatureLifetime(id: id) { [coordinator] runtime in
-        try await coordinator.connect(to: runtime)
-    }
+    public let lifetime: MiniAppFeatureLifetime
     public lazy var removal = MiniAppRemovalProvider(
         id: id,
         dataDescription: "このFeatureが所有する外部account data",
@@ -34,6 +32,10 @@ public final class MiniAppExternalIdentityFeature {
     public init(id: MiniAppID, container: MiniAppExternalContainer,
                 backend: any MiniAppExternalIdentityBackend) {
         self.id = id
-        coordinator = MiniAppExternalIdentityCoordinator(owner: id, container: container, backend: backend)
+        let coordinator = MiniAppExternalIdentityCoordinator(owner: id, container: container, backend: backend)
+        self.coordinator = coordinator
+        lifetime = MiniAppFeatureLifetime(id: id) { @MainActor [coordinator] runtime in
+            try await coordinator.connect(to: runtime)
+        }
     }
 }

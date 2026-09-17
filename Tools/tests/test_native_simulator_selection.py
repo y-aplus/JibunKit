@@ -14,14 +14,14 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class NativeSimulatorSelectionTests(unittest.TestCase):
-    def select(self, major, requested, devices):
+    def select(self, major, requested, devices, surface="media"):
         workflow = (ROOT / '.github/workflows/native-surface.yml').read_text(encoding='utf-8')
         code = textwrap.dedent(workflow.split("<<'PY'\n", 1)[1].split('\n          PY', 1)[0])
         with tempfile.TemporaryDirectory() as temporary:
             fixture = Path(temporary) / 'simulators.json'
             fixture.write_text(json.dumps({'devices': devices}), encoding='utf-8')
             result = io.StringIO()
-            with patch.dict(os.environ, {'IOS_MAJOR': major, 'REQUESTED_RUNTIME': requested}), \
+            with patch.dict(os.environ, {'IOS_MAJOR': major, 'REQUESTED_RUNTIME': requested, 'SURFACE': surface}), \
                     patch.object(sys, 'argv', ['selector', str(fixture)]), redirect_stdout(result):
                 exec(compile(code, 'workflow-selector', 'exec'), {})
             return result.getvalue().strip()
@@ -47,3 +47,18 @@ class NativeSimulatorSelectionTests(unittest.TestCase):
     def testUnavailableDeviceIsRejected(self):
         with self.assertRaises(SystemExit):
             self.select('27', '', self.runtime('27-0', 'unavailable', False))
+
+    def testSceneSurfaceRequiresIPadAndDoesNotFallBackToPhone(self):
+        devices = self.runtime('26-5', 'phone')
+        with self.assertRaises(SystemExit):
+            self.select('26', '', devices, 'ble-scenes')
+        devices['com.apple.CoreSimulator.SimRuntime.iOS-26-5'].append(
+            {'name': 'iPad Air', 'udid': 'pad', 'isAvailable': True})
+        self.assertEqual(self.select('26', '', devices, 'ble-scenes'), 'pad')
+        self.assertEqual(self.select('26', '', devices), 'phone')
+
+    def testUnavailableIPadIsNotARealWindowTestDevice(self):
+        devices = {'com.apple.CoreSimulator.SimRuntime.iOS-26-5': [
+            {'name': 'iPad Air', 'udid': 'pad', 'isAvailable': False}]}
+        with self.assertRaises(SystemExit):
+            self.select('26', '', devices, 'ble-scenes')

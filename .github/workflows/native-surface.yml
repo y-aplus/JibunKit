@@ -91,6 +91,7 @@ jobs:
       - name: Prepare simulator tests
         env:
           REQUESTED_RUNTIME: ${{ inputs.simulator_runtime }}
+          SURFACE: ${{ matrix.surface }}
           IOS_MAJOR: ${{ inputs.ios_major }}
         shell: bash
         run: |
@@ -108,10 +109,11 @@ jobs:
           if not runtimes:
               raise SystemExit('Requested iOS simulator runtime is not installed')
           runtime = max(runtimes, key=lambda value: tuple(map(int, value.split('iOS-')[1].split('-'))))
+          family = 'iPad' if os.environ.get('SURFACE') == 'ble-scenes' else 'iPhone'
           candidates = [d for d in devices[runtime]
-                        if d['name'].startswith('iPhone') and d['isAvailable']]
+                        if d['name'].startswith(family) and d['isAvailable']]
           if not candidates:
-              raise SystemExit('No available iPhone simulator for iOS ' + major)
+              raise SystemExit('No available ' + family + ' simulator for iOS ' + major)
           candidates.sort(key=lambda d: (d['name'] != 'iPhone 16e', d['name']))
           print(candidates[0]['udid'])
           PY

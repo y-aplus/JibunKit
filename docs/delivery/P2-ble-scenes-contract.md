@@ -27,3 +27,9 @@ Tests/P2Scenes/P2ScenesProbe.swiftとP2ScenesNativeTests.swiftに二scene/owner�
 ## 提出とレビュー
 
 Swift6 actor isolation、escaping closure capture、XCTest helper隔離を提出前に一括確認する。前境界のコンパイル修正を繰り返さない。SwiftがないWindowsでは実行済みと書かず、API署名はApple一次資料で照合する。管理停止→native取消/join→削除/復元の順序を試験に含める。提出は実装commit、未実行一覧、接続手順と条件、残件を一度通知する。親はsource確定後に同一SHAの検証を組む。
+
+## 開始状況
+
+基点afb8f50でJibunKit所属のSol low別スレッド2本を起動。親は`codex/p2-ble-scenes`へ分岐。既存native workflowの実選択コードにiPad必須のsurface条件を追加し、既存major/runtime選択3件とiPad必須/利用不可拒否2件が成功。新surface自体の登録・host生成は担当API提出後にまとめて接続するため、CIは未投入。
+
+P2-Iの失敗を踏まえ、Core/診断app/native testのSwift6隔離を提出前レビュー対象へ明記した。実OS window生成にはmanifest/host接続とiPadが必要であり、二つのnavigationオブジェクトの成功で代用しない。BLEのSimulator制限もnative生成と実無線を区別する。

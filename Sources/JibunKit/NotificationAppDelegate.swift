@@ -40,16 +40,12 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
 
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Task { @MainActor in
-            await MiniAppRemotePushCoordinator.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
-        }
+        MiniAppRemotePushCoordinator.shared.didRegisterForRemoteNotifications(deviceToken: deviceToken)
     }
 
     func application(_ application: UIApplication,
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        Task { @MainActor in
-            await MiniAppRemotePushCoordinator.shared.didFailToRegisterForRemoteNotifications(error)
-        }
+        MiniAppRemotePushCoordinator.shared.didFailToRegisterForRemoteNotifications(error)
     }
 
     func application(_ application: UIApplication,

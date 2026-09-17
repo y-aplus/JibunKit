@@ -45,3 +45,11 @@ Push初回a1315db/12f7523を受領し開発branchへ統合、CI前の一括修�
 identity初回a5bf420/550cd74を統合し、同じ担当へ一括修正。管理の停止後削除でcurrent消失によりinactiveとなる問題、並行activate/closed runtimeの世代rollback、operation取消/joinとserver commitの限界、通常CloudKit上書き、永続keyとactivation世代の分離、CKAccountChangedのFeature所有observer、署名専用試験と通常CIの分離を対象にした。実管理/停止/復元を通る試験へ補強する。現時点の親担当メッセージは初回2＋各修正1＝4件、修正往復各1。初回契約の通常利用/失敗保証が提出で不足していたためで、CIで発見して再実行する前にまとめて修正する。
 
 両初回ソースが揃い、親のhost生成試験を最小入力から実提出fixtureへ切り替えた。これはソース配置/構成検査でありSwift compileやOS通信の成功ではない。統合branchは未検証でmainへは入れない。署名CloudKit roundtripを通常native全methodへ混ぜないよう、担当の分離修正を待って全件数を固定する。
+
+## 統合後の検証境界
+
+両担当の修正を統合。各2往復（初回の寿命/管理修正、追加のアカウント切替時削除・JSON整数保持）をCI前に完了した。親からの担当メッセージは計6件。親は実delegateの同期token転送と、画面を開かずcold ownerへ配送するhost試験を追加。ローカルhost生成/検証回帰11件が成功。Swift/iOS成否はCI前なので未確認。
+
+`docs/verification/2026-09-18-p2-identity-push-evidence.json`で事前範囲を固定する。同一SHAで通常/shared（全共有試験、Records、通常IPA、Search UI）とidentity-push native（全12method、署名専用CloudKitを除く、診断Release IPA）を2run並列投入する。前者24分/後者22分見込み。直近通常18分06秒/native12分48秒を準備・upload込みの基準に余裕を加えた。初回予算3run内で、再試行前は原因と対象を記録する。
+
+今回のnative成功だけではAPNs実配信/CloudKit実通信完了にしない。正しい署名・container・providerが必要な確認は別に残す。P2-Bの未確認も閉じない。ユーザー睡眠中に実機操作を求めない。

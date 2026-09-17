@@ -30,7 +30,9 @@ Incoming payloads must contain `JibunKitMiniAppID`; optional navigation uses `Ji
 
 ## UIApplicationDelegate connection
 
-The host calls `registerForRemoteNotifications()` once after its notification authorization policy permits it, then forwards callbacks:
+The JibunKit host already forwards the three delegate callbacks below. Enable automatic launch-time `registerForRemoteNotifications()` by declaring `JibunKitRemotePushEnabled = true` in the app Info.plist through the existing Feature build requirements. Also supply the valid `aps-environment` entitlement/profile, and `remote-notification` background mode for background delivery. The flag does not supply signing capability. Notification display authorization is a separate decision; denying alerts is not itself a reason to discard background registration.
+
+For another host, the equivalent callback wiring is shown below. Its management and launch-error gates must reject disabled or failed owners before delivery, as `NotificationAppDelegate` does in JibunKit:
 
 ```swift
 func application(_ application: UIApplication,

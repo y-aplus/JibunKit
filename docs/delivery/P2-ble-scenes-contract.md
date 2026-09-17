@@ -33,3 +33,5 @@ Swift6 actor isolation、escaping closure capture、XCTest helper隔離を提出
 基点afb8f50でJibunKit所属のSol low別スレッド2本を起動。親は`codex/p2-ble-scenes`へ分岐。既存native workflowの実選択コードにiPad必須のsurface条件を追加し、既存major/runtime選択3件とiPad必須/利用不可拒否2件が成功。新surface自体の登録・host生成は担当API提出後にまとめて接続するため、CIは未投入。
 
 P2-Iの失敗を踏まえ、Core/診断app/native testのSwift6隔離を提出前レビュー対象へ明記した。実OS window生成にはmanifest/host接続とiPadが必要であり、二つのnavigationオブジェクトの成功で代用しない。BLEのSimulator制限もnative生成と実無線を区別する。
+
+scene初回ef0f20aを開発branchへ統合し、一括レビューを返した。再接続cleanup await中のconnect/disconnect再入、owner無効化時のscene資源取消/join、手動事前準備/XCTSkipに依存しないiPad OS生成/破棄試験を補強する。初回提出はSwift未実行であり完了扱いしない。親担当メッセージは初回2＋scene修正1、CI0。BLE初回とscene修正版の提出通知を待つ。

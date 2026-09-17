@@ -497,7 +497,8 @@ final class P2BackgroundNativeTests: XCTestCase {
         await eventually { bStatuses.contains { $0.contains("download保存") } }
         XCTAssertTrue(bConnection.hasSession)
         XCTAssertTrue(b.observations.entries.contains { $0.event == "HTTP完了: ファイル保存" })
-        XCTAssertFalse(a.observations.entries.contains { $0.event == "HTTP完了: ファイル保存" })        XCTAssertEqual(b.lifetime.state, .running)
+        XCTAssertFalse(a.observations.entries.contains { $0.event == "HTTP完了: ファイル保存" })
+        XCTAssertEqual(b.lifetime.state, .running)
         let files = try FileManager.default.contentsOfDirectory(at: bConnection.destinationDirectory,
                                                                includingPropertiesForKeys: nil)
         XCTAssertEqual(files.count, 1)

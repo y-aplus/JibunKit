@@ -143,3 +143,5 @@ iBeacon機材について、ユーザーはAndroidスマホを所有し、iPad�
 ## 次の独立検証: 通常scheduler/URLSessionの永続受信記録
 
 通常/共有scheduler、host URLSession再接続、delegate完了、runtime受付拒否/cleanupをowner別に最新64件保存する診断を追加。時刻・app状態・processを残し、再起動だけでOS起動理由を断定しない。HTTP URL・内容・NSError userInfoは永続記録へ含めない。保存上限、再読込、A/B分離、破損保持と実Feature配送順序を自動検証する。診断fixtureのみ変更し、通常productionのCIは再利用。これは未配布で、手元のdaa49cdにはない。外部HTTP経路の準備とOS cold配送の実証は別途残る。
+
+2026-09-18追記: ユーザーはiOS側問題への十分な確信があれば追加追究不要と指示。直接比較までの結果をもって継続処理の追加診断は一旦停止する。OS開始を確認済みにはせず、host/署名との完全分離がない限界を残す。独立した通常/共有/HTTP観測のCI35241889661はテスト構文エラーで実行前に停止。修正して同じ28件を再検証する。ユーザーへ追加操作は依頼しない。

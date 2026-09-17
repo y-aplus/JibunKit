@@ -118,3 +118,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 6回目CI35238784459/source daa49cdは11分18秒で成功。背景17＋位置9の全26methodを構造化結果へ照合し、skip/実行時warningなし。generate80.124秒・test165.844秒・Release113.210秒。公開診断IPAのGET/hash/CRC/tagを照合。通常/共有397件・Records11件・検索/通常IPAは82f61bbの証拠を再利用。実機比較は未実施で、OS開始成功へ読み替えない。
 
 7run目: 直接native実機もcode1を受領し、共通経路だけの不具合ではないと切り分けた。継続処理の要求変更を反復せず、別の残件である通常scheduler/共有refresh/URLSessionのcold配送観測を整備する。owner別永続記録・2保存試験・既存実Feature/HTTP配送順序のassertを全28nativeと診断Releaseで一括検証。診断のみのため通常productionは82f61bbを再利用。前回11分18秒をもとに20分予算、30分上限。外部HTTP経路の準備とcold実機証拠はまだ残る。
+
+7回目CI35241889661/source e00ec45は8分18秒で失敗。新テスト500行目のassert間の改行欠落でtest target compileが停止し、実行0件/新IPAなし。診断appのcompileを通ったことと実行成功を区別する。改行を修正し編集箇所に同種の連結がないことを確認、同じ全28件/診断Release境界を8run目として再投入する（この境界の連続失敗は1回）。継続処理のiOS内部原因調査はユーザー指示を踏まえ追加試行を停止。通常/共有/HTTPの独立検証を継続する。

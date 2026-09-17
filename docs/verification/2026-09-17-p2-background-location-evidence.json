@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-C": "Published0.8.3 c5afccc; normal35169921272 passed, media native35102558612 and physical audio/capture checkpoint passed. docs/verification/2026-09-16-p2-media-evidence.json. No rerun of unchanged physical media matrix."
   },
-  "planned_ci_runs": 7,
-  "budget_exception": "Three initial runs consumed (one missing-return compile failure, two successes). New physical evidence: corrected app opens but continued request stays accepted without progress; queue cannot diagnose immediate resource rejection. Fourth run batches diagnostic fail/queue paths and timestamped native error/event visibility with Core cancellation/rejected-submit/duplicate-launch admission repair and new Core/native regressions. This is an observed device-followup boundary, not per-check CI. Full ordinary/native boundary retained because shared Core changes. Fifth run: explicit fail-mode physical record still has only synchronous submit success. Apple documents lost legacy submission errors and iOS27 completion replacement; combine async admission/cancellation/retry repair with prepared persistent location evidence, rather than testing each separately. Sixth run: async path reveals code1 service-connection error despite enabled background refresh. Batch same-host direct native control, actual installed-prefix/wildcard check, owner cancellation/late-response regressions; diagnostic-only scope reuses verified normal/shared source82f61bb rather than rerunning it. Seventh boundary: independent normal/shared scheduler and URLSession cold-delivery observability, not another continued-processing tweak. Diagnostic-only persistent owner logs and two storage tests plus existing real Feature/HTTP ordering assertions; reuse unchanged product normal/shared evidence. Full28 native methods and diagnostic build together.",
+  "planned_ci_runs": 8,
+  "budget_exception": "Three initial runs consumed (one missing-return compile failure, two successes). New physical evidence: corrected app opens but continued request stays accepted without progress; queue cannot diagnose immediate resource rejection. Fourth run batches diagnostic fail/queue paths and timestamped native error/event visibility with Core cancellation/rejected-submit/duplicate-launch admission repair and new Core/native regressions. This is an observed device-followup boundary, not per-check CI. Full ordinary/native boundary retained because shared Core changes. Fifth run: explicit fail-mode physical record still has only synchronous submit success. Apple documents lost legacy submission errors and iOS27 completion replacement; combine async admission/cancellation/retry repair with prepared persistent location evidence, rather than testing each separately. Sixth run: async path reveals code1 service-connection error despite enabled background refresh. Batch same-host direct native control, actual installed-prefix/wildcard check, owner cancellation/late-response regressions; diagnostic-only scope reuses verified normal/shared source82f61bb rather than rerunning it. Seventh boundary: independent normal/shared scheduler and URLSession cold-delivery observability, not another continued-processing tweak. Diagnostic-only persistent owner logs and two storage tests plus existing real Feature/HTTP ordering assertions; reuse unchanged product normal/shared evidence. Full28 native methods and diagnostic build together. Eighth run repeats the same seventh boundary after one test-source newline syntax repair; no runtime/manifest changes or extra scenario. Reviewed edited assertions for joined statements before retry. This boundary has one consecutive compile failure, not an OS failure.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -104,6 +104,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35238784459",
       "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
       "conclusion": "success: native26 no skips/runtime warnings, SDK27 diagnostic Release; 678s. Unchanged normal/shared reused from82f61bb."
+    },
+    {
+      "id": "35241889661",
+      "source": "e00ec459d764a53603b32cf8c30573028d4acbf6",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35241889661",
+      "conclusion": "failure: new native test line500 joined two assertions without newline. Test-target compiler stopped before execution; zero tests, no Release IPA. Job498s. App sources compiled. Separate from physical scheduler code1."
     }
   ],
   "evidence": [
@@ -518,6 +524,12 @@
       "inputs_and_filters": "native-surface.yml surface=background-location ios_major=27; all28 native methods, diagnostic Release. Only Tests/P2Background and docs changed; production normal/shared82f61bb reused. Source pinned before dispatch. Fixture source=bac33f0e406b5e972fe34dcd3658dd21ab1f6b9a; documentation-only pin follows.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "Previous full native26 job11m18; add2 persistence/corruption tests and existing callback/HTTP assertions. One combined native boundary,30min job limit; OS monitor sends once."
+    },
+    {
+      "id": "persistent-background-delivery-compile-repair",
+      "inputs_and_filters": "Same native-surface.yml background-location/ios_major27; all28 methods and Release IPA. One missing newline between assertions repaired. Product/normal unchanged. Source pinned before dispatch.",
+      "expected_elapsed_minutes": 20,
+      "estimate_basis": "Previous successful full diagnostic11m18, failed test-target compile8m18. Full native boundary retained; no per-method reruns;30min job cap."
     }
   ],
   "planned_device_checks": [
@@ -928,5 +940,6 @@
     "at": "2026-09-17T15:36:33Z",
     "observation": "User OCR: installed bundle prefix/permitted wildcard match; appState=0, refresh=2, lowPower=false; native registration succeeded; submit response BGTaskSchedulerErrorDomain code1 connection to com.apple.duetactivityscheduler.",
     "conclusion": "Direct native path reproduces wrapper error. Not specific to common center/resolver/execution adapter. Same host/signing; root OS/host/signing cause not isolated. No OS launch success."
-  }
+  },
+  "continued_processing_investigation_policy": "User2026-09-18: do not pursue iOS internals after sufficient evidence. Additional continued-processing probes paused after wrapper/direct same error, valid prefix/wildcard, active/refresh available/lowPower false. Keep actual OS launch unverified; not a completed device acceptance. Independent normal/shared/HTTP delivery work continues."
 }

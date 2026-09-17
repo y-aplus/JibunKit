@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-I",
-  "source": "1e637515dbe2765243a61cdded470d9d7f965c41",
+  "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
   "contract": {
     "baseline": "7347b483936e7f8bfe45d36984c32390cdcae2b3",
     "interfaces": "docs/delivery/P2-identity-push-contract.md; standard Feature lifetime/runtime, management/externalAccess, host launch and notification route. Additive owner-scoped external identity and app-token/owner-server push APIs.",
@@ -68,7 +68,20 @@
       ]
     }
   ],
-  "runs": [],
+  "runs": [
+    {
+      "id": "35249120439",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249120439",
+      "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
+      "conclusion": "pending: dispatched at 2026-09-17T16:51Z; no result yet"
+    },
+    {
+      "id": "35249124064",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35249124064",
+      "source": "ba13b5f96312b8902e507606b0c73e28d122f2f4",
+      "conclusion": "pending: dispatched at 2026-09-17T16:51Z; no result yet"
+    }
+  ],
   "evidence": [
     {
       "criterion": "P0-2.presentation",
@@ -329,7 +342,7 @@
     }
   ],
   "pending": [
-    "Freeze final source SHA before CI dispatch; no Swift/iOS result yet.",
+    "Normal35249120439 and native35249124064 dispatched on the same frozen source. Await completion notifications; no model polling.",
     "Real CloudKit and APNs require valid entitlements/profile/container/provider. No physical request while user sleeps.",
     "P2-B pending device observations remain open; this independent work does not close them."
   ]

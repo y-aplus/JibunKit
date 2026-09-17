@@ -500,5 +500,14 @@
       "sha256": "79c0eb81d5903cc74e35c9a91195b80d5f075eca092de1b6825b9d297b2ad5de",
       "bytes": 3806301
     }
+  },
+  "diagnostic_publication": {
+    "tag": "p2-b-device-check-20260917",
+    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-device-check-20260917",
+    "draft": false,
+    "prerelease": true,
+    "public_get": "All4 IPA/ZIP assets unauthenticated GET SHA256/CRC and outer ZIP IPA equality passed.",
+    "physical_status": "First grouped continued-processing check requested. Location/beacon hardware availability question pending."
   }
 }

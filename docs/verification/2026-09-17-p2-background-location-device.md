@@ -34,6 +34,6 @@
 
 source `da62672`で共有389件（既存Keychain2skip/失敗0）、独立Records11件、通常検索UI、背景10件・位置7件のnative試験（skip/失敗0）が成功。通常job14分13秒、診断job7分24秒。所有/管理/復元/世代/期限/失敗/B保持、実HTTP A取消・Bファイル保存、実CoreLocation設定とSDK値を対象とする。OS schedulerの起動や物理移動は注入試験から推定しない。
 
-IPA全entry CRC、app/Widget/Shareの既存IDと0.8.3/build13、署名resource、診断構成の5scheduler宣言と3background modes、通常版の診断非混入を照合。各ZIP内IPAの一致を検査した。公開取得の結果は公開後に記録する。
+IPA全entry CRC、app/Widget/Shareの既存IDと0.8.3/build13、署名resource、診断構成の5scheduler宣言と3background modes、通常版の診断非混入を照合。各ZIP内IPAの一致を検査した。新規prerelease `p2-b-device-check-20260917`を同sourceへ固定して公開。診断/通常のIPA/ZIP計4assetを無認証で再取得し、SHA-256・CRCとZIP内IPA一致を確認済み。既存tag/assetは差し替えていない。
 
 実機結果はまだ受領していない。受領後にsourceと操作範囲をこの文書へまとめて追記する。

@@ -42,6 +42,16 @@ protocol MiniAppContinuedProcessingScheduling: AnyObject {
                   launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void) -> Bool
     func submit(_ request: MiniAppContinuedProcessingRequest) throws
     func cancel(identifier: String)
+    func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void)
+}
+
+extension MiniAppContinuedProcessingScheduling {
+    func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void) {
+        do { try submit(request); completion(.success(())) }
+        catch { completion(.failure(error)) }
+    }
 }
 
 @MainActor
@@ -115,6 +125,8 @@ public final class MiniAppContinuedProcessingCenter {
         let owner: String
         let jobIdentifier: UUID
         var awaitingLaunch = true
+        var submissionResolved = false
+        var cancelled = false
     }
     private let scheduler: any MiniAppContinuedProcessingScheduling
     private var registrations: [String: Registration] = [:]
@@ -127,6 +139,7 @@ public final class MiniAppContinuedProcessingCenter {
     }
 
     fileprivate func submit(owner: String, request: MiniAppContinuedProcessingRequest,
+                            submissionResult: (@MainActor @Sendable (Result<Void, Error>) -> Void)? = nil,
                             handler: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void)
         throws -> MiniAppContinuedProcessingReceipt {
         guard Self.isValidBaseIdentifier(request.baseIdentifier) else {
@@ -157,10 +170,24 @@ public final class MiniAppContinuedProcessingCenter {
         }
         guard accepted else { throw Failure.nativeRegistrationRejected }
         registrations[identifier] = Registration(owner: owner, jobIdentifier: request.jobIdentifier)
-        do { try scheduler.submit(request) }
-        catch {
-            registrations[identifier]?.awaitingLaunch = false
-            throw error
+        if let submissionResult {
+            scheduler.submitReportingResult(request) { [weak self] result in
+                guard let self, registrations[identifier]?.submissionResolved == false else { return }
+                registrations[identifier]?.submissionResolved = true
+                // The off-main native submission may finish after an earlier
+                // cancellation. Remove that newly admitted request as well.
+                if registrations[identifier]?.cancelled == true {
+                    scheduler.cancel(identifier: identifier)
+                }
+                if case .failure = result { registrations[identifier]?.awaitingLaunch = false }
+                submissionResult(result)
+            }
+        } else {
+            do { try scheduler.submit(request) }
+            catch {
+                registrations[identifier]?.awaitingLaunch = false
+                throw error
+            }
         }
         return .init(identifier: identifier, jobIdentifier: request.jobIdentifier)
     }
@@ -168,6 +195,7 @@ public final class MiniAppContinuedProcessingCenter {
     fileprivate func cancel(owner: String, identifier: String) throws {
         guard registrations[identifier]?.owner == owner else { throw Failure.identifierNotOwned }
         registrations[identifier]?.awaitingLaunch = false
+        registrations[identifier]?.cancelled = true
         scheduler.cancel(identifier: identifier)
     }
 
@@ -195,6 +223,19 @@ public final class MiniAppContinuedProcessingTasks {
                        launch: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void)
         throws -> MiniAppContinuedProcessingReceipt {
         try center.submit(owner: ownerIdentifier, request: request, handler: launch)
+    }
+
+    /// Reports asynchronous submission errors on SDK/OS 27+, keeping the receipt
+    /// available for cancellation while the OS response is pending. Success is
+    /// admission only; `launch` separately reports execution. SDK/OS 26 uses the
+    /// legacy synchronous error coverage. The callback is delivered at most once.
+    @discardableResult
+    public func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void,
+        launch: @escaping @MainActor (MiniAppContinuedProcessingExecution) -> Void)
+        throws -> MiniAppContinuedProcessingReceipt {
+        try center.submit(owner: ownerIdentifier, request: request,
+                          submissionResult: completion, handler: launch)
     }
 
     public func cancelPendingRequest(identifier: String) throws {

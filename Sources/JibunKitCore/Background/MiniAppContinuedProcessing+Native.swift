@@ -1,5 +1,5 @@
 #if canImport(BackgroundTasks) && os(iOS)
-import BackgroundTasks
+@preconcurrency import BackgroundTasks
 import Foundation
 
 @available(iOS 26.0, *)
@@ -60,6 +60,33 @@ private final class SystemContinuedProcessingScheduler: MiniAppContinuedProcessi
         )
         native.strategy = request.strategy == .queue ? .queue : .fail
         try scheduler.submit(native)
+    }
+
+    func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void) {
+        // Xcode 27 supplies Swift 6.4 and the new declaration; retain SDK 26 builds.
+        #if compiler(>=6.4)
+        if #available(iOS 27.0, *) {
+            let identifier = MiniAppBackgroundTaskIdentifier.resolve(request.identifier)
+            let systemScheduler = scheduler
+            // Apple requires this API off the main thread. Construct the request
+            // on that queue and return its result to the owner's MainActor.
+            DispatchQueue.global(qos: .userInitiated).async {
+                let native = BGContinuedProcessingTaskRequest(identifier: identifier,
+                    title: request.title, subtitle: request.subtitle)
+                native.strategy = request.strategy == .queue ? .queue : .fail
+                systemScheduler.submitTaskRequest(native) { error in
+                    Task { @MainActor in
+                        if let error { completion(.failure(error)) }
+                        else { completion(.success(())) }
+                    }
+                }
+            }
+            return
+        }
+        #endif
+        do { try submit(request); completion(.success(())) }
+        catch { completion(.failure(error)) }
     }
 
     func cancel(identifier: String) {

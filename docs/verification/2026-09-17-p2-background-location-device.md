@@ -80,3 +80,9 @@ IPA全entry CRC、app/Widget/Shareの既存IDと0.8.3/build13、署名resource�
 iBeacon機材について、ユーザーはAndroidスマホを所有し、iPadは明日以降利用可能と回答。AndroidのBLE advertising/iBeacon送信可否は未確認。アプリ導入や外出はまだ依頼していない。
 
 送信機の一次資料: [Android BluetoothAdapter](https://developer.android.com/reference/android/bluetooth/BluetoothAdapter)はBLE advertisingの機種対応確認が必要。[AppleのiOS機器送信](https://developer.apple.com/documentation/corelocation/turning-an-ios-device-into-an-ibeacon-device)はBLE対応と送信appの前景維持が条件。手元機材での送信成功は未確認。
+
+## 8b3584aの即時開始でもOS通知がない観測
+
+ユーザー記録は2026-09-17T14:33:53Z「要求 即時 job=DE7832BE」、同時刻「submit成功（OS開始とは別）」のみ。進捗は増えず受付済み・OS開始未確認。明示的に`.fail`を選択したことを確認したが、旧同期APIが返した成功であり、OS側の全受付エラーがないとは言えない。[Apple DTS](https://developer.apple.com/forums/thread/807370)と[新API](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submittaskrequest(_:completionhandler:))は、旧submitに全エラーを返せない場合がありiOS27のcompletion方式で補うと説明する。今回の根本原因をOS不具合と確定しない。
+
+次の一括検証ではXcode27/Swift6.4のSDK宣言を使う非同期受付と、上記の位置受信記録を統合する。通常Xcode26.6の互換経路も同runで検証する。ユーザーへ開始の再連打・無期限待機・端末の初期化等を求めない。

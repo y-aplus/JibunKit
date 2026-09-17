@@ -120,6 +120,47 @@ final class MiniAppContinuedProcessingTests: XCTestCase {
         XCTAssertEqual(scheduler.launch(retry.identifier).completions, [true])
     }
 
+    func testAsynchronousSubmissionFailureRejectsLateLaunchAndKeepsOtherOwner() throws {
+        let scheduler = ContinuedSchedulerSpy()
+        scheduler.deferSubmissionResult = true
+        let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
+        let a = center.tasks(for: context("async-a")), b = center.tasks(for: context("async-b"))
+        let results = ContinuedSubmissionResults()
+        let aReceipt = try a.submitReportingResult(request("com.example.app.a"), completion: { results.record($0) }) {
+            _ in XCTFail("Failed submission launched")
+        }
+        let bReceipt = try b.submitReportingResult(request("com.example.app.b"), completion: { results.record($0) }) {
+            $0.complete(success: true)
+        }
+        XCTAssertEqual(results.count, 0)
+        let error = NSError(domain: "BGTaskSchedulerErrorDomain", code: 4)
+        scheduler.completions[aReceipt.identifier]?(.failure(error))
+        scheduler.completions[aReceipt.identifier]?(.success(()))
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.lastError?.domain, error.domain)
+        XCTAssertEqual(results.lastError?.code, 4)
+        XCTAssertEqual(scheduler.launch(aReceipt.identifier).completions, [false])
+        scheduler.completions[bReceipt.identifier]?(.success(()))
+        XCTAssertEqual(scheduler.launch(bReceipt.identifier).completions, [true])
+        XCTAssertEqual(results.count, 2)
+    }
+
+    func testCancellationBeforeSubmissionResponseRemovesLateAcceptedRequest() throws {
+        let scheduler = ContinuedSchedulerSpy()
+        scheduler.deferSubmissionResult = true
+        let tasks = MiniAppContinuedProcessingCenter(scheduler: scheduler).tasks(for: context("async-cancel"))
+        let results = ContinuedSubmissionResults()
+        let receipt = try tasks.submitReportingResult(request("com.example.app.a"), completion: { results.record($0) }) {
+            _ in XCTFail("Cancelled submission launched")
+        }
+        try tasks.cancelPendingRequest(identifier: receipt.identifier)
+        scheduler.completions[receipt.identifier]?(.success(()))
+        scheduler.completions[receipt.identifier]?(.success(()))
+        XCTAssertEqual(scheduler.cancellations, [receipt.identifier, receipt.identifier])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(scheduler.launch(receipt.identifier).completions, [false])
+    }
+
     func testRejectedRegistrationDoesNotSubmitAndInvalidInputsFailEarly() throws {
         let scheduler = ContinuedSchedulerSpy(rejectNextRegistration: true)
         let tasks = MiniAppContinuedProcessingCenter(scheduler: scheduler).tasks(for: context("continued-a"))
@@ -160,6 +201,8 @@ private final class ContinuedSchedulerSpy: MiniAppContinuedProcessingScheduling 
     var submissions: [MiniAppContinuedProcessingRequest] = []
     var cancellations: [String] = []
     var submissionError: Error?
+    var deferSubmissionResult = false
+    var completions: [String: @MainActor @Sendable (Result<Void, Error>) -> Void] = [:]
     var rejectNextRegistration: Bool
     init(rejectNextRegistration: Bool = false) { self.rejectNextRegistration = rejectNextRegistration }
     func register(identifier: String,
@@ -172,6 +215,14 @@ private final class ContinuedSchedulerSpy: MiniAppContinuedProcessingScheduling 
     func submit(_ request: MiniAppContinuedProcessingRequest) throws {
         submissions.append(request)
         if let submissionError { throw submissionError }
+    }
+    func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void) {
+        if deferSubmissionResult { submissions.append(request); completions[request.identifier] = completion }
+        else {
+            do { try submit(request); completion(.success(())) }
+            catch { completion(.failure(error)) }
+        }
     }
     func cancel(identifier: String) { cancellations.append(identifier) }
     func launch(_ identifier: String) -> ContinuedNativeSpy {
@@ -191,4 +242,14 @@ private final class ContinuedNativeSpy: MiniAppContinuedProcessingNative {
     func updateTitle(_ title: String, subtitle: String) { titles.append(.init(title: title, subtitle: subtitle)) }
     func setTaskCompleted(success: Bool) { completions.append(success) }
     func expire() { let callback = expirationHandler; expirationHandler = nil; callback?() }
+}
+
+@MainActor
+private final class ContinuedSubmissionResults {
+    var count = 0
+    var lastError: NSError?
+    func record(_ result: Result<Void, Error>) {
+        count += 1
+        if case .failure(let error) = result { lastError = error as NSError }
+    }
 }

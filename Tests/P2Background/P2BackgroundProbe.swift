@@ -90,21 +90,44 @@ final class P2BackgroundFeature: ObservableObject {
         progress = 0
         pendingJobIdentifier = request.jobIdentifier
         recordContinued("要求 \(strategy == .fail ? "即時" : "待機可") job=\(request.jobIdentifier.uuidString.prefix(8))")
+        status = "OS受付応答待ち"
+        #if compiler(>=6.4)
+        if #available(iOS 27.0, *) { recordContinued("受付API: 非同期completion") }
+        else { recordContinued("受付API: 旧同期（エラー範囲に制限）") }
+        #else
+        recordContinued("受付API: 旧SDK同期（エラー範囲に制限）")
+        #endif
         do {
-            let submitted = try continued.submit(request) { [weak self, weak runtime] execution in
+            let submitted = try continued.submitReportingResult(request, completion: { [weak self] result in
+                guard let self else { return }
+                switch result {
+                case .success:
+                    self.recordContinued("OS受付応答: 成功（OS開始とは別）")
+                    if self.pendingJobIdentifier == request.jobIdentifier {
+                        self.status = "受付済み・OS開始未確認 job=\(request.jobIdentifier.uuidString.prefix(8))"
+                    }
+                case .failure(let error):
+                    self.recordContinued("OS受付応答: \(Self.submissionError(error))")
+                    if self.pendingJobIdentifier == request.jobIdentifier {
+                        self.pendingJobIdentifier = nil
+                        self.receipt = nil
+                        self.status = Self.submissionError(error)
+                    }
+                }
+            }, launch: { [weak self, weak runtime] execution in
                 self?.receive(execution, runtime: runtime)
-            }
-            recordContinued("submit成功（OS開始とは別）")
-            if pendingJobIdentifier == request.jobIdentifier {
-                receipt = submitted
-                status = "受付済み・OS開始未確認 job=\(request.jobIdentifier.uuidString.prefix(8))"
-            }
+            })
+            if pendingJobIdentifier == request.jobIdentifier { receipt = submitted }
         } catch {
             pendingJobIdentifier = nil
-            let native = error as NSError
-            status = "受付失敗: \(error) [\(native.domain) code=\(native.code)]"
+            status = Self.submissionError(error)
             recordContinued(status)
         }
+    }
+
+    private static func submissionError(_ error: Error) -> String {
+        let native = error as NSError
+        return "受付失敗: \(error) [\(native.domain) code=\(native.code)]"
     }
 
     func cancelContinued() async {

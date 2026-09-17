@@ -93,3 +93,28 @@ Apple references:
 - [BGContinuedProcessingTaskRequest](https://developer.apple.com/documentation/backgroundtasks/bgcontinuedprocessingtaskrequest)
 - [`BGContinuedProcessingTaskRequest.init(identifier:title:subtitle:)`](https://developer.apple.com/documentation/backgroundtasks/bgcontinuedprocessingtaskrequest/init(identifier:title:subtitle:))
 - [Finish tasks in the background (WWDC25)](https://developer.apple.com/videos/play/wwdc2025/227/)
+
+
+## Submission results on iOS 27
+
+For admission diagnostics and complete error reporting, use the additive
+`tasks.submitReportingResult(request, completion: ..., launch: ...)` API. It returns
+the owner-scoped receipt immediately after registration so pending admission can
+be cancelled. Its MainActor completion reports success or error at most once;
+launch remains a separate callback. Registration/validation failures still throw.
+The existing synchronous `submit` API is retained for source compatibility.
+
+When built with Xcode 27/Swift 6.4 and running on iOS 27, the native adapter uses
+`BGTaskScheduler.submitTaskRequest(_:completionHandler:)` off the main thread.
+SDK/OS 26 builds fall back to the legacy synchronous submission and cannot promise
+the same error coverage. A late successful response after cancellation cancels
+that exact request again; it cannot reopen launch admission or cancel other owners.
+The diagnostic labels the selected API and keeps request, admission response, and
+OS launch separate. It never substitutes foreground work for an OS launch success.
+
+Apple DTS describes missing errors from the old synchronous API in
+[the accepted response](https://developer.apple.com/forums/thread/807370).
+The [new API documentation](https://developer.apple.com/documentation/backgroundtasks/bgtaskscheduler/submittaskrequest(_:completionhandler:))
+requires an off-main invocation and does not give a bounded response time. This
+explains why a synchronous success alone is insufficient; it does not establish
+the cause of the current physical-device failure.

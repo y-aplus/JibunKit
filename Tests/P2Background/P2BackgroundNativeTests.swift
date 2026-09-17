@@ -61,7 +61,7 @@ final class P2BackgroundNativeTests: XCTestCase {
         feature.submitContinued(strategy: .fail)
         XCTAssertEqual(scheduler.submissions.last?.strategy, .fail)
         XCTAssertTrue(feature.status.contains("BGTaskSchedulerErrorDomain code=4"))
-        XCTAssertFalse(feature.continuedEvents.contains { $0.contains("submit成功") })
+        XCTAssertFalse(feature.continuedEvents.contains { $0.contains("OS受付応答: 成功") })
         XCTAssertEqual(feature.progress, 0)
         scheduler.submissionError = nil
         feature.submitContinued(strategy: .fail)
@@ -99,6 +99,27 @@ final class P2BackgroundNativeTests: XCTestCase {
         XCTAssertTrue(feature.continuedEvents.contains { $0.contains("OS callback") })
         XCTAssertEqual(feature.continuedEvents.filter { $0.contains("OS callback") }.count, 1)
         await feature.lifetime.stop()
+    }
+
+    func testLateSubmissionResponseCannotOverwriteReplacementJobStatus() async throws {
+        let scheduler = P2ContinuedSchedulerSpy()
+        scheduler.deferSubmissionResult = true
+        let center = MiniAppContinuedProcessingCenter(scheduler: scheduler)
+        let feature = P2BackgroundFeature(id: MiniAppID("async-probe"), title: "Async",
+            continued: center.tasks(for: MiniAppContext(id: MiniAppID("async-probe"))))
+        try await feature.lifetime.start()
+        feature.submitContinued(strategy: .fail)
+        let oldID = try XCTUnwrap(scheduler.submissions.last?.identifier)
+        XCTAssertEqual(feature.status, "OS受付応答待ち")
+        await feature.cancelContinued()
+        feature.submitContinued(strategy: .fail)
+        let newID = try XCTUnwrap(scheduler.submissions.last?.identifier)
+        scheduler.completions[oldID]?(.failure(NSError(domain: "BGTaskSchedulerErrorDomain", code: 4)))
+        XCTAssertEqual(feature.status, "OS受付応答待ち")
+        scheduler.completions[newID]?(.success(()))
+        XCTAssertTrue(feature.status.contains("OS開始未確認"))
+        XCTAssertTrue(feature.continuedEvents.contains { $0.contains("code=4") })
+        await feature.cancelContinued(); await feature.lifetime.stop()
     }
 
     func testStopCancelsPendingAndRejectsLateOSLaunch() async throws {
@@ -571,6 +592,8 @@ private final class P2ContinuedSchedulerSpy: MiniAppContinuedProcessingSchedulin
     var registrations: [String: @MainActor (any MiniAppContinuedProcessingNative) -> Void] = [:]
     var submissions: [MiniAppContinuedProcessingRequest] = []
     var submissionError: Error?
+    var deferSubmissionResult = false
+    var completions: [String: @MainActor @Sendable (Result<Void, Error>) -> Void] = [:]
     var cancellations: [String] = []
     func register(identifier: String,
                   launch: @escaping @MainActor (any MiniAppContinuedProcessingNative) -> Void) -> Bool {
@@ -579,6 +602,14 @@ private final class P2ContinuedSchedulerSpy: MiniAppContinuedProcessingSchedulin
     func submit(_ request: MiniAppContinuedProcessingRequest) throws {
         submissions.append(request)
         if let submissionError { throw submissionError }
+    }
+    func submitReportingResult(_ request: MiniAppContinuedProcessingRequest,
+        completion: @escaping @MainActor @Sendable (Result<Void, Error>) -> Void) {
+        if deferSubmissionResult { submissions.append(request); completions[request.identifier] = completion }
+        else {
+            do { try submit(request); completion(.success(())) }
+            catch { completion(.failure(error)) }
+        }
     }
     func cancel(identifier: String) { cancellations.append(identifier) }
     func launch(_ identifier: String) -> P2ContinuedNativeSpy {

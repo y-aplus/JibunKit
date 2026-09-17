@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+  "source": "010dd0771db59f494052eec67c5b2bf3e676dbad",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -294,105 +294,6 @@
       "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
       "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
       "reuse_reason": "Prior source evidence retained, not a rerun. Core Audio/Capture, storage/schema/Feature management/backup/widgets/intents/network unchanged from306874f. Host scene registration and scanner presentation anchor changed; fullScreen/re-presentation/scene disconnect native regressions and normal notification routing UI passed in repair run35102558612. Existing physical recording/video success is scoped to306874f. Release candidate runtime/tests/package identical to a142108; only3bundle versions/build and workflow expectations plus documentation changed. Original evidence source preserved; no physical rerun claim. P2-B delta against559e95e adds background/location Core and diagnostic fixtures plus optional consent-change hook. Existing notification/inbox/Web/widget/intent/storage/presentation/generator runtime paths and identifiers are unchanged. Shared tests rerun. Consent picker keeps the existing choice UI; saved-consent-before-hook/failure denial is newly tested by P2LocationNativeTests; prior manual management success covers existing controls only, not new location effects. Launch repair retains prior successful physical behavior only for unchanged features; new failed-owner start gate and host labels are pending full shared/native and normal Search regression. It does not claim the crashed P2 candidate works on device."
-    },
-    {
-      "criterion": "P0-1.lifetime",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P0-3.failure",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P0-5.ownership",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P0-6.diagnostics",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P1-3.routing",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P1-4.ownership",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P1-5.http",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P2-3.ownership",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P2-4.ownership",
-      "kind": "unit",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P2-3.docs",
-      "kind": "inspection",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
-    },
-    {
-      "criterion": "P2-4.docs",
-      "kind": "inspection",
-      "result": "passed",
-      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
-      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
-      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
-      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
     }
   ],
   "deferred_device": {
@@ -480,7 +381,7 @@
     },
     {
       "id": "async-admission-and-location-observation",
-      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true background_location_ios_major=27 simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; whole shared397 expected/Records, native24 expected, normal SDK26.6 IPA, diagnostic SDK27 IPA. Source pinned before dispatch.",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true background_location_ios_major=27 simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; whole shared397 expected/Records, native24 expected, normal SDK26.6 IPA, diagnostic SDK27 IPA. Source pinned before dispatch. Runtime source=010dd0771db59f494052eec67c5b2bf3e676dbad. A documentation-only pin follows.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Previous normal15m43/native11m35 inclusive. SDK27 runner path/workflow already exists; new runtime cost unmeasured so retain25min estimate and inspect stage timings. All native methods, no per-method shard; added Core2/background1/location2 methods. Native30min/normal45min existing limits."
     }
@@ -684,7 +585,7 @@
       "review": "Whole P2 integration/device acceptance remains open; source-specific compile/auto evidence does not establish user device recovery."
     }
   ],
-  "followup_evidence_policy": "Fresh source8b3584a shared/native/normal evidence inspected. WIP location journal not included. Remaining real OS-start/cold/location events prevent complete/release gate.",
+  "followup_evidence_policy": "Previous8b3584a evidence archived pending new SDK26/27 results. No current async-admission/position-log runtime evidence before CI. Earlier unchanged P0/P1 evidence retains source-specific reuse.",
   "location_device_observation": {
     "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
     "foreground": "User confirmed latitude/longitude displayed after foreground updates.",
@@ -720,5 +621,106 @@
       "sha256": "e2e657f364c8fea725dcbdfabe20fa1fc4bda8d5c0e3e22f53be051239d80105",
       "bytes": 3821695
     }
-  }
+  },
+  "evidence_before_async_admission": [
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P2-3.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P2-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P2-3.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    },
+    {
+      "criterion": "P2-4.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
+      "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
+      "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
+    }
+  ]
 }

@@ -62,8 +62,8 @@ def check_requirements(info, surface="media"):
         required = {"com.jibunkit.app.p2-background-a.ordinary",
                     "com.jibunkit.app.p2-background-b.ordinary",
                     "com.jibunkit.app.p2-background.shared-refresh",
-                    "com.jibunkit.app.p2-background-a.export",
-                    "com.jibunkit.app.p2-background-b.export"}
+                    "com.jibunkit.app.p2-background-a.export.*",
+                    "com.jibunkit.app.p2-background-b.export.*"}
         if set(info.get("BGTaskSchedulerPermittedIdentifiers", [])) != required:
             raise ValueError("Background task identifiers differ from the diagnostic contract")
     if info.get("CFBundleIdentifier") != "com.jibunkit.app":

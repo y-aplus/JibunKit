@@ -62,3 +62,11 @@
 - 親: `prepare-background-location-host.py`が両Fixtureを使い捨て通常hostへ接続し、`verify-media.py --surface background-location`で既存の署名/IPA/構造化xcresult処理を再利用する。workflowの`background_location_validation`で通常jobと独立実行。新しいmanifestの正確なidentifierは背景担当のSDK照合後に固定する。
 
 親のローカル検査はhost生成/失敗前の非破壊/必須plist3件、既存media5件を通す。Swift/iOS実行やOSイベント配送の証拠ではない。通常hostのAppDelegateには既に必要なlaunch hookとURLSession callback転送があるため、二重登録を追加しない。
+
+## 修正版の統合
+
+背景`eff453c`・位置`38f574b`を受領。continuedの一意job/cleanup join、位置の破損保護・pending取消・SDK sample保持は改善された。背景の通常refresh/shared refresh/URLSessionには管理中の受付・停止join・再有効化の不足が残り、同担当へその範囲をまとめて再修正依頼した。親の依頼計5件、背景2往復目・位置1往復。CI前の修正であり、CI失敗回数へ混同しない。原因は初回契約の管理・寿命条件が全背景入口へ適用されていなかったこと。
+
+親は位置のSwift条件付きコンパイル境界、古いserviceからの操作、service解放時のnative停止、破損後callbackによるwrite、選択復元中cold配送を修正した。`MiniAppDefinition.onConsentChange`と保存後の共通hookを追加し、標準管理画面が画面未表示Featureへも同意変更を伝える。拒否後cleanupが失敗しても拒否を保存したままエラーを表示する。位置固有のhost分岐は加えない。Core4件・native1件を追加し、Swift実行は統合CIで確認する。
+
+診断plistはcontinuedの`export.*`、通常の`ordinary`とshared refreshを含む5宣言、`fetch`/`processing`/`location`へ更新した。現在地/編集可能地点と再起動後登録一覧も診断に含む。0.8.3公開済みruntimeはmainに保持し、この未検証変更は統合branchだけへpushする。

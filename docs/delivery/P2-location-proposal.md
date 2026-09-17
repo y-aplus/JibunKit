@@ -65,7 +65,9 @@
 2. hostの`application(_:didFinishLaunchingWithOptions:)`でregistry確定後・scene表示前に各定義の`onHostLaunch`を呼ぶ既存公開hookへ接続する。既に全定義hookを呼ぶ構成なら追加呼出し不要。
 3. 診断host Info.plistへ`NSLocationWhenInUseUsageDescription`、`NSLocationAlwaysAndWhenInUseUsageDescription`を追加し、Background Modesの`location`を有効にする。
 4. `Tests/P2Location/P2LocationProbe.swift`と`P2LocationNativeTests.swift`をiOS native test targetへ追加する。`Package.swift`やProject/workflowは担当境界のため未変更。
-5. 管理画面のFeature同意setterで`location` decisionを保存した直後、対象Featureのlocation service `featureConsentDidChange()`をMainActorで呼ぶ。これにより画面未表示時の取消もnative仕事へ反映する。
+5. 親統合で`MiniAppDefinition.onConsentChange`と保存後callbackを追加した。標準管理画面から共通hookを通して対象ownerの位置処理を停止するため、hostに位置Feature名による分岐を追加しない。
+
+親統合では、Swiftの条件付きコンパイルをparameter listから宣言/statement境界へ移し、置換済みserviceの再操作拒否、service解放後のruntime cleanup、読込失敗後のmonitoring callbackによる破壊的write拒否、復元中のcold配送停止を追加。Core4件と共通同意hookのnative1件を追加したが、Swift/iOS実行結果はCI受領まで未検証である。
 
 ## 検証結果と未解決条件
 

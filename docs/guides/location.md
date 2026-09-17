@@ -8,10 +8,10 @@ JibunKitの位置APIは、Featureごとの同意・owner・世代をCore Locatio
 2. `MiniAppLocationService`をFeatureの`MiniAppID`で作り、同意closureでは`MiniAppConsentStore`の同owner・`location`を確認する。
 3. `MiniAppFeatureLifetime`のconfigureから`service.connect(to:)`を呼ぶ。接続tokenはruntime世代に結び付き、停止時はその世代だけが連続更新とcallback配送を閉じる。閉じたruntimeへの接続はrollbackされ、接続前／停止後の操作は`.stopped`になる。
 4. `MiniAppDefinition.externalAccess`へ`service.externalAccess`を渡す。これにより管理状態がcold launch前に適用され、disableは当該ownerの仕事だけを停止・解除する。
-5. Regionを使うFeatureは`onHostLaunch`から`try service.reconnectPersistedMonitoring()`を同期的に呼ぶ。これは管理 admissionと永続Feature同意を両方確認し、画面表示前からowner別cold callbackを受け付ける。`onUnregister`では管理用`service.unregisterAllOwned()`を呼ぶ。
+5. Regionを使うFeatureは`onHostLaunch`から`try service.reconnectPersistedMonitoring()`を同期的に呼ぶ。これは管理 admissionと永続Feature同意を両方確認し、画面表示前からowner別cold callbackを受け付ける。永続metadataの読込失敗はFeatureの状態表示へ保存し、host全体を終了させない。`onUnregister`では管理用`service.unregisterAllOwned()`を呼ぶ。
 
 Feature同意がない場合、OS許可dialogもnative登録も開始しない。OS許可はapp共有だが、Feature同意と登録解除はowner別である。
-同意が拒否／取消へ変わったら、同意を書き込んだ同じhost処理から`service.featureConsentDidChange()`を呼ぶ。Viewの表示や`onChange`だけに依存しない。このownerの連続更新と永続Regionだけを停止・解除し、app共有OS許可や他ownerは変更しない。
+`MiniAppDefinition.onConsentChange`へ対象permissionの変更処理を接続する。標準管理画面は`definition.setConsent(_:permissionID:in:)`で保存後にこのhookを呼び、cleanup失敗を表示する。拒否は失敗時も保存されたままである。hookで`service.featureConsentDidChange()`を呼ぶか、渡された拒否を使って同ownerをrevokeする。Viewの表示や`onChange`だけに依存しない。このownerの連続更新と永続Regionだけを停止・解除し、app共有OS許可や他ownerは変更しない。
 
 ## 前景・背景の標準更新
 
@@ -35,7 +35,9 @@ Core Locationのregionはapp内全managerで共有され、1 app最大20件で�
 - `NSLocationAlwaysAndWhenInUseUsageDescription`: 終了後のregionイベントによる再起動を必要とする用途。
 - `UIBackgroundModes`の`location`: 連続背景更新、およびiBeaconでapp launchを求める診断。
 - 起動時: managementを先に生成して`externalAccess.prepare(enabled)`を適用し、registry確定後かつFeature UI表示前の`application(_:didFinishLaunchingWithOptions:)`で各定義の`onHostLaunch`を呼ぶ。
-- Feature同意変更時: consent保存直後に対象位置serviceの`featureConsentDidChange()`を呼ぶ。
+- Feature同意変更時: `onConsentChange`を通し、対象位置serviceの`featureConsentDidChange()`を呼ぶ。
+
+選択復元中はこのownerの通常・cold callback配送を閉じ、復元後も連続更新を自動再開しない。復元中に管理無効化された場合は、復元のresumeだけで再度受付可能にしない。古いserviceやruntimeの終了は新しい同owner接続を止めない。
 
 usage descriptionはFeature同意の代わりではない。管理画面でFeatureを無効化するとlifetime cleanupをjoinし、Feature削除では`onUnregister`を実行してownerのRegionだけを消す。単なる画面非表示で永続Regionを解除しない。
 

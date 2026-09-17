@@ -75,8 +75,8 @@ class BackgroundLocationHostTests(unittest.TestCase):
                     "com.jibunkit.app.p2-background-a.ordinary",
                     "com.jibunkit.app.p2-background-b.ordinary",
                     "com.jibunkit.app.p2-background.shared-refresh",
-                    "com.jibunkit.app.p2-background-a.export",
-                    "com.jibunkit.app.p2-background-b.export"]}
+                    "com.jibunkit.app.p2-background-a.export.*",
+                    "com.jibunkit.app.p2-background-b.export.*"]}
         VERIFY.check_requirements(info, "background-location")
         for key in info:
             broken = dict(info)

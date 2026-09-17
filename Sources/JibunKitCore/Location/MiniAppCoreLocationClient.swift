@@ -5,7 +5,7 @@ import Foundation
 /// Direct Core Location adapter. Each continuous update generation gets its own
 /// manager, while a distinct manager reconnects the app-wide monitored regions.
 @MainActor
-public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeClient, CLLocationManagerDelegate {
+public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeClient, @preconcurrency CLLocationManagerDelegate {
     public var eventHandler: (@MainActor @Sendable (MiniAppLocationNativeEvent) -> Void)?
     public var coreLocationHandler: (@MainActor (UUID, [CLLocation]) -> Void)?
     private let regionManager: CLLocationManager
@@ -22,7 +22,9 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
     }
 
     public var authorization: MiniAppLocationAuthorization { Self.authorization(regionManager.authorizationStatus) }
-    public var monitoredRegionIDs: Set<String> { Set(regionManager.monitoredRegions.map(\.identifier)) }
+    public var monitoredRegionIDs: Set<String> {
+        Set(regionManager.monitoredRegions.map(\.identifier)).union(requestedRegions.keys)
+    }
     public func isMonitoringAvailable(for kind: MiniAppLocationMonitoringKind) -> Bool {
         switch kind {
         case .geofence: CLLocationManager.isMonitoringAvailable(for: CLCircularRegion.self)

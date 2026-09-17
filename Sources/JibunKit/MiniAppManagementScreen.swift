@@ -55,7 +55,13 @@ struct MiniAppManagementScreen: View {
                                 Text("拒否した場合: " + permission.deniedBehavior).font(.caption)
                                 Picker("このアプリでの利用", selection: Binding(
                                     get: { MiniAppRegistry.consents.consent(for: definition.id, permissionID: permission.id) },
-                                    set: { MiniAppRegistry.consents.setConsent($0, for: definition.id, permissionID: permission.id) }
+                                    set: { consent in
+                                        do {
+                                            try definition.setConsent(consent, permissionID: permission.id,
+                                                                      in: MiniAppRegistry.consents)
+                                            errorMessage = nil
+                                        } catch { errorMessage = String(describing: error) }
+                                    }
                                 )) {
                                     Text("未確認").tag(MiniAppConsent.notDetermined)
                                     Text("許可").tag(MiniAppConsent.allowed)

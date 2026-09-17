@@ -3,9 +3,73 @@ import XCTest
 #if os(iOS)
 import CoreLocation
 #endif
+#if os(iOS)
+import CoreLocation
+#endif
 
 @MainActor
 final class MiniAppLocationCoordinatorTests: XCTestCase {
+    func testReplacedServiceCannotStartOrCancelTheNewConnection() async throws {
+        let native = LocationNative(); native.authorization = .always
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore())
+        let old = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let current = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let oldRuntime = MiniAppRuntime(), currentRuntime = MiniAppRuntime()
+        try old.connect(to: oldRuntime); try current.connect(to: currentRuntime)
+        let generation = try current.startUpdates(.init(desiredAccuracy: 17))
+        XCTAssertThrowsError(try old.startUpdates(.init(desiredAccuracy: 99)))
+        XCTAssertThrowsError(try old.unregisterAll())
+        await oldRuntime.shutdown()
+        XCTAssertEqual(native.configurations[generation]?.desiredAccuracy, 17)
+        await currentRuntime.shutdown()
+        XCTAssertNil(native.configurations[generation])
+    }
+
+    func testReleasedServiceStillStopsItsOwnedNativeUpdatesOnRuntimeShutdown() async throws {
+        let native = LocationNative(); native.authorization = .always
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore())
+        var service: MiniAppLocationService? = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let runtime = MiniAppRuntime()
+        try service?.connect(to: runtime)
+        let generation = try XCTUnwrap(service?.startUpdates(.init(desiredAccuracy: 27)))
+        service = nil
+        await runtime.shutdown()
+        XCTAssertNil(native.configurations[generation])
+    }
+
+    func testCorruptPartialMetadataCannotBeOverwrittenByMonitoringFailure() throws {
+        let a = try MiniAppLocationRegistration(owner: MiniAppID("a"), localID: "same", region: fence())
+        let duplicate = try MiniAppLocationRegistration(owner: a.owner, localID: a.localID, region: fence())
+        let store = LocationStore(); store.values = [a, duplicate]
+        let native = LocationNative()
+        let coordinator = MiniAppLocationCoordinator(native: native, store: store)
+        XCTAssertNotNil(coordinator.persistenceFailure)
+        native.send(.monitoringFailed(identifier: a.id, message: "late"))
+        XCTAssertEqual(store.writeCount, 0)
+        XCTAssertEqual(store.values, [a, duplicate])
+    }
+
+    func testRestoreSuppressesOnlyOwnerColdEventsAndDoesNotUndoManagementClose() async throws {
+        let native = LocationNative(); native.authorization = .always
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore())
+        let a = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let b = MiniAppLocationService(owner: MiniAppID("b"), coordinator: coordinator) { true }
+        let valuesA = LocationEvents(), valuesB = LocationEvents()
+        a.receive = { valuesA.values.append($0) }; b.receive = { valuesB.values.append($0) }
+        try a.externalAccess.prepare(true); try b.externalAccess.prepare(true)
+        let ar = try coordinator.register(owner: a.owner, localID: "a", region: fence(), featureConsent: true)
+        let br = try coordinator.register(owner: b.owner, localID: "b", region: fence(), featureConsent: true)
+        let restore = a.externalAccess.restoreLifecycle(nil)
+        try await restore.stop()
+        native.send(.entered(identifier: ar.id)); native.send(.entered(identifier: br.id))
+        XCTAssertTrue(valuesA.values.isEmpty); XCTAssertEqual(valuesB.values, [.entered(br)])
+        try await a.externalAccess.close()
+        try await restore.resume()
+        try a.reconnectPersistedMonitoring()
+        XCTAssertFalse(native.ids.contains(ar.id)); XCTAssertTrue(native.ids.contains(br.id))
+        XCTAssertEqual(valuesB.values, [.entered(br)])
+    }
+
     func testFeatureConsentPrecedesOSPromptAndNativeWork() throws {
         let native = LocationNative(); native.authorization = .always
         let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore())

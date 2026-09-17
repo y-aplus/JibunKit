@@ -48,8 +48,8 @@ def prepare(host):
                 "com.jibunkit.app.p2-background-a.ordinary",
                 "com.jibunkit.app.p2-background-b.ordinary",
                 "com.jibunkit.app.p2-background.shared-refresh",
-                "com.jibunkit.app.p2-background-a.export",
-                "com.jibunkit.app.p2-background-b.export",
+                "com.jibunkit.app.p2-background-a.export.*",
+                "com.jibunkit.app.p2-background-b.export.*",
             ],
         ]),
         FeatureBuildRequirement(owner: "p2-location-probe", infoPlist: [

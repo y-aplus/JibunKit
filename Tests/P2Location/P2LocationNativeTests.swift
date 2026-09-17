@@ -1,11 +1,35 @@
 #if os(iOS)
 import XCTest
 import CoreLocation
+import SwiftUI
 @_spi(Testing) import JibunKitCore
 @testable import JibunKit_App
 
 @MainActor
 final class P2LocationNativeTests: XCTestCase {
+    func testDefinitionConsentSavesBeforeCallbackAndPreservesDenialOnCleanupFailure() throws {
+        let suite = "P2Consent.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = MiniAppConsentStore(defaults: defaults)
+        let a = MiniAppID("consent-a"), b = MiniAppID("consent-b")
+        store.setConsent(.allowed, for: a, permissionID: "location")
+        store.setConsent(.allowed, for: b, permissionID: "location")
+        enum CleanupFailure: Error { case unavailable }
+        var calls = 0
+        let definition = MiniAppDefinition(id: a, title: "A", systemImage: "location",
+            permissions: [.init(id: "location", title: "Location", purpose: "Test", deniedBehavior: "Stop")],
+            onConsentChange: { permission, decision in
+                calls += 1
+                XCTAssertEqual(store.consent(for: a, permissionID: permission), decision)
+                throw CleanupFailure.unavailable
+            }) { _ in EmptyView() }
+        XCTAssertThrowsError(try definition.setConsent(.denied, permissionID: "location", in: store))
+        XCTAssertEqual(calls, 1)
+        XCTAssertEqual(store.consent(for: a, permissionID: "location"), .denied)
+        XCTAssertEqual(store.consent(for: b, permissionID: "location"), .allowed)
+    }
+
     func testProbePublishesTwoRealFeatureDefinitionsWithSeparateOwners() {
         let definitions = P2LocationProbe.definitions
         XCTAssertEqual(definitions.map(\.id), [MiniAppID("p2-location-tracker"), MiniAppID("p2-location-regions")])

@@ -44,8 +44,17 @@ final class P2LocationFeature {
             permissions: [.init(id: "location", title: "位置情報",
                                 purpose: kind == .tracker ? "選択した精度で前景・背景の位置更新を受け取ります" : "geofenceとiBeaconの出入りを監視します",
                                 deniedBehavior: "OS許可を要求せず、位置処理を開始しません")],
+            onConsentChange: { [weak self] permissionID, decision in
+                guard let self, permissionID == "location" else { return }
+                // The value is explicit; this also works with an injected host store.
+                if decision != .allowed { try self.coordinator.revoke(owner: self.id) }
+                self.refreshRegistrations()
+            },
             onUnregister: { [weak self] in try self?.service.unregisterAllOwned() },
-            onHostLaunch: { [weak self] in try self?.service.reconnectPersistedMonitoring() }
+            onHostLaunch: { [weak self] in
+                guard let self else { return }
+                self.report { try self.service.reconnectPersistedMonitoring() }
+            }
         ) { [self] _ in P2LocationView(feature: self) }
     }
 

@@ -1,21 +1,35 @@
 import Foundation
 
-public enum MiniAppBluetoothAuthorization: String, Sendable, Equatable {
-    case notDetermined, restricted, denied, allowed, unsupported
-}
+public enum MiniAppBluetoothAuthorization: String, Sendable, Equatable { case notDetermined, restricted, denied, allowed, unsupported }
+public enum MiniAppBluetoothPower: String, Sendable, Equatable { case unknown, resetting, unsupported, unauthorized, poweredOff, poweredOn }
 
-public enum MiniAppBluetoothPower: String, Sendable, Equatable {
-    case unknown, resetting, unsupported, unauthorized, poweredOff, poweredOn
+public struct MiniAppBluetoothAdvertisement: Sendable, Equatable {
+    public let localName: String?
+    public let manufacturerData: Data?
+    public let serviceData: [String: Data]
+    public let serviceUUIDs: [String]
+    public let overflowServiceUUIDs: [String]
+    public let solicitedServiceUUIDs: [String]
+    public let txPower: Int?
+    public let isConnectable: Bool?
+    public init(localName: String? = nil, manufacturerData: Data? = nil,
+                serviceData: [String: Data] = [:], serviceUUIDs: [String] = [],
+                overflowServiceUUIDs: [String] = [], solicitedServiceUUIDs: [String] = [],
+                txPower: Int? = nil, isConnectable: Bool? = nil) {
+        self.localName = localName; self.manufacturerData = manufacturerData
+        self.serviceData = serviceData; self.serviceUUIDs = serviceUUIDs
+        self.overflowServiceUUIDs = overflowServiceUUIDs; self.solicitedServiceUUIDs = solicitedServiceUUIDs
+        self.txPower = txPower; self.isConnectable = isConnectable
+    }
 }
 
 public struct MiniAppBluetoothPeripheral: Sendable, Equatable, Identifiable {
     public let id: UUID
     public let name: String?
     public let rssi: Int?
-    public let advertisement: [String: String]
-
+    public let advertisement: MiniAppBluetoothAdvertisement
     public init(id: UUID, name: String? = nil, rssi: Int? = nil,
-                advertisement: [String: String] = [:]) {
+                advertisement: MiniAppBluetoothAdvertisement = .init()) {
         self.id = id; self.name = name; self.rssi = rssi; self.advertisement = advertisement
     }
 }
@@ -23,13 +37,10 @@ public struct MiniAppBluetoothPeripheral: Sendable, Equatable, Identifiable {
 public struct MiniAppBluetoothCharacteristic: Sendable, Equatable, Hashable {
     public let service: String
     public let characteristic: String
-    public init(service: String, characteristic: String) {
-        self.service = service; self.characteristic = characteristic
-    }
+    public init(service: String, characteristic: String) { self.service = service; self.characteristic = characteristic }
 }
 
-public enum MiniAppBluetoothWriteType: Sendable { case withResponse, withoutResponse }
-
+public enum MiniAppBluetoothWriteType: Sendable, Equatable { case withResponse, withoutResponse }
 public enum MiniAppBluetoothEvent: Sendable, Equatable {
     case powerChanged(MiniAppBluetoothPower, authorization: MiniAppBluetoothAuthorization)
     case discovered(MiniAppBluetoothPeripheral)
@@ -40,23 +51,26 @@ public enum MiniAppBluetoothEvent: Sendable, Equatable {
     case value(peripheral: UUID, generation: UUID, characteristic: MiniAppBluetoothCharacteristic, data: Data, notifying: Bool)
     case notificationChanged(peripheral: UUID, generation: UUID, characteristic: MiniAppBluetoothCharacteristic, enabled: Bool)
     case writeCompleted(peripheral: UUID, generation: UUID, characteristic: MiniAppBluetoothCharacteristic)
+    case readyToWriteWithoutResponse(peripheral: UUID, generation: UUID, maximumLength: Int)
     case failed(peripheral: UUID?, generation: UUID?, message: String)
 }
 
 public enum MiniAppBluetoothFailure: Error, Sendable, Equatable {
-    case stopped
-    case wrongOwner
-    case staleGeneration
+    case stopped, wrongOwner, staleGeneration, unknownPeripheral, unknownCharacteristic
     case bluetoothUnavailable(MiniAppBluetoothPower)
     case permissionDenied(MiniAppBluetoothAuthorization)
-    case unknownPeripheral
-    case unknownCharacteristic
+    case writeTooLarge(maximum: Int)
+    case writeWouldBlock(maximum: Int)
 }
 
 public struct MiniAppBluetoothConnection: Sendable, Equatable {
     public let owner: MiniAppID
     public let peripheral: UUID
     public let generation: UUID
+}
+public struct MiniAppBluetoothOwnerLease: Sendable, Equatable {
+    public let owner: MiniAppID
+    fileprivate let token: UUID
 }
 
 @MainActor
@@ -67,192 +81,151 @@ public protocol MiniAppBluetoothNativeCentral: AnyObject {
     func scan(serviceUUIDs: [String]?, allowDuplicates: Bool)
     func stopScan()
     func connect(peripheral: UUID, generation: UUID)
-    func disconnect(peripheral: UUID, generation: UUID)
+    func disconnect(peripheral: UUID, generation: UUID) async
     func discoverServices(_ serviceUUIDs: [String]?, peripheral: UUID, generation: UUID)
-    func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String,
-                                 peripheral: UUID, generation: UUID)
+    func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String, peripheral: UUID, generation: UUID)
     func read(_ characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID)
     func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic,
-               type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID)
-    func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic,
-                   peripheral: UUID, generation: UUID)
-    func stopAll()
+               type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID) throws
+    func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID)
+    func stopAll() async
 }
 
-/// App-wide owner router. Native managers and their restoration identifiers are
-/// deliberately per owner; one Feature can never cancel another Feature's scan
-/// or connection, even when both managers refer to the same physical peripheral.
 @MainActor
 public final class MiniAppBluetoothCoordinator {
     public typealias NativeFactory = @MainActor (MiniAppID, String) -> any MiniAppBluetoothNativeCentral
-
-    private struct Consumer {
-        let token: UUID
-        let receive: @MainActor @Sendable (MiniAppBluetoothEvent) -> Void
-    }
+    private struct Consumer { let lease: MiniAppBluetoothOwnerLease; let receive: @MainActor @Sendable (MiniAppBluetoothEvent) -> Void }
     private struct OwnerState {
         let native: any MiniAppBluetoothNativeCentral
+        var lease: MiniAppBluetoothOwnerLease?
         var consumer: Consumer?
         var connections: [UUID: UUID] = [:]
+        var pendingRestoration: [MiniAppBluetoothEvent] = []
         var admitted = false
+        var restorationOpen = false
+        var onRestore: (@MainActor @Sendable () -> Void)?
     }
-
     public static let shared = MiniAppBluetoothCoordinator()
     private let factory: NativeFactory
     private var owners: [MiniAppID: OwnerState] = [:]
+    public init(factory: @escaping NativeFactory = { MiniAppCoreBluetoothCentral(owner: $0, restorationIdentifier: $1) }) { self.factory = factory }
+    public static func restorationIdentifier(for owner: MiniAppID) -> String { "dev.jibunkit.bluetooth.central.\(owner.storageNamespace)" }
 
-    public init(factory: @escaping NativeFactory = { owner, identifier in
-        MiniAppCoreBluetoothCentral(owner: owner, restorationIdentifier: identifier)
-    }) { self.factory = factory }
-
-    public static func restorationIdentifier(for owner: MiniAppID) -> String {
-        "dev.jibunkit.bluetooth.central.\(owner.storageNamespace)"
-    }
-
-    /// Called synchronously by the host launch hook. A disabled owner must not
-    /// call this method, otherwise constructing CBCentralManager can revive it.
-    public func prepareRestoration(owner: MiniAppID, admitted: Bool) {
+    public func prepareRestoration(owner: MiniAppID, admitted: Bool,
+                                   onRestore: @escaping @MainActor @Sendable () -> Void) {
         guard admitted else { return }
-        var state = state(for: owner, admitted: true)
-        state.admitted = true
-        owners[owner] = state
-    }
-
-    public func connect(owner: MiniAppID, token: UUID,
-                        receive: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) {
-        var state = state(for: owner, admitted: true)
-        if let consumer = state.consumer, consumer.token != token {
-            state.native.stopAll(); state.connections.removeAll()
+        if var state = owners[owner] {
+            state.admitted = true; state.restorationOpen = true; state.onRestore = onRestore; owners[owner] = state
+            return
         }
-        state.consumer = Consumer(token: token, receive: receive)
-        state.admitted = true
-        owners[owner] = state
+        let native = factory(owner, Self.restorationIdentifier(for: owner))
+        owners[owner] = OwnerState(native: native, admitted: true, restorationOpen: true, onRestore: onRestore)
+        native.eventHandler = { [weak self] in self?.receive($0, owner: owner) }
+    }
+    @discardableResult
+    public func connect(owner: MiniAppID,
+                        receive: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) -> MiniAppBluetoothOwnerLease {
+        var state = state(for: owner, admitted: true)
+        let lease = MiniAppBluetoothOwnerLease(owner: owner, token: UUID())
+        state.lease = lease; state.consumer = Consumer(lease: lease, receive: receive); state.admitted = true
+        let pending = state.pendingRestoration; state.pendingRestoration.removeAll(); owners[owner] = state
+        pending.forEach(receive)
+        return lease
+    }
+    public func isConnected(_ lease: MiniAppBluetoothOwnerLease) -> Bool { owners[lease.owner]?.consumer?.lease == lease }
+    public func disconnect(_ lease: MiniAppBluetoothOwnerLease) async {
+        guard var state = owners[lease.owner], state.lease == lease else { return }
+        state.consumer = nil; state.admitted = false; state.restorationOpen = false
+        state.connections.removeAll(); state.pendingRestoration.removeAll(); owners[lease.owner] = state
+        await state.native.stopAll()
+    }
+    public func unregister(_ lease: MiniAppBluetoothOwnerLease) async {
+        guard let state = owners[lease.owner], state.lease == lease else { return }
+        await disconnect(lease)
+        guard owners[lease.owner]?.lease == lease, owners[lease.owner]?.consumer == nil else { return }
+        state.native.eventHandler = nil; owners.removeValue(forKey: lease.owner)
     }
 
-    public func isConnected(owner: MiniAppID, token: UUID) -> Bool {
-        owners[owner]?.consumer?.token == token
+    public func power(_ lease: MiniAppBluetoothOwnerLease) throws -> MiniAppBluetoothPower { try active(lease).native.power }
+    public func authorization(_ lease: MiniAppBluetoothOwnerLease) throws -> MiniAppBluetoothAuthorization { try active(lease).native.authorization }
+    public func scan(_ lease: MiniAppBluetoothOwnerLease, serviceUUIDs: [String]?, allowDuplicates: Bool) throws {
+        let native = try active(lease).native; try requireAvailable(native); native.scan(serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates)
     }
-
-    public func disconnect(owner: MiniAppID, token: UUID) {
-        guard var state = owners[owner], state.consumer?.token == token else { return }
-        state.consumer = nil
-        state.connections.removeAll()
-        state.native.stopAll()
-        owners[owner] = state
-    }
-
-    public func unregister(owner: MiniAppID) {
-        guard let state = owners.removeValue(forKey: owner) else { return }
-        state.native.stopAll()
-        state.native.eventHandler = nil
-    }
-
-    /// Querying status must not construct a manager and accidentally opt a
-    /// disabled owner into native restoration.
-    public func power(owner: MiniAppID) -> MiniAppBluetoothPower { owners[owner]?.native.power ?? .unknown }
-    public func authorization(owner: MiniAppID) -> MiniAppBluetoothAuthorization {
-        owners[owner]?.native.authorization ?? .notDetermined
-    }
-
-    public func scan(owner: MiniAppID, serviceUUIDs: [String]?, allowDuplicates: Bool) throws {
-        let native = try active(owner).native
-        try requireAvailable(native)
-        native.scan(serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates)
-    }
-    public func stopScan(owner: MiniAppID) throws { try active(owner).native.stopScan() }
-
-    public func connect(owner: MiniAppID, peripheral: UUID) throws -> MiniAppBluetoothConnection {
-        var state = try active(owner)
-        try requireAvailable(state.native)
-        if let old = state.connections[peripheral] { state.native.disconnect(peripheral: peripheral, generation: old) }
-        let generation = UUID()
-        state.connections[peripheral] = generation
-        owners[owner] = state
+    public func stopScan(_ lease: MiniAppBluetoothOwnerLease) throws { try active(lease).native.stopScan() }
+    public func connect(_ lease: MiniAppBluetoothOwnerLease, peripheral: UUID) async throws -> MiniAppBluetoothConnection {
+        var state = try active(lease); try requireAvailable(state.native)
+        if let old = state.connections.removeValue(forKey: peripheral) {
+            owners[lease.owner] = state; await state.native.disconnect(peripheral: peripheral, generation: old)
+            state = try active(lease)
+        }
+        let generation = UUID(); state.connections[peripheral] = generation; owners[lease.owner] = state
         state.native.connect(peripheral: peripheral, generation: generation)
-        return .init(owner: owner, peripheral: peripheral, generation: generation)
+        return .init(owner: lease.owner, peripheral: peripheral, generation: generation)
     }
-
-    public func disconnect(_ connection: MiniAppBluetoothConnection) throws {
-        var state = try checked(connection)
-        state.connections.removeValue(forKey: connection.peripheral)
-        owners[connection.owner] = state
-        state.native.disconnect(peripheral: connection.peripheral, generation: connection.generation)
+    public func disconnect(_ connection: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) async throws {
+        var state = try checked(connection, lease: lease); state.connections.removeValue(forKey: connection.peripheral)
+        owners[lease.owner] = state; await state.native.disconnect(peripheral: connection.peripheral, generation: connection.generation)
     }
-
-    public func discoverServices(_ identifiers: [String]?, on connection: MiniAppBluetoothConnection) throws {
-        let state = try checked(connection)
-        state.native.discoverServices(identifiers, peripheral: connection.peripheral, generation: connection.generation)
+    public func discoverServices(_ ids: [String]?, on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
+        let s = try checked(c, lease: lease); s.native.discoverServices(ids, peripheral: c.peripheral, generation: c.generation)
     }
-    public func discoverCharacteristics(_ identifiers: [String]?, service: String,
-                                        on connection: MiniAppBluetoothConnection) throws {
-        let state = try checked(connection)
-        state.native.discoverCharacteristics(identifiers, service: service, peripheral: connection.peripheral,
-                                             generation: connection.generation)
+    public func discoverCharacteristics(_ ids: [String]?, service: String, on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
+        let s = try checked(c, lease: lease); s.native.discoverCharacteristics(ids, service: service, peripheral: c.peripheral, generation: c.generation)
     }
-    public func read(_ characteristic: MiniAppBluetoothCharacteristic,
-                     on connection: MiniAppBluetoothConnection) throws {
-        let state = try checked(connection)
-        state.native.read(characteristic, peripheral: connection.peripheral, generation: connection.generation)
+    public func read(_ key: MiniAppBluetoothCharacteristic, on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
+        let s = try checked(c, lease: lease); s.native.read(key, peripheral: c.peripheral, generation: c.generation)
     }
-    public func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic,
-                      type: MiniAppBluetoothWriteType, on connection: MiniAppBluetoothConnection) throws {
-        let state = try checked(connection)
-        state.native.write(data, to: characteristic, type: type, peripheral: connection.peripheral,
-                           generation: connection.generation)
+    public func write(_ data: Data, to key: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType,
+                      on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
+        let s = try checked(c, lease: lease); try s.native.write(data, to: key, type: type, peripheral: c.peripheral, generation: c.generation)
     }
-    public func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic,
-                          on connection: MiniAppBluetoothConnection) throws {
-        let state = try checked(connection)
-        state.native.setNotify(enabled, for: characteristic, peripheral: connection.peripheral,
-                               generation: connection.generation)
+    public func setNotify(_ enabled: Bool, for key: MiniAppBluetoothCharacteristic,
+                          on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
+        let s = try checked(c, lease: lease); s.native.setNotify(enabled, for: key, peripheral: c.peripheral, generation: c.generation)
     }
 
     private func state(for owner: MiniAppID, admitted: Bool) -> OwnerState {
         if let state = owners[owner] { return state }
         let native = factory(owner, Self.restorationIdentifier(for: owner))
-        let state = OwnerState(native: native, admitted: admitted)
-        owners[owner] = state
-        native.eventHandler = { [weak self] event in self?.receive(event, owner: owner) }
+        let state = OwnerState(native: native, admitted: admitted); owners[owner] = state
+        native.eventHandler = { [weak self] in self?.receive($0, owner: owner) }
         return owners[owner] ?? state
     }
-    private func active(_ owner: MiniAppID) throws -> OwnerState {
-        guard let state = owners[owner], state.admitted, state.consumer != nil else {
-            throw MiniAppBluetoothFailure.stopped
-        }
+    private func active(_ lease: MiniAppBluetoothOwnerLease) throws -> OwnerState {
+        guard let state = owners[lease.owner], state.admitted, state.consumer?.lease == lease else { throw MiniAppBluetoothFailure.stopped }
         return state
     }
-    private func checked(_ connection: MiniAppBluetoothConnection) throws -> OwnerState {
-        let state = try active(connection.owner)
-        guard state.connections[connection.peripheral] == connection.generation else {
-            throw MiniAppBluetoothFailure.staleGeneration
-        }
+    private func checked(_ c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws -> OwnerState {
+        guard c.owner == lease.owner else { throw MiniAppBluetoothFailure.wrongOwner }
+        let state = try active(lease)
+        guard state.connections[c.peripheral] == c.generation else { throw MiniAppBluetoothFailure.staleGeneration }
         return state
     }
     private func requireAvailable(_ native: any MiniAppBluetoothNativeCentral) throws {
-        guard native.authorization != .denied && native.authorization != .restricted else {
-            throw MiniAppBluetoothFailure.permissionDenied(native.authorization)
-        }
+        guard native.authorization != .denied && native.authorization != .restricted else { throw MiniAppBluetoothFailure.permissionDenied(native.authorization) }
         guard native.power == .poweredOn else { throw MiniAppBluetoothFailure.bluetoothUnavailable(native.power) }
     }
     private func receive(_ event: MiniAppBluetoothEvent, owner: MiniAppID) {
         guard var state = owners[owner], state.admitted else { return }
         switch event {
-        case .connected(let peripheral, let generation, _):
-            guard state.connections[peripheral] == generation || state.connections[peripheral] == nil else { return }
-            // A restored connection is adopted only for an admitted owner.
-            state.connections[peripheral] = generation
-            owners[owner] = state
-        case .disconnected(let peripheral, let generation, _):
+        case .connected(let peripheral, let generation, let restored):
+            if restored {
+                guard state.restorationOpen else { return }
+                state.connections[peripheral] = generation
+                if let consumer = state.consumer {
+                    owners[owner] = state; consumer.receive(event)
+                } else {
+                    state.pendingRestoration.append(event); owners[owner] = state; state.onRestore?()
+                }
+                return
+            }
             guard state.connections[peripheral] == generation else { return }
-            state.connections.removeValue(forKey: peripheral); owners[owner] = state
-        case .services(let peripheral, let generation, _),
-             .characteristics(let peripheral, let generation, _, _),
-             .value(let peripheral, let generation, _, _, _),
-             .notificationChanged(let peripheral, let generation, _, _),
-             .writeCompleted(let peripheral, let generation, _):
-            guard state.connections[peripheral] == generation else { return }
-        case .failed(let peripheral?, let generation?, _):
-            guard state.connections[peripheral] == generation else { return }
+        case .disconnected(let p, let g, _):
+            guard state.connections[p] == g else { return }; state.connections.removeValue(forKey: p); owners[owner] = state
+        case .services(let p, let g, _), .characteristics(let p, let g, _, _), .value(let p, let g, _, _, _),
+             .notificationChanged(let p, let g, _, _), .writeCompleted(let p, let g, _), .readyToWriteWithoutResponse(let p, let g, _):
+            guard state.connections[p] == g else { return }
+        case .failed(let p?, let g?, _): guard state.connections[p] == g else { return }
         default: break
         }
         state.consumer?.receive(event)
@@ -263,63 +236,35 @@ public final class MiniAppBluetoothCoordinator {
 public final class MiniAppBluetoothService {
     public let owner: MiniAppID
     private let coordinator: MiniAppBluetoothCoordinator
-    private var token: UUID?
+    private var lease: MiniAppBluetoothOwnerLease?
     private weak var runtime: MiniAppRuntime?
     public var receive: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
-
-    public init(owner: MiniAppID, coordinator: MiniAppBluetoothCoordinator = .shared) {
-        precondition(owner.isValid); self.owner = owner; self.coordinator = coordinator
+    public init(owner: MiniAppID, coordinator: MiniAppBluetoothCoordinator = .shared) { precondition(owner.isValid); self.owner = owner; self.coordinator = coordinator }
+    public func prepareRestoration(admitted: Bool, onRestore: @escaping @MainActor @Sendable () -> Void) {
+        coordinator.prepareRestoration(owner: owner, admitted: admitted, onRestore: onRestore)
     }
-    public func prepareRestoration(admitted: Bool) { coordinator.prepareRestoration(owner: owner, admitted: admitted) }
     public func connect(to runtime: MiniAppRuntime) throws {
-        let token = UUID(), coordinator = coordinator, owner = owner
+        let lease = coordinator.connect(owner: owner) { [weak self] in self?.receive?($0) }
+        let coordinator = coordinator
         try runtime.onShutdownAsync { [weak self] in
-            coordinator.disconnect(owner: owner, token: token)
-            if self?.token == token { self?.token = nil; self?.runtime = nil }
+            await coordinator.disconnect(lease)
+            if self?.lease == lease { self?.runtime = nil }
         }
-        coordinator.connect(owner: owner, token: token) { [weak self] event in self?.receive?(event) }
-        self.token = token; self.runtime = runtime
+        self.lease = lease; self.runtime = runtime
     }
-    public func unregisterAllOwned() { coordinator.unregister(owner: owner); token = nil; runtime = nil }
-    private func requireConnection() throws {
-        guard let token, runtime?.isClosed == false, coordinator.isConnected(owner: owner, token: token) else {
-            throw MiniAppBluetoothFailure.stopped
-        }
+    public func unregisterAllOwned() async { guard let lease else { return }; await coordinator.unregister(lease); if self.lease == lease { self.lease = nil; runtime = nil } }
+    private func activeLease() throws -> MiniAppBluetoothOwnerLease {
+        guard let lease, runtime?.isClosed == false, coordinator.isConnected(lease) else { throw MiniAppBluetoothFailure.stopped }; return lease
     }
-    public var power: MiniAppBluetoothPower { coordinator.power(owner: owner) }
-    public var authorization: MiniAppBluetoothAuthorization { coordinator.authorization(owner: owner) }
-    public func scan(serviceUUIDs: [String]? = nil, allowDuplicates: Bool = false) throws {
-        try requireConnection(); try coordinator.scan(owner: owner, serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates)
-    }
-    public func stopScan() throws { try requireConnection(); try coordinator.stopScan(owner: owner) }
-    public func connect(peripheral: UUID) throws -> MiniAppBluetoothConnection {
-        try requireConnection(); return try coordinator.connect(owner: owner, peripheral: peripheral)
-    }
-    public func disconnect(_ connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.disconnect(connection)
-    }
-    public func discoverServices(_ identifiers: [String]? = nil, on connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.discoverServices(identifiers, on: connection)
-    }
-    public func discoverCharacteristics(_ identifiers: [String]? = nil, service: String,
-                                        on connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.discoverCharacteristics(identifiers, service: service, on: connection)
-    }
-    public func read(_ characteristic: MiniAppBluetoothCharacteristic, on connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.read(characteristic, on: connection)
-    }
-    public func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic,
-                      type: MiniAppBluetoothWriteType, on connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.write(data, to: characteristic, type: type, on: connection)
-    }
-    public func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic,
-                          on connection: MiniAppBluetoothConnection) throws {
-        try requireConnection(); guard connection.owner == owner else { throw MiniAppBluetoothFailure.wrongOwner }
-        try coordinator.setNotify(enabled, for: characteristic, on: connection)
-    }
+    public var power: MiniAppBluetoothPower { guard let lease else { return .unknown }; return (try? coordinator.power(lease)) ?? .unknown }
+    public var authorization: MiniAppBluetoothAuthorization { guard let lease else { return .notDetermined }; return (try? coordinator.authorization(lease)) ?? .notDetermined }
+    public func scan(serviceUUIDs: [String]? = nil, allowDuplicates: Bool = false) throws { try coordinator.scan(activeLease(), serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates) }
+    public func stopScan() throws { try coordinator.stopScan(activeLease()) }
+    public func connect(peripheral: UUID) async throws -> MiniAppBluetoothConnection { try await coordinator.connect(activeLease(), peripheral: peripheral) }
+    public func disconnect(_ c: MiniAppBluetoothConnection) async throws { try await coordinator.disconnect(c, lease: activeLease()) }
+    public func discoverServices(_ ids: [String]? = nil, on c: MiniAppBluetoothConnection) throws { try coordinator.discoverServices(ids, on: c, lease: activeLease()) }
+    public func discoverCharacteristics(_ ids: [String]? = nil, service: String, on c: MiniAppBluetoothConnection) throws { try coordinator.discoverCharacteristics(ids, service: service, on: c, lease: activeLease()) }
+    public func read(_ key: MiniAppBluetoothCharacteristic, on c: MiniAppBluetoothConnection) throws { try coordinator.read(key, on: c, lease: activeLease()) }
+    public func write(_ data: Data, to key: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, on c: MiniAppBluetoothConnection) throws { try coordinator.write(data, to: key, type: type, on: c, lease: activeLease()) }
+    public func setNotify(_ enabled: Bool, for key: MiniAppBluetoothCharacteristic, on c: MiniAppBluetoothConnection) throws { try coordinator.setNotify(enabled, for: key, on: c, lease: activeLease()) }
 }

@@ -17,9 +17,14 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     private var central: CBCentralManager!
     private var peripherals: [UUID: CBPeripheral] = [:]
     private var generations: [UUID: UUID] = [:]
-    private var pendingReconnects: [UUID: UUID] = [:]
+    private var restoredGenerations: Set<UUID> = []
+    private var cancelling: Set<UUID> = []
+    private var disconnectWaiters: [UUID: [CheckedContinuation<Void, Never>]] = [:]
     private var services: [UUID: [String: CBService]] = [:]
+    private var serviceDiscoveryGenerations: [UUID: UUID] = [:]
     private var characteristics: [UUID: [MiniAppBluetoothCharacteristic: CBCharacteristic]] = [:]
+    private var serviceGenerations: [ObjectIdentifier: UUID] = [:]
+    private var characteristicGenerations: [ObjectIdentifier: UUID] = [:]
     private var pendingEvents: [MiniAppBluetoothEvent] = []
 
     public init(owner: MiniAppID, restorationIdentifier: String) {
@@ -48,20 +53,18 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
             return emit(.disconnected(peripheral: id, generation: generation,
                                       message: "Peripheral is not known to this owner"))
         }
-        if generations[id] != nil {
-            pendingReconnects[id] = generation
-            central.cancelPeripheralConnection(peripheral)
-            return
-        }
+        guard generations[id] == nil else { return fail(id, generation, "Native generation is still active") }
         generations[id] = generation; peripheral.delegate = self; central.connect(peripheral)
     }
-    public func disconnect(peripheral id: UUID, generation: UUID) {
+    public func disconnect(peripheral id: UUID, generation: UUID) async {
         guard generations[id] == generation else { return }
-        if let peripheral = peripherals[id] { central.cancelPeripheralConnection(peripheral) }
-        else { clear(id) }
+        guard let peripheral = peripherals[id], peripheral.state != .disconnected else { finish(id, generation: generation); return }
+        cancelling.insert(id); central.cancelPeripheralConnection(peripheral)
+        await withCheckedContinuation { disconnectWaiters[id, default: []].append($0) }
     }
     public func discoverServices(_ ids: [String]?, peripheral id: UUID, generation: UUID) {
         guard let peripheral = checked(id, generation) else { return }
+        serviceDiscoveryGenerations[id] = generation
         peripheral.discoverServices(ids?.map { CBUUID(string: $0) })
     }
     public func discoverCharacteristics(_ ids: [String]?, service: String, peripheral id: UUID, generation: UUID) {
@@ -77,12 +80,17 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         peripheral.readValue(for: characteristic)
     }
     public func write(_ data: Data, to key: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType,
-                      peripheral id: UUID, generation: UUID) {
+                      peripheral id: UUID, generation: UUID) throws {
         guard let peripheral = checked(id, generation), let characteristic = characteristics[id]?[key] else {
-            return fail(id, generation, "Characteristic is not known")
+            throw MiniAppBluetoothFailure.unknownCharacteristic
         }
         let nativeType: CBCharacteristicWriteType
         switch type { case .withResponse: nativeType = .withResponse; case .withoutResponse: nativeType = .withoutResponse }
+        let maximum = peripheral.maximumWriteValueLength(for: nativeType)
+        guard data.count <= maximum else { throw MiniAppBluetoothFailure.writeTooLarge(maximum: maximum) }
+        if type == .withoutResponse && !peripheral.canSendWriteWithoutResponse {
+            throw MiniAppBluetoothFailure.writeWouldBlock(maximum: maximum)
+        }
         peripheral.writeValue(data, for: characteristic, type: nativeType)
     }
     public func setNotify(_ enabled: Bool, for key: MiniAppBluetoothCharacteristic,
@@ -92,76 +100,90 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         }
         peripheral.setNotifyValue(enabled, for: characteristic)
     }
-    public func stopAll() {
+    public func stopAll() async {
         central.stopScan()
-        for peripheral in peripherals.values where peripheral.state != .disconnected {
-            central.cancelPeripheralConnection(peripheral)
-        }
-        generations.removeAll(); pendingReconnects.removeAll(); services.removeAll(); characteristics.removeAll()
+        let active = Array(generations)
+        for (id, generation) in active { await disconnect(peripheral: id, generation: generation) }
     }
 
     public func centralManagerDidUpdateState(_ central: CBCentralManager) {
         emit(.powerChanged(Self.power(central.state), authorization: authorization))
+        if central.state != .poweredOn {
+            for (id, generation) in Array(generations) {
+                emit(.disconnected(peripheral: id, generation: generation,
+                                   message: "Bluetooth became \(Self.power(central.state).rawValue)"))
+                finish(id, generation: generation)
+            }
+        }
     }
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                                advertisementData: [String: Any], rssi RSSI: NSNumber) {
         peripherals[peripheral.identifier] = peripheral; peripheral.delegate = self
-        let safe = advertisementData.reduce(into: [String: String]()) { result, entry in
-            result[entry.key] = String(describing: entry.value)
-        }
+        let serviceData = (advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data] ?? [:])
+            .reduce(into: [String: Data]()) { $0[$1.key.uuidString] = $1.value }
+        let snapshot = MiniAppBluetoothAdvertisement(
+            localName: advertisementData[CBAdvertisementDataLocalNameKey] as? String,
+            manufacturerData: advertisementData[CBAdvertisementDataManufacturerDataKey] as? Data,
+            serviceData: serviceData,
+            serviceUUIDs: (advertisementData[CBAdvertisementDataServiceUUIDsKey] as? [CBUUID] ?? []).map(\.uuidString),
+            overflowServiceUUIDs: (advertisementData[CBAdvertisementDataOverflowServiceUUIDsKey] as? [CBUUID] ?? []).map(\.uuidString),
+            solicitedServiceUUIDs: (advertisementData[CBAdvertisementDataSolicitedServiceUUIDsKey] as? [CBUUID] ?? []).map(\.uuidString),
+            txPower: (advertisementData[CBAdvertisementDataTxPowerLevelKey] as? NSNumber)?.intValue,
+            isConnectable: (advertisementData[CBAdvertisementDataIsConnectable] as? NSNumber)?.boolValue)
         emit(.discovered(.init(id: peripheral.identifier, name: peripheral.name,
-                               rssi: RSSI.intValue, advertisement: safe)))
+                               rssi: RSSI.intValue, advertisement: snapshot)))
     }
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
         guard let generation = generations[peripheral.identifier] else { return }
-        emit(.connected(peripheral: peripheral.identifier, generation: generation, restored: false))
+        if cancelling.contains(peripheral.identifier) { central.cancelPeripheralConnection(peripheral); return }
+        let restored = restoredGenerations.remove(generation) != nil
+        emit(.connected(peripheral: peripheral.identifier, generation: generation, restored: restored))
     }
     public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral,
                                error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
-        let pending = pendingReconnects.removeValue(forKey: peripheral.identifier)
-        clear(peripheral.identifier)
         emit(.disconnected(peripheral: peripheral.identifier, generation: generation,
                            message: error?.localizedDescription ?? "Connect failed"))
-        if let pending {
-            generations[peripheral.identifier] = pending
-            central.connect(peripheral)
-        }
+        finish(peripheral.identifier, generation: generation)
     }
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral,
                                error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
-        let pending = pendingReconnects.removeValue(forKey: peripheral.identifier)
-        clear(peripheral.identifier)
         emit(.disconnected(peripheral: peripheral.identifier, generation: generation,
                            message: error?.localizedDescription))
-        if let pending {
-            generations[peripheral.identifier] = pending
-            central.connect(peripheral)
-        }
+        finish(peripheral.identifier, generation: generation)
     }
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
         let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? []
         for peripheral in restored {
-            let generation = UUID(); peripherals[peripheral.identifier] = peripheral
-            generations[peripheral.identifier] = generation; peripheral.delegate = self
-            emit(.connected(peripheral: peripheral.identifier, generation: generation, restored: true))
+            peripherals[peripheral.identifier] = peripheral; peripheral.delegate = self
+            guard peripheral.state == .connected || peripheral.state == .connecting else { continue }
+            let generation = UUID(); generations[peripheral.identifier] = generation
+            if peripheral.state == .connected {
+                emit(.connected(peripheral: peripheral.identifier, generation: generation, restored: true))
+            } else { restoredGenerations.insert(generation) }
         }
     }
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
+        guard serviceDiscoveryGenerations.removeValue(forKey: peripheral.identifier) == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
         let found = peripheral.services ?? []; services[peripheral.identifier] = Dictionary(uniqueKeysWithValues: found.map { ($0.uuid.uuidString, $0) })
+        for service in found { serviceGenerations[ObjectIdentifier(service)] = generation }
         emit(.services(peripheral: peripheral.identifier, generation: generation,
                        identifiers: found.map { $0.uuid.uuidString }))
     }
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverCharacteristicsFor service: CBService,
                            error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
+        guard serviceGenerations[ObjectIdentifier(service)] == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
         let found = service.characteristics ?? []
         var map = characteristics[peripheral.identifier] ?? [:]
-        for value in found { map[.init(service: service.uuid.uuidString, characteristic: value.uuid.uuidString)] = value }
+        for value in found {
+            map[.init(service: service.uuid.uuidString, characteristic: value.uuid.uuidString)] = value
+            characteristicGenerations[ObjectIdentifier(value)] = generation
+        }
         characteristics[peripheral.identifier] = map
         emit(.characteristics(peripheral: peripheral.identifier, generation: generation,
             service: service.uuid.uuidString, identifiers: found.map { $0.uuid.uuidString }))
@@ -169,6 +191,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic,
                            error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
+        guard characteristicGenerations[ObjectIdentifier(characteristic)] == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
         let key = MiniAppBluetoothCharacteristic(service: characteristic.service?.uuid.uuidString ?? "",
                                                   characteristic: characteristic.uuid.uuidString)
@@ -178,6 +201,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     public func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic,
                            error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
+        guard characteristicGenerations[ObjectIdentifier(characteristic)] == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
         let key = MiniAppBluetoothCharacteristic(service: characteristic.service?.uuid.uuidString ?? "",
                                                   characteristic: characteristic.uuid.uuidString)
@@ -187,11 +211,17 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
                            didUpdateNotificationStateFor characteristic: CBCharacteristic,
                            error: (any Error)?) {
         guard let generation = generations[peripheral.identifier] else { return }
+        guard characteristicGenerations[ObjectIdentifier(characteristic)] == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
         let key = MiniAppBluetoothCharacteristic(service: characteristic.service?.uuid.uuidString ?? "",
                                                   characteristic: characteristic.uuid.uuidString)
         emit(.notificationChanged(peripheral: peripheral.identifier, generation: generation,
                                   characteristic: key, enabled: characteristic.isNotifying))
+    }
+    public func peripheralIsReady(toSendWriteWithoutResponse peripheral: CBPeripheral) {
+        guard let generation = generations[peripheral.identifier], !cancelling.contains(peripheral.identifier) else { return }
+        emit(.readyToWriteWithoutResponse(peripheral: peripheral.identifier, generation: generation,
+            maximumLength: peripheral.maximumWriteValueLength(for: .withoutResponse)))
     }
     private func peripheral(_ id: UUID) -> CBPeripheral? {
         if let value = peripherals[id] { return value }
@@ -203,7 +233,18 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         guard generations[id] == generation else { fail(id, generation, "Stale connection generation"); return nil }
         return peripheral(id)
     }
-    private func clear(_ id: UUID) { generations[id] = nil; services[id] = nil; characteristics[id] = nil }
+    private func finish(_ id: UUID, generation: UUID) {
+        guard generations[id] == generation else { return }
+        generations[id] = nil; restoredGenerations.remove(generation); cancelling.remove(id)
+        serviceDiscoveryGenerations[id] = nil
+        if let owned = services.removeValue(forKey: id)?.values {
+            for service in owned { serviceGenerations[ObjectIdentifier(service)] = nil }
+        }
+        if let owned = characteristics.removeValue(forKey: id)?.values {
+            for characteristic in owned { characteristicGenerations[ObjectIdentifier(characteristic)] = nil }
+        }
+        let waiters = disconnectWaiters.removeValue(forKey: id) ?? []; waiters.forEach { $0.resume() }
+    }
     private func fail(_ id: UUID?, _ generation: UUID?, _ message: String) {
         emit(.failed(peripheral: id, generation: generation, message: message))
     }
@@ -234,12 +275,12 @@ public final class MiniAppCoreBluetoothCentral: MiniAppBluetoothNativeCentral {
     public func scan(serviceUUIDs: [String]?, allowDuplicates: Bool) {}
     public func stopScan() {}
     public func connect(peripheral: UUID, generation: UUID) {}
-    public func disconnect(peripheral: UUID, generation: UUID) {}
+    public func disconnect(peripheral: UUID, generation: UUID) async {}
     public func discoverServices(_ serviceUUIDs: [String]?, peripheral: UUID, generation: UUID) {}
     public func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String, peripheral: UUID, generation: UUID) {}
     public func read(_ characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
-    public func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID) {}
+    public func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID) throws {}
     public func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
-    public func stopAll() {}
+    public func stopAll() async {}
 }
 #endif

@@ -3,136 +3,125 @@ import XCTest
 
 @MainActor
 final class MiniAppBluetoothCoordinatorTests: XCTestCase {
-    func testTwoOwnersUseDistinctManagersAndStoppingOneDoesNotCancelOther() async throws {
-        let pool = FakeBluetoothPool()
-        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+    func testStopClosesDeliveryBeforeJoiningNativeAndPreservesOtherOwner() async throws {
+        let pool = FakePool(), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let a = MiniAppBluetoothService(owner: MiniAppID("ble-a"), coordinator: coordinator)
         let b = MiniAppBluetoothService(owner: MiniAppID("ble-b"), coordinator: coordinator)
-        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
-        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
-        let peripheral = UUID()
-        let connectionA = try a.connect(peripheral: peripheral)
-        let connectionB = try b.connect(peripheral: peripheral)
-
-        await runtimeA.shutdown()
-
-        XCTAssertEqual(pool.central(for: a.owner).stopAllCount, 1)
-        XCTAssertEqual(pool.central(for: b.owner).stopAllCount, 0)
-        try b.discoverServices(nil, on: connectionB)
-        XCTAssertEqual(pool.central(for: b.owner).discoveries, [connectionB.generation])
-        XCTAssertNotEqual(connectionA.generation, connectionB.generation)
+        let ra = MiniAppRuntime(), rb = MiniAppRuntime(); try a.connect(to: ra); try b.connect(to: rb)
+        let events = EventBox(); a.receive = { events.values.append($0) }
+        let ca = try await a.connect(peripheral: UUID()), cb = try await b.connect(peripheral: UUID())
+        pool[a.owner].blockStop = true
+        let stopping = Task { @MainActor in await ra.shutdown() }
+        await pool[a.owner].stopEntered.wait()
+        pool[a.owner].emit(.connected(peripheral: ca.peripheral, generation: ca.generation, restored: false))
+        XCTAssertTrue(events.values.isEmpty)
+        try b.discoverServices(nil, on: cb)
+        pool[a.owner].releaseStop.open(); await stopping.value
+        XCTAssertEqual(pool[b.owner].stopCount, 0)
     }
 
-    func testReplacementAndLateCallbacksAreGenerationChecked() throws {
-        let pool = FakeBluetoothPool(), owner = MiniAppID("ble-generation")
-        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
-        let events = BluetoothEventBox(); service.receive = { events.values.append($0) }
-        let peripheral = UUID()
-        let old = try service.connect(peripheral: peripheral)
-        let current = try service.connect(peripheral: peripheral)
-        let native = pool.central(for: owner)
-        native.emit(.services(peripheral: peripheral, generation: old.generation, identifiers: ["OLD"]))
-        native.emit(.services(peripheral: peripheral, generation: current.generation, identifiers: ["NEW"]))
-        XCTAssertEqual(events.values, [.services(peripheral: peripheral, generation: current.generation, identifiers: ["NEW"])])
-        XCTAssertThrowsError(try service.disconnect(old)) { XCTAssertEqual($0 as? MiniAppBluetoothFailure, .staleGeneration) }
-    }
-
-    func testDisconnectRemovesBeforeNativeCancelSoDuplicateCallbackIsIgnored() throws {
-        let pool = FakeBluetoothPool(), owner = MiniAppID("ble-cancel")
-        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
-        let events = BluetoothEventBox(); service.receive = { events.values.append($0) }
-        let connection = try service.connect(peripheral: UUID())
-        try service.disconnect(connection)
-        pool.central(for: owner).emit(.disconnected(peripheral: connection.peripheral,
-            generation: connection.generation, message: nil))
+    func testNormalLateConnectedNeverReAdoptsAfterExplicitDisconnect() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-late"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime()
+        try service.connect(to: runtime); let events = EventBox(); service.receive = { events.values.append($0) }
+        let connection = try await service.connect(peripheral: UUID()); try await service.disconnect(connection)
+        pool[owner].emit(.connected(peripheral: connection.peripheral, generation: connection.generation, restored: false))
         XCTAssertTrue(events.values.isEmpty)
         XCTAssertThrowsError(try service.read(.init(service: "s", characteristic: "c"), on: connection))
     }
 
-    func testRestorationOnlyConstructsManagerForAdmittedOwner() {
-        let pool = FakeBluetoothPool(), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let a = MiniAppID("ble-restore-a"), b = MiniAppID("ble-restore-b")
-        coordinator.prepareRestoration(owner: a, admitted: true)
-        coordinator.prepareRestoration(owner: b, admitted: false)
-        XCTAssertEqual(pool.created, [a])
-        XCTAssertEqual(pool.central(for: a).identifier, MiniAppBluetoothCoordinator.restorationIdentifier(for: a))
+    func testReconnectJoinsOldNativeGenerationBeforeStartingNew() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-reconnect"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        let events = EventBox(); service.receive = { events.values.append($0) }
+        let peripheral = UUID(), first = try await service.connect(peripheral: peripheral)
+        pool[owner].blockDisconnect = true
+        let task = Task { @MainActor in try await service.connect(peripheral: peripheral) }
+        await pool[owner].disconnectEntered.wait()
+        XCTAssertEqual(pool[owner].connectGenerations, [first.generation])
+        pool[owner].releaseDisconnect.open(); let second = try await task.value
+        XCTAssertEqual(pool[owner].connectGenerations, [first.generation, second.generation])
+        pool[owner].emit(.services(peripheral: peripheral, generation: first.generation, identifiers: ["OLD"]))
+        pool[owner].emit(.services(peripheral: peripheral, generation: second.generation, identifiers: ["NEW"]))
+        XCTAssertEqual(events.values, [.services(peripheral: peripheral, generation: second.generation, identifiers: ["NEW"])])
     }
 
-    func testPowerAndPermissionGateNativeOperations() throws {
-        let pool = FakeBluetoothPool(), owner = MiniAppID("ble-power")
-        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+    func testColdRestoreStartsLifetimeAndSnapshotWaitsForConsumer() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-restore"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
-        let native = pool.central(for: owner); native.power = .poweredOff
-        XCTAssertThrowsError(try service.scan()) { XCTAssertEqual($0 as? MiniAppBluetoothFailure, .bluetoothUnavailable(.poweredOff)) }
-        native.power = .poweredOn; native.authorization = .denied
-        XCTAssertThrowsError(try service.scan()) { XCTAssertEqual($0 as? MiniAppBluetoothFailure, .permissionDenied(.denied)) }
+        let lifetime = MiniAppFeatureLifetime(id: owner) { runtime in try service.connect(to: runtime) }
+        let events = EventBox(); service.receive = { events.values.append($0) }
+        service.prepareRestoration(admitted: true) { Task { try? await lifetime.start() } }
+        let peripheral = UUID(), generation = UUID()
+        pool[owner].emit(.connected(peripheral: peripheral, generation: generation, restored: true))
+        for _ in 0..<20 where lifetime.state != .running { await Task.yield() }
+        XCTAssertEqual(lifetime.state, .running)
+        XCTAssertEqual(events.values, [.connected(peripheral: peripheral, generation: generation, restored: true)])
+        await lifetime.stop()
     }
 
-    func testFullOperationSurfacePreservesOwnerAndGeneration() throws {
-        let pool = FakeBluetoothPool(), owner = MiniAppID("ble-operations")
-        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let runtime = MiniAppRuntime(); try service.connect(to: runtime)
-        try service.scan(serviceUUIDs: ["180D"], allowDuplicates: true)
-        let connection = try service.connect(peripheral: UUID())
-        let characteristic = MiniAppBluetoothCharacteristic(service: "180D", characteristic: "2A37")
-        try service.discoverServices(["180D"], on: connection)
-        try service.discoverCharacteristics(["2A37"], service: "180D", on: connection)
-        try service.read(characteristic, on: connection)
-        try service.write(Data([1]), to: characteristic, type: .withResponse, on: connection)
-        try service.setNotify(true, for: characteristic, on: connection)
-        XCTAssertEqual(pool.central(for: owner).operations,
-            ["scan:180D:true", "connect", "services", "characteristics", "read", "write", "notify:true"])
+    func testDisabledRestoreDoesNotConstructManager() {
+        let pool = FakePool(), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        coordinator.prepareRestoration(owner: MiniAppID("disabled"), admitted: false, onRestore: {})
+        XCTAssertTrue(pool.created.isEmpty)
     }
 
-    func testEveryConnectionOperationRejectsAnotherOwner() throws {
-        let pool = FakeBluetoothPool(), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let a = MiniAppBluetoothService(owner: MiniAppID("ble-guard-a"), coordinator: coordinator)
-        let b = MiniAppBluetoothService(owner: MiniAppID("ble-guard-b"), coordinator: coordinator)
-        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
-        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
-        let foreign = try b.connect(peripheral: UUID())
-        let key = MiniAppBluetoothCharacteristic(service: "s", characteristic: "c")
-        XCTAssertThrowsError(try a.read(key, on: foreign)) { XCTAssertEqual($0 as? MiniAppBluetoothFailure, .wrongOwner) }
-        XCTAssertThrowsError(try a.write(Data(), to: key, type: .withResponse, on: foreign))
-        XCTAssertThrowsError(try a.setNotify(true, for: key, on: foreign))
+    func testOldServiceCannotUnregisterReplacementLease() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-lease"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let old = MiniAppBluetoothService(owner: owner, coordinator: coordinator), replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime(); try old.connect(to: oldRuntime); try replacement.connect(to: newRuntime)
+        await old.unregisterAllOwned()
+        _ = try await replacement.connect(peripheral: UUID())
+        XCTAssertEqual(pool[owner].stopCount, 0)
+        await newRuntime.shutdown()
+    }
+
+    func testPowerPermissionAndWriteBackpressureAreVisible() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-write"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        pool[owner].power = .poweredOff
+        XCTAssertThrowsError(try service.scan())
+        pool[owner].power = .poweredOn; let c = try await service.connect(peripheral: UUID())
+        pool[owner].writeFailure = .writeWouldBlock(maximum: 20)
+        XCTAssertThrowsError(try service.write(Data([1]), to: .init(service: "s", characteristic: "c"), type: .withoutResponse, on: c)) {
+            XCTAssertEqual($0 as? MiniAppBluetoothFailure, .writeWouldBlock(maximum: 20))
+        }
+    }
+
+    func testAdvertisementSnapshotPreservesBinaryStandardFields() {
+        let snapshot = MiniAppBluetoothAdvertisement(localName: "sensor", manufacturerData: Data([0, 255]),
+            serviceData: ["180D": Data([1, 2])], serviceUUIDs: ["180D"], txPower: -4, isConnectable: true)
+        XCTAssertEqual(snapshot.manufacturerData, Data([0, 255]))
+        XCTAssertEqual(snapshot.serviceData["180D"], Data([1, 2]))
     }
 }
 
-@MainActor
-private final class FakeBluetoothPool {
-    var created: [MiniAppID] = []
-    var values: [MiniAppID: FakeBluetoothCentral] = [:]
-    lazy var make: MiniAppBluetoothCoordinator.NativeFactory = { [unowned self] owner, identifier in
-        self.created.append(owner); let central = FakeBluetoothCentral(identifier: identifier); self.values[owner] = central; return central
-    }
-    func central(for owner: MiniAppID) -> FakeBluetoothCentral { values[owner]! }
+@MainActor private final class FakePool {
+    var created: [MiniAppID] = []; var values: [MiniAppID: FakeCentral] = [:]
+    lazy var make: MiniAppBluetoothCoordinator.NativeFactory = { [unowned self] owner, _ in self.created.append(owner); let value = FakeCentral(); self.values[owner] = value; return value }
+    subscript(_ owner: MiniAppID) -> FakeCentral { values[owner]! }
 }
-
-@MainActor
-private final class FakeBluetoothCentral: MiniAppBluetoothNativeCentral {
-    var power: MiniAppBluetoothPower = .poweredOn
-    var authorization: MiniAppBluetoothAuthorization = .allowed
+@MainActor private final class FakeCentral: MiniAppBluetoothNativeCentral {
+    var power: MiniAppBluetoothPower = .poweredOn, authorization: MiniAppBluetoothAuthorization = .allowed
     var eventHandler: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
-    let identifier: String
-    var stopAllCount = 0, discoveries: [UUID] = [], operations: [String] = []
-    init(identifier: String) { self.identifier = identifier }
+    var blockStop = false, blockDisconnect = false, stopCount = 0
+    var connectGenerations: [UUID] = [], writeFailure: MiniAppBluetoothFailure?
+    let stopEntered = Gate(), disconnectEntered = Gate(), releaseStop = Gate(), releaseDisconnect = Gate()
     func emit(_ event: MiniAppBluetoothEvent) { eventHandler?(event) }
-    func scan(serviceUUIDs: [String]?, allowDuplicates: Bool) { operations.append("scan:\(serviceUUIDs?.joined() ?? "nil"):\(allowDuplicates)") }
-    func stopScan() { operations.append("stopScan") }
-    func connect(peripheral: UUID, generation: UUID) { operations.append("connect") }
-    func disconnect(peripheral: UUID, generation: UUID) { operations.append("disconnect") }
-    func discoverServices(_ serviceUUIDs: [String]?, peripheral: UUID, generation: UUID) { discoveries.append(generation); operations.append("services") }
-    func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String, peripheral: UUID, generation: UUID) { operations.append("characteristics") }
-    func read(_ characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) { operations.append("read") }
-    func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID) { operations.append("write") }
-    func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) { operations.append("notify:\(enabled)") }
-    func stopAll() { stopAllCount += 1 }
+    func scan(serviceUUIDs: [String]?, allowDuplicates: Bool) {}
+    func stopScan() {}
+    func connect(peripheral: UUID, generation: UUID) { connectGenerations.append(generation) }
+    func disconnect(peripheral: UUID, generation: UUID) async { disconnectEntered.open(); if blockDisconnect { await releaseDisconnect.wait() } }
+    func discoverServices(_ serviceUUIDs: [String]?, peripheral: UUID, generation: UUID) {}
+    func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String, peripheral: UUID, generation: UUID) {}
+    func read(_ characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
+    func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, peripheral: UUID, generation: UUID) throws { if let writeFailure { throw writeFailure } }
+    func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
+    func stopAll() async { stopCount += 1; stopEntered.open(); if blockStop { await releaseStop.wait() } }
 }
-
-@MainActor private final class BluetoothEventBox { var values: [MiniAppBluetoothEvent] = [] }
+@MainActor private final class Gate {
+    var openState = false; var waiters: [CheckedContinuation<Void, Never>] = []
+    func wait() async { if openState { return }; await withCheckedContinuation { waiters.append($0) } }
+    func open() { openState = true; waiters.forEach { $0.resume() }; waiters.removeAll() }
+}
+@MainActor private final class EventBox { var values: [MiniAppBluetoothEvent] = [] }

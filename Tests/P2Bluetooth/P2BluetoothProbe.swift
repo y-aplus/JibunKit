@@ -13,13 +13,22 @@ enum P2BluetoothProbe {
 final class P2BluetoothFeature: ObservableObject {
     let id: MiniAppID, title: String
     let service: MiniAppBluetoothService
-    lazy var lifetime = MiniAppFeatureLifetime(id: id) { [service] runtime in try service.connect(to: runtime) }
+    let consents: MiniAppConsentStore
+    lazy var lifetime = MiniAppFeatureLifetime(id: id) { [service, consents, id] runtime in
+        guard consents.consent(for: id, permissionID: "bluetooth") == .allowed else {
+            throw MiniAppBluetoothFailure.permissionDenied(.notDetermined)
+        }
+        try service.connect(to: runtime)
+    }
     @Published var status = "停止中"
     @Published var peripherals: [MiniAppBluetoothPeripheral] = []
-    private var connection: MiniAppBluetoothConnection?
+    @Published private(set) var connection: MiniAppBluetoothConnection?
+    private let diagnostic = MiniAppBluetoothCharacteristic(service: "180D", characteristic: "2A37")
 
-    init(id: MiniAppID, title: String, coordinator: MiniAppBluetoothCoordinator = .shared) {
-        self.id = id; self.title = title; service = MiniAppBluetoothService(owner: id, coordinator: coordinator)
+    init(id: MiniAppID, title: String, coordinator: MiniAppBluetoothCoordinator = .shared,
+         consents: MiniAppConsentStore = MiniAppConsentStore(defaults: .standard)) {
+        self.id = id; self.title = title; self.consents = consents
+        service = MiniAppBluetoothService(owner: id, coordinator: coordinator)
         service.receive = { [weak self] event in self?.receive(event) }
     }
     var definition: MiniAppDefinition {
@@ -27,17 +36,32 @@ final class P2BluetoothFeature: ObservableObject {
             lifetime: lifetime,
             permissions: [.init(id: "bluetooth", title: "Bluetooth", purpose: "近くのBLE機器に接続します", deniedBehavior: "スキャンと接続を開始しません")],
             onConsentChange: { [weak self] permission, decision in
-                guard permission == "bluetooth", decision != .allowed else { return }
-                self?.service.unregisterAllOwned()
+                guard let self, permission == "bluetooth" else { return }
+                self.lifetime.setStartAllowed(decision == .allowed)
+                if decision != .allowed {
+                    Task { await self.lifetime.stop(); await self.service.unregisterAllOwned() }
+                }
             },
-            onUnregister: { [weak self] in self?.service.unregisterAllOwned() },
-            onHostLaunch: { [weak self] in self?.service.prepareRestoration(admitted: self?.lifetime.isStartAllowed == true) }
+            onUnregister: { [weak self] in await self?.service.unregisterAllOwned() },
+            onHostLaunch: { [weak self] in
+                guard let self else { return }
+                let admitted = self.lifetime.isStartAllowed && self.consents.consent(for: self.id, permissionID: "bluetooth") == .allowed
+                self.service.prepareRestoration(admitted: admitted) { [weak self] in
+                    guard let self else { return }
+                    Task { try? await self.lifetime.start() }
+                }
+            }
         ) { [self] _ in P2BluetoothView(feature: self) }
     }
     func scan() { report { try service.scan(); status = "スキャン中" } }
     func stopScan() { report { try service.stopScan(); status = "スキャン停止" } }
-    func connect(_ peripheral: MiniAppBluetoothPeripheral) { report { connection = try service.connect(peripheral: peripheral.id) } }
-    func disconnect() { report { if let connection { try service.disconnect(connection); self.connection = nil } } }
+    func connect(_ peripheral: MiniAppBluetoothPeripheral) { reportAsync { self.connection = try await self.service.connect(peripheral: peripheral.id) } }
+    func disconnect() { reportAsync { if let connection = self.connection { try await self.service.disconnect(connection); self.connection = nil } } }
+    func discover() { report { guard let connection else { return }; try service.discoverServices([diagnostic.service], on: connection) } }
+    func discoverCharacteristic() { report { guard let connection else { return }; try service.discoverCharacteristics([diagnostic.characteristic], service: diagnostic.service, on: connection) } }
+    func read() { report { guard let connection else { return }; try service.read(diagnostic, on: connection) } }
+    func write() { report { guard let connection else { return }; try service.write(Data([1]), to: diagnostic, type: .withResponse, on: connection) } }
+    func subscribe(_ enabled: Bool) { report { guard let connection else { return }; try service.setNotify(enabled, for: diagnostic, on: connection) } }
     private func receive(_ event: MiniAppBluetoothEvent) {
         switch event {
         case .discovered(let peripheral):
@@ -51,6 +75,9 @@ final class P2BluetoothFeature: ObservableObject {
         }
     }
     private func report(_ body: () throws -> Void) { do { try body() } catch { status = "拒否/失敗: \(error)" } }
+    private func reportAsync(_ body: @escaping @MainActor () async throws -> Void) {
+        Task { do { try await body() } catch { status = "拒否/失敗: \(error)" } }
+    }
 }
 
 private struct P2BluetoothView: View {
@@ -63,6 +90,12 @@ private struct P2BluetoothView: View {
                 Button(peripheral.name ?? peripheral.id.uuidString) { feature.connect(peripheral) }
             }
             Button("切断") { feature.disconnect() }
+            Button("Service discovery (180D)") { feature.discover() }
+            Button("Characteristic discovery (2A37)") { feature.discoverCharacteristic() }
+            HStack {
+                Button("Read") { feature.read() }; Button("Write") { feature.write() }
+                Button("Subscribe") { feature.subscribe(true) }; Button("Unsubscribe") { feature.subscribe(false) }
+            }
         }
     }
 }

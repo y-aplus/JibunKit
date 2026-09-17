@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "daa49cd28fa611dc3067281c3abbb0a82bdd91f1",
+  "source": "bac33f0e406b5e972fe34dcd3658dd21ab1f6b9a",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -515,7 +515,7 @@
     },
     {
       "id": "persistent-background-delivery-observations",
-      "inputs_and_filters": "native-surface.yml surface=background-location ios_major=27; all28 native methods, diagnostic Release. Only Tests/P2Background and docs changed; production normal/shared82f61bb reused. Source pinned before dispatch.",
+      "inputs_and_filters": "native-surface.yml surface=background-location ios_major=27; all28 native methods, diagnostic Release. Only Tests/P2Background and docs changed; production normal/shared82f61bb reused. Source pinned before dispatch. Fixture source=bac33f0e406b5e972fe34dcd3658dd21ab1f6b9a; documentation-only pin follows.",
       "expected_elapsed_minutes": 20,
       "estimate_basis": "Previous full native26 job11m18; add2 persistence/corruption tests and existing callback/HTTP assertions. One combined native boundary,30min job limit; OS monitor sends once."
     }

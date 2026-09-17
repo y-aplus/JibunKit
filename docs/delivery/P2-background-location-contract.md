@@ -80,3 +80,5 @@
 [投入前report](../verification/2026-09-17-p2-background-location-evidence.json)に入力・再利用証拠・予算を記録した。通常IPA/全共有試験/検索UIと、背景・位置の全17native試験/診断IPAを2jobで並列実行する。初回計画1run、予算3run、準備・upload込み25分見積り。新しいsurfaceの所要時間は未測定であり、超過・失敗時はstage別時間で切り分ける。個別XCTestにも60秒既定/120秒最大の上限を設定する。
 
 ローカルのhost3件・media5件・workflow command1件と差分検査は成功。Swift/XcodeはWindowsで未実行。実機のOS継続処理、非決定的なrefresh起動、転送cold再接続、位置の実移動・beaconは未確認として残し、今回の自動試験成功だけでP2-3/P2-4を完了にしない。
+
+初回[35175311988](https://github.com/y-aplus/JibunKit/actions/runs/35175311988)はsource `6f3944f`で失敗。通常jobは1分19秒、native jobは9分53秒で、両方とも`MiniAppLocationService.startUpdates/register`の戻り値未返却が原因だった。親が接続確認を追加して複数文にした際の`return`漏れ2件を`a82434a`で修正した。同じ新規API群の戻り値宣言も再確認した。native内訳はTuist生成233秒・コンパイル120秒で、試験本体とRelease生成には未到達。再試行は同じ2job/全試験の境界を維持し、予算3runのうち2回目として投入する。

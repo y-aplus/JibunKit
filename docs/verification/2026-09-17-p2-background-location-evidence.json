@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "b55f87aac1cd9d6337232eacbe26cfbb29d85d4b",
+  "source": "a82434ad3b26210c75dc5680a5373143a0c4b94f",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -9,12 +9,12 @@
     "failure_cases": "Managed disable and restore, expired-before-admission, cancellation join, stale runtime/launch, duplicate callback, corrupt metadata, pending region cancellation, consent denial and failure, A cancellation with B nondefault result retained.",
     "normal_entrypoints": "Actual MiniAppDefinition/lifetime/management and launch hooks, native URLSession HTTP delegates, CLLocationManager adapter/configuration, continued native scheduler adapter; OS cold launch is not simulated success.",
     "invalidation": "Owner/runtime admission closes before worker/native cancellation joins. Location cold consent/restore gates and generation tokens reject late results; transfer invalidation joins delegate completion before host release.",
-    "review": "Two submissions jointly reviewed before CI; background two grouped repair rounds, location one. Parent fixed conditional Swift declarations, released/stale service cleanup, consent propagation and transfer/expiration gaps. Local host3/media5/workflow1 tests and loopback process/HTTP check passed; Swift/Xcode unavailable locally."
+    "review": "Two submissions jointly reviewed before CI; background two grouped repair rounds, location one. Parent fixed conditional Swift declarations, released/stale service cleanup, consent propagation and transfer/expiration gaps. Local host3/media5/workflow1 tests and loopback process/HTTP check passed; Swift/Xcode unavailable locally. Run1 compiler evidence identified two missing returns after parent admission guards; corrected together and reviewed other new result-returning methods. No runtime result inferred."
   },
   "dependencies": {
     "P2-C": "Published0.8.3 c5afccc; normal35169921272 passed, media native35102558612 and physical audio/capture checkpoint passed. docs/verification/2026-09-16-p2-media-evidence.json. No rerun of unchanged physical media matrix."
   },
-  "planned_ci_runs": 1,
+  "planned_ci_runs": 2,
   "budget_exception": "",
   "jobs": [
     {
@@ -68,7 +68,14 @@
       ]
     }
   ],
-  "runs": [],
+  "runs": [
+    {
+      "id": "35175311988",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35175311988",
+      "source": "6f3944f489b74699a10d54da0bf4afd980118b60",
+      "conclusion": "failure: both macOS shared and iOS native builds stopped on missing return in MiniAppLocationService.startUpdates/register; no XCTest execution or new IPA. Normal job79s; native593s including simulator setup."
+    }
+  ],
   "evidence": [
     {
       "criterion": "P0-1.integration",
@@ -288,7 +295,7 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 5,
-    "ci_job_minutes": 0
+    "ci_job_minutes": 11.2
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -333,6 +340,12 @@
       "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location runtime source=b55f87aac1cd9d6337232eacbe26cfbb29d85d4b; background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; other defaults. Entire shared Core suite plus module package tests; all P2BackgroundNativeTests and P2LocationNativeTests without method filtering. Dispatch after documentation-only checkpoint; record actual head SHA on receipt.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Previous normal35102558612 with simulator16m50, normal version-only35169921272 5m29, combined media native12m50. New background/location target adds actual loopback transfer and all17 native methods, same Debug+Release builds. Allow normal22min/native25min including checkout/tool generation/simulator/signing/packaging/upload, parallel with no dependency. Native step24min/job30min, individual XCTest60s default/120s max; existing normal45min hard limit. New surface duration unmeasured; inspect stage timings rather than assume CI queue time fits."
+    },
+    {
+      "id": "repair-location-return",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location runtime source=a82434ad3b26210c75dc5680a5373143a0c4b94f; background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; other defaults. Entire shared Core suite plus module package tests; all P2BackgroundNativeTests and P2LocationNativeTests without method filtering. Dispatch after documentation-only checkpoint; record actual head SHA on receipt.",
+      "expected_elapsed_minutes": 25,
+      "estimate_basis": "First run normal1m19/native9m53, both stopped at Core compile. Native setup172s; full test/Release still unmeasured. Same two-job boundary and25min inclusive estimate; no extra diagnostic job. Two return statements repaired; whole shared/native suite still required."
     }
   ],
   "planned_device_checks": [

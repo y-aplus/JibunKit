@@ -524,13 +524,13 @@
     }
   },
   "diagnostic_publication": {
-    "tag": "p2-b-device-check-20260917",
-    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
-    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-device-check-20260917",
+    "tag": "p2-b-launch-check-20260917",
+    "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-launch-check-20260917",
     "draft": false,
     "prerelease": true,
-    "public_get": "All4 IPA/ZIP assets unauthenticated GET SHA256/CRC and outer ZIP IPA equality passed.",
-    "physical_status": "Known launch crash; retained historical artifacts, user instructed not to repeat launch. Use stable0.8.3 for recovery. Corrected candidate not yet available."
+    "public_get": "4 assets unauthenticated GET SHA256/CRC and ZIP/IPA equality passed; tag target matches CI source.",
+    "physical_status": "Corrected candidate startup check requested; no new device success yet."
   },
   "physical_failure": {
     "source": "da6267213a15872f3eb3860157edf0840e866bd2",
@@ -555,5 +555,14 @@
       "sha256": "79c0eb81d5903cc74e35c9a91195b80d5f075eca092de1b6825b9d297b2ad5de",
       "bytes": 3806301
     }
+  },
+  "diagnostic_publication_previous": {
+    "tag": "p2-b-device-check-20260917",
+    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-device-check-20260917",
+    "draft": false,
+    "prerelease": true,
+    "public_get": "All4 IPA/ZIP assets unauthenticated GET SHA256/CRC and outer ZIP IPA equality passed.",
+    "physical_status": "Known launch crash; retained historical artifacts, user instructed not to repeat launch. Use stable0.8.3 for recovery. Corrected candidate not yet available."
   }
 }

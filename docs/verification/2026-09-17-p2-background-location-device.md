@@ -10,7 +10,7 @@
 
 **今回は削除せず修正版を上書きし、アプリ一覧まで開くかだけ確認する。** 一覧に「準備失敗」が出ればその文言を報告する。継続処理・位置更新の旧手順は起動確認後に再開し、成功していない項目を既済にしない。
 
-修正版IPAで3bundleの既存ID/0.8.3/build13、追加したbuild時ID metadata、診断5scheduler/3background modes、通常版の診断非混入、CRC/署名resourceと一重ZIPを照合済み。公開GETは公開後に記録する。実機再署名後の起動成功はまだ受領していない。
+修正版IPAで3bundleの既存ID/0.8.3/build13、追加したbuild時ID metadata、診断5scheduler/3background modes、通常版の診断非混入、CRC/署名resourceと一重ZIPを照合済み。新規prerelease `p2-b-launch-check-20260917`を同sourceへ固定し、診断/通常IPA・ZIPの4assetを無認証GETで再取得。SHA-256・CRC・ZIP内IPA一致を確認済み。旧tag/assetは移動・差替えしていない。実機再署名後の起動成功はまだ受領していない。
 
 ## 旧候補で確認した起動不具合
 

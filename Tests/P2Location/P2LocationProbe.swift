@@ -17,6 +17,7 @@ final class P2LocationFeature {
     let kind: Kind
     let coordinator: MiniAppLocationCoordinator
     let state = P2LocationState()
+    let observations: P2LocationObservationLog
     private var consentStore: MiniAppConsentStore? = MiniAppConsentStore(defaults: .standard)
     private var updateGeneration: UUID?
     lazy var service = MiniAppLocationService(owner: id, coordinator: coordinator) { [weak self] in
@@ -26,12 +27,14 @@ final class P2LocationFeature {
     lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
         guard let self else { return }
         try self.service.connect(to: runtime)
+        self.observations.record("runtime接続")
         self.state.generation += 1
         self.state.status = "Feature接続済み・OS許可 \(self.coordinator.authorization.rawValue)"
     }
 
     init(id: MiniAppID, coordinator: MiniAppLocationCoordinator, kind: Kind) {
         self.id = id; self.coordinator = coordinator; self.kind = kind
+        observations = P2LocationObservationLog(owner: id)
     }
 
     var definition: MiniAppDefinition {
@@ -48,11 +51,13 @@ final class P2LocationFeature {
                 guard let self, permissionID == "location" else { return }
                 // The value is explicit; this also works with an injected host store.
                 if decision != .allowed { try self.coordinator.revoke(owner: self.id) }
+                self.observations.record("Feature同意変更: \(decision)")
                 self.refreshRegistrations()
             },
             onUnregister: { [weak self] in try self?.service.unregisterAllOwned() },
             onHostLaunch: { [weak self] in
                 guard let self else { return }
+                self.observations.record("host起動hook")
                 self.report { try self.service.reconnectPersistedMonitoring() }
             }
         ) { [self] _ in P2LocationView(feature: self) }
@@ -75,6 +80,7 @@ final class P2LocationFeature {
                 showsBackgroundIndicator: background
             ))
             state.status = background ? "背景位置更新を開始" : "前景位置更新を開始"
+            observations.record(state.status)
         }
     }
     func stopUpdates() {
@@ -82,6 +88,7 @@ final class P2LocationFeature {
             guard let updateGeneration else { return }
             try service.stopUpdates(generation: updateGeneration)
             self.updateGeneration = nil; state.status = "位置更新を停止"
+            observations.record(state.status)
         }
     }
     func registerGeofence() {
@@ -90,6 +97,7 @@ final class P2LocationFeature {
                 latitude: state.latitude, longitude: state.longitude, radius: state.radius,
                 notifyOnEntry: true, notifyOnExit: true))
             state.status = "geofence登録 \(registration.localID)"; refreshRegistrations()
+            observations.record(state.status)
         }
     }
     func registerBeacon() {
@@ -98,16 +106,28 @@ final class P2LocationFeature {
                 uuid: UUID(uuidString: "E2C56DB5-DFFB-48D2-B060-D0F5A71096E0")!, major: 1, minor: 1,
                 notifyOnEntry: true, notifyOnExit: true))
             state.status = "iBeacon監視登録 \(registration.localID)"; refreshRegistrations()
+            observations.record(state.status)
         }
     }
     func unregister(_ registration: MiniAppLocationRegistration) {
         report {
             try service.unregister(localID: registration.localID, generation: registration.generation)
             state.status = "担当Regionを解除"; refreshRegistrations()
+            observations.record("Region解除: \(registration.localID)")
         }
     }
     private func receive(_ event: MiniAppLocationEvent) {
         state.eventCount += 1
+        // Record delivery context before view/lifetime status can replace it.
+        switch event {
+        case .locations(_, let samples): observations.record("位置callback \(samples.count)件")
+        case .authorizationChanged(let value): observations.record("OS許可callback: \(value.rawValue)")
+        case .entered(let value): observations.record("進入callback: \(value.localID)")
+        case .exited(let value): observations.record("退出callback: \(value.localID)")
+        case .state(let value, let regionState): observations.record("状態callback: \(value.localID) \(regionState)")
+        case .monitoringFailed: observations.record("監視失敗callback")
+        case .failed: observations.record("位置失敗callback")
+        }
         switch event {
         case .locations(_, let samples):
             state.status = "位置更新 \(samples.count)件"; state.lastSample = samples.last
@@ -157,6 +177,7 @@ private struct P2LocationView: View {
                 Button("位置更新停止") { feature.stopUpdates() }
             } else {
                 Button("現在地を取得") { feature.start(background: false) }
+                Button("位置更新停止") { feature.stopUpdates() }
                 TextField("緯度", value: $state.latitude, format: .number)
                 TextField("経度", value: $state.longitude, format: .number)
                 TextField("半径m", value: $state.radius, format: .number)
@@ -171,6 +192,7 @@ private struct P2LocationView: View {
                 }
             }
             if let sample = state.lastSample { Text("\(sample.latitude), \(sample.longitude) ±\(sample.horizontalAccuracy)m") }
+            P2LocationObservationView(log: feature.observations)
         }
         .onAppear { feature.attachConsent(consentStore) }
         .onChange(of: locationConsent) { _, _ in feature.attachConsent(consentStore) }

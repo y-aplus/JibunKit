@@ -7,6 +7,47 @@ import SwiftUI
 
 @MainActor
 final class P2LocationNativeTests: XCTestCase {
+    func testObservationLogPreservesDeliveryStateAcrossProcessesAndIsolatesOwners() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = MiniAppID("observation-a"), b = MiniAppID("observation-b")
+        let aFiles = try MiniAppFiles(context: MiniAppContext(id: a), containerURL: root)
+        let bFiles = try MiniAppFiles(context: MiniAppContext(id: b), containerURL: root)
+        let oldProcess = UUID(), newProcess = UUID()
+        let old = P2LocationObservationLog(owner: a, files: aFiles, process: oldProcess, appState: { "background" })
+        let received = Date(timeIntervalSince1970: 12345)
+        old.record("位置callback 1件", at: received)
+        let reopened = P2LocationObservationLog(owner: a, files: aFiles, process: newProcess, appState: { "active" })
+        reopened.record("runtime接続", at: received.addingTimeInterval(10))
+        XCTAssertNil(reopened.error)
+        XCTAssertEqual(reopened.entries.map(\.appState), ["background", "active"])
+        XCTAssertEqual(reopened.entries.map(\.process), [oldProcess, newProcess])
+        XCTAssertEqual(reopened.entries.first?.receivedAt, received)
+        let other = P2LocationObservationLog(owner: b, files: bFiles, appState: { "inactive" })
+        XCTAssertTrue(other.entries.isEmpty)
+        other.record("B受信")
+        for index in 0..<70 { reopened.record("位置callback \(index)") }
+        let trimmed = P2LocationObservationLog(owner: a, files: aFiles)
+        XCTAssertEqual(trimmed.entries.count, 64)
+        XCTAssertEqual(trimmed.entries.first?.event, "位置callback 6")
+        XCTAssertEqual(P2LocationObservationLog(owner: b, files: bFiles).entries.map(\.event), ["B受信"])
+    }
+
+    func testCorruptObservationEvidenceIsPreservedAndFailureVisible() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let id = MiniAppID("observation-corrupt")
+        let files = try MiniAppFiles(context: MiniAppContext(id: id), containerURL: root)
+        let original = Data("unreadable evidence".utf8)
+        try files.write(original, named: P2LocationObservationLog.filename)
+        let log = P2LocationObservationLog(owner: id, files: files)
+        XCTAssertNotNil(log.error)
+        log.record("新しいcallback")
+        XCTAssertEqual(log.entries.count, 1)
+        XCTAssertEqual(try files.read(named: P2LocationObservationLog.filename), original)
+        XCTAssertNotNil(log.error)
+    }
+
     func testDefinitionConsentSavesBeforeCallbackAndPreservesDenialOnCleanupFailure() throws {
         let suite = "P2Consent.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

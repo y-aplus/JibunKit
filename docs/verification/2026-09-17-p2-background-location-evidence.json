@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+  "source": "0681e78ca8faabb258da4e6d81528a9c307da7ba",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -468,7 +468,7 @@
     },
     {
       "id": "continued-admission-device-followup",
-      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; all shared tests (+2 Core), all21 background/location native tests (+2), normal and diagnostic IPA. Source pinned by commit before dispatch.",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; all shared tests (+2 Core), all21 background/location native tests (+2), normal and diagnostic IPA. Source pinned by commit before dispatch. Runtime source=0681e78ca8faabb258da4e6d81528a9c307da7ba. Documentation-only source pin follows; record dispatched head SHA on result.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Previous normal11m52/native8m52 including setup/upload. Shared Core admission change requires whole shared suite and normal regression; native21 includes immediate rejection/retry and cancelled old callback versus replacement. Same2 parallel jobs, existing limits. Publish IPA only; no extra outer ZIP."
     }

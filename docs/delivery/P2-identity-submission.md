@@ -3,6 +3,7 @@
 - 基点: `7347b483936e7f8bfe45d36984c32390cdcae2b3`
 - 初回実装 commit: `a5bf420f52f29efda3a8b804f9bb58efd3e96e8a`
 - lifecycle/管理/native修正 commit: `092fa5a9186c39e6fe3035df6050a545ef6e3844`
+- account snapshot照合修正 commit: `779d77f0b28961117d4c75e12eb134625774f50e`
 - branch: `codex/p2-identity`
 
 ## 変更契約
@@ -24,6 +25,9 @@
   ではなく、任意CKRecordを使うFeature向けには `CloudKitExternalIdentityNames` のowned ID helperを公開する。record zone作成は
   `modifyRecordZones` のowner zone個別結果を成功確認してから次へ進む。
 - native backendの `CKAccountChanged` observerはFeature runtime taskが所有し、停止時に解除する。停止中の通知は再activateしない。
+- native全操作はidentity/snapshotのaccount identifierを現在の`CKContainer.userRecordID()`と照合する。await後とmutation直前にも
+  account/取消を再検査し、停止中に別accountへ切り替わった場合はowner zone削除を拒否して管理のremoving intentを保持する。
+  account照合と次のCloudKit requestは別OS requestであり、切替との完全な原子性は保証しない。
 - native adapter は署名済み host が明示生成した `CKContainer` の注入を必須とする。Core、通常の Probe 定義、
   unavailable backend は `CKContainer()` を呼ばないため、entitlement なしの診断 host を定義生成だけで落とさない。
 - fake backend の成功と実 CloudKit 通信成功を分離した。署名専用試験は通常 native targetから別sourceへ分け、通常試験には
@@ -39,6 +43,7 @@
   - activation 失敗からの復旧と B 保持
   - 閉じたruntimeへの接続rollback、runtime所有account observerと停止後非再起動
   - 実 `MiniAppManagement.remove` の停止→snapshot削除→再enableと B runtime・値保持
+  - 管理停止後のaccount切替で誤account削除拒否、旧account値保持、元accountでの削除再試行
 - native fixture: `Tests/P2Identity/P2IdentityProbe.swift` は二つの `MiniAppDefinition` と、署名 host 用 backend factory を公開。
 - native tests: `Tests/P2Identity/P2IdentityNativeTests.swift` はskipなしで所有、削除、account変更、遅着、失敗/復旧、実Featureの
   管理remove、復元、終了接続を検証する。

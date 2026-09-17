@@ -110,7 +110,7 @@ final class P2IdentityNativeTests: XCTestCase {
 }
 
 private actor P2IdentityBackend: MiniAppExternalIdentityBackend {
-    enum Failure: Error { case injected }
+    enum Failure: Error { case injected, wrongAccount }
     var account: String; var records: [MiniAppExternalPersistentRecordKey: [String: String]] = [:]
     var failing = false, holding = false
     var held: CheckedContinuation<Void, Never>?, observed: CheckedContinuation<Void, Never>?
@@ -124,20 +124,24 @@ private actor P2IdentityBackend: MiniAppExternalIdentityBackend {
         if failing { failing = false; throw Failure.injected }; return account
     }
     func load(_ identity: MiniAppExternalRecordIdentity) async throws -> MiniAppExternalRecord? {
+        try validate(identity.account)
         if holding { holding = false; await withCheckedContinuation { held = $0; observed?.resume(); observed = nil } }
         return records[MiniAppExternalPersistentRecordKey(identity)].map {
             MiniAppExternalRecord(identity: identity, fields: $0)
         }
     }
     func save(_ record: MiniAppExternalRecord) async throws {
+        try validate(record.identity.account)
         let key = MiniAppExternalPersistentRecordKey(record.identity)
         records[key, default: [:]].merge(record.fields) { _, new in new }
     }
     func delete(_ identity: MiniAppExternalRecordIdentity) async throws {
+        try validate(identity.account)
         records[MiniAppExternalPersistentRecordKey(identity)] = nil
     }
-    func ensureSubscription(for account: MiniAppExternalAccount) async throws {}
+    func ensureSubscription(for account: MiniAppExternalAccount) async throws { try validate(account) }
     func deleteOwnedData(for account: MiniAppExternalAccount) async throws {
+        try validate(account)
         records = records.filter { key, _ in
             key.owner != account.owner || key.container != account.container
                 || key.accountIdentifier != account.accountIdentifier
@@ -145,6 +149,9 @@ private actor P2IdentityBackend: MiniAppExternalIdentityBackend {
     }
     func cancelOperations(owner: MiniAppID) async { release() }
     func accountChanges() async -> AsyncStream<Void> { AsyncStream { $0.finish() } }
+    private func validate(_ expected: MiniAppExternalAccount) throws {
+        guard expected.accountIdentifier == account else { throw Failure.wrongAccount }
+    }
 }
 
 private func XCTAssertThrowsErrorAsync<T>(_ operation: () async throws -> T,

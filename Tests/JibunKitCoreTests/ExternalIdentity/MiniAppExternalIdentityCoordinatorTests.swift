@@ -146,14 +146,57 @@ final class MiniAppExternalIdentityCoordinatorTests: XCTestCase {
         catch let error as MiniAppExternalIdentityError { XCTAssertEqual(error, .inactive) }
     }
 
+    @MainActor
+    func testManagementRemovalRejectsSnapshotAfterAccountSwitchAndRetriesOriginalAccount() async throws {
+        let backend = ExternalIdentityFakeBackend(account: "account-a")
+        let scope = try MiniAppExternalContainer(identifier: "iCloud.test")
+        let a = MiniAppExternalIdentityFeature(id: MiniAppID("owner-a"), container: scope, backend: backend)
+        let b = MiniAppExternalIdentityFeature(id: MiniAppID("owner-b"), container: scope, backend: backend)
+        let suite = "ExternalIdentityAccountSwitch.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let switcher = ExternalIdentityAccountSwitcher()
+        let manager = MiniAppManagement(registrations: [
+            .init(id: a.id, lifetime: a.lifetime, removal: a.removal, externalAccess: a.externalAccess,
+                  unregister: {
+                      if switcher.take() { await backend.setAccount("account-b") }
+                  }),
+            .init(id: b.id, lifetime: b.lifetime, removal: b.removal, externalAccess: b.externalAccess),
+        ], defaults: defaults, consents: .init(defaults: defaults), coordinator: .init())
+        try await a.lifetime.start(); try await b.lifetime.start()
+        let aID = try await a.coordinator.identity(localID: "same")
+        let bID = try await b.coordinator.identity(localID: "same")
+        try await a.coordinator.save(aID, fields: ["value": "A"])
+        try await b.coordinator.save(bID, fields: ["value": "B"])
+        do { try await manager.remove(a.id); XCTFail("Wrong account zone was deleted") } catch {}
+        XCTAssertEqual(manager.failures[a.id]?.stage, .deletingData)
+        XCTAssertEqual(manager.status(for: a.id), .removing)
+        await backend.setAccount("account-a")
+        let retainedA = try await backend.load(aID)
+        let retainedB = try await backend.load(bID)
+        XCTAssertEqual(retainedA?.fields["value"], "A")
+        XCTAssertEqual(retainedB?.fields["value"], "B")
+        try await manager.remove(a.id)
+        XCTAssertEqual(manager.status(for: a.id), .removed)
+        let finalB = try await backend.load(bID)
+        XCTAssertEqual(finalB?.fields["value"], "B")
+        await b.lifetime.stop()
+    }
+
     private func coordinator(_ backend: ExternalIdentityFakeBackend) throws -> MiniAppExternalIdentityCoordinator {
         MiniAppExternalIdentityCoordinator(owner: MiniAppID("owner-a"),
             container: try .init(identifier: "iCloud.test"), backend: backend)
     }
 }
 
+@MainActor
+private final class ExternalIdentityAccountSwitcher {
+    private var pending = true
+    func take() -> Bool { defer { pending = false }; return pending }
+}
+
 private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
-    enum Failure: Error { case injected }
+    enum Failure: Error { case injected, wrongAccount }
     private var account: String
     private var rows: [MiniAppExternalPersistentRecordKey: [String: String]] = [:]
     private var failAccount = false
@@ -178,6 +221,7 @@ private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
         return account
     }
     func load(_ identity: MiniAppExternalRecordIdentity) async throws -> MiniAppExternalRecord? {
+        try validate(identity.account)
         if shouldHoldLoad {
             shouldHoldLoad = false
             await withCheckedContinuation { continuation in
@@ -189,14 +233,17 @@ private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
         }
     }
     func save(_ record: MiniAppExternalRecord) async throws {
+        try validate(record.identity.account)
         let key = MiniAppExternalPersistentRecordKey(record.identity)
         rows[key, default: [:]].merge(record.fields) { _, new in new }
     }
     func delete(_ identity: MiniAppExternalRecordIdentity) async throws {
+        try validate(identity.account)
         rows[MiniAppExternalPersistentRecordKey(identity)] = nil
     }
-    func ensureSubscription(for account: MiniAppExternalAccount) async throws {}
+    func ensureSubscription(for account: MiniAppExternalAccount) async throws { try validate(account) }
     func deleteOwnedData(for account: MiniAppExternalAccount) async throws {
+        try validate(account)
         rows = rows.filter { key, _ in
             key.owner != account.owner || key.container != account.container
                 || key.accountIdentifier != account.accountIdentifier
@@ -209,6 +256,9 @@ private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
         return pair.stream
     }
     func emitAccountChange() { accountChangeContinuations.forEach { $0.yield(()) } }
+    private func validate(_ expected: MiniAppExternalAccount) throws {
+        guard expected.accountIdentifier == account else { throw Failure.wrongAccount }
+    }
 }
 
 private func XCTAssertThrowsExternal<T>(_ expected: MiniAppExternalIdentityError?,

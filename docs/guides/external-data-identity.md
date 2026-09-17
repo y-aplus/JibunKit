@@ -55,6 +55,12 @@ activate/account change は個別 reservation で後着だけを採用する。�
 取消は新しい mutation とローカル結果公開を止める境界である。CloudKit server が取消前に受理済みの書込みを巻き戻す保証は
 ないため、generation 照合を server transaction/rollback と呼ばない。
 
+native adapter は各 load/save/delete/subscription/owner削除で、identity/snapshot の account identifier と現在の
+`CKContainer.userRecordID()` を照合する。account切替を検出した場合は `.staleGeneration` とし、特に停止中の削除snapshotを
+別accountの同名owner zoneへ適用しない。network await後とmutation呼出し直前にもaccountと取消を再検査する。ただし
+CloudKitには「account照合と次の別request」を一つのOS原子的操作にするAPIはないため、最後の照合直後にOS accountが切り替わる
+競合を完全には排除できない。削除失敗は管理のremoving intentとsnapshotを保持し、元accountへ戻して明示再試行する。
+
 失敗した activation は runtime 起動失敗として扱われ、既存 `MiniAppFeatureLifetime` の停止完了後に再試行できる。
 片方の account/通信失敗を別 owner の停止や削除へ拡大しない。
 

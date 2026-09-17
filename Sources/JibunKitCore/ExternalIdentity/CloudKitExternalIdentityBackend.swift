@@ -24,13 +24,22 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
         try validate(identity.account.container)
         let database = database(identity.account.container)
         let id = CloudKitExternalIdentityNames.recordID(for: identity)
+        let container = container
         return try await run(owner: identity.account.owner) {
+            try await Self.verify(account: identity.account, container: container)
+            try Task.checkCancellation()
             do {
                 let record = try await database.record(for: id)
+                try await Self.verify(account: identity.account, container: container)
+                try Task.checkCancellation()
                 var fields: [String: String] = [:]
                 for key in record.allKeys() { if let value = record[key] as? String { fields[key] = value } }
                 return .init(identity: identity, fields: fields)
-            } catch let error as CKError where error.code == .unknownItem { return nil }
+            } catch let error as CKError where error.code == .unknownItem {
+                try await Self.verify(account: identity.account, container: container)
+                try Task.checkCancellation()
+                return nil
+            }
         }
     }
 
@@ -39,16 +48,25 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
         let database = database(value.identity.account.container)
         let id = CloudKitExternalIdentityNames.recordID(for: value.identity)
         let recordType = recordType
+        let container = container
         try await run(owner: value.identity.account.owner) {
+            try await Self.verify(account: value.identity.account, container: container)
+            try Task.checkCancellation()
             try await Self.ensureZone(value.identity.account, database: database)
+            try await Self.verify(account: value.identity.account, container: container)
+            try Task.checkCancellation()
             let record: CKRecord
             do { record = try await database.record(for: id) }
             catch let error as CKError where error.code == .unknownItem {
                 record = CKRecord(recordType: recordType, recordID: id)
             }
+            try await Self.verify(account: value.identity.account, container: container)
+            try Task.checkCancellation()
             // Preserve the fetched change tag and all fields not owned by this update.
             for (key, field) in value.fields { record[key] = field as CKRecordValue }
             _ = try await database.save(record)
+            try await Self.verify(account: value.identity.account, container: container)
+            try Task.checkCancellation()
         }
     }
 
@@ -56,33 +74,57 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
         try validate(identity.account.container)
         let database = database(identity.account.container)
         let id = CloudKitExternalIdentityNames.recordID(for: identity)
+        let container = container
         try await run(owner: identity.account.owner) {
+            try await Self.verify(account: identity.account, container: container)
+            try Task.checkCancellation()
             do { _ = try await database.deleteRecord(withID: id) }
-            catch let error as CKError where error.code == .unknownItem { return }
+            catch let error as CKError where error.code == .unknownItem {}
+            try await Self.verify(account: identity.account, container: container)
+            try Task.checkCancellation()
         }
     }
 
     public func ensureSubscription(for account: MiniAppExternalAccount) async throws {
         try validate(account.container)
         let database = database(account.container)
+        let container = container
         try await run(owner: account.owner) {
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
             try await Self.ensureZone(account, database: database)
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
             let identifier = CloudKitExternalIdentityNames.subscriptionID(for: account)
-            do { _ = try await database.subscription(for: identifier); return }
+            do {
+                _ = try await database.subscription(for: identifier)
+                try await Self.verify(account: account, container: container)
+                try Task.checkCancellation()
+                return
+            }
             catch let error as CKError where error.code == .unknownItem {}
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
             let subscription = CKRecordZoneSubscription(
                 zoneID: CloudKitExternalIdentityNames.zoneID(for: account), subscriptionID: identifier)
             _ = try await database.save(subscription)
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
         }
     }
 
     public func deleteOwnedData(for account: MiniAppExternalAccount) async throws {
         try validate(account.container)
         let database = database(account.container)
+        let container = container
         try await run(owner: account.owner) {
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
             do { _ = try await database.deleteRecordZone(
                 withID: CloudKitExternalIdentityNames.zoneID(for: account)) }
-            catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem { return }
+            catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem {}
+            try await Self.verify(account: account, container: container)
+            try Task.checkCancellation()
         }
     }
 
@@ -122,6 +164,15 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
             throw MiniAppExternalIdentityError.backend("CloudKit returned no result for the owned record zone")
         }
         _ = try result.get()
+    }
+
+    private static func verify(account: MiniAppExternalAccount, container: CKContainer) async throws {
+        let status = try await container.accountStatus()
+        guard status == .available else { throw MiniAppExternalIdentityError.accountUnavailable }
+        let current = try await container.userRecordID().recordName
+        guard current == account.accountIdentifier else {
+            throw MiniAppExternalIdentityError.staleGeneration
+        }
     }
 
     private func run<Value: Sendable>(owner: MiniAppID,

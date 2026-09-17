@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "010dd0771db59f494052eec67c5b2bf3e676dbad",
+  "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -91,6 +91,12 @@
       "id": "35231831131",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35231831131",
       "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+      "conclusion": "success"
+    },
+    {
+      "id": "35235454126",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
       "conclusion": "success"
     }
   ],
@@ -294,6 +300,105 @@
       "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
       "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
       "reuse_reason": "Prior source evidence retained, not a rerun. Core Audio/Capture, storage/schema/Feature management/backup/widgets/intents/network unchanged from306874f. Host scene registration and scanner presentation anchor changed; fullScreen/re-presentation/scene disconnect native regressions and normal notification routing UI passed in repair run35102558612. Existing physical recording/video success is scoped to306874f. Release candidate runtime/tests/package identical to a142108; only3bundle versions/build and workflow expectations plus documentation changed. Original evidence source preserved; no physical rerun claim. P2-B delta against559e95e adds background/location Core and diagnostic fixtures plus optional consent-change hook. Existing notification/inbox/Web/widget/intent/storage/presentation/generator runtime paths and identifiers are unchanged. Shared tests rerun. Consent picker keeps the existing choice UI; saved-consent-before-hook/failure denial is newly tested by P2LocationNativeTests; prior manual management success covers existing controls only, not new location effects. Launch repair retains prior successful physical behavior only for unchanged features; new failed-owner start gate and host labels are pending full shared/native and normal Search regression. It does not claim the crashed P2 candidate works on device."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P2-3.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P2-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P2-3.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
+    },
+    {
+      "criterion": "P2-4.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35235454126",
+      "observation": "SDK26.6 shared397 (existing Keychain2skip)/Records11/Search44.924s/normal IPA; SDK27 Swift6.4 native24 no skip/runtime warnings and diagnostic IPA passed. Async callback races and location journal persistence/corrupt preservation exercised using injected scheduling/app state, not actual OS-start/cold-event proof.",
+      "review": "Parent checked per-method structured xcresult against pinned source, compiler/SDK provenance, normal/diagnostic markers, new submission selector in diagnostic binary, 3bundle identifiers/version/signature resources, public GET/hash/CRC. Physical results still pending on this source."
     }
   ],
   "deferred_device": {
@@ -432,24 +537,43 @@
       "normal_search_seconds": 38.205,
       "normal_job_seconds": 943,
       "native_job_seconds": 695
+    },
+    "async_admission_and_location": {
+      "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
+      "native_methods_passed": 24,
+      "native_skips": 0,
+      "native_os": "iOS27.0 Simulator 24A5423a",
+      "native_swift": "6.4",
+      "shared_executed": 397,
+      "known_skips": 2,
+      "normal_search_seconds": 44.924,
+      "normal_job_seconds": 1086,
+      "native_job_seconds": 650,
+      "native_stages_seconds": {
+        "generate": 69.553,
+        "native_build_and_tests": 185.862,
+        "release_build": 113.156
+      }
     }
   },
   "assets": {
-    "JibunKit-P2-B-8b3584a.ipa": {
-      "sha256": "b52362c041226edf984d0550d8aeeb5cf786a49dee61f81d96b8d27f318d1990",
-      "bytes": 3917637
+    "JibunKit-P2-B-82f61bb.ipa": {
+      "sha256": "9d863ddb4a1e0d96fcf41cf75792810525d1bb4fcb343d53b329f30b361af082",
+      "bytes": 3870482,
+      "sdk": "iphoneos27.0"
     },
-    "JibunKit-normal-8b3584a.ipa": {
-      "sha256": "8cadb2fe22e1fef4cd7270ad6b231c944e91a761b285b76c368ddb4d6d12e75f",
-      "bytes": 3825805
+    "JibunKit-normal-82f61bb.ipa": {
+      "sha256": "6ccaf9864f38797ff615a0d31d251861ebb398a498b6c88ba2d912566caa89c7",
+      "bytes": 3828251,
+      "sdk": "iphoneos26.5"
     }
   },
   "diagnostic_publication": {
-    "tag": "p2-b-admission-check-20260917",
-    "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+    "tag": "p2-b-async-check-20260918",
+    "source": "82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08",
     "prerelease": true,
-    "public_get": "2 IPA assets unauthenticated GET SHA256/CRC passed; tag source matches. No additional ZIP.",
-    "physical_status": "User selected immediate mode; 2026-09-17T14:33:53Z request and synchronous submit-success only. No OS launch/progress. New async-result diagnostic required; exact device rejection still unknown."
+    "public_get": "2 IPA unauthenticated GET/hash/CRC passed; tag source matches. Diagnostic SDK27 with new selector; normal SDK26.5 fallback. No added outer ZIP.",
+    "physical_status": "Awaiting one immediate-start check with API label 非同期completion; no device success on this source yet."
   },
   "physical_failure": {
     "source": "da6267213a15872f3eb3860157edf0840e866bd2",
@@ -585,7 +709,7 @@
       "review": "Whole P2 integration/device acceptance remains open; source-specific compile/auto evidence does not establish user device recovery."
     }
   ],
-  "followup_evidence_policy": "Previous8b3584a evidence archived pending new SDK26/27 results. No current async-admission/position-log runtime evidence before CI. Earlier unchanged P0/P1 evidence retains source-specific reuse.",
+  "followup_evidence_policy": "Fresh SDK26 normal/shared and SDK27 native/diagnostic inspected. Physical/cold OS delivery remains pending. Older device evidence remains source-scoped. Entire P2 wave not complete.",
   "location_device_observation": {
     "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
     "foreground": "User confirmed latitude/longitude displayed after foreground updates.",
@@ -722,5 +846,22 @@
       "observation": "Follow-up: shared395 (existing Keychain2skip)/Records11/Search38.205s/native21 no skips and normal/diagnostic IPA passed. New Core2/native2 admission regressions passed. OS-start/cold delivery not inferred.",
       "review": "Parent inspected successful steps, full log counts, source-declared native methods against structured xcresult, and both IPA contents/public downloads. Location physical observations remain explicitly at3af8e32; uncompiled location journal changes excluded."
     }
-  ]
+  ],
+  "diagnostic_publication_previous_8b3584a": {
+    "tag": "p2-b-admission-check-20260917",
+    "source": "8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816",
+    "prerelease": true,
+    "public_get": "2 IPA assets unauthenticated GET SHA256/CRC passed; tag source matches. No additional ZIP.",
+    "physical_status": "User selected immediate mode; 2026-09-17T14:33:53Z request and synchronous submit-success only. No OS launch/progress. New async-result diagnostic required; exact device rejection still unknown."
+  },
+  "assets_previous_8b3584a": {
+    "JibunKit-P2-B-8b3584a.ipa": {
+      "sha256": "b52362c041226edf984d0550d8aeeb5cf786a49dee61f81d96b8d27f318d1990",
+      "bytes": 3917637
+    },
+    "JibunKit-normal-8b3584a.ipa": {
+      "sha256": "8cadb2fe22e1fef4cd7270ad6b231c944e91a761b285b76c368ddb4d6d12e75f",
+      "bytes": 3825805
+    }
+  }
 }

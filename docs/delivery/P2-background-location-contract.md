@@ -110,3 +110,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 5run目の予算例外を記録。通常Xcode26.6の共有全件＋Records＋検索UI＋通常IPAと、既存xcode-27 runnerの背景/位置native24件＋診断IPAを並列にする。新規Core2/native背景1/位置2件を含む。SDK26/OS26 fallbackとSDK27/OS27のcompile/runtimeを分離して評価し、後者だけを実機の新API診断として配布する。APIが利用不可でも黙って新API成功と報告せず、画面の受付API表示で区別する。旧normal15分43秒/native11分35秒から準備upload込み25分を見積り、job上限は既存45/30分。OS監視から一回通知し、各小項目のCIを増やさない。
 
 投入前にGitHubがworkflowの26個目のdispatch入力を拒否した（runは作成されていない）。新しい入力は撤去し、既存background-location診断jobのSDKを27に固定した。既存の25入力と通常SDK26.6は維持する。今回のdispatch CLIに追加入力はない。
+
+5回目CI35235454126/source82f61bbは通常18分06秒・native10分50秒で成功。共有397件（既存2skip）/Records11件/通常検索44.924秒、iOS27.0・Swift6.4でnative24件（skip/実行時warningなし）と診断IPAを確認。公開2IPAの無認証GET/hash/CRC、診断binaryの新受付selector・位置記録型を照合した。通常IPAはSDK26.5 fallbackであることを明示し、新API実機結果は未確認のまま。

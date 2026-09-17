@@ -1,6 +1,21 @@
 # P2-B 背景処理・位置情報の実機確認（修正版の起動確認済み・対象操作待ち）
 
-## 現在の配布版: 即時開始の診断
+## 現在の配布版: iOS27非同期受付と位置受信記録
+
+2026-09-18更新。source `82f61bb8d59bd74a5a6a3513b4fa3c68b2f48b08`、0.8.3/build13。[CI35235454126](https://github.com/y-aplus/JibunKit/actions/runs/35235454126)で共有397件（既存Keychain2skip）、Records11件、通常検索44.924秒、背景15＋位置9＝native24件（skip/実行時warningなし）が成功。通常18分06秒・native10分50秒。
+
+[新しい診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-P2-B-82f61bb.ipa) ／ [同source・従来SDKの通常IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-b-async-check-20260918/JibunKit-normal-82f61bb.ipa)
+
+今回の診断はXcode27/Swift6.4/iOS27 SDK製で、iOS27で新しいcompletion受付を使用する。通常版はXcode26.6/iOS26.5 SDK製で旧同期fallbackを保持する。同一sourceでも両IPAのSDK経路は同じではない。実機での新APIの受付/OS開始成功はまだ未確認。
+
+削除せず診断IPAを上書きし、Background Aで「継続処理を即時開始」を一度押す。「継続処理の記録」に「受付API: 非同期completion」があることと、その後の受付応答/進捗を確認する。進まなければ記録全文を共有し、反復や無期限待機は不要。位置/Regionの既済手順を再要求しない。
+
+位置記録は「受信記録（座標なし・最新64件）」へ保存する。callback受信時の時刻・UIApplication状態・process識別子を残し、画面表示/再起動で消さない。Regionにも「位置更新停止」を追加した。単にprocessが変わっただけでOSが位置イベントを理由にcold起動したとは断定しない。破損記録は保存失敗を表示して既存ファイルを保持する。
+
+公開tag/source一致、2IPAの無認証GET・SHA-256・全entry CRC・3bundle ID/0.8.3/build13・署名resource・診断非混入を確認。診断binaryに新submitTaskRequest completion selectorと位置記録型があることも確認済み。ZIPは追加していない。安定版は0.8.3のまま。
+
+
+## 前候補8b3584a: 同期APIによる即時開始の診断
 
 source `8b3584a74e6a49c99fedfbe5b0b0fd6e8a5b9816`、0.8.3/build13。[CI35231831131](https://github.com/y-aplus/JibunKit/actions/runs/35231831131)は共有395件（既存Keychain2skip）、Records11件、通常検索UI（38.205秒）、背景14＋位置7＝native21件（skipなし）、通常/診断IPAが成功。通常15分43秒・native11分35秒。structured xcresultの全宣言methodをsourceに照合済み。
 
@@ -73,9 +88,9 @@ IPA全entry CRC、app/Widget/Shareの既存IDと0.8.3/build13、署名resource�
 
 旧候補で受領した実機結果は起動直後終了のみ。修正版の起動成功は冒頭へ記録した。継続処理のOS開始は未確認。位置の実機観測は冒頭に記録した。
 
-## CI待機中の次回診断準備（未配布）
+## 位置記録を準備した経緯（82f61bbでCI・配布済み）
 
-位置callbackの受信時刻・UIApplication状態・process識別子・イベント種別をowner別の診断ファイルへ原子的に保存し、最新64件を画面で確認できる診断を作業中。座標は記録しない。既存ファイルの破損は上書きせず表示する。processが変わっただけでOSのcold起動原因を断定しない。Region画面にも位置更新停止ボタンを追加する。今回進行中のCI35231831131/source8b3584aには含まれず、別の検証境界へまとめる。
+位置callbackの受信時刻・UIApplication状態・process識別子・イベント種別をowner別の診断ファイルへ原子的に保存し、最新64件を画面で確認できる診断を準備し、82f61bbでCI・配布まで完了。座標は記録しない。既存ファイルの破損は上書きせず表示する。processが変わっただけでOSのcold起動原因を断定しない。Region画面にも位置更新停止ボタンを追加する。CI35231831131/source8b3584aには含めず、CI35235454126/source82f61bbへまとめた。
 
 iBeacon機材について、ユーザーはAndroidスマホを所有し、iPadは明日以降利用可能と回答。AndroidのBLE advertising/iBeacon送信可否は未確認。アプリ導入や外出はまだ依頼していない。
 

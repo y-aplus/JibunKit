@@ -37,7 +37,8 @@ final class P2IdentityFeature: ObservableObject {
 
     var definition: MiniAppDefinition {
         MiniAppDefinition(id: id, title: id.rawValue, systemImage: "externaldrive.connected.to.line.below",
-                          lifetime: service.lifetime, removal: service.removal) { [self] _ in
+                          lifetime: service.lifetime, removal: service.removal,
+                          externalAccess: service.externalAccess) { [self] _ in
             P2IdentityView(feature: self)
         }
     }

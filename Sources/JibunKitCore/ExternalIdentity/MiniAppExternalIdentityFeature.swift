@@ -14,6 +14,22 @@ public final class MiniAppExternalIdentityFeature {
         dataDescription: "このFeatureが所有する外部account data",
         removeData: { [coordinator] in try await coordinator.removeOwnedData() }
     )
+    public lazy var externalAccess = MiniAppExternalAccess(
+        id: id,
+        prepare: { _ in },
+        close: { [coordinator] in await coordinator.deactivate() },
+        open: {},
+        restoreLifecycle: { [coordinator] inner in
+            MiniAppRestoreLifecycle(
+                stop: {
+                    await coordinator.deactivate()
+                    try await inner?.stop()
+                },
+                resume: { try await inner?.resume() },
+                recoverAfterFailedStop: inner?.recoverAfterFailedStop
+            )
+        }
+    )
 
     public init(id: MiniAppID, container: MiniAppExternalContainer,
                 backend: any MiniAppExternalIdentityBackend) {

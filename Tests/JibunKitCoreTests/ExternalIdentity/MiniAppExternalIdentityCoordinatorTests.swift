@@ -12,8 +12,11 @@ final class MiniAppExternalIdentityCoordinatorTests: XCTestCase {
         let bID = try await b.identity(localID: "same")
         try await a.save(aID, fields: ["value": "A"])
         try await b.save(bID, fields: ["value": "B"])
+        await a.deactivate()
         try await a.removeOwnedData()
-        let deleted = try await a.load(aID)
+        _ = try await a.activate()
+        let reopenedA = try await a.identity(localID: "same")
+        let deleted = try await a.load(reopenedA)
         let preserved = try await b.load(bID)
         XCTAssertNil(deleted)
         XCTAssertEqual(preserved?.fields["value"], "B")
@@ -79,26 +82,68 @@ final class MiniAppExternalIdentityCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testFeatureLifetimeStopAndRestartInvalidatesOnlyItsOwner() async throws {
+    func testManagementRemovalStopsADeletesItsSnapshotAndPreservesB() async throws {
         let backend = ExternalIdentityFakeBackend(account: "account")
         let scope = try MiniAppExternalContainer(identifier: "iCloud.test")
         let a = MiniAppExternalIdentityFeature(id: MiniAppID("owner-a"), container: scope, backend: backend)
         let b = MiniAppExternalIdentityFeature(id: MiniAppID("owner-b"), container: scope, backend: backend)
+        let suite = "ExternalIdentityManagement.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let manager = MiniAppManagement(registrations: [
+            .init(id: a.id, lifetime: a.lifetime, removal: a.removal, externalAccess: a.externalAccess),
+            .init(id: b.id, lifetime: b.lifetime, removal: b.removal, externalAccess: b.externalAccess),
+        ], defaults: defaults, consents: .init(defaults: defaults), coordinator: .init())
         try await a.lifetime.start(); try await b.lifetime.start()
         let bRuntime = b.lifetime.runtime
         let oldA = try await a.coordinator.identity(localID: "same")
         let bID = try await b.coordinator.identity(localID: "same")
+        try await a.coordinator.save(oldA, fields: ["value": "A"])
         try await b.coordinator.save(bID, fields: ["value": "B"])
-        await a.lifetime.stop()
+        try await manager.remove(a.id)
         XCTAssertTrue(b.lifetime.runtime === bRuntime)
         do { _ = try await a.coordinator.load(oldA); XCTFail("Expected stale generation") }
         catch let error as MiniAppExternalIdentityError { XCTAssertEqual(error, .staleGeneration) }
         let preserved = try await b.coordinator.load(bID)
         XCTAssertEqual(preserved?.fields["value"], "B")
-        try await a.lifetime.start()
+        try await manager.enable(a.id); try await a.lifetime.start()
         let newA = try await a.coordinator.identity(localID: "same")
         XCTAssertNotEqual(oldA.account.generation, newA.account.generation)
+        let removed = try await a.coordinator.load(newA)
+        XCTAssertNil(removed)
         await b.lifetime.stop(); await a.lifetime.stop()
+    }
+
+    @MainActor
+    func testAccountObserverBelongsToRuntimeAndDoesNotReactivateAfterStop() async throws {
+        let backend = ExternalIdentityFakeBackend(account: "old")
+        let feature = MiniAppExternalIdentityFeature(id: MiniAppID("owner-a"),
+            container: try .init(identifier: "iCloud.test"), backend: backend)
+        try await feature.lifetime.start()
+        await backend.setAccount("new"); await backend.emitAccountChange()
+        var changed: MiniAppExternalRecordIdentity?
+        for _ in 0..<100 {
+            if let value = try? await feature.coordinator.identity(localID: "same"),
+               value.account.accountIdentifier == "new" { changed = value; break }
+            await Task.yield()
+        }
+        XCTAssertEqual(changed?.account.accountIdentifier, "new")
+        await feature.lifetime.stop()
+        await backend.setAccount("later"); await backend.emitAccountChange(); await Task.yield()
+        do { _ = try await feature.coordinator.identity(localID: "same"); XCTFail("Stopped feature reactivated") }
+        catch let error as MiniAppExternalIdentityError { XCTAssertEqual(error, .inactive) }
+    }
+
+    @MainActor
+    func testClosedRuntimeNeverLeavesAnActiveAccountRegistration() async throws {
+        let backend = ExternalIdentityFakeBackend(account: "account")
+        let coordinator = try coordinator(backend)
+        let runtime = MiniAppRuntime(); await runtime.shutdown()
+        do { try await coordinator.connect(to: runtime); XCTFail("Closed runtime connected") } catch {}
+        let lookups = await backend.accountLookupCount
+        XCTAssertEqual(lookups, 0)
+        do { _ = try await coordinator.identity(localID: "same"); XCTFail("Account remained active") }
+        catch let error as MiniAppExternalIdentityError { XCTAssertEqual(error, .inactive) }
     }
 
     private func coordinator(_ backend: ExternalIdentityFakeBackend) throws -> MiniAppExternalIdentityCoordinator {
@@ -110,11 +155,13 @@ final class MiniAppExternalIdentityCoordinatorTests: XCTestCase {
 private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
     enum Failure: Error { case injected }
     private var account: String
-    private var rows: [MiniAppExternalRecordIdentity: MiniAppExternalRecord] = [:]
+    private var rows: [MiniAppExternalPersistentRecordKey: [String: String]] = [:]
     private var failAccount = false
     private var shouldHoldLoad = false
     private var heldLoad: CheckedContinuation<Void, Never>?
     private var holdObserved: CheckedContinuation<Void, Never>?
+    private var accountChangeContinuations: [AsyncStream<Void>.Continuation] = []
+    private(set) var accountLookupCount = 0
 
     init(account: String) { self.account = account }
     func setAccount(_ value: String) { account = value }
@@ -126,6 +173,7 @@ private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
     func releaseLoad() { heldLoad?.resume(); heldLoad = nil }
 
     func currentAccountIdentifier(in container: MiniAppExternalContainer) async throws -> String {
+        accountLookupCount += 1
         if failAccount { failAccount = false; throw Failure.injected }
         return account
     }
@@ -136,15 +184,31 @@ private actor ExternalIdentityFakeBackend: MiniAppExternalIdentityBackend {
                 heldLoad = continuation; holdObserved?.resume(); holdObserved = nil
             }
         }
-        return rows[identity]
+        return rows[MiniAppExternalPersistentRecordKey(identity)].map {
+            MiniAppExternalRecord(identity: identity, fields: $0)
+        }
     }
-    func save(_ record: MiniAppExternalRecord) async throws { rows[record.identity] = record }
-    func delete(_ identity: MiniAppExternalRecordIdentity) async throws { rows[identity] = nil }
+    func save(_ record: MiniAppExternalRecord) async throws {
+        let key = MiniAppExternalPersistentRecordKey(record.identity)
+        rows[key, default: [:]].merge(record.fields) { _, new in new }
+    }
+    func delete(_ identity: MiniAppExternalRecordIdentity) async throws {
+        rows[MiniAppExternalPersistentRecordKey(identity)] = nil
+    }
     func ensureSubscription(for account: MiniAppExternalAccount) async throws {}
     func deleteOwnedData(for account: MiniAppExternalAccount) async throws {
-        rows = rows.filter { $0.key.account != account }
+        rows = rows.filter { key, _ in
+            key.owner != account.owner || key.container != account.container
+                || key.accountIdentifier != account.accountIdentifier
+        }
     }
-    func cancelOperations(owner: MiniAppID) async {}
+    func cancelOperations(owner: MiniAppID) async { releaseLoad() }
+    func accountChanges() async -> AsyncStream<Void> {
+        let pair = AsyncStream<Void>.makeStream()
+        accountChangeContinuations.append(pair.continuation)
+        return pair.stream
+    }
+    func emitAccountChange() { accountChangeContinuations.forEach { $0.yield(()) } }
 }
 
 private func XCTAssertThrowsExternal<T>(_ expected: MiniAppExternalIdentityError?,

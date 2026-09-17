@@ -6,8 +6,12 @@ import Foundation
 /// Merely constructing a Feature or diagnostic host never calls CKContainer().
 public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
     private let container: CKContainer
+    private let recordType: String
+    private var operations: [MiniAppID: [UUID: CloudKitOwnedOperation]] = [:]
 
-    public init(container: CKContainer) { self.container = container }
+    public init(container: CKContainer, recordType: String = "JibunKitExternalData") {
+        self.container = container; self.recordType = recordType
+    }
 
     public func currentAccountIdentifier(in scope: MiniAppExternalContainer) async throws -> String {
         try validate(scope)
@@ -18,51 +22,81 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
 
     public func load(_ identity: MiniAppExternalRecordIdentity) async throws -> MiniAppExternalRecord? {
         try validate(identity.account.container)
-        do {
-            let record = try await database(identity.account.container).record(for: recordID(identity))
-            var fields: [String: String] = [:]
-            for key in record.allKeys() { if let value = record[key] as? String { fields[key] = value } }
-            return .init(identity: identity, fields: fields)
-        } catch let error as CKError where error.code == .unknownItem { return nil }
+        let database = database(identity.account.container)
+        let id = CloudKitExternalIdentityNames.recordID(for: identity)
+        return try await run(owner: identity.account.owner) {
+            do {
+                let record = try await database.record(for: id)
+                var fields: [String: String] = [:]
+                for key in record.allKeys() { if let value = record[key] as? String { fields[key] = value } }
+                return .init(identity: identity, fields: fields)
+            } catch let error as CKError where error.code == .unknownItem { return nil }
+        }
     }
 
     public func save(_ value: MiniAppExternalRecord) async throws {
         try validate(value.identity.account.container)
         let database = database(value.identity.account.container)
-        let zone = CKRecordZone(zoneID: zoneID(value.identity.account))
-        _ = try await database.modifyRecordZones(saving: [zone], deleting: [])
-        let record = CKRecord(recordType: "JibunKitExternalData", recordID: recordID(value.identity))
-        for (key, field) in value.fields { record[key] = field as CKRecordValue }
-        _ = try await database.save(record)
+        let id = CloudKitExternalIdentityNames.recordID(for: value.identity)
+        let recordType = recordType
+        try await run(owner: value.identity.account.owner) {
+            try await Self.ensureZone(value.identity.account, database: database)
+            let record: CKRecord
+            do { record = try await database.record(for: id) }
+            catch let error as CKError where error.code == .unknownItem {
+                record = CKRecord(recordType: recordType, recordID: id)
+            }
+            // Preserve the fetched change tag and all fields not owned by this update.
+            for (key, field) in value.fields { record[key] = field as CKRecordValue }
+            _ = try await database.save(record)
+        }
     }
 
     public func delete(_ identity: MiniAppExternalRecordIdentity) async throws {
         try validate(identity.account.container)
-        do { _ = try await database(identity.account.container).deleteRecord(withID: recordID(identity)) }
-        catch let error as CKError where error.code == .unknownItem { return }
+        let database = database(identity.account.container)
+        let id = CloudKitExternalIdentityNames.recordID(for: identity)
+        try await run(owner: identity.account.owner) {
+            do { _ = try await database.deleteRecord(withID: id) }
+            catch let error as CKError where error.code == .unknownItem { return }
+        }
     }
 
     public func ensureSubscription(for account: MiniAppExternalAccount) async throws {
         try validate(account.container)
         let database = database(account.container)
-        _ = try await database.modifyRecordZones(
-            saving: [CKRecordZone(zoneID: zoneID(account))], deleting: [])
-        let identifier = subscriptionID(account)
-        do { _ = try await database.subscription(for: identifier); return }
-        catch let error as CKError where error.code == .unknownItem {}
-        let subscription = CKRecordZoneSubscription(zoneID: zoneID(account), subscriptionID: identifier)
-        _ = try await database.save(subscription)
+        try await run(owner: account.owner) {
+            try await Self.ensureZone(account, database: database)
+            let identifier = CloudKitExternalIdentityNames.subscriptionID(for: account)
+            do { _ = try await database.subscription(for: identifier); return }
+            catch let error as CKError where error.code == .unknownItem {}
+            let subscription = CKRecordZoneSubscription(
+                zoneID: CloudKitExternalIdentityNames.zoneID(for: account), subscriptionID: identifier)
+            _ = try await database.save(subscription)
+        }
     }
 
     public func deleteOwnedData(for account: MiniAppExternalAccount) async throws {
         try validate(account.container)
-        do { _ = try await database(account.container).deleteRecordZone(withID: zoneID(account)) }
-        catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem { return }
+        let database = database(account.container)
+        try await run(owner: account.owner) {
+            do { _ = try await database.deleteRecordZone(
+                withID: CloudKitExternalIdentityNames.zoneID(for: account)) }
+            catch let error as CKError where error.code == .zoneNotFound || error.code == .unknownItem { return }
+        }
     }
 
     public func cancelOperations(owner: MiniAppID) async {
-        // Async convenience calls cannot be selectively cancelled. The coordinator's
-        // generation check isolates their late completion from the replacement account.
+        let owned = Array(operations[owner, default: [:]].values)
+        owned.forEach { $0.cancel() }
+        for operation in owned { await operation.wait() }
+    }
+
+    public func accountChanges() async -> AsyncStream<Void> {
+        AsyncStream { continuation in
+            let observation = CloudKitAccountChangeObservation(continuation: continuation)
+            continuation.onTermination = { _ in observation.cancel() }
+        }
     }
 
     private func database(_ scope: MiniAppExternalContainer) -> CKDatabase {
@@ -81,14 +115,58 @@ public actor CloudKitExternalIdentityBackend: MiniAppExternalIdentityBackend {
                 "CloudKit native adapter supports privateDatabase custom zones only")
         }
     }
-    private func zoneID(_ account: MiniAppExternalAccount) -> CKRecordZone.ID {
-        CKRecordZone.ID(zoneName: "jibunkit.\(account.owner.storageNamespace)", ownerName: CKCurrentUserDefaultName)
+    private static func ensureZone(_ account: MiniAppExternalAccount, database: CKDatabase) async throws {
+        let zone = CKRecordZone(zoneID: CloudKitExternalIdentityNames.zoneID(for: account))
+        let results = try await database.modifyRecordZones(saving: [zone], deleting: [])
+        guard let result = results.saveResults[zone.zoneID] else {
+            throw MiniAppExternalIdentityError.backend("CloudKit returned no result for the owned record zone")
+        }
+        _ = try result.get()
     }
-    private func recordID(_ identity: MiniAppExternalRecordIdentity) -> CKRecord.ID {
-        CKRecord.ID(recordName: identity.recordName, zoneID: zoneID(identity.account))
+
+    private func run<Value: Sendable>(owner: MiniAppID,
+        operation: @escaping @Sendable () async throws -> Value) async throws -> Value {
+        let task = Task { try await operation() }, id = UUID()
+        operations[owner, default: [:]][id] = CloudKitOwnedOperation(task)
+        defer { operations[owner]?[id] = nil }
+        return try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
     }
-    private func subscriptionID(_ account: MiniAppExternalAccount) -> String {
+}
+
+/// Namespace helper for Features that need richer CKRecord fields or operations
+/// than the small String-field example adapter provides.
+public enum CloudKitExternalIdentityNames {
+    public static func zoneID(for account: MiniAppExternalAccount) -> CKRecordZone.ID {
+        CKRecordZone.ID(zoneName: "jibunkit.\(account.owner.storageNamespace)",
+                        ownerName: CKCurrentUserDefaultName)
+    }
+    public static func recordID(for identity: MiniAppExternalRecordIdentity) -> CKRecord.ID {
+        CKRecord.ID(recordName: identity.recordName, zoneID: zoneID(for: identity.account))
+    }
+    public static func subscriptionID(for account: MiniAppExternalAccount) -> String {
         "jibunkit.\(account.owner.storageNamespace).changes"
     }
+}
+
+private final class CloudKitOwnedOperation: @unchecked Sendable {
+    let cancel: @Sendable () -> Void
+    let wait: @Sendable () async -> Void
+    init<Value: Sendable>(_ task: Task<Value, Error>) {
+        cancel = { task.cancel() }; wait = { _ = await task.result }
+    }
+}
+
+private final class CloudKitAccountChangeObservation: @unchecked Sendable {
+    private let center = NotificationCenter.default
+    private var token: NSObjectProtocol?
+    init(continuation: AsyncStream<Void>.Continuation) {
+        token = center.addObserver(forName: .CKAccountChanged, object: nil, queue: nil) { _ in
+            continuation.yield(())
+        }
+    }
+    func cancel() {
+        if let token { center.removeObserver(token); self.token = nil }
+    }
+    deinit { cancel() }
 }
 #endif

@@ -9,6 +9,10 @@
 - backend が返した account identifier と、その照合ごとに発行する generation
 - Feature 内の `localID`
 
+generation は runtime 内の受付・遅着判定だけに使う。backend の永続キーは
+`MiniAppExternalPersistentRecordKey`（owner/container/account/localID）であり generation を含まない。同じ account で
+停止・復元・再開しても既存データを読める。
+
 CloudKit adapter は owner ごとに `jibunkit.<owner>` の custom record zone と subscription ID を使う。同じ
 `localID` を A/B が使っても zone が異なる。管理から A を削除すると A の zone だけを削除し、B の record、
 runtime、非初期値は変更しない。任意 container 間の移行、競合解決、業務データの汎用同期はこの API の範囲外。
@@ -31,20 +35,25 @@ MiniAppDefinition(
     title: "Example",
     systemImage: "externaldrive",
     lifetime: external.lifetime,
-    removal: external.removal
+    removal: external.removal,
+    externalAccess: external.externalAccess
 ) { context in
     ExampleView(coordinator: external.coordinator)
 }
 ```
 
-`lifetime.start()` は account を照合して subscription を用意する。runtime shutdown は admission を閉じ、
-coordinator の account generation を無効化する。管理の disable は既存の lifetime 停止を、データ削除は既存の
-`MiniAppRemovalProvider` をそのまま使う。復元後は新しい runtime で再度 `activate()` されるため、停止前の handle は
+`lifetime.start()` は cleanup を先に runtime へ登録してから account を照合し、subscription と account observer を用意する。
+管理の `externalAccess.close` は lifetime 停止より先に受付を閉じる。coordinator は所有 operation を取消して完了まで join し、
+その後に deletion 用 account snapshot を保持したまま runtime generation を無効化する。したがって管理が stop 後に呼ぶ
+`MiniAppRemovalProvider` は snapshot の owner zone を削除できる。復元後は新しい runtime で再接続し、停止前の handle は
 再利用せず `identity(localID:)` を取り直す。
 
-account change notification を host が受けたときは、該当する各 Feature の
-`coordinator.accountDidChange()` を呼ぶ。旧世代の要求は取消を backend に依頼し、取消不能な async CloudKit 呼出しも
-完了時の generation 照合で結果を隔離する。旧 handle の read/write/delete は `.staleGeneration` になる。
+native backend は `CKAccountChanged` observer を Feature runtime の task として所有する。停止時に observer を取消し、停止中の
+通知は Feature を再activateしない。変更中は受付を閉じ、旧 operation を取消/joinしてから新 account を照合する。並行する
+activate/account change は個別 reservation で後着だけを採用する。旧 handle の read/write/delete は `.staleGeneration` になる。
+
+取消は新しい mutation とローカル結果公開を止める境界である。CloudKit server が取消前に受理済みの書込みを巻き戻す保証は
+ないため、generation 照合を server transaction/rollback と呼ばない。
 
 失敗した activation は runtime 起動失敗として扱われ、既存 `MiniAppFeatureLifetime` の停止完了後に再試行できる。
 片方の account/通信失敗を別 owner の停止や削除へ拡大しない。
@@ -68,9 +77,13 @@ Core、`P2IdentityProbe`、`UnavailableExternalIdentityBackend` は `CKContainer
 診断 host も定義を列挙しただけでは落ちない。native adapter は、上記を満たす host が作成した `CKContainer` の注入を
 必須にしている。
 
-`Tests/P2Identity/P2IdentityNativeTests.swift` の実 CloudKit round-trip は、署名済み test host で環境変数
-`JIBUNKIT_CLOUDKIT_CONTAINER` を明示した場合だけ実行する。未設定時は skip であり成功ではない。fake backend の
-所有・取消・遅着・失敗/復旧試験も、OS 通信成功や Dashboard 設定成功の証拠とは呼ばない。
+`CloudKitExternalIdentityBackend` は String field を使う小さな接続例であり、任意 CKRecord/asset/reference の facade ではない。
+更新時は既存 record を fetch して change tag と未指定 field を保持する。より豊かな Feature は
+`CloudKitExternalIdentityNames` の owned zone/record/subscription ID を使い、固有 schema/operation を Feature 内に実装する。
+
+通常の `Tests/P2Identity/P2IdentityNativeTests.swift` は skip なしで fake backend と実 Feature の管理・復元・終了接続を検証する。
+実 CloudKit round-trip は診断 app にコピーされない `Tests/P2IdentitySigned/P2IdentitySignedCloudKitTests.swift` だけに置き、
+署名専用 target と `JIBUNKIT_CLOUDKIT_CONTAINER` を必須にする。未実行は成功でも通常 native test の skip でもない。
 
 ## 観測すべき結果
 

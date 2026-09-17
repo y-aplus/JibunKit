@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "0672c74f416471a50098599c4dc897df174dd9d4",
+  "source": "8d526d22d25862617c2279b75ede7f6a3cab810d",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -357,7 +357,7 @@
     },
     {
       "id": "device-launch-registration-repair",
-      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location runtime source=0672c74f416471a50098599c4dc897df174dd9d4; background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; other defaults. Entire shared suite including4 new identity/launch-failure tests; all19 native background/location methods; both normal and diagnostic IPA.",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location runtime source=8d526d22d25862617c2279b75ede7f6a3cab810d; background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; other defaults. Entire shared suite including4 new identity/launch-failure tests; all19 native background/location methods; both normal and diagnostic IPA.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Prior successful normal14m13/native7m24 including setup/upload. Repair changes native scheduler identifier mapping, host launch failure handling/lifetime gate/UI, and adds2 native/4 Core tests. Same2 parallel jobs,25min expected inclusive; budget3rd run, no separate worker CI."
     }

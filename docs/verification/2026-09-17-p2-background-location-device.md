@@ -1,4 +1,8 @@
-# P2-B 背景処理・位置情報の実機確認（未実施）
+# P2-B 背景処理・位置情報の実機確認（起動不具合を修正中）
+
+**以下のda62672診断版は実機で起動直後に終了したため、確認を中断する。再試行不要。** 添付クラッシュ記録のapp binary UUIDが配布IPAと一致し、main threadの`NotificationAppDelegate.application(_:didFinishLaunchingWithOptions:)`で`EXC_BREAKPOINT/SIGTRAP`を確認。元のthrowされたエラー文は記録になく、SideStoreの許可ID書換え→旧ID登録拒否はコードからの有力な推定である。端末識別子やログ全文はリポジトリへ保存しない。復旧用には[安定版0.8.3 IPA](https://github.com/y-aplus/JibunKit/releases/download/0.8.3/JibunKit.ipa)を削除せず上書きできる。
+
+修正では実行時の許可リストに一致する再署名後IDへnative register/submit/cancelを統一し、Feature起動登録の失敗を全appのtrapに変えず、当該ownerの開始拒否と画面表示へ変える。修正版CI・実機の起動確認は未実施。以下は旧候補の手順と証拠として保持する。
 
 対象sourceは`da6267213a15872f3eb3860157edf0840e866bd2`、0.8.3/build13。[CI35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)で通常版と背景/位置native17件・診断版が成功。正式0.8.4の出荷確認ではない。実機で確認した成果のまとまりを次の版へ進める。
 
@@ -36,4 +40,4 @@ source `da62672`で共有389件（既存Keychain2skip/失敗0）、独立Records
 
 IPA全entry CRC、app/Widget/Shareの既存IDと0.8.3/build13、署名resource、診断構成の5scheduler宣言と3background modes、通常版の診断非混入を照合。各ZIP内IPAの一致を検査した。新規prerelease `p2-b-device-check-20260917`を同sourceへ固定して公開。診断/通常のIPA/ZIP計4assetを無認証で再取得し、SHA-256・CRCとZIP内IPA一致を確認済み。既存tag/assetは差し替えていない。
 
-実機結果はまだ受領していない。受領後にsourceと操作範囲をこの文書へまとめて追記する。
+受領した実機結果は起動直後終了のみ。継続処理・位置の各操作には到達していない。修正版の起動と対象操作を確認してから更新する。

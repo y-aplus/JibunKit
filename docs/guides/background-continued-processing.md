@@ -59,6 +59,25 @@ rejects duplicate UUIDs, and fails a late native launch if the center has alread
 Do not request background GPU resources through this wrapper: GPU capability and entitlement are
 an optional, separate integration and are outside this boundary.
 
+For re-signing hosts, put the build-time app bundle ID in
+`JibunKitOriginalBundleIdentifier` in the app Info.plist. The JibunKit host supplies
+`com.jibunkit.app`. The native refresh, processing, shared-refresh, and continued
+adapters resolve logical task IDs against the installed `CFBundleIdentifier` and
+permitted task list. They replace the original bundle prefix only when the
+result is explicitly permitted (including continued-task wildcard entries).
+Feature IDs, stored owner IDs, job UUIDs and returned logical receipts remain
+unchanged; registration, submission and cancellation use the same native mapping.
+Unrelated namespaces and signers that leave the task list unchanged retain their
+existing IDs. No suffix-only or cross-owner match is used.
+
+This handles the task-list rewrite present in
+[SideStore's re-sign operation](https://github.com/SideStore/SideStore/blob/develop/SideStore/Core/Operations/PipelineOperations/ResignAppOperation.swift).
+It does not establish that every signing configuration supports background
+execution. A rejected launch registration is reported for that Feature, and its
+lifetime rejects starts for the rest of the process. Other Features still
+register. Correct the launch conditions and restart; toggling management enable
+does not repeat an OS registration that may already have partially succeeded.
+
 The system owns admission and runtime. A successful `submit` does not prove launch, and invoking a
 stored launch closure in a test is not OS-launch evidence. The system may terminate work under
 resource pressure, cancels queued work when a person closes the app from the app switcher, and may

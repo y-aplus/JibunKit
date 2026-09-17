@@ -20,7 +20,9 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         MiniAppRegistry.launchState.register(MiniAppRegistry.all)
         do {
             let registrations = Dictionary(uniqueKeysWithValues:
-                MiniAppRegistry.all.map { ($0.id, MiniAppRegistry.management.isEnabled($0.id) ? $0.notificationCategories : []) })
+                MiniAppRegistry.all.map { ($0.id,
+                    MiniAppRegistry.management.isEnabled($0.id) && MiniAppRegistry.launchState.errors[$0.id] == nil
+                        ? $0.notificationCategories : []) })
             try MiniAppNotificationCategoryRegistry.shared.configure(registrations)
         } catch {
             MiniAppRegistry.launchState.hostError = String(describing: error)

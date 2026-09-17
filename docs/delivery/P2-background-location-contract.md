@@ -86,3 +86,7 @@
 2回目[35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)はsource `da62672`で成功。通常14分13秒・診断7分24秒、共有389件（既存Keychain2skip）・独立Records11件・通常検索UI・native17件（skipなし）を確認。診断のTuist生成79秒、native build/test140秒、Release87秒。2run合計の実行job時間は32.82分。予定25分の実経過以内で、親子依頼は5件のまま、今回のコンパイル修正は親で完了した。モデル別課金内訳がないため金銭的節約額は算出しない。
 
 通常/診断IPAのCRC・3bundleの既存ID/0.8.3/build13・署名resourceと診断構成を照合した。P2-3/P2-4の全integration条件には実OSの起動/背景/物理イベントを含むため、CI成功だけでwave全体のgate合格にはしない。[今回の実機手順と残件](../verification/2026-09-17-p2-background-location-device.md)へ進む。coldイベント観測・外部HTTP・iBeacon機材の不足は明示し、無期限待機や任意URLの用意をユーザーへ転嫁しない。
+
+実機da62672は起動直後に終了した。添付ログのapp UUIDを配布IPAと照合し、main threadの起動delegateでSIGTRAPを確認。元のthrow理由は含まれていないため、SideStoreのBG許可ID書換えが直接原因とはまだ断定しない。native IDの整合不備と、fallibleなFeature起動hookを全体のpreconditionFailureへ変換する既知の問題を修正する。hostのbuild時bundle IDと実行時の許可リストを使ってnative register/submit/cancelを統一し、失敗ownerのlifetime開始とhostイベントを閉じて他ownerを継続する。部分成功したOS登録は同processで再試行せず、画面に理由を残す。
+
+Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計画。前回実測14分13秒/7分24秒から準備upload込み25分見積りを維持する。native19件と共有全件/通常検索UI/両IPAを実行し、成功後の実機再確認は起動から再開する。raw crash記録、端末識別子、署名材料はGitHubへ送らない。

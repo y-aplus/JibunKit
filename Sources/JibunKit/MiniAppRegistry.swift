@@ -37,7 +37,8 @@ enum MiniAppRegistry {
     /// tasks avoid duplicate subscriptions and do not make A wait for B.
     static func reconcileContinuingSurfaces(for owner: MiniAppID? = nil) {
         for definition in all where !definition.continuingSurfaces.isEmpty
-            && (owner == nil || definition.id == owner) && management.isEnabled(definition.id) {
+            && (owner == nil || definition.id == owner) && management.isEnabled(definition.id)
+            && launchState.errors[definition.id] == nil {
             let id = definition.id
             guard continuingTasks[id] == nil else { continue }
             let group = definition.continuingSurfaceGroup
@@ -142,7 +143,7 @@ enum MiniAppRegistry {
         for definition in all {
             guard let handler = definition.onHostPhaseChange else { continue }
             let gated: @MainActor (MiniAppHostPhase) -> Void = { phase in
-                if management.isEnabled(definition.id) { handler(phase) }
+                if management.isEnabled(definition.id), launchState.errors[definition.id] == nil { handler(phase) }
             }
             handlers.append(gated)
         }
@@ -154,7 +155,7 @@ enum MiniAppRegistry {
         for definition in all {
             guard let handler = definition.onSceneActivityChange else { continue }
             handlers.append(.init(id: definition.id) { activity in
-                if management.isEnabled(definition.id) { handler(activity) }
+                if management.isEnabled(definition.id), launchState.errors[definition.id] == nil { handler(activity) }
             })
         }
         return MiniAppSceneActivityDispatcher(handlers: handlers)

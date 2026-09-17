@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- P2-B診断版が実機の起動処理で終了する不具合を修正中。再署名後の背景許可IDへnative登録/submit/取消を合わせ、失敗した起動登録をFeature別に表示・開始拒否する。元のクラッシュはSIGTRAPまで確認し、具体的な登録拒否理由は未確定。
+
 - 開発branch `codex/p2-background-location`に、owner別の継続処理、位置更新/geofence/iBeaconの登録・配送・寿命・管理連携を追加。通常管理画面の同意変更を保存後にFeatureへ伝えるoptional hookを追加。
 - CI35176070341で共有389件（既存Keychain2skip）、背景/位置native17件、通常検索UIと通常/診断IPAが成功。実OS背景起動・実移動/電波による配送は未確認。main/安定版0.8.3へ出荷済みとは扱わない。
 

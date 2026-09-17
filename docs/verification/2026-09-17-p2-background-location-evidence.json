@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "a82434ad3b26210c75dc5680a5373143a0c4b94f",
+  "source": "da6267213a15872f3eb3860157edf0840e866bd2",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -74,6 +74,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35175311988",
       "source": "6f3944f489b74699a10d54da0bf4afd980118b60",
       "conclusion": "failure: both macOS shared and iOS native builds stopped on missing return in MiniAppLocationService.startUpdates/register; no XCTest execution or new IPA. Normal job79s; native593s including simulator setup."
+    },
+    {
+      "id": "35176070341",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "conclusion": "success: shared389 tests/2 existing Keychain skips, independent Records11, normal Search UI, normal IPA; all17 background/location native tests without skips plus diagnostic Release IPA. Normal14m13/native7m24."
     }
   ],
   "evidence": [
@@ -276,6 +282,105 @@
       "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
       "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
       "reuse_reason": "Prior source evidence retained, not a rerun. Core Audio/Capture, storage/schema/Feature management/backup/widgets/intents/network unchanged from306874f. Host scene registration and scanner presentation anchor changed; fullScreen/re-presentation/scene disconnect native regressions and normal notification routing UI passed in repair run35102558612. Existing physical recording/video success is scoped to306874f. Release candidate runtime/tests/package identical to a142108; only3bundle versions/build and workflow expectations plus documentation changed. Original evidence source preserved; no physical rerun claim. P2-B delta against559e95e adds background/location Core and diagnostic fixtures plus optional consent-change hook. Existing notification/inbox/Web/widget/intent/storage/presentation/generator runtime paths and identifiers are unchanged. Shared tests rerun. Consent picker keeps the existing choice UI; saved-consent-before-hook/failure denial is newly tested by P2LocationNativeTests; prior manual management success covers existing controls only, not new location effects."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P2-3.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P2-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341 ; Test shared feature logic, 389 tests/2 existing Keychain skips/zero failure. Native-background-location-diagnostics/result.json and structured xcresult17 passes.",
+      "observation": "Full shared suite including location24 and continued6 new tests, lifetime/restore/management/input/HTTP/notification regressions passed. New native17 tests cover real Feature wiring and actual HTTP A cancellation/B saved file. Test source and method list reviewed; native callbacks injected for OS scheduler and region event cases.",
+      "review": "Two existing Keychain skips are unchanged, outside this delta. No unit/injected scheduler success is asserted as actual OS launch, physical region delivery, or full P2 integration/device acceptance."
+    },
+    {
+      "criterion": "P2-3.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "docs/guides/location.md; docs/delivery/P2-background-location-contract.md; docs/verification/2026-09-17-p2-background-location-device.md",
+      "observation": "Reviewed source API and successful iOS compile, diagnostic host hooks, usage descriptions/background modes/identifiers, ownership/consent/runtime cleanup and declared OS limits. Procedure distinguishes new native tests from remaining physical/cold behavior.",
+      "review": "Guides describe the branch implementation, not a shipped P2 completion. Cold/physical and hardware-dependent evidence is explicitly pending; diagnostic event-history limitations recorded."
+    },
+    {
+      "criterion": "P2-4.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+      "reference": "docs/guides/background-continued-processing.md; docs/delivery/P2-background-location-contract.md; docs/verification/2026-09-17-p2-background-location-device.md",
+      "observation": "Reviewed source API and successful iOS compile, diagnostic host hooks, usage descriptions/background modes/identifiers, ownership/consent/runtime cleanup and declared OS limits. Procedure distinguishes new native tests from remaining physical/cold behavior.",
+      "review": "Guides describe the branch implementation, not a shipped P2 completion. Cold/physical and hardware-dependent evidence is explicitly pending; diagnostic event-history limitations recorded."
     }
   ],
   "deferred_device": {
@@ -287,15 +392,16 @@
     "source": "",
     "summary": "Not a release report; minor-release full current-document review remains required at publication. New guides reviewed against source before first CI; SDK execution and physical evidence pending.",
     "unresolved": [
-      "P2-B has no Swift/iOS execution evidence yet; compile/native failures require repairs before main.",
-      "OS cold launch, real movement/beacon and background scheduling remain unverified."
+      "Actual OS continued processing/system cancellation and representative location behavior await user device checkpoint.",
+      "BG refresh/processing launch and cold URLSession events need observability; arbitrary user HTTP setup not requested.",
+      "Physical geofence/beacon and cold recovery remain unverified; transmitter availability requested."
     ]
   },
   "release": {},
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 5,
-    "ci_job_minutes": 11.2
+    "ci_job_minutes": 32.82
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -361,5 +467,38 @@
       "checkpoint": "1.0.0",
       "procedure": "After native CI, check OS location permission, foreground/background update, physical geofence and iBeacon delivery/reconnection where hardware available. If beacon transmitter unavailable, retain explicit unverified condition and ask at the grouped checkpoint."
     }
-  ]
+  ],
+  "execution_observations": {
+    "native_methods_passed": 17,
+    "native_skips": 0,
+    "shared_tests_executed": 389,
+    "shared_known_keychain_skips": 2,
+    "normal_search_test": "passed,40.430s",
+    "normal_job_seconds": 853,
+    "native_job_seconds": 444,
+    "native_stages_seconds": {
+      "generate": 79.267,
+      "native_build_and_tests": 139.833,
+      "release_build": 87.229
+    },
+    "remaining_integration": "Whole P2-3/P2-4 integration remains pending: OS scheduling/cold launch/real region and beacon behavior not established by these tests. Therefore this report is preflight plus CI evidence, not a passed full-wave CI/release gate."
+  },
+  "assets": {
+    "JibunKit-P2-B-da62672.ipa": {
+      "sha256": "f656973961351cd54a6cb60dd2544bb98fdf61ea7fc09928749ac55c75ebb694",
+      "bytes": 3891442
+    },
+    "JibunKit-P2-B-da62672.zip": {
+      "sha256": "2c44b02c90c0ccdb2bb33f4093c3c61574f7a983f1ad3adb5cd4f07abea1e1b1",
+      "bytes": 3891590
+    },
+    "JibunKit-normal-da62672.ipa": {
+      "sha256": "bb962d4f3d9426a0550d278eb70877a238c5c140debf498647bd6ecfdff5f872",
+      "bytes": 3806149
+    },
+    "JibunKit-normal-da62672.zip": {
+      "sha256": "79c0eb81d5903cc74e35c9a91195b80d5f075eca092de1b6825b9d297b2ad5de",
+      "bytes": 3806301
+    }
+  }
 }

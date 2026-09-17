@@ -493,8 +493,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "位置・背景更新・監視",
-      "existing": "活動/寿命/権限境界を再利用。実OSの位置所有を検証する",
-      "remaining": "前景/背景位置と通常geofence/iBeacon、権限変更/復帰、owner別登録/解除、枠不足の説明とB保持",
+      "existing": "開発branch da62672/CI35176070341: owner別位置service、native設定/SDK値、永続Region予約/20枠/破損保護、世代/同意/管理/復元を実装。Core24件・native7件成功。未出荷",
+      "remaining": "実OS許可/背景更新・物理geofence/iBeacon配送・cold復帰の観測、代表操作と文書/出荷確認。機材条件と診断のcoldイベント観測を整える",
       "deferred": "大量監視枠の透過仮想化/予測最適化",
       "criteria": [
         {
@@ -539,8 +539,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "背景起動・転送再接続・継続処理",
-      "existing": "既存BGTask API/shared refresh journal/background URLSession registryを再利用",
-      "remaining": "実OS受付/launch/期限/取消/completion、cold launchと転送再接続、重複配送・再起動の他owner保持",
+      "existing": "開発branch da62672/CI35176070341: 継続処理の一意job/owner、通常/shared refresh/URLSessionのlifetime受付・cleanup join。Core continued6件・背景native10件（実HTTP A取消/B保存含む）成功。未出荷",
+      "remaining": "実OS continued開始/取消、refresh/processing/sharedの実起動/期限、URLSession cold再接続、代表復帰操作と文書/出荷確認。注入callbackはOS起動証拠にしない",
       "deferred": "特殊GPU/複雑scheduler・全OS不具合回避",
       "criteria": [
         {

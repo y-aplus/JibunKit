@@ -82,3 +82,7 @@
 ローカルのhost3件・media5件・workflow command1件と差分検査は成功。Swift/XcodeはWindowsで未実行。実機のOS継続処理、非決定的なrefresh起動、転送cold再接続、位置の実移動・beaconは未確認として残し、今回の自動試験成功だけでP2-3/P2-4を完了にしない。
 
 初回[35175311988](https://github.com/y-aplus/JibunKit/actions/runs/35175311988)はsource `6f3944f`で失敗。通常jobは1分19秒、native jobは9分53秒で、両方とも`MiniAppLocationService.startUpdates/register`の戻り値未返却が原因だった。親が接続確認を追加して複数文にした際の`return`漏れ2件を`a82434a`で修正した。同じ新規API群の戻り値宣言も再確認した。native内訳はTuist生成233秒・コンパイル120秒で、試験本体とRelease生成には未到達。再試行は同じ2job/全試験の境界を維持し、予算3runのうち2回目として投入する。
+
+2回目[35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)はsource `da62672`で成功。通常14分13秒・診断7分24秒、共有389件（既存Keychain2skip）・独立Records11件・通常検索UI・native17件（skipなし）を確認。診断のTuist生成79秒、native build/test140秒、Release87秒。2run合計の実行job時間は32.82分。予定25分の実経過以内で、親子依頼は5件のまま、今回のコンパイル修正は親で完了した。モデル別課金内訳がないため金銭的節約額は算出しない。
+
+通常/診断IPAのCRC・3bundleの既存ID/0.8.3/build13・署名resourceと診断構成を照合した。P2-3/P2-4の全integration条件には実OSの起動/背景/物理イベントを含むため、CI成功だけでwave全体のgate合格にはしない。[今回の実機手順と残件](../verification/2026-09-17-p2-background-location-device.md)へ進む。coldイベント観測・外部HTTP・iBeacon機材の不足は明示し、無期限待機や任意URLの用意をユーザーへ転嫁しない。

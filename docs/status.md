@@ -4,6 +4,10 @@
 
 P2-1/P2-2の採用通常範囲はcomplete。306874fで再生/録音・写真/音声動画、a142108で文書保存/取消・QR・イヤホン抜去停止・通常版復帰後の既存データ保持を確認。native28件と通常通知UIはCI35102558612のsource付き証拠を、版変更だけの出荷へ再利用した。写真初回の不明エラー、以前のLive B単発値差分は原因未確定として保持。1.0全体は未完、次の境界は背景実行と位置（P2-B）。以下の旧版節はsourceを明示した履歴。
 
+## 開発中の背景処理・位置情報
+
+現在の開発branch `codex/p2-background-location`では、source `da62672`の[CI35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)が成功した。共有389件（既存Keychain2skip）、背景10件・位置7件のnative試験、通常検索UI、通常/診断IPAを検証。P2-3/P2-4は、実OS背景起動・位置/Region/iBeaconの実測を残すためpartial。mainの公開runtimeは0.8.3のままである。[今回の確認範囲](verification/2026-09-17-p2-background-location-device.md)。
+
 ## 0.8.0公開版
 
 製品source `71ef1ffb4f84442bf8853c0c2e286c2bedd81d22`、[CI34967147135](https://github.com/y-aplus/JibunKit/actions/runs/34967147135)は5分16秒で成功。共通273件（skip2、失敗0）、Records11件、通常Release/metadata/署名/IPA検査が成功した。取得IPAの全entry CRC、本体・Widget・Shareの0.8.0/build10と既存ID、診断Widget kind/resource非混入も確認済み。

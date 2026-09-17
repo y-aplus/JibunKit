@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+- 開発branch `codex/p2-background-location`に、owner別の継続処理、位置更新/geofence/iBeaconの登録・配送・寿命・管理連携を追加。通常管理画面の同意変更を保存後にFeatureへ伝えるoptional hookを追加。
+- CI35176070341で共有389件（既存Keychain2skip）、背景/位置native17件、通常検索UIと通常/診断IPAが成功。実OS背景起動・実移動/電波による配送は未確認。main/安定版0.8.3へ出荷済みとは扱わない。
+
 ## [0.8.3] - 2026-09-17
 
 0.8.3/build13を公開。対象別CI・実機と版変更後CI35169921272、公開IPA/ZIPの無認証再取得を完了。

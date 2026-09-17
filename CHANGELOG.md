@@ -4,9 +4,9 @@
 
 ## [Unreleased]
 
-## [0.8.3] - 出荷候補
+## [0.8.3] - 2026-09-17
 
-0.8.3/build13。対象別CI・実機確認を完了し、版変更後の通常IPAを検証中。未公開。
+0.8.3/build13を公開。対象別CI・実機と版変更後CI35169921272、公開IPA/ZIPの無認証再取得を完了。
 
 - AudioSessionのowner別調停、明示競合切替、停止/復旧待ち、Now Playing操作配送を追加。
 - camera予約とcapture/VisionKitの寿命・同意・scene接続、音声付き撮影の共有audio hookを追加。

@@ -1,6 +1,6 @@
 # 公開・release手順
 
-更新日: 2026-09-17。候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別CI・実機を完了し、版変更後の通常IPAを検証する。[今回の出荷照合](verification/2026-09-17-0.8.3-release.md)。最新公開版はGitHub Releasesを正本とし、候補を公開済みとは扱わない。版の範囲は[優先実装](implementation-priorities.md)、補完責任は[共存原則](coexistence-boundaries.md)、現状は[差分台帳](coexistence-ledger.md)で判断する。
+更新日: 2026-09-17。公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別CI・実機、版変更後CI、main統合と公開IPA/ZIP取得検査を完了。[出荷照合](verification/2026-09-17-0.8.3-release.md)。最新公開版はGitHub Releasesを正本とする。
 
 ## 版ごとの出荷判断
 

@@ -1,9 +1,8 @@
 # 基盤を更新する
 
-候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機を完了し、版変更後の通常IPAを検証中です。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
-更新日: 2026-09-16。公開版0.8.2とmainの区別は[現在状態](status.md)を参照。
+公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機、版変更後CIと公開IPA/ZIP検査を完了しました。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
+更新日: 2026-09-17。公開版0.8.3/build13とmainは[現在状態](status.md)を参照。
 0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。
-0.8.1/build11を公開済み。操作Widget/Controlと共有状態の実機確認、版変更後CIと公開物検査を完了（[出荷照合](verification/2026-09-16-0.8.1-release.md)）。
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 

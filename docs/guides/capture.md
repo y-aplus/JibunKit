@@ -78,7 +78,7 @@ operationの型は契約どおり`(@MainActor @Sendable () async throws -> (@Mai
 
 `Tests/MediaCapture/MediaCaptureNativeTests.swift`は注入可能な実Feature factoryとVision adapterを`@testable import JibunKit_App`で検査し、停止join、A停止後のBの非初期値／同一runtime generation、同意拒否、scanner開始失敗、旧delegate拒否、外部dismissと別owner提示保持を確認する。Foundation状態試験は`Tests/JibunKitCoreTests/Capture/`にあり、競合、明示切替、stop中、許可callback遅着、scene集約、Audio解放順、世代付き中断／runtime失敗をfakeで検査する。
 
-0.8.3候補の実機は代表操作へ絞った。306874fで写真・音声付き動画/背景移動停止/保存結果、a142108で文書保存/再表示/取消とQR、通常版復帰を確認済み。許可遅着/拒否、scene集約、世代、片側停止と他owner保持は実Feature/nativeおよびFoundation試験を使い、実機全組合せを反復しない。別playerとの実機同時録画、全機器/OS、AR/高度captureまで確認済みとはしない。写真初回の不明エラーは全文/再現条件不明として残す。[出荷照合](../verification/2026-09-17-0.8.3-release.md)。
+0.8.3の実機は代表操作へ絞った。306874fで写真・音声付き動画/背景移動停止/保存結果、a142108で文書保存/再表示/取消とQR、通常版復帰を確認済み。許可遅着/拒否、scene集約、世代、片側停止と他owner保持は実Feature/nativeおよびFoundation試験を使い、実機全組合せを反復しない。別playerとの実機同時録画、全機器/OS、AR/高度captureまで確認済みとはしない。写真初回の不明エラーは全文/再現条件不明として残す。[出荷照合](../verification/2026-09-17-0.8.3-release.md)。
 
 Apple一次資料: [AVCaptureSession](https://developer.apple.com/documentation/avfoundation/avcapturesession)、[startRunning](https://developer.apple.com/documentation/avfoundation/avcapturesession/startrunning())、[runtimeErrorNotification](https://developer.apple.com/documentation/avfoundation/avcapturesession/runtimeerrornotification)、[AVCaptureFileOutputRecordingDelegate](https://developer.apple.com/documentation/avfoundation/avcapturefileoutputrecordingdelegate)。
 

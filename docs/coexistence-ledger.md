@@ -34,8 +34,8 @@ P0完了は0.7.0、P0/P1完了は0.8.0。需要調査Issue #6は受領済みで�
 
 ## 台帳
 
-公開安定版PREVIOUSは0.8.2。候補VERSIONは0.8.3/build13で、音声・撮影/scanの対象別CI・実機結果を反映する。候補のbuild/公開は未完。[公開版との区別](status.md)を参照。
-P0はCI34705653297と2026-09-13の一括実機で確認し0.7.0、P1は0.8.0で公開済み。公開安定版は0.8.2、0.8.3は出荷候補。需要調査Issue #6を2026-09-13に受領し、1.0の正式境界は2026-09-15に推奨案で確定した。親D全体と採用通常範囲の完了を区別する。
+公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12で、音声・撮影/scanの対象別CI・実機結果を反映する。出荷CI・公開IPA検査を完了。[公開版との区別](status.md)を参照。
+P0はCI34705653297と2026-09-13の一括実機で確認し0.7.0、P1は0.8.0で公開済み。公開安定版は0.8.3。需要調査Issue #6を2026-09-13に受領し、1.0の正式境界は2026-09-15に推奨案で確定した。親D全体と採用通常範囲の完了を区別する。
 
 | ID | 対象 | 状態 | 現在状態 |
 | --- | --- | --- | --- |
@@ -59,9 +59,9 @@ P0はCI34705653297と2026-09-13の一括実機で確認し0.7.0、P1は0.8.0で�
 | D18 | Spotlight・NSUserActivityと項目削除 | 未対応 | MiniAppSpotlightNamespaceでnative属性を保持したFeature別item/domainと限定削除を追加。34509301964でA削除後のB identifier/domain/title保持を検証（52.529秒）。34523416261ではOS検索結果→所有Featureの詳細、別Featureの経路保持、host終了後の結果選択からの起動を署名付きiOS hostで検証（269.418秒）。SwiftUIが配送したscene内で既存AppNavigationへ接続する。textContentのquery返却、実OS複数window選択、一般NSUserActivity/検索クエリ継続等は残る。[所有権検証](verification/2026-09-10-spotlight-ownership.md)・[配送検証](verification/2026-09-11-spotlight-routing.md)。 |
 | D19 | 権限・プライバシー同意の単位 | 未対応 | P0-BでFeature別同意と目的・拒否時動作を通常管理/Reminder通知へ接続。34702137986で拒否後の通常編集保持と同意変更が成功。P0の一括実機も確認済み。OS全権限の一般的な調停はこの検証の対象外で未対応。 [P0-B証拠](verification/2026-09-12-p0-b.md)。 |
 | D20 | 署名capability・Info.plist・構成の合成 | 未対応 | Feature別のplist/entitlements要求をTuist標準helperで合成。異値衝突、明示resolution、限定した文字列集合、target別分離を追加。34510497056でnative helper試験、生成probeのビルド済みInfo.plist/実ad-hoc署名、通常app/Widget/IPAとUI回帰が成功。[接続ガイド](guides/feature-build-requirements.md)。34528323199でhost/Featureの言語別InfoPlist.strings合成・衝突/明示解決・stale除去、native app/widget読戻し、通常bundleと生成設定の一致を検証。[多言語検証](verification/2026-09-11-localized-info-plist.md)。34530924876で独立SwiftPM A/Bと統合app/Widgetのprivacy manifestを比較し、Aを外したclean buildでB保持を検証。標準resource bundleを使い独自合成は追加しない。[manifest検証](verification/2026-09-11-privacy-manifest-ownership.md)。34532392126では同一root・DerivedDataの通常再生成/buildでもXcodeがAを除去し、app BのbytesとWidget Bの辞書を保持した。追加清掃は不要。34537911487でCFBundleURLTypesの宣言辞書保持・完全一致重複除去・同名異値拒否・明示解決を追加し、native app読戻し/Widget非混入と自動合成schemeのOS起動を検証。[URL宣言検証](verification/2026-09-11-url-type-composition.md)。実権限ダイアログの言語表示、構造化配列の一般合成、target/依存/Registryの一元化、実provisioningと再署名後の利用条件は残る。 |
-| D21 | AudioSessionの構成と中断・復帰 | 通常範囲を実装・検証済み | 0.8.3候補。共有profileの互換/競合・明示切替・停止待ち・復旧とFeature寿命を接続。CI35102558612でcore/native回帰、306874f実機で再生/録音/背景/Siri後明示再開、a142108でイヤホン抜去停止を確認。特殊多経路や全機器へ一般化しない。[証拠](verification/2026-09-16-p2-media.md)。 |
-| D22 | Now Playing・remote commands・再生対象 | 通常範囲を実装・検証済み | 0.8.3候補。owner別session/command登録と終了待ち、実playerとFeature lifetimeを接続。native回帰と306874f実機のロック画面pause/play配送を確認。初期比較の未確認を今回sourceで補った。全OS surface/複数player実機同時操作へ一般化しない。[証拠](verification/2026-09-16-p2-media.md)。 |
-| D23 | カメラ・AR等のcapture資源 | 撮影/scanは検証済み・AR等は残る | 0.8.3候補。camera予約、scene/lifetime/同意/提示、音声付き撮影を接続。306874fで写真・動画、a142108で文書保存/取消・QRを実機確認。全画面表示時の誤切断を修正しnative28件/通常通知UI成功。写真初回の不明エラーは未確定。通常AR評価・高度同時captureは別範囲。[証拠](verification/2026-09-16-p2-media.md)。 |
+| D21 | AudioSessionの構成と中断・復帰 | 通常範囲を実装・検証済み | 0.8.3。共有profileの互換/競合・明示切替・停止待ち・復旧とFeature寿命を接続。CI35102558612でcore/native回帰、306874f実機で再生/録音/背景/Siri後明示再開、a142108でイヤホン抜去停止を確認。特殊多経路や全機器へ一般化しない。[証拠](verification/2026-09-16-p2-media.md)。 |
+| D22 | Now Playing・remote commands・再生対象 | 通常範囲を実装・検証済み | 0.8.3。owner別session/command登録と終了待ち、実playerとFeature lifetimeを接続。native回帰と306874f実機のロック画面pause/play配送を確認。初期比較の未確認を今回sourceで補った。全OS surface/複数player実機同時操作へ一般化しない。[証拠](verification/2026-09-16-p2-media.md)。 |
+| D23 | カメラ・AR等のcapture資源 | 撮影/scanは検証済み・AR等は残る | 0.8.3。camera予約、scene/lifetime/同意/提示、音声付き撮影を接続。306874fで写真・動画、a142108で文書保存/取消・QRを実機確認。全画面表示時の誤切断を修正しnative28件/通常通知UI成功。写真初回の不明エラーは未確定。通常AR評価・高度同時captureは別範囲。[証拠](verification/2026-09-16-p2-media.md)。 |
 | D24 | Bluetooth managerの復元と接続所有者 | 未調査 | 未調査。台帳への具体的な復元ID/所有者項目の追加が必要。 |
 | D25 | 位置情報・監視条件とアプリ単位の枠 | 未対応 | 初期台帳で不足していた「枠の統合」差分。登録・調停は未対応、別方式での補完範囲は未調査。 |
 | D26 | Widget・Control・既存extensionの組立て | 未対応 | 34566580764で二Swift Packageの静的Widgetを単独A/Bと統合WidgetBundleでbuildし、一つのextensionへの組込みとhost配下のbundle IDを確認。同じsuite/local keyへのA/B保存値を各Timeline providerで読み、A更新後もB保持を確認（0.025秒）。続く34578792277でApp Groupを介したapp/extension間の共有、単独A/Bと統合galleryの表示・ホームへの追加・実値の描画を確認。統合版では同一snapshotでA:11→A:33とB:22保持を確認し、画像と文字認識結果を保存。kind文字列のリンク検査とは別の実行証拠であり、任意Widget/Controlの動作へは一般化しない。[記録](verification/2026-09-11-package-widgets-native.md)。P1-Aで静的Widgetの通常保存・無効化/再登録/削除/B保持を接続し、CIで検証済み。[通常接続](guides/package-static-widgets.md)。4e6a3f4で静的Widgetの追加/描画/管理/B保持と上書き/Refreshを実機確認済み。P2-W e984d44で設定/操作Widget・Controlの独立A/B/統合build、metadata、native4件/管理UIが成功。OSの設定/操作/更新保持と管理/復元/B保持を[実機確認済み](verification/2026-09-15-p2-widget-control-device.md)。0.8.1で公開済み。親D全体/任意extension全体の完了とはしない。任意extension全体の統合は残る。 |
@@ -93,7 +93,7 @@ P0はCI34705653297と2026-09-13の一括実機で確認し0.7.0、P1は0.8.0で�
 | D09 | 仕様確認・比較実験・設計検証 | Cookie全属性/永続化時点、非パスワード資格情報、backgroundへの再接続条件。公開APIの保持条件と二ownerの実通信を比較する。 |
 | D11 | 仕様確認・比較実験 | custom callback/取消のnative比較と所有権調停は検証済み。関連HTTPS callback、実providerのSSO/consent条件、別OS sceneでの提示を比較する。 |
 | D14 | 仕様確認・比較実験 | 対象署名でAPNs entitlementを使える条件、app単位tokenを複数Featureのサーバー識別へ接続する条件を確認。可否を一括推定せず、登録/配送の実証可能な条件を記録する。 |
-| D23 | 残るARの評価・比較実験 | 通常capture/文書/QRは0.8.3候補でCI・実機確認済み。通常ARの低負荷採用範囲を評価する。高度同時capture/AR world stateは後段。[証拠](verification/2026-09-16-p2-media.md)。 |
+| D23 | 残るARの評価・比較実験 | 通常capture/文書/QRは0.8.3でCI・実機確認済み。通常ARの低負荷採用範囲を評価する。高度同時capture/AR world stateは後段。[証拠](verification/2026-09-16-p2-media.md)。 |
 | D24 | 仕様確認・比較実験 | Bluetooth restoration identifierの重複・再起動時のmanager復元・callback所有者を確認。実機と周辺機器が必要な試験を切り分ける。 |
 | D29 | 比較実験・設計検証 | 別identityの純Swift SDKの版/設定分離とproduct名変更後のiOS接続は検証済み。同一identityの複数version、C/ObjC/binary、OS/global状態、その他resource形式を次の比較対象として残す。 |
 | D30 | 仕様確認・比較実験・設計検証 | CloudKit等のcontainer/account/record所有権と署名条件を確認。同じ外部identityを使う二Featureの読書き・削除・復帰で差分を検証する。 |

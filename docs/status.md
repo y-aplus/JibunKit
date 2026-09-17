@@ -1,8 +1,8 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-16。公開安定版は[0.8.2/build12](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)（直前0.8.1）。P0/P1・P2-Wに加え、Live Activities/AlarmKitの接続と対象別実機、自動状態保持試験を確認し、main統合・公開IPA/ZIP再取得を完了。[0.8.2出荷記録](verification/2026-09-16-0.8.2-release.md)。Live Bの単発の値差分は原因未特定・限定再確認で再現なしとして残す。以下の旧版節はsourceを明記した既存証拠。
+更新日: 2026-09-17。公開安定版は[0.8.3/build13](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)（PREVIOUS0.8.2/build12）。音声・撮影/scanの対象別実機、CI35169921272、main統合、公開IPA/ZIP無認証取得と整合性確認まで完了。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
 
-2026-09-17: 候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。`codex/p2-media-integration`のP2-Cは対象別実機まで完了した。306874fで再生/録音・写真/音声動画、修正版a142108で文書保存/取消・QR・イヤホン抜去停止・通常版復帰後の既存データ保持を確認。共有359件（既存skip2）、native28件、通常通知UIはCI35102558612で成功。P2-1/P2-2の採用通常範囲はcomplete。写真初回の不明エラーと過去Live Bの値差分は原因未確定として残す。[0.8.3出荷検証](verification/2026-09-17-0.8.3-release.md)で版変更後の通常IPAと公開を進める。0.8.3公開・main統合は未完。
+P2-1/P2-2の採用通常範囲はcomplete。306874fで再生/録音・写真/音声動画、a142108で文書保存/取消・QR・イヤホン抜去停止・通常版復帰後の既存データ保持を確認。native28件と通常通知UIはCI35102558612のsource付き証拠を、版変更だけの出荷へ再利用した。写真初回の不明エラー、以前のLive B単発値差分は原因未確定として保持。1.0全体は未完、次の境界は背景実行と位置（P2-B）。以下の旧版節はsourceを明示した履歴。
 
 ## 0.8.0公開版
 

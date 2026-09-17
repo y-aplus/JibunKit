@@ -1,6 +1,6 @@
-> 0.8.3/build13を出荷準備中です。音声・撮影・文書/QRの接続基盤を追加し、対象別実機確認を完了しました。公開安定版は[0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)。1.0は未達です。
+> [0.8.3](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)を公開しました。音声・撮影・文書/QRの接続基盤と全画面表示時のscene修正を含みます。対象別実機と出荷CI・公開IPA/ZIP検査を完了。1.0は未達です。
 
-候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。[今回の出荷照合](docs/verification/2026-09-17-0.8.3-release.md)と[候補の変更・観測限界](release-notes-0.8.3.md)を参照してください。
+公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。[今回の出荷照合](docs/verification/2026-09-17-0.8.3-release.md)と[変更・観測限界](release-notes-0.8.3.md)を参照してください。
 # JibunKit
 
 SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**の基盤。
@@ -9,7 +9,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.8.2](https://github.com/y-aplus/JibunKit/releases/tag/0.8.2)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.2の変更と検証範囲](release-notes-0.8.2.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.8.3](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.3の変更と検証範囲](release-notes-0.8.3.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。前回の出荷検証は[0.8.1公開記録](docs/verification/2026-09-16-0.8.1-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
 
@@ -17,9 +17,9 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 0.8.1/build11は操作Widget/Controlと共有状態の実機確認、版変更後CI、公開IPA/ZIP再取得を完了しています。[出荷範囲と証拠](docs/verification/2026-09-16-0.8.1-release.md)。通常IPAへ診断A/Bは含めません。
 
-## 公開版0.8.2と候補0.8.3
+## 公開版0.8.3とmain
 
-0.8.3候補は[音声](docs/guides/audio.md)と[撮影/scan](docs/guides/capture.md)のFeature接続を追加します。通常IPAへ診断Featureは含めません。対象別実機は完了し、版変更後の通常IPAと公開は検証中です。
+0.8.3では[音声](docs/guides/audio.md)と[撮影/scan](docs/guides/capture.md)のFeature接続を追加しました。通常IPAへ診断Featureは含めません。対象別実機、版変更後の通常IPA、公開後の取得確認まで完了しています。
 
 通常IPAはCounter/Reminderと汎用Share Extensionを含みます。独立Featureの組込み、選択JSON・添付ZIPバックアップ、
 通知・URL・Widget・Shortcutsの接続に加え、共有background refreshの永続要求/調停/復旧APIと
@@ -37,7 +37,7 @@ SDKはiOSで公開product名を分けるmanifest編集が必要です。refresh�
 
 | 文書 | 内容 |
 | --- | --- |
-| [公開版とmainの現在状態](docs/status.md) | 0.8.2の出荷範囲、開発状態 |
+| [公開版とmainの現在状態](docs/status.md) | 0.8.3の出荷範囲、開発状態 |
 | [共存の補完責任](docs/coexistence-boundaries.md) | 技術的な責任と未対応/不能の判定規則 |
 | [優先実装と版の到達条件](docs/implementation-priorities.md) | P0/P1、0.7/0.8境界と1.0の決定手順 |
 | [大きなCI単位の運用](docs/ci-boundaries.md) | 事前契約、証拠gate、minorごとの文書確認 |

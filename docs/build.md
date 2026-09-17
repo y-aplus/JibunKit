@@ -1,6 +1,6 @@
 # ビルドと検証
 
-候補VERSIONは0.8.3/build13、公開安定版PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機を完了し、版変更後の通常IPAを検証中です。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
+公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機、版変更後CIと公開IPA/ZIP検査を完了しました。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
 開発中のCIは[事前に固定した大きな境界](ci-boundaries.md)で実行する。小commitや担当者の提出ごとに起動しない。以下の入力例は実行方法であり、全変更への一律実行指示ではない。
 
 標準のiOSビルドはTuist 4.207.0とXcode 26.6を使う。WindowsからはGitHub Actionsを実行でき、Mac購入は前提にしない。SwiftのあるmacOS／Linux／WSLでは`swift test`でFoundationロジックを確認できる。xtoolによるIPA生成経路は廃止した。

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-B",
-  "source": "8d526d22d25862617c2279b75ede7f6a3cab810d",
+  "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
   "contract": {
     "baseline": "559e95e910ddfb0da2f8e565844de34984b832ad",
     "interfaces": "docs/delivery/P2-background-location-contract.md; existing FeatureLifetime/Runtime, onHostLaunch, reconnect registry; additive continued-processing and location APIs, optional saved-consent callback.",
@@ -80,6 +80,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35176070341",
       "source": "da6267213a15872f3eb3860157edf0840e866bd2",
       "conclusion": "success: shared389 tests/2 existing Keychain skips, independent Records11, normal Search UI, normal IPA; all17 background/location native tests without skips plus diagnostic Release IPA. Normal14m13/native7m24."
+    },
+    {
+      "id": "35180204806",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806",
+      "conclusion": "success: shared393 tests/2 existing Keychain skips, independent Records11, normal Search UI, native19 tests without skips; normal and diagnostic IPA. Normal712s/native532s."
     }
   ],
   "evidence": [
@@ -282,6 +288,105 @@
       "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
       "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
       "reuse_reason": "Prior source evidence retained, not a rerun. Core Audio/Capture, storage/schema/Feature management/backup/widgets/intents/network unchanged from306874f. Host scene registration and scanner presentation anchor changed; fullScreen/re-presentation/scene disconnect native regressions and normal notification routing UI passed in repair run35102558612. Existing physical recording/video success is scoped to306874f. Release candidate runtime/tests/package identical to a142108; only3bundle versions/build and workflow expectations plus documentation changed. Original evidence source preserved; no physical rerun claim. P2-B delta against559e95e adds background/location Core and diagnostic fixtures plus optional consent-change hook. Existing notification/inbox/Web/widget/intent/storage/presentation/generator runtime paths and identifiers are unchanged. Shared tests rerun. Consent picker keeps the existing choice UI; saved-consent-before-hook/failure denial is newly tested by P2LocationNativeTests; prior manual management success covers existing controls only, not new location effects. Launch repair retains prior successful physical behavior only for unchanged features; new failed-owner start gate and host labels are pending full shared/native and normal Search regression. It does not claim the crashed P2 candidate works on device."
+    },
+    {
+      "criterion": "P0-1.lifetime",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P0-3.failure",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P0-5.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P0-6.diagnostics",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P1-3.routing",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P1-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P1-5.http",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P2-3.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P2-4.ownership",
+      "kind": "unit",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35180204806 ; shared393/known skip2 plus native19/skip0.",
+      "observation": "Full suite passed including4 new rewritten-ID/failure-latch Core tests and2 native host registration/installed-manifest tests. Existing location24/continued6 and real HTTP A cancellation/B save remain passing.",
+      "review": "Known Keychain skips unchanged. OS-launch closures and region callbacks remain injected where documented; not physical/cold-launch proof."
+    },
+    {
+      "criterion": "P2-3.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "docs/guides/location.md; docs/verification/2026-09-17-p2-background-location-device.md",
+      "observation": "Guide matches new build-time host ID/native mapping and launch failure semantics; actual failed candidate and updated CI are separated from pending physical success.",
+      "review": "Whole P2 integration/device acceptance remains open; source-specific compile/auto evidence does not establish user device recovery."
+    },
+    {
+      "criterion": "P2-4.docs",
+      "kind": "inspection",
+      "result": "passed",
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "reference": "docs/guides/background-continued-processing.md; docs/verification/2026-09-17-p2-background-location-device.md",
+      "observation": "Guide matches new build-time host ID/native mapping and launch failure semantics; actual failed candidate and updated CI are separated from pending physical success.",
+      "review": "Whole P2 integration/device acceptance remains open; source-specific compile/auto evidence does not establish user device recovery."
     }
   ],
   "deferred_device": {
@@ -293,7 +398,7 @@
     "source": "",
     "summary": "Not a release report; minor-release full current-document review remains required at publication. New guides reviewed against source before first CI; SDK execution and physical evidence pending.",
     "unresolved": [
-      "Fix actual device launch trap, validate rewritten native identifiers and host failure isolation, then request corrected IPA startup.",
+      "Corrected3af8e32 CI passes; request device startup only before resuming background/location steps.",
       "Actual OS continued processing/system cancellation and representative location behavior await user device checkpoint.",
       "BG refresh/processing launch and cold URLSession events need observability; arbitrary user HTTP setup not requested.",
       "Physical geofence/beacon and cold recovery remain unverified; transmitter availability requested."
@@ -303,7 +408,7 @@
   "metrics": {
     "review_rounds": 3,
     "parent_messages": 5,
-    "ci_job_minutes": 32.82
+    "ci_job_minutes": 53.55
   },
   "acceptance": {
     "P0-1.lifetime": "開始・非選択・取消・終了・再開、購読/HTTP/採用DB解放とB継続",
@@ -389,9 +494,51 @@
       "native_build_and_tests": 139.833,
       "release_build": 87.229
     },
-    "remaining_integration": "Whole P2-3/P2-4 integration remains pending: OS scheduling/cold launch/real region and beacon behavior not established by these tests. Therefore this report is preflight plus CI evidence, not a passed full-wave CI/release gate."
+    "remaining_integration": "Whole P2-3/P2-4 integration remains pending: OS scheduling/cold launch/real region and beacon behavior not established by these tests. Therefore this report is preflight plus CI evidence, not a passed full-wave CI/release gate.",
+    "latest_repair": {
+      "source": "3af8e32532e2fb2b1759920da7a716a00639de10",
+      "native_methods_passed": 19,
+      "native_skips": 0,
+      "shared_executed": 393,
+      "known_skips": 2,
+      "normal_job_seconds": 712,
+      "native_job_seconds": 532
+    }
   },
   "assets": {
+    "JibunKit-P2-B-3af8e32.ipa": {
+      "sha256": "ac8dafdd00b638bc50f87f1032f43f4d17f71a45b062863d842e3cdd9382e393",
+      "bytes": 3907877
+    },
+    "JibunKit-P2-B-3af8e32.zip": {
+      "sha256": "1be7612d9072b0117102a7ab55d51c53198ed2e4bf1118f45e8ba9de5775c8d9",
+      "bytes": 3908025
+    },
+    "JibunKit-normal-3af8e32.ipa": {
+      "sha256": "ecc9fe1a559be1d40239d8337c86a28651b497abec6ea913c0bbd29248b583df",
+      "bytes": 3821543
+    },
+    "JibunKit-normal-3af8e32.zip": {
+      "sha256": "e2e657f364c8fea725dcbdfabe20fa1fc4bda8d5c0e3e22f53be051239d80105",
+      "bytes": 3821695
+    }
+  },
+  "diagnostic_publication": {
+    "tag": "p2-b-device-check-20260917",
+    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-device-check-20260917",
+    "draft": false,
+    "prerelease": true,
+    "public_get": "All4 IPA/ZIP assets unauthenticated GET SHA256/CRC and outer ZIP IPA equality passed.",
+    "physical_status": "Known launch crash; retained historical artifacts, user instructed not to repeat launch. Use stable0.8.3 for recovery. Corrected candidate not yet available."
+  },
+  "physical_failure": {
+    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
+    "observation": "User reports opens briefly then exits; attached app UUID matches diagnostic IPA; EXC_BREAKPOINT/SIGTRAP in NotificationAppDelegate.application(_:didFinishLaunchingWithOptions:). Original error text absent.",
+    "inference": "Known native BG identifier/installed permitted-list mismatch can reject registration and reach the app-wide preconditionFailure; SideStore rewrite observed in upstream source, exact device rejection cause not yet established.",
+    "status": "CI35180204806 repair passed; physical startup on corrected3af8e32 pending."
+  },
+  "assets_previous_da62672": {
     "JibunKit-P2-B-da62672.ipa": {
       "sha256": "f656973961351cd54a6cb60dd2544bb98fdf61ea7fc09928749ac55c75ebb694",
       "bytes": 3891442
@@ -408,20 +555,5 @@
       "sha256": "79c0eb81d5903cc74e35c9a91195b80d5f075eca092de1b6825b9d297b2ad5de",
       "bytes": 3806301
     }
-  },
-  "diagnostic_publication": {
-    "tag": "p2-b-device-check-20260917",
-    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
-    "url": "https://github.com/y-aplus/JibunKit/releases/tag/p2-b-device-check-20260917",
-    "draft": false,
-    "prerelease": true,
-    "public_get": "All4 IPA/ZIP assets unauthenticated GET SHA256/CRC and outer ZIP IPA equality passed.",
-    "physical_status": "Known launch crash; retained historical artifacts, user instructed not to repeat launch. Use stable0.8.3 for recovery. Corrected candidate not yet available."
-  },
-  "physical_failure": {
-    "source": "da6267213a15872f3eb3860157edf0840e866bd2",
-    "observation": "User reports opens briefly then exits; attached app UUID matches diagnostic IPA; EXC_BREAKPOINT/SIGTRAP in NotificationAppDelegate.application(_:didFinishLaunchingWithOptions:). Original error text absent.",
-    "inference": "Known native BG identifier/installed permitted-list mismatch can reject registration and reach the app-wide preconditionFailure; SideStore rewrite observed in upstream source, exact device rejection cause not yet established.",
-    "status": "Repair0672c74 pending CI then focused device launch retry; old physical procedure paused."
   }
 }

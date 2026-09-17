@@ -108,3 +108,5 @@ Core4件・native2件を追加し、通常/診断の同じ2jobで3run目を計�
 8b3584a実機で明示的な即時要求と同期submit成功のみを確認し、OS開始はなし。Apple一次資料で旧同期submitのエラー欠落とiOS27 completion APIの導入を確認した。機種/OSが原因と断定せず、新APIの受付結果を取得する。iOS26互換を維持する追加callback API、取消と遅延response/重複responseの調停、古い結果による新job表示の上書き防止、位置受信の永続記録/停止操作を一つの検証境界にまとめる。
 
 5run目の予算例外を記録。通常Xcode26.6の共有全件＋Records＋検索UI＋通常IPAと、既存xcode-27 runnerの背景/位置native24件＋診断IPAを並列にする。新規Core2/native背景1/位置2件を含む。SDK26/OS26 fallbackとSDK27/OS27のcompile/runtimeを分離して評価し、後者だけを実機の新API診断として配布する。APIが利用不可でも黙って新API成功と報告せず、画面の受付API表示で区別する。旧normal15分43秒/native11分35秒から準備upload込み25分を見積り、job上限は既存45/30分。OS監視から一回通知し、各小項目のCIを増やさない。
+
+投入前にGitHubがworkflowの26個目のdispatch入力を拒否した（runは作成されていない）。新しい入力は撤去し、既存background-location診断jobのSDKを27に固定した。既存の25入力と通常SDK26.6は維持する。今回のdispatch CLIに追加入力はない。

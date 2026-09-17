@@ -381,7 +381,7 @@
     },
     {
       "id": "async-admission-and-location-observation",
-      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true background_location_ios_major=27 simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; whole shared397 expected/Records, native24 expected, normal SDK26.6 IPA, diagnostic SDK27 IPA. Source pinned before dispatch. Runtime source=010dd0771db59f494052eec67c5b2bf3e676dbad. A documentation-only pin follows.",
+      "inputs_and_filters": "build-ios.yml ref=codex/p2-background-location background_location_validation=true simulator_tests=true feature_validation=false records_validation=false ui_test_filter=MigrationUITests/MigrationUITests/testMiniAppSearchFiltersAndOpensResults focused_ui_validation=false; whole shared397 expected/Records, native24 expected, normal SDK26.6 IPA, diagnostic SDK27 IPA. Source pinned before dispatch. Runtime source=010dd0771db59f494052eec67c5b2bf3e676dbad. A documentation-only pin follows.",
       "expected_elapsed_minutes": 25,
       "estimate_basis": "Previous normal15m43/native11m35 inclusive. SDK27 runner path/workflow already exists; new runtime cost unmeasured so retain25min estimate and inspect stage timings. All native methods, no per-method shard; added Core2/background1/location2 methods. Native30min/normal45min existing limits."
     }

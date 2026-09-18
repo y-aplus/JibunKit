@@ -34,4 +34,8 @@ Swift6 actor isolation、escaping closure capture、XCTest helper隔離を提出
 
 P2-Iの失敗を踏まえ、Core/診断app/native testのSwift6隔離を提出前レビュー対象へ明記した。実OS window生成にはmanifest/host接続とiPadが必要であり、二つのnavigationオブジェクトの成功で代用しない。BLEのSimulator制限もnative生成と実無線を区別する。
 
-scene初回ef0f20aを開発branchへ統合し、一括レビューを返した。再接続cleanup await中のconnect/disconnect再入、owner無効化時のscene資源取消/join、手動事前準備/XCTSkipに依存しないiPad OS生成/破棄試験を補強する。初回提出はSwift未実行であり完了扱いしない。親担当メッセージは初回2＋scene修正1、CI0。BLE初回とscene修正版の提出通知を待つ。
+sceneは初回ef0f20aから8100cfa、96647adの修正まで統合。再接続cleanup await中の再入、無効ownerの受付拒否、既に切断されたsceneの資源解放待ちを補強した。親が実WindowGroup rootへOS session接続・独立navigation配送を追加し、管理停止と選択復元へscene資源の取消/joinを接続した。実iPad Simulatorの二window生成・指定配送・破棄、および復元停止失敗/回復失敗時の受付維持を試験対象にする。Swift/Xcode未実行であり合格扱いしない。
+
+BLEは初回f8e8582と修正cac8201を統合。binary広告情報、write backpressure、復元受付、lease/世代検査を追加した。親レビューで、取消join中の再connect/新lease受付、閉じたruntimeへの登録失敗、同一UUID service列によるtrapの残件をまとめて返却した。第二修正の提出が現在の待機対象。未解決のままCIへ投入しない。
+
+親のhost生成/実workflow Simulator選択/既存media・background・identity生成と検証器のローカル試験は合計19件成功。P2-S CIは0回。BLE修正レビュー後にsourceを固定し、通常/sharedとiPad nativeを同じsourceで実行する。既存P2-Iの所要18分12秒/13分27秒を見積りの根拠にし、P2-S追加試験を含む上限見込み25分を確認してから投入する。

@@ -66,7 +66,7 @@ enum MiniAppRegistry {
         let registrations: [MiniAppManagement.Registration] = all.map { definition in
             MiniAppManagement.Registration(
                 id: definition.id, lifetime: definition.lifetime, removal: incomingRemoval(for: definition),
-                externalAccess: definition.effectiveExternalAccess,
+                externalAccess: MiniAppWindowOwnership.externalAccess(for: definition),
                 unregister: {
                     #if DEBUG
                     let started = Date()
@@ -112,6 +112,7 @@ enum MiniAppRegistry {
                 ControlCenter.shared.reloadAllControls()
             }
         )
+        AppSceneRouting.windows.bootstrapSuspendedOwners(all.filter { !result.isEnabled($0.id) }.map(\.id))
         do {
             try incomingStore.get().publish(all.filter { result.isEnabled($0.id) }.compactMap(incomingDestination))
         } catch { incomingCatalogError = error.localizedDescription }

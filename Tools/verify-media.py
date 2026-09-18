@@ -48,16 +48,18 @@ def require_test_passes(report, summary, sources):
 
 
 def check_requirements(info, surface="media"):
-    if surface not in {"media", "background-location", "identity-push"}:
+    if surface not in {"media", "background-location", "identity-push", "ble-scenes"}:
         raise ValueError("Unknown native host surface")
-    descriptions = ([] if surface == "identity-push" else ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
+    descriptions = (["NSBluetoothAlwaysUsageDescription"] if surface == "ble-scenes" else [] if surface == "identity-push" else ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
                     else ["NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"])
     for key in descriptions:
         if not isinstance(info.get(key), str) or not info[key].strip():
             raise ValueError(f"Missing media usage description: {key}")
-    modes = {"remote-notification"} if surface == "identity-push" else {"audio"} if surface == "media" else {"fetch", "processing", "location"}
+    modes = {"bluetooth-central"} if surface == "ble-scenes" else {"remote-notification"} if surface == "identity-push" else {"audio"} if surface == "media" else {"fetch", "processing", "location"}
     if not modes <= set(info.get("UIBackgroundModes", [])):
         raise ValueError("Missing required background modes")
+    if surface == "ble-scenes" and info.get("UIApplicationSceneManifest", {}).get("UIApplicationSupportsMultipleScenes") is not True:
+        raise ValueError("Multiple window scene support is required")
     if surface == "background-location":
         required = {"com.jibunkit.app.p2-background-a.ordinary",
                     "com.jibunkit.app.p2-background-b.ordinary",
@@ -73,14 +75,14 @@ def check_requirements(info, surface="media"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
-    parser.add_argument("--surface", choices=["media", "background-location", "identity-push"], default="media")
+    parser.add_argument("--surface", choices=["media", "background-location", "identity-push", "ble-scenes"], default="media")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     is_media = args.surface == "media"
     families = {"media": ["MediaAudio", "MediaCapture", "MediaIntegration"],
                 "background-location": ["P2Background", "P2Location"],
-                "identity-push": ["P2Identity", "P2Push"]}[args.surface]
-    label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush"}[args.surface]
+                "identity-push": ["P2Identity", "P2Push"], "ble-scenes": ["P2Bluetooth", "P2Scenes"]}[args.surface]
+    label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush", "ble-scenes": "BluetoothScenes"}[args.surface]
     scheme = label + "NativeTests"
     evidence = Path(os.environ["RUNNER_TEMP"]) / label
     evidence.mkdir(exist_ok=True)
@@ -130,7 +132,7 @@ def main():
             native_error = None
             timeouts = ([] if is_media else ["-test-timeouts-enabled", "YES",
                 "-default-test-execution-time-allowance", "60",
-                "-maximum-test-execution-time-allowance", "240" if args.surface == "identity-push" else "120"])
+                "-maximum-test-execution-time-allowance", "240" if args.surface in {"identity-push", "ble-scenes"} else "120"])
             try:
                 command = ["xcodebuild", "test", *common, "-scheme", scheme,
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
@@ -169,7 +171,9 @@ def main():
                 (root / f"Tests/{family}/{family}NativeTests.swift").read_text(encoding="utf-8")
                 for family in families] + (
                     [(root / "Tests/P2IdentityPushHost/HostNativeTests.swift").read_text(encoding="utf-8")]
-                    if args.surface == "identity-push" else []))
+                    if args.surface == "identity-push" else
+                    [(root / "Tests/P2BluetoothScenesHost/HostNativeTests.swift").read_text(encoding="utf-8")]
+                    if args.surface == "ble-scenes" else []))
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")
@@ -196,7 +200,7 @@ def main():
             payload.mkdir(parents=True)
             run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
             ipa = evidence / {"media": "JibunKit-P2-C-check.ipa", "background-location": "JibunKit-P2-B-check.ipa",
-                              "identity-push": "JibunKit-P2-I-check.ipa"}[args.surface]
+                              "identity-push": "JibunKit-P2-I-check.ipa", "ble-scenes": "JibunKit-P2-S-check.ipa"}[args.surface]
             run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
             run(["unzip", "-t", ipa], root, "ipa-crc")
             run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")

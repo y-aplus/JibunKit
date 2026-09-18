@@ -21,9 +21,12 @@ struct BackupScreen: View {
     @State private var status: String?
 
     private let definitions: [MiniAppDefinition]
+    private let lifecycleForDefinition: @MainActor (MiniAppDefinition) -> MiniAppRestoreLifecycle?
 
-    init(definitions: [MiniAppDefinition], importedBackup: MiniAppBackup? = nil, importedArchive: ImportedMiniAppBackup? = nil) {
+    init(definitions: [MiniAppDefinition], importedBackup: MiniAppBackup? = nil, importedArchive: ImportedMiniAppBackup? = nil,
+         lifecycleForDefinition: @escaping @MainActor (MiniAppDefinition) -> MiniAppRestoreLifecycle? = { $0.effectiveRestoreLifecycle }) {
         self.definitions = definitions
+        self.lifecycleForDefinition = lifecycleForDefinition
         _imported = State(initialValue: importedArchive ?? importedBackup.map { ImportedMiniAppBackup(legacy: $0) })
     }
     private var providers: [MiniAppBackupProvider] { definitions.compactMap(\.backup) }
@@ -230,7 +233,7 @@ struct BackupScreen: View {
             defer { busy = false }
             do {
                 let lifecycles = Dictionary(uniqueKeysWithValues: definitions.compactMap { definition in
-                    definition.effectiveRestoreLifecycle.map { (definition.id, $0) }
+                    lifecycleForDefinition(definition).map { (definition.id, $0) }
                 })
                 try await plan.apply(lifecycles: lifecycles)
                 status = plan.ids.map(title).joined(separator: "、") + "を復元しました。"

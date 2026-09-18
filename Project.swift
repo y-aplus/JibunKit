@@ -17,6 +17,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
         "LSItemContentTypes": ["public.data"],
     ]],
     "UILaunchScreen": [:],
+    "UIApplicationSceneManifest": ["UIApplicationSupportsMultipleScenes": true],
     "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
     "CFBundleURLTypes": [[
         "CFBundleURLName": "com.jibunkit.app.mini-app",

@@ -30,6 +30,7 @@ private struct MiniAppSceneRoot: View {
     @State private var navigation = AppNavigation()
     @State private var registration: UUID?
     @State private var activity = MiniAppRegistry.makeSceneActivityDispatcher()
+    @State private var windowConnection = MiniAppWindowConnectionBridge(registry: AppSceneRouting.windows)
     @Environment(\.scenePhase) private var scenePhase
 
     private var activityPhase: MiniAppSceneActivity.Phase {
@@ -43,6 +44,8 @@ private struct MiniAppSceneRoot: View {
     var body: some View {
         MiniAppListScreen(navigation: navigation)
             .environment(\.miniAppConsentStore, MiniAppRegistry.consents)
+            .environment(\.miniAppWindowRegistry, AppSceneRouting.windows)
+            .environment(\.miniAppWindowConnection, windowConnection.connection)
             // SwiftUI delivers this URL to a particular scene; keep that target.
             .onOpenURL { navigation.openURL($0) }
             .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
@@ -60,15 +63,21 @@ private struct MiniAppSceneRoot: View {
                 }
             }, disconnect: {
                 activity.disconnect()
+                windowConnection.disconnect()
                 if let registration { AppSceneRouting.shared.unregister(registration) }
                 registration = nil
+            }, connectScene: { scene in
+                windowConnection.connect(scene: scene, navigation: navigation,
+                    phase: activityPhase, selectedID: navigation.activeID)
             }))
             .onChange(of: scenePhase) { _, phase in
                 activity.update(phase: activityPhase, selectedID: navigation.activeID)
+                windowConnection.update(phase: activityPhase, selectedID: navigation.activeID)
                 if let registration { AppSceneRouting.shared.update(registration, isActive: phase == .active) }
             }
             .onChange(of: navigation.activeID) { _, selectedID in
                 activity.update(phase: activityPhase, selectedID: selectedID)
+                windowConnection.update(phase: activityPhase, selectedID: selectedID)
             }
     }
 }

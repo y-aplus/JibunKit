@@ -2,10 +2,12 @@
 import JibunKitCore
 import Observation
 import SwiftUI
+import UIKit
 
 struct MiniAppListScreen: View {
     @Bindable var navigation: AppNavigation
     @State private var searchText = ""
+    @State private var windowError: String?
 
     private var matchingApps: [MiniAppDefinition] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -53,9 +55,15 @@ struct MiniAppListScreen: View {
         // Rebuild the stack for its owner while retaining that owner's path.
         .id(navigation.stackID)
         .onChange(of: MiniAppRegistry.registeredIDs) { _, _ in navigation.discardUnavailableOwners() }
+        .alert("ウインドウを開けませんでした", isPresented: Binding(
+            get: { windowError != nil }, set: { if !$0 { windowError = nil } }
+        )) {
+            Button("閉じる", role: .cancel) { windowError = nil }
+        } message: { Text(windowError ?? "") }
         .sheet(item: $navigation.hostSheet, onDismiss: navigation.hostSheetDidDismiss) { sheet in
             switch sheet {
-            case .backup: BackupScreen(definitions: MiniAppRegistry.enabled)
+            case .backup: BackupScreen(definitions: MiniAppRegistry.enabled,
+                                      lifecycleForDefinition: { MiniAppWindowOwnership.restoreLifecycle(for: $0) })
             case .management: MiniAppManagementScreen()
             case .incoming: MiniAppIncomingScreen(navigation: navigation)
             }
@@ -126,6 +134,16 @@ struct MiniAppListScreen: View {
             ToolbarItem(placement: .bottomBar) {
                 Button("受信", systemImage: "tray.and.arrow.down") { navigation.requestHostSheet(.incoming) }
                     .accessibilityIdentifier("incoming.open")
+            }
+            if UIApplication.shared.supportsMultipleScenes {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("新しいウインドウ", systemImage: "rectangle.badge.plus") {
+                        MiniAppUIKitWindowSceneRequester().requestWindow(userActivity: nil) {
+                            windowError = $0.localizedDescription
+                        }
+                    }
+                    .accessibilityIdentifier("window.new")
+                }
             }
         }
     }

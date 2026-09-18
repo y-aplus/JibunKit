@@ -14,7 +14,7 @@ P2-9（BLE）は実機の通常通信・両owner/管理・新processの同一復
 
 0.8.5の通常CI35357260854と実機代表1–2は成功。共有443件（既存skip2）・Module11件・選択復元/cold URL優先UIと通常IPAを確認した。4a1340a/CI35365770330でnative87件・OS UI6件が成功し、Simulator geofenceの実enter/exitも確認。背景HTTPは実機で別processの同一転送に対するOS callback・owner再接続・保存・completion返却chain成立を確認した（[記録](verification/2026-09-19-background-http-device.md)）。OSの起動契機は未判定。ユーザーの停止解除を受け、次はSimulatorの終了後Region配送を有界診断として準備する。現在の追加実機操作はない。
 
-2026-09-18、ユーザーからCloudKit/APNsの実通信検証用の有料署名・サービス環境は現在用意できないと回答を受領。P2-8/P2-10は署名/サービス環境不足による実通信未検証を維持する。加入や購入は依頼していない。この回答を1.0完成基準の除外承認や実通信合格とは扱わない。環境から独立したFiles比較・AR/BLE残件の検証準備を進める。
+2026-09-19、ユーザーがCloudKit/APNsを通常利用の前提にしないと確定。既存実装は署名・サービス条件付きの任意機能として残し、実通信未検証を明記して1.0の必須実通信検証から外す。汎用HTTP等による外部同期と所有者分離は必須範囲を維持する。[変更後の契約](delivery/P2-identity-push-contract.md)。加入・購入や検証環境の再準備は依頼しない。
 
 ## 0.8.4へ至るsource別履歴
 

@@ -24,6 +24,8 @@ enum P2ScenesProbe {
 
 private struct P2SceneOwnerView: View {
     let owner: MiniAppID
+    @Environment(\.miniAppWindowConnection) private var windowConnection
+    @State private var windowError: String?
     /// SceneStorage supplies a value that the OS may restore for this scene. Its
     /// presence alone is not restoration evidence; the OS reconnect is observed.
     @SceneStorage private var count: Int
@@ -37,8 +39,34 @@ private struct P2SceneOwnerView: View {
         VStack {
             Text(owner.rawValue).accessibilityIdentifier("p2.scene.owner")
             Text("\(count)").accessibilityIdentifier("p2.scene.count")
+            if let windowConnection {
+                Text(windowConnection.sessionID.rawValue)
+                    .accessibilityIdentifier("p2.scene.session")
+            }
             Button("increment") { count += 1 }.accessibilityIdentifier("p2.scene.increment")
+            Button("new window") {
+                MiniAppUIKitWindowSceneRequester().requestWindow(userActivity: nil) {
+                    windowError = $0.localizedDescription
+                }
+            }
+            .accessibilityIdentifier("p2.scene.new-window")
+            if let windowConnection {
+                Button("close this window") {
+                    guard MiniAppUIKitWindowSceneRequester().destroyWindow(
+                        sessionID: windowConnection.sessionID,
+                        onFailure: { windowError = $0.localizedDescription }
+                    ) else {
+                        windowError = "session not found"
+                        return
+                    }
+                }
+                .accessibilityIdentifier("p2.scene.close-window")
+            }
         }
+        .alert("window operation failed", isPresented: Binding(
+            get: { windowError != nil }, set: { if !$0 { windowError = nil } }
+        )) { Button("close", role: .cancel) { windowError = nil } }
+        message: { Text(windowError ?? "") }
     }
 }
 

@@ -28,6 +28,7 @@ struct JibunKitApp: App {
 /// State is instantiated inside WindowGroup's view hierarchy, once per window.
 private struct MiniAppSceneRoot: View {
     @State private var navigation = AppNavigation()
+    @SceneStorage("jibunkit.selected-mini-app") private var restoredOwner: String?
     @State private var registration: UUID?
     @State private var activity = MiniAppRegistry.makeSceneActivityDispatcher()
     @State private var activityConnectionID: UUID?
@@ -80,8 +81,13 @@ private struct MiniAppSceneRoot: View {
                 if let registration { AppSceneRouting.shared.update(registration, isActive: phase == .active) }
             }
             .onChange(of: navigation.activeID) { _, selectedID in
+                restoredOwner = selectedID?.rawValue
                 activity.update(phase: activityPhase, selectedID: selectedID)
                 windowConnection.update(phase: activityPhase, selectedID: selectedID)
+            }
+            .onChange(of: restoredOwner, initial: true) { _, restoredOwner in
+                guard navigation.activeID == nil, let restoredOwner else { return }
+                navigation.open(MiniAppID(restoredOwner))
             }
     }
 }

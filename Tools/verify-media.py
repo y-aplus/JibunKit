@@ -244,6 +244,7 @@ def main():
                 result["simulator_os_ui"] = {
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",
+                    "windows": "two distinct owner sessions restored, then one destroyed",
                     "physical_device": "not exercised",
                 }
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",

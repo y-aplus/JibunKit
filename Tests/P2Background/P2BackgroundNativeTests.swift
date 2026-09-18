@@ -595,9 +595,10 @@ final class P2BackgroundNativeTests: XCTestCase {
         connection.urlSession(URLSession.shared, task: task, didCompleteWithError: nil)
         connection.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession.shared)
         await eventually { completion.count == 1 }
-        let savedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("download保存") })
-        let finishedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("cold復元chain") })
-        XCTAssertLessThan(savedIndex, finishedIndex)
+        XCTAssertTrue(statuses.contains { $0.contains("download保存") })
+        // This admission/cleanup fixture forwards callbacks without submitting
+        // a diagnostic run. It must not claim cold evidence from those callbacks.
+        XCTAssertFalse(statuses.contains { $0.contains("cold復元chain: 成立") })
         let observations = feature.observations.entries.map(\.event)
         XCTAssertLessThan(try XCTUnwrap(observations.firstIndex(of: "HTTP完了: ファイル保存")),
                           try XCTUnwrap(observations.firstIndex(of: "HTTP全delegate完了・host completion返却後")))

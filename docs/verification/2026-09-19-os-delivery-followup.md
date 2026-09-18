@@ -29,3 +29,7 @@ worker6134cde/be77b19を統合。保存失敗時の成功表示、破損ファ�
 表示は明確に「OSの起動契機は未判定」とし、手動再入場を自動起動の証明にしない。過去の保存済み転送証拠を表示するボタンを追加し、ユーザーが開くまでにprocessが再び終了していても診断結果を読める。通常IPAに含まれないfixtureのみ。公開0.8.5へ変更を加えていない。
 
 既存httpbingo drip URLをこのPCから再確認し、HTTP200/10bytes/12.107秒。これは実機のcold転送成功ではなく、診断用通信先の応答確認だけ。ローカル35試験・py_compile・diff検査成功。一括CIのOS UIは6件、nativeはsourceから抽出した全件合格を要求。前回15分52秒にgeofenceの最大95秒と追加nativeを加え、準備/upload込み25分以内を想定する。
+
+## CI35364846699の切り分け
+
+a317524はコンパイル成功、nativeの既存HTTP admission/cleanup試験1件が失敗。転送runを生成しないfake delegate fixtureが、新しいcold chain表示を要求していたことが原因。保存表示の存在と、既存の永続観測による保存→host completion返却順、実completion counterを確認し、cold成功を主張しないassertへ修正する。新しい証拠相関/保存失敗/再試行試験は成功。native段階の失敗なので今回のRelease/OS UIは未実行。製品障害やgeofence不成立とは判断しない。この境界の初失敗として原因を確認後に再投入する。

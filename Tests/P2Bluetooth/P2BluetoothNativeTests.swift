@@ -197,6 +197,38 @@ final class P2BluetoothNativeTests: XCTestCase {
         await feature.lifetime.stop(); await feature.service.unregisterAllOwned()
     }
 
+    func testNotificationAfterRestoredDisconnectAndNormalReconnectIsNotClassifiedAsRestored() async throws {
+        let suite = "P2BluetoothRestoredGenerationBoundary.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = MiniAppConsentStore(defaults: defaults), pool = P2BluetoothNativeFakePool()
+        let diagnostics = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 405)
+        let feature = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-generation-boundary"), title: "Boundary",
+            coordinator: MiniAppBluetoothCoordinator(factory: pool.make), consents: store,
+            diagnostics: diagnostics)
+        store.setConsent(.allowed, for: feature.id, permissionID: "bluetooth")
+        try feature.definition.onHostLaunch?()
+        let native = try XCTUnwrap(pool.centrals.first)
+        let peripheral = UUID(), restoredGeneration = UUID()
+        native.emit(.connected(peripheral: peripheral, generation: restoredGeneration, restored: true))
+        for _ in 0..<20 where feature.lifetime.state != .running { await Task.yield() }
+        XCTAssertEqual(feature.connection?.generation, restoredGeneration)
+
+        native.emit(.disconnected(peripheral: peripheral, generation: restoredGeneration, message: nil))
+        feature.connect(.init(id: peripheral))
+        for _ in 0..<20 where feature.connection == nil { await Task.yield() }
+        let normalConnection = try XCTUnwrap(feature.connection)
+        XCTAssertNotEqual(normalConnection.generation, restoredGeneration)
+        native.emit(.connected(peripheral: peripheral, generation: normalConnection.generation, restored: false))
+        native.emit(.value(peripheral: peripheral, generation: normalConnection.generation,
+                           characteristic: .init(service: "180D", characteristic: "2A37"),
+                           data: Data([0x23, 0x24]), notifying: true))
+
+        XCTAssertEqual(feature.lastNotifyHex, "2A37: 23 24")
+        XCTAssertFalse(diagnostics.text.contains("first restored notification generation="))
+        await feature.lifetime.stop(); await feature.service.unregisterAllOwned()
+    }
+
     func testManagementDisableStopsOnlySelectedFeature() async throws {
         let fixture = try makeFixture(), definitions = fixture.definitions, featureConsents = fixture.store
         defer { fixture.defaults.removePersistentDomain(forName: fixture.suite) }

@@ -127,6 +127,68 @@ final class P2BluetoothNativeTests: XCTestCase {
         XCTAssertFalse(imported.text.contains(String(repeating: "x", count: 513)))
     }
 
+    func testLatestCompletedRestoreEvidenceSurvivesRestartAndRejectsMixedEvents() throws {
+        let suite = "P2BluetoothHistoricalRestoreEvidence.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let owner = MiniAppID("historical-owner"), otherOwner = MiniAppID("historical-other")
+        let completedProcess = UUID(), completedGeneration = UUID()
+        var instant = Date(timeIntervalSince1970: 10)
+        _ = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 500, now: { instant })
+        let first = P2BluetoothDiagnosticLog(defaults: defaults, processID: completedProcess, systemPID: 501,
+            now: { instant })
+        first.appendNative(owner: owner, message: "willRestoreState callback restoredCount=1")
+        first.record(.ownerOnRestore, owner: owner, message: "owner onRestore invoked")
+        first.record(.consumerConnectCompleted, owner: owner, message: "consumer-connect completed")
+        first.record(.restoredConnected, owner: owner, generation: completedGeneration,
+                     message: "restored-connected")
+        instant = Date(timeIntervalSince1970: 16)
+        first.record(.restoredNotification, owner: owner, generation: completedGeneration,
+                     message: "first restored notification")
+        XCTAssertEqual(first.coldRestoreStatus,
+                       "新processでOS復元callbackと同一世代の初回通知を確認（OSの起動契機は未判定）")
+
+        instant = Date(timeIntervalSince1970: 20)
+        let second = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 502,
+            now: { instant })
+        XCTAssertEqual(second.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+        XCTAssertTrue(second.latestCompletedRestoreEvidence.contains(Date(timeIntervalSince1970: 16).ISO8601Format()))
+        XCTAssertTrue(second.latestCompletedRestoreEvidence.contains("process=\(completedProcess.uuidString)"))
+        XCTAssertTrue(second.latestCompletedRestoreEvidence.contains("owner=\(owner.rawValue)"))
+        XCTAssertTrue(second.latestCompletedRestoreEvidence.contains("generation=\(completedGeneration.uuidString)"))
+
+        let incompleteGeneration = UUID(), wrongGeneration = UUID()
+        second.appendNative(owner: owner, message: "willRestoreState callback restoredCount=1")
+        second.record(.ownerOnRestore, owner: owner, message: "owner onRestore invoked")
+        second.record(.consumerConnectCompleted, owner: owner, message: "consumer-connect completed")
+        second.record(.restoredConnected, owner: owner, generation: incompleteGeneration,
+                      message: "restored-connected")
+        second.record(.restoredNotification, owner: otherOwner, generation: incompleteGeneration,
+                      message: "wrong owner")
+        second.record(.restoredNotification, owner: owner, generation: wrongGeneration,
+                      message: "wrong generation")
+        XCTAssertEqual(second.coldRestoreStatus,
+                       "新processでOS復元callbackからconnectedを確認（OSの起動契機は未判定）")
+        XCTAssertTrue(second.latestCompletedRestoreEvidence.contains("process=\(completedProcess.uuidString)"))
+        XCTAssertFalse(second.latestCompletedRestoreEvidence.contains(incompleteGeneration.uuidString))
+
+        instant = Date(timeIntervalSince1970: 30)
+        let thirdProcess = UUID()
+        let third = P2BluetoothDiagnosticLog(defaults: defaults, processID: thirdProcess, systemPID: 503,
+            now: { instant })
+        third.record(.restoredNotification, owner: owner, generation: incompleteGeneration,
+                     message: "matching owner and generation but different process")
+        XCTAssertTrue(third.latestCompletedRestoreEvidence.contains("process=\(completedProcess.uuidString)"))
+        XCTAssertFalse(third.latestCompletedRestoreEvidence.contains(incompleteGeneration.uuidString))
+
+        instant = Date(timeIntervalSince1970: 40)
+        let reloaded = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 504,
+            now: { instant })
+        XCTAssertEqual(reloaded.previousProcessID, thirdProcess)
+        XCTAssertTrue(reloaded.latestCompletedRestoreEvidence.contains("process=\(completedProcess.uuidString)"))
+        XCTAssertTrue(reloaded.latestCompletedRestoreEvidence.contains("generation=\(completedGeneration.uuidString)"))
+    }
+
     func testDiagnosticStateShowsDiscoveryReadWriteAndNotifyCallbacks() async throws {
         let suite = "P2BluetoothDiagnostic.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

@@ -29,6 +29,7 @@ final class P2BluetoothDiagnosticLog: ObservableObject {
     let previousProcessID: UUID?
     @Published private(set) var lines: [String] = []
     @Published private(set) var coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
+    @Published private(set) var latestCompletedRestoreEvidence = "過去processの完全な復元通知証拠: なし"
     private let defaults: UserDefaults, now: @MainActor () -> Date
     private var entries: [Entry]
     private var volatileLines: [String] = []
@@ -72,17 +73,12 @@ final class P2BluetoothDiagnosticLog: ObservableObject {
         lines = entries.map { format(time: $0.time, processID: $0.processID, owner: $0.owner,
                                      kind: $0.kind, message: $0.message) } + volatileLines
         let current = entries.filter { $0.processID == processID }
+        rebuildHistoricalEvidence()
         guard let previousProcessID, previousProcessID != processID else {
             coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
             return
         }
-        let restored = current.filter { connected in
-            guard connected.kind == .restoredConnected, let owner = connected.owner,
-                  connected.generation != nil else { return false }
-            return current.contains { $0.kind == .native && $0.owner == owner && $0.message.hasPrefix("willRestoreState ") }
-                && current.contains { $0.kind == .ownerOnRestore && $0.owner == owner }
-                && current.contains { $0.kind == .consumerConnectCompleted && $0.owner == owner }
-        }
+        let restored = qualifiedRestoredConnections(in: current)
         guard !restored.isEmpty else {
             coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
             return
@@ -97,6 +93,39 @@ final class P2BluetoothDiagnosticLog: ObservableObject {
             coldRestoreStatus = qualification
         }
     }
+    private func qualifiedRestoredConnections(in processEntries: [Entry]) -> [Entry] {
+        processEntries.filter { connected in
+            guard connected.kind == .restoredConnected, let owner = connected.owner,
+                  connected.generation != nil else { return false }
+            return processEntries.contains { $0.kind == .native && $0.owner == owner && $0.message.hasPrefix("willRestoreState ") }
+                && processEntries.contains { $0.kind == .ownerOnRestore && $0.owner == owner }
+                && processEntries.contains { $0.kind == .consumerConnectCompleted && $0.owner == owner }
+        }
+    }
+    private func rebuildHistoricalEvidence() {
+        var latest: (connected: Entry, notification: Entry)?
+        for (historicalProcess, processEntries) in Dictionary(grouping: entries.filter { $0.processID != processID },
+                                                               by: \.processID) {
+            guard processEntries.contains(where: {
+                $0.kind == .processStart && !$0.message.hasSuffix("previous=none")
+            }) else { continue }
+            for connected in qualifiedRestoredConnections(in: processEntries) {
+                guard let notification = processEntries.filter({
+                    $0.processID == historicalProcess && $0.kind == .restoredNotification
+                        && $0.owner == connected.owner && $0.generation == connected.generation
+                }).max(by: { $0.time < $1.time }) else { continue }
+                if latest == nil || latest!.notification.time < notification.time {
+                    latest = (connected, notification)
+                }
+            }
+        }
+        guard let latest, let owner = latest.connected.owner, let generation = latest.connected.generation else {
+            latestCompletedRestoreEvidence = "過去processの完全な復元通知証拠: なし"
+            return
+        }
+        latestCompletedRestoreEvidence = "過去processの完全な復元通知証拠: \(latest.notification.time.ISO8601Format()) "
+            + "process=\(latest.notification.processID.uuidString) owner=\(owner) generation=\(generation.uuidString)"
+    }
     private func format(time: Date, processID: UUID, owner: String?, kind: Kind, message: String) -> String {
         let owner = owner.map { " [\($0)]" } ?? ""
         return "\(time.ISO8601Format()) [process=\(processID.uuidString)]\(owner) [\(kind.rawValue)] \(message)"
@@ -109,6 +138,8 @@ private struct P2BluetoothDiagnosticLogView: View {
     var body: some View {
         Section("BLE接続記録（両Feature）") {
             Text(log.coldRestoreStatus).accessibilityIdentifier("p2.bluetooth.cold-restore-status")
+            Text(log.latestCompletedRestoreEvidence)
+                .accessibilityIdentifier("p2.bluetooth.latest-completed-restore-evidence")
             ShareLink("診断記録を共有", item: log.text)
             Text(log.text.isEmpty ? "記録なし" : log.text)
                 .font(.caption.monospaced()).textSelection(.enabled)

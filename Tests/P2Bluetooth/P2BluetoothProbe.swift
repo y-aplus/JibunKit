@@ -4,9 +4,35 @@ import JibunKitCore
 
 @MainActor
 enum P2BluetoothProbe {
-    static let sensor = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-sensor"), title: "BLE Sensor")
-    static let accessory = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-accessory"), title: "BLE Accessory")
+    static let diagnostics = P2BluetoothDiagnosticLog()
+    static let coordinator = MiniAppBluetoothCoordinator { owner, restorationIdentifier in
+        MiniAppCoreBluetoothCentral(owner: owner, restorationIdentifier: restorationIdentifier,
+            diagnostics: { message in diagnostics.append(owner: owner, message: message) })
+    }
+    static let sensor = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-sensor"), title: "BLE Sensor", coordinator: coordinator)
+    static let accessory = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-accessory"), title: "BLE Accessory", coordinator: coordinator)
     static var definitions: [MiniAppDefinition] { [sensor.definition, accessory.definition] }
+}
+
+@MainActor
+final class P2BluetoothDiagnosticLog: ObservableObject {
+    @Published private(set) var lines: [String] = []
+    func append(owner: MiniAppID, message: String) {
+        lines.append("\(Date.now.ISO8601Format()) [\(owner.rawValue)] \(message)")
+        if lines.count > 80 { lines.removeFirst(lines.count - 80) }
+    }
+    var text: String { lines.joined(separator: "\n") }
+}
+
+private struct P2BluetoothDiagnosticLogView: View {
+    @ObservedObject var log: P2BluetoothDiagnosticLog
+    var body: some View {
+        Section("BLE接続記録（両Feature）") {
+            ShareLink("診断記録を共有", item: log.text)
+            Text(log.text.isEmpty ? "記録なし" : log.text)
+                .font(.caption.monospaced()).textSelection(.enabled)
+        }
+    }
 }
 
 enum P2BluetoothDiagnosticInput {
@@ -236,6 +262,7 @@ private struct P2BluetoothView: View {
                 LabeledContent("Notify状態", value: feature.notifyResult)
                 LabeledContent("Notify受信値", value: feature.lastNotifyHex)
             }
+            P2BluetoothDiagnosticLogView(log: P2BluetoothProbe.diagnostics)
         }
     }
 }

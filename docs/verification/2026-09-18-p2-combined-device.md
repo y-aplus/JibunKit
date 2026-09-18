@@ -51,3 +51,15 @@ Android GATT設定・広告準備後、ユーザーの画像でBLE SensorのForm
 修正版はp2-combinedの既存69 native/Release検査を一括実行し、実機で単独scanと後続通信を再開する。既存AR/Action/idleの結果は保持。表示修正のため通常回帰全体は再投入しない。Androidは利用可能、iPadはユーザー申告で約3時間後目安（利用開始を自動的に仮定しない）。
 
 修正版afd9086187ebd3105a98d68386c0704ee9ea3569は[CI35306613429](https://github.com/y-aplus/JibunKit/actions/runs/35306613429)でnative69件成功（failure0/skip0）、Release/IPA検査成功。所要15分11秒。[修正版IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-ble-ui-check-20260918/JibunKit-P2-combined-check.ipa)を公開し、無認証再取得のSHA-256 `9d380452e4560298917ac507ee654717801807166a0fe650c245c5adc10c54df`と全entry CRC一致を確認。6,386,486 bytes。UIの実タップとBLE無線は未確認で、69 native試験で代用しない。元候補c66b624のAR/Action/idle実機結果は維持する。
+
+## BLE同一機器の複数owner: 実機失敗と切り分け
+
+修正版afd9086で単独Sensorのscan/接続/service/characteristic検索、write `03 04`とreadback、notify `05 06`、unsubscribe後は`07 08`を送っても値維持、resubscribe後`09 0A`受信に成功。Android操作時はほぼ毎回ChatGPTが前景で、JibunKit復帰後に値を確認したとの補足を受領。背景送信→復帰後の受信確認として記録し、callback処理が背景中だったか復帰直後だったかは未判定。
+
+Accessoryも同じperipheralへ接続・購読中表示。しかし`0D0E`はSensorだけ受信しAccessoryは未受信。Androidの接続タブは1つ。Sensorのみ管理から無効化するとAndroidの通知矢印が消え、次の送信不可。Sensor単owner成功と併用時の未受信を区別し、B維持を合格にしない。Accessory単独での通信は未確認のため、複数owner干渉が原因と確定したわけではない。既存fakeはowner別に独立し、共有native object/物理購読の競合を検証していない。
+
+初期修正はdiscovery/retrieve時の不要なdelegate再代入の除去と、接続中objectをscan結果で置換しないこと。connect/restorationのdelegate設定は維持する。これだけで修復したとは断定しない。診断fixtureが任意sinkを注入し、manager/peripheral object identity、delegate owner、generation、notify request/callback、value、cancel/disconnectを80行の共有ログに収録・共有できるようにする。ペイロード本文は記録しない。通常利用ではsinkなしで記録しない。別project workerのソースレビューでも、delegate奪取とOS/peerのlink/CCCD共有をtraceで区別してから恒久修正する方針を確認した。
+
+AppleのcancelPeripheralConnection資料は他アプリの接続が物理linkを維持し得るとするが、同一アプリの複数managerの隔離を今回の結果に代えて保証しない。もし同一objectまたは購読/切断の共有が確認されたら、peripheral単位のdelegate/接続interest/購読者管理と応答所有者の調停が必要。単純なcallback全owner転送ではread/writeの帰属が崩れるため行わない。
+
+ユーザー指摘により、Accessory単独でのread/notify成功が未確認である点を明示。次の実機切り分けはSensor無効・Accessoryのみを新規接続して受信確認→Sensor追加後の双方受信→Sensor停止後Accessory維持の順にする。Accessory単独で失敗する場合はその段階の記録で止め、共有transport説を先行確定しない。

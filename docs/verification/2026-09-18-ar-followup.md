@@ -34,3 +34,10 @@ Core変更は既存の任意diagnostics sink（通常nil）へのwillRestoreStat
 59f7081b2830f48691d4cc2c41891f54ce9460d2 / CI35342293484は11分55秒で成功。native79件、共有BLE/window24件、failure0/skip0、Release/IPA検査成功。取得IPA6,459,039 bytes、SHA-256 `2b381351fbbf49c4a7becc7dc0c1662105ee505a2d65323bd97d9f14a9d646e2`、全entry CRC照合済み。ARの世代相関・重複開始・複数中断、BLEの接続成功限定・世代照合・永続上限の追加試験を含む。実OS interruptionや自動cold起動の成功ではない。
 
 診断IPAはartifactとして保持し、新しい有効な実機手順が確定するまで追加インストールを要求しない。次はBLE復元の再現可能なOS条件と、P2-6/P2-13の古いremaining/実際の未検証の照合をread-onlyで並行確認する。根拠のない時間待ちを実機タスクにはしない。
+
+
+## 保存専用Actionの完了判定
+
+5a978579ededfe83ddd6ce87573b753d27548537 / CI35343811711で関連native21件成功。追加の登録省略期間保持試験は2.530秒で成功。実ファイルstoreの再生成、publish([])、既存A/B pending保持、新規拒否、再登録後のA text配送/ACKとB保持を確認した。OS再インストールを直接実施した試験とはしない。
+
+Action/Shareの差は入口presentationで、provider loader/保存/取消は共通。c66b624のAction URL/file入口・取消・A管理/B保持、既存Share text実機とnative実provider文字列試験、source不変照合、今回保持試験を再利用して採用P2-13をcompleteとする。Action sheetのplain text単独実測は未観測のまま明記し、同一経路の手動再反復や通常IPA往復を新たな必須条件にしない。任意extension全体を完了とはしない。

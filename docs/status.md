@@ -6,6 +6,8 @@
 
 AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。次はBLE cold復元の診断観測とAR中断条件の評価を並列で進める。0.8.4後の診断変更は公開IPAへ未反映。
 
+保存専用Action（P2-13）は5a97857/CI35343811711と既存source別実機/共通入力証拠を照合して採用範囲を完了。[判定記録](verification/2026-09-18-ar-followup.md)。P2-6のOS言語表示は残件。
+
 ## 現在の外部条件
 
 2026-09-18、ユーザーからCloudKit/APNsの実通信検証用の有料署名・サービス環境は現在用意できないと回答を受領。P2-8/P2-10は署名/サービス環境不足による実通信未検証を維持する。加入や購入は依頼していない。この回答を1.0完成基準の除外承認や実通信合格とは扱わない。環境から独立したFiles比較・AR/BLE残件の検証準備を進める。

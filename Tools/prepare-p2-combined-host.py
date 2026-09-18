@@ -164,11 +164,11 @@ def prepare(host):
 
     registry = host / PROJECT_FILES[1]
     registry_prefix = (
-        "P2BackgroundProbe.definitions + P2LocationProbe.definitions + "
-        "P2IdentityProbe.definitions + P2PushProbe.definitions + "
-        "P2BluetoothProbe.definitions + P2ScenesProbe.definitions + "
-        "P2ARProbe.definitions + P2AppearanceProbe.definitions + "
-        "P1IncomingProbe.definitions + ["
+        "[P2BackgroundProbe.definitions, P2LocationProbe.definitions, "
+        "P2IdentityProbe.definitions, P2PushProbe.definitions, "
+        "P2BluetoothProbe.definitions, P2ScenesProbe.definitions, "
+        "P2ARProbe.definitions, P2AppearanceProbe.definitions, "
+        "P1IncomingProbe.definitions].flatMap { $0 } + ["
     )
     changes[registry] = once(
         registry.read_text(encoding="utf-8"),
@@ -176,8 +176,23 @@ def prepare(host):
         "static let all = makeRegistry(" + registry_prefix,
     )
 
+    # Swift rejects duplicate basenames in one module, even from separate
+    # directories. The existing family host tests all use HostNativeTests.swift.
+    native_sources = []
+    for relative in NATIVE_EXPECTED_SOURCES:
+        source = Path(relative)
+        if sum(Path(item).name == source.name for item in NATIVE_EXPECTED_SOURCES) > 1:
+            destination = host / "GeneratedFeatureTests/P2Combined" / (source.parent.name + source.name)
+            if destination.exists():
+                raise ValueError(f"Combined P2 native destination already exists: {destination}")
+            changes[destination] = (host / relative).read_text(encoding="utf-8")
+            native_sources.append(destination.relative_to(host).as_posix())
+        else:
+            native_sources.append(relative)
+    if len({Path(item).name for item in native_sources}) != len(native_sources):
+        raise ValueError("Combined P2 native source basenames collide")
     project = host / PROJECT_FILES[0]
-    sources = ", ".join(f'"{path}"' for path in NATIVE_EXPECTED_SOURCES)
+    sources = ", ".join(f'"{path}"' for path in native_sources)
     text = once(
         project.read_text(encoding="utf-8"),
         "    targets: [\n",

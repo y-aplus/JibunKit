@@ -113,7 +113,7 @@ struct P2AppearanceRoot: View {
                 }
                 Section("Idle timer") {
                     Toggle("画面を点灯し続ける", isOn: Binding(
-                        get: { feature.requested }, set: feature.setRequested
+                        get: { feature.requested }, set: { value in feature.setRequested(value) }
                     ))
                     Text("requested=\(feature.requested) effective=\(feature.effective)")
                         .accessibilityIdentifier("p2.appearance.\(feature.id.rawValue).idle")

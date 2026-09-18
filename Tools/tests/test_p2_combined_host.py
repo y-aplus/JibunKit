@@ -1,12 +1,12 @@
 import importlib.util
 from pathlib import Path
 import shutil
+import re
 import tempfile
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PARENT_SOURCE = Path("C:/Dev/JibunKit-p1-a")
 SPEC = importlib.util.spec_from_file_location("p2_combined_host", ROOT / "Tools/prepare-p2-combined-host.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -21,21 +21,10 @@ class P2CombinedHostTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, target)
-        requirements = root / MODULE.PROJECT_FILES[2]
-        content = requirements.read_text(encoding="utf-8")
-        action = "    public static let action: FeatureBuildConfiguration? = nil"
-        if action not in content:
-            content = content.replace(
-                "    public static let widget = FeatureBuildConfiguration()",
-                "    public static let widget = FeatureBuildConfiguration()\n" + action,
-            )
-            requirements.write_text(content, encoding="utf-8")
         for relative in MODULE.APP_EXPECTED_SOURCES + MODULE.NATIVE_EXPECTED_SOURCES:
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             source = ROOT / relative
-            if not source.is_file():
-                source = PARENT_SOURCE / relative
             if source.is_file():
                 shutil.copyfile(source, target)
             else:
@@ -66,8 +55,13 @@ class P2CombinedHostTests(unittest.TestCase):
             self.assertEqual(registry.count(probe + ".definitions"), 1)
         self.assertNotIn("P2ActionProbe.definitions", registry)
         self.assertIn('name: "P2CombinedNativeTests"', project)
-        for relative in MODULE.NATIVE_EXPECTED_SOURCES:
-            self.assertEqual(project.count(f'"{relative}"'), 1)
+        source_list = re.search(r'infoPlist: \.default, sources: \[(.*?)\]', project).group(1)
+        compiled = re.findall(r'"([^"]+)"', source_list)
+        self.assertEqual(len(compiled), len(MODULE.NATIVE_EXPECTED_SOURCES))
+        self.assertEqual(len(compiled), len({Path(item).name for item in compiled}))
+        actual_bytes = sorted((root / item).read_text(encoding="utf-8") for item in compiled)
+        expected_bytes = sorted((root / item).read_text(encoding="utf-8") for item in MODULE.NATIVE_EXPECTED_SOURCES)
+        self.assertEqual(actual_bytes, expected_bytes)
         self.assertNotIn('"Tests/P2AR/P2ARProbe.swift"', project)
         self.assertNotIn('"Tests/P2Appearance/P2AppearanceProbe.swift"', project)
         self.assertNotIn('"Tests/TemplateIntegration/P1IncomingProbe.swift"', project)

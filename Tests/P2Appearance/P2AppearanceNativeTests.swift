@@ -14,7 +14,7 @@ final class P2AppearanceNativeTests: XCTestCase, @unchecked Sendable {
         let b = P2AppearanceFeature(id: MiniAppID("appearance-test-b"), title: "B", scheme: .light, timer: timer)
         try await a.lifetime.start(); try await b.lifetime.start()
         let scenes = MiniAppSceneActivityDispatcher(handlers: [
-            .init(id: a.id, handler: a.receive), .init(id: b.id, handler: b.receive),
+            .init(id: a.id) { a.receive($0) }, .init(id: b.id) { b.receive($0) },
         ])
         scenes.connect(phase: .active, selectedID: a.id)
         a.setRequested(true); b.setRequested(true)

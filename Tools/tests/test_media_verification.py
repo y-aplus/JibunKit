@@ -77,3 +77,26 @@ class MediaVerificationTests(unittest.TestCase):
             (app / "ja.lproj/InfoPlist.strings").write_bytes(plistlib.dumps({}))
             with self.assertRaisesRegex(ValueError, "Missing built ja"):
                 MODULE.check_localized_usage_descriptions(app, {key: "base"})
+
+    def test_combined_requires_all_capabilities_and_exact_background_identifiers(self):
+        info = {
+            "CFBundleIdentifier": "com.jibunkit.app",
+            "UIBackgroundModes": ["fetch", "processing", "location", "remote-notification", "bluetooth-central"],
+            "UIApplicationSceneManifest": {"UIApplicationSupportsMultipleScenes": True},
+            "BGTaskSchedulerPermittedIdentifiers": [
+                "com.jibunkit.app.p2-background-a.ordinary", "com.jibunkit.app.p2-background-b.ordinary",
+                "com.jibunkit.app.p2-background.shared-refresh",
+                "com.jibunkit.app.p2-background-a.export.*", "com.jibunkit.app.p2-background-b.export.*"],
+        }
+        keys = ["NSCameraUsageDescription", "NSBluetoothAlwaysUsageDescription", "NSLocalNetworkUsageDescription",
+                "NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"]
+        info.update({key: "purpose" for key in keys})
+        MODULE.check_requirements(info, "p2-combined")
+        for key in keys + ["UIApplicationSceneManifest", "BGTaskSchedulerPermittedIdentifiers"]:
+            damaged = dict(info); damaged.pop(key)
+            with self.assertRaises(ValueError):
+                MODULE.check_requirements(damaged, "p2-combined")
+        for mode in info["UIBackgroundModes"]:
+            damaged = dict(info, UIBackgroundModes=[m for m in info["UIBackgroundModes"] if m != mode])
+            with self.assertRaises(ValueError):
+                MODULE.check_requirements(damaged, "p2-combined")

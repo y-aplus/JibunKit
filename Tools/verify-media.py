@@ -223,6 +223,8 @@ def main():
                 # privacy state, and let XCUITest observe the actual OS prompt.
                 run(["xcrun", "simctl", "privacy", args.simulator_id, "reset", "camera",
                      "com.jibunkit.app"], root, "reset-camera-privacy", limit=60)
+                run(["xcrun", "simctl", "privacy", args.simulator_id, "grant", "location-always",
+                     "com.jibunkit.app"], root, "grant-location-privacy", limit=60)
                 run(["xcodebuild", "test", *common, "-scheme", "P2CombinedOSUITests",
                      "-configuration", "Debug",
                      "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
@@ -250,6 +252,7 @@ def main():
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",
                     "windows": "two distinct owner sessions restored, then one destroyed",
+                    "location": "standard update delivered while app remained backgrounded",
                     "physical_device": "not exercised",
                 }
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",

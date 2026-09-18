@@ -61,14 +61,18 @@ final class P2LocationObservationLog: ObservableObject {
 }
 
 struct P2LocationObservationView: View {
+    let owner: MiniAppID
     @ObservedObject var log: P2LocationObservationLog
     var body: some View {
         DisclosureGroup("受信記録（座標なし・最新64件）") {
-            if let error = log.error { Text(error) }
+            if let error = log.error {
+                Text(error).accessibilityIdentifier("p2.location.\(owner.rawValue).observation-error")
+            }
             Text(log.entries.map {
                 "\($0.receivedAt.ISO8601Format()) [\($0.appState)] 起動\($0.process.uuidString.prefix(8)) \($0.event)"
             }.joined(separator: "\n"))
                 .font(.caption).textSelection(.enabled)
+                .accessibilityIdentifier("p2.location.\(owner.rawValue).observations")
         }
     }
 }

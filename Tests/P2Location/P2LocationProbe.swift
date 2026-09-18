@@ -1,6 +1,9 @@
 #if os(iOS)
+import CoreFoundation
+import CoreLocation
 import JibunKitCore
 import SwiftUI
+import UIKit
 
 @MainActor
 enum P2LocationProbe {
@@ -120,7 +123,20 @@ final class P2LocationFeature {
         state.eventCount += 1
         // Record delivery context before view/lifetime status can replace it.
         switch event {
-        case .locations(_, let samples): observations.record("位置callback \(samples.count)件")
+        case .locations(_, let samples):
+            let previous = state.lastSample
+            observations.record("位置callback \(samples.count)件")
+            if UIApplication.shared.applicationState == .background,
+               let previous, let current = samples.last,
+               CLLocation(latitude: previous.latitude, longitude: previous.longitude)
+                .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude)) >= 50 {
+                CFNotificationCenterPostNotification(
+                    CFNotificationCenterGetDarwinNotifyCenter(),
+                    CFNotificationName(rawValue:
+                        "com.jibunkit.tests.p2-location.background-callback" as CFString),
+                    nil, nil, true
+                )
+            }
         case .authorizationChanged(let value): observations.record("OS許可callback: \(value.rawValue)")
         case .entered(let value): observations.record("進入callback: \(value.localID)")
         case .exited(let value): observations.record("退出callback: \(value.localID)")
@@ -169,12 +185,16 @@ private struct P2LocationView: View {
         Form {
             Text(state.status).accessibilityIdentifier("p2.location.\(feature.id.rawValue).status")
             Text("event \(state.eventCount) / runtime世代 \(state.generation)")
+                .accessibilityIdentifier("p2.location.\(feature.id.rawValue).events")
             Button("When In Use許可を要求") { feature.request(.whenInUse) }
             Button("Always許可を要求") { feature.request(.always) }
             if feature.kind == .tracker {
                 Button("前景位置更新") { feature.start(background: false) }
+                    .accessibilityIdentifier("p2.location.tracker.foreground")
                 Button("背景位置更新") { feature.start(background: true) }
+                    .accessibilityIdentifier("p2.location.tracker.background")
                 Button("位置更新停止") { feature.stopUpdates() }
+                    .accessibilityIdentifier("p2.location.tracker.stop")
             } else {
                 Button("現在地を取得") { feature.start(background: false) }
                 Button("位置更新停止") { feature.stopUpdates() }
@@ -192,7 +212,7 @@ private struct P2LocationView: View {
                 }
             }
             if let sample = state.lastSample { Text("\(sample.latitude), \(sample.longitude) ±\(sample.horizontalAccuracy)m") }
-            P2LocationObservationView(log: feature.observations)
+            P2LocationObservationView(owner: feature.id, log: feature.observations)
         }
         .onAppear { feature.attachConsent(consentStore) }
         .onChange(of: locationConsent) { _, _ in feature.attachConsent(consentStore) }

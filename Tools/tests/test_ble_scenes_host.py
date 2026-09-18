@@ -51,6 +51,9 @@ class BluetoothScenesHostTests(unittest.TestCase):
                       "CounterMiniApp.definition", "ReminderMiniApp.definition"]:
             self.assertIn(entry, registry)
         self.assertIn("BluetoothScenesNativeTests", project)
+        requirements = (root / "Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift").read_text(encoding="utf-8")
+        self.assertIn('"en": ["NSBluetoothAlwaysUsageDescription": "Uses Bluetooth to verify BLE owner isolation."]', requirements)
+        self.assertIn('"ja": ["NSBluetoothAlwaysUsageDescription": "BLEの所有者分離を検証するためBluetoothを使用します。"]', requirements)
 
     def test_invalid_source_layout_is_rejected_before_any_write(self):
         for fault in ["missing", "test-in-app", "anchor", "repeat"]:

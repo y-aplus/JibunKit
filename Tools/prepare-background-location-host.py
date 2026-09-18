@@ -53,11 +53,23 @@ def prepare(host):
                 "com.jibunkit.app.p2-background-a.export.*",
                 "com.jibunkit.app.p2-background-b.export.*",
             ],
+        ], localizedInfoPlist: [
+            "en": ["NSLocalNetworkUsageDescription": "Uses local HTTP to verify owner-scoped background transfers."],
+            "ja": ["NSLocalNetworkUsageDescription": "所有者別の背景転送をローカルHTTPで検証します。"],
         ]),
         FeatureBuildRequirement(owner: "p2-location-probe", infoPlist: [
             "NSLocationWhenInUseUsageDescription": "位置更新とRegionの検証で位置を使用します。",
             "NSLocationAlwaysAndWhenInUseUsageDescription": "背景のRegion配送を検証します。",
             "UIBackgroundModes": ["location"],
+        ], localizedInfoPlist: [
+            "en": [
+                "NSLocationWhenInUseUsageDescription": "Uses your location to verify location updates and regions.",
+                "NSLocationAlwaysAndWhenInUseUsageDescription": "Uses your location to verify background region delivery.",
+            ],
+            "ja": [
+                "NSLocationWhenInUseUsageDescription": "位置更新とRegionの検証で位置を使用します。",
+                "NSLocationAlwaysAndWhenInUseUsageDescription": "背景のRegion配送を検証します。",
+            ],
         ]),
     ])''')
 

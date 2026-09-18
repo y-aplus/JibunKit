@@ -48,6 +48,11 @@ class BackgroundLocationHostTests(unittest.TestCase):
                       "CounterMiniApp.definition", "ReminderMiniApp.definition"]:
             self.assertIn(entry, registry)
         self.assertIn("BackgroundLocationNativeTests", project)
+        requirements = (root / "Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift").read_text(encoding="utf-8")
+        self.assertIn('"en": ["NSLocalNetworkUsageDescription"', requirements)
+        self.assertIn('"ja": ["NSLocalNetworkUsageDescription"', requirements)
+        self.assertIn('"NSLocationWhenInUseUsageDescription": "Uses your location to verify location updates and regions."', requirements)
+        self.assertIn('"NSLocationAlwaysAndWhenInUseUsageDescription": "背景のRegion配送を検証します。"', requirements)
 
     def test_invalid_source_layout_is_rejected_before_any_write(self):
         for fault in ["missing", "test-in-app", "anchor", "repeat"]:

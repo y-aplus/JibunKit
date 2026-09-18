@@ -66,3 +66,7 @@ try build.writeLocalizedInfoPlistStrings(to: "GeneratedResources/AppInfo")
 生成先をtargetの`resources`へ渡すと、Apple標準の`<locale>.lproj/InfoPlist.strings`としてbundleへ入る。`Project.swift`はapp/widgetを`GeneratedFeatureResources/App`と`Widget`へ書き、通常製品targetへ自動接続している。Feature登録の追加・除去後は通常の`tuist generate`だけで反映される。
 
 書出し先は生成専用ディレクトリにする。このAPIは再生成時に指定先の各`*.lproj/InfoPlist.strings`を除去してから書く（`Localizable.strings`等の別resourceは削除しない）。appとwidgetは別々のconfiguration・生成先を使い、片方の用途説明や表示名をもう片方へ流用しない。`compose(... localizedInfoPlist:)`へhost既存値を渡すと、hostもFeatureと同じ同値・衝突・明示resolution規則へ入る。これはFeature UI全体の翻訳frameworkではなく、Info.plistの人向け文字列だけを合成する。
+
+診断hostも、採用したOS機能の用途説明を`infoPlist`のfallbackだけへ直書きせず、同じFeature要求の`localizedInfoPlist`へen/jaを登録する。複数Featureがマイク等の同一locale/keyへ同じ文言を要求する場合は同値として保持し、異なる目的を含む場合だけhostが`localizedInfoPlistResolutions`へ合意文言を明記する。OSが要求しない架空の用途説明keyは追加せず、通常appが利用しない診断権限を通常構成へ流入させない。
+
+生成dictionaryとbuild済み`InfoPlist.strings`の読戻しは、同梱値とtarget分離の証拠である。実際のOS権限dialogが選択言語で表示されたことや、grant/deny後の挙動を証明するものではないため、採用した権限ごとのSimulatorまたは実機検証と区別して記録する。

@@ -50,6 +50,9 @@ def prepare(host):
             "NSBluetoothAlwaysUsageDescription": "BLE owner isolation diagnostics",
             "UIBackgroundModes": ["bluetooth-central"],
             "UIApplicationSceneManifest": ["UIApplicationSupportsMultipleScenes": true],
+        ], localizedInfoPlist: [
+            "en": ["NSBluetoothAlwaysUsageDescription": "Uses Bluetooth to verify BLE owner isolation."],
+            "ja": ["NSBluetoothAlwaysUsageDescription": "BLEの所有者分離を検証するためBluetoothを使用します。"],
         ]),
     ])''')
 

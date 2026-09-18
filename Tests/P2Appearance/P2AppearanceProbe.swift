@@ -25,23 +25,22 @@ final class P2AppearanceFeature {
     var showingSheet = false
 
     @ObservationIgnored private let timer: MiniAppIdleTimer
+    @ObservationIgnored private let runtimeHolder: P2AppearanceRuntimeHolder
     @ObservationIgnored private var sceneIdle: MiniAppSceneIdleTimer?
     @ObservationIgnored private var sceneActivities: [UUID: MiniAppSceneActivity] = [:]
-    @ObservationIgnored
-    lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
-        guard let self else { return }
-        let scope = try runtime.makeSceneIdleTimer(for: self.id, using: self.timer)
-        self.sceneIdle = scope
-        for activity in self.sceneActivities.values { scope.receive(activity) }
-        try scope.setRequested(self.requested)
-        self.refreshEffective()
-    }
+    @ObservationIgnored let lifetime: MiniAppFeatureLifetime
 
     init(id: MiniAppID, title: String, scheme: ColorScheme, timer: MiniAppIdleTimer = .shared) {
+        let holder = P2AppearanceRuntimeHolder()
         self.id = id
         self.title = title
         self.scheme = scheme
         self.timer = timer
+        runtimeHolder = holder
+        lifetime = MiniAppFeatureLifetime(id: id) { [holder] runtime in
+            try holder.configure(runtime)
+        }
+        holder.feature = self
     }
 
     var definition: MiniAppDefinition {
@@ -71,6 +70,27 @@ final class P2AppearanceFeature {
     func refreshEffective() {
         effective = timer.activeOwners.contains(id)
     }
+
+    func configure(_ runtime: MiniAppRuntime) throws {
+        let scope = try runtime.makeSceneIdleTimer(for: id, using: timer)
+        sceneIdle = scope
+        for activity in sceneActivities.values { scope.receive(activity) }
+        try scope.setRequested(requested)
+        refreshEffective()
+    }
+
+    func resetAppearanceReadings() {
+        rootEnvironment = "unread"
+        rootTrait = "unread"
+        sheetEnvironment = "closed"
+        sheetTrait = "closed"
+    }
+}
+
+@MainActor
+private final class P2AppearanceRuntimeHolder: @unchecked Sendable {
+    weak var feature: P2AppearanceFeature?
+    func configure(_ runtime: MiniAppRuntime) throws { try feature?.configure(runtime) }
 }
 
 enum P2AppearancePolicy {
@@ -128,16 +148,9 @@ private struct P2AppearanceReading: View {
             Text("trait=\(label == "root" ? feature.rootTrait : feature.sheetTrait)")
         }
         .accessibilityIdentifier("p2.appearance.\(feature.id.rawValue).\(label)")
-        .background(P2AppearanceTraitReader { style in
-            let value = name(style)
-            if label == "root" {
-                feature.rootEnvironment = name(colorScheme)
-                feature.rootTrait = value
-            } else {
-                feature.sheetEnvironment = name(colorScheme)
-                feature.sheetTrait = value
-            }
-        })
+        .background(P2AppearanceTraitReader(
+            feature: feature, label: label, environment: name(colorScheme)
+        ))
     }
 
     private func name(_ value: ColorScheme) -> String { value == .dark ? "dark" : "light" }
@@ -147,15 +160,61 @@ private struct P2AppearanceReading: View {
 }
 
 private struct P2AppearanceTraitReader: UIViewControllerRepresentable {
-    let receive: @MainActor (UIUserInterfaceStyle) -> Void
+    let feature: P2AppearanceFeature
+    let label: String
+    let environment: String
+
+    func makeCoordinator() -> Coordinator { Coordinator(feature: feature, label: label) }
 
     func makeUIViewController(context: Context) -> P2AppearanceTraitViewController {
-        P2AppearanceTraitViewController(receive: receive)
+        P2AppearanceTraitViewController { [weak coordinator = context.coordinator] style in
+            coordinator?.submit(style: style)
+        }
     }
 
     func updateUIViewController(_ controller: P2AppearanceTraitViewController, context: Context) {
-        controller.receive = receive
+        context.coordinator.update(feature: feature, label: label, environment: environment)
         controller.report()
+    }
+
+    @MainActor
+    final class Coordinator {
+        private weak var feature: P2AppearanceFeature?
+        private var label: String
+        private var environment = "unread"
+        private var generation = 0
+
+        init(feature: P2AppearanceFeature, label: String) {
+            self.feature = feature
+            self.label = label
+        }
+
+        func update(feature: P2AppearanceFeature, label: String, environment: String) {
+            self.feature = feature
+            self.label = label
+            self.environment = environment
+        }
+
+        func submit(style: UIUserInterfaceStyle) {
+            generation += 1
+            let submitted = generation
+            let trait = P2AppearanceTraitReader.name(style)
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                guard let self, self.generation == submitted, let feature = self.feature else { return }
+                if self.label == "root" {
+                    if feature.rootEnvironment != self.environment { feature.rootEnvironment = self.environment }
+                    if feature.rootTrait != trait { feature.rootTrait = trait }
+                } else {
+                    if feature.sheetEnvironment != self.environment { feature.sheetEnvironment = self.environment }
+                    if feature.sheetTrait != trait { feature.sheetTrait = trait }
+                }
+            }
+        }
+    }
+
+    private static func name(_ value: UIUserInterfaceStyle) -> String {
+        switch value { case .dark: "dark"; case .light: "light"; default: "unspecified" }
     }
 }
 
@@ -181,5 +240,26 @@ final class P2ContainedAppearanceViewController: UIViewController {
         overrideUserInterfaceStyle = style
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+@MainActor @Observable
+final class P2AppearanceSelection {
+    enum Selected { case first, second }
+    var selected: Selected = .first
+}
+
+struct P2AppearanceSwitchingRoot: View {
+    @Bindable var selection: P2AppearanceSelection
+    let first: P2AppearanceFeature
+    let second: P2AppearanceFeature
+
+    var body: some View {
+        Group {
+            switch selection.selected {
+            case .first: P2AppearanceRoot(feature: first, policy: .environment(.dark))
+            case .second: P2AppearanceRoot(feature: second, policy: .preferred(.light))
+            }
+        }
+    }
 }
 #endif

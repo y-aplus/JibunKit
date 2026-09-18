@@ -12,6 +12,7 @@ UIKitではFeatureが所有するcontainer/root controllerの`overrideUserInterf
 - `preferredColorScheme`を持つ実`UIHostingController`のtraitと別windowのtrait
 - Feature所有UIKit controllerのoverrideと兄弟/windowのtrait
 - 通常`NavigationStack` rootおよびsheet内の環境値・UIKit trait
+- 同じhost presentation内でenvironment指定A→preferred指定B→sheet終了→A再訪した際のpreference除去
 
 probeのA/Bは通常の`MiniAppDefinition`、`MiniAppFeatureLifetime`、`onSceneActivityChange`を使う。画面点灯要求は既存`MiniAppSceneIdleTimer`へ接続し、UIに`requested`（Featureの意図）と`effective`（現在leaseを持つowner）を別表示する。Aが要求中でもB選択時はAのeffectiveを解除し、Bの要求を有効化する。backgroundではeffectiveを解除し、activeで選択された場合に要求を復元する。
 

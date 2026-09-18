@@ -6,6 +6,7 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
+PARENT_SOURCE = Path("C:/Dev/JibunKit-p1-a")
 SPEC = importlib.util.spec_from_file_location("p2_combined_host", ROOT / "Tools/prepare-p2-combined-host.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
@@ -33,10 +34,12 @@ class P2CombinedHostTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             source = ROOT / relative
+            if not source.is_file():
+                source = PARENT_SOURCE / relative
             if source.is_file():
                 shutil.copyfile(source, target)
             else:
-                target.write_text("// fixture\n", encoding="utf-8")
+                self.fail(f"Missing real combined fixture source: {relative}")
         return root
 
     def snapshot(self, root):

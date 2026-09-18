@@ -31,6 +31,7 @@ APP_EXPECTED_SOURCES = (
 NATIVE_EXPECTED_SOURCES = (
     "Tests/P2Background/P2BackgroundNativeTests.swift",
     "Tests/P2Location/P2LocationNativeTests.swift",
+    "Tests/P2CombinedHost/HostNativeTests.swift",
     "Tests/P2IdentityPushHost/HostNativeTests.swift",
     "Tests/P2Identity/P2IdentityNativeTests.swift",
     "Tests/P2Push/P2PushNativeTests.swift",

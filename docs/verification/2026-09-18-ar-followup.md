@@ -41,3 +41,7 @@ Core変更は既存の任意diagnostics sink（通常nil）へのwillRestoreStat
 5a978579ededfe83ddd6ce87573b753d27548537 / CI35343811711で関連native21件成功。追加の登録省略期間保持試験は2.530秒で成功。実ファイルstoreの再生成、publish([])、既存A/B pending保持、新規拒否、再登録後のA text配送/ACKとB保持を確認した。OS再インストールを直接実施した試験とはしない。
 
 Action/Shareの差は入口presentationで、provider loader/保存/取消は共通。c66b624のAction URL/file入口・取消・A管理/B保持、既存Share text実機とnative実provider文字列試験、source不変照合、今回保持試験を再利用して採用P2-13をcompleteとする。Action sheetのplain text単独実測は未観測のまま明記し、同一経路の手動再反復や通常IPA往復を新たな必須条件にしない。任意extension全体を完了とはしない。
+
+## BLE終了試験の準備
+
+ユーザーはFast App Termination項目があると回答。Apple DTSの自然終了を模した復元試験案（https://developer.apple.com/forums/thread/840468）を根拠に、まず設定を変更せず診断版で接続・購読を準備する。tag p2-ble-restoration-20260918へ59f7081の検証済みIPAを公開し、公開URLから再取得したSHA-256が上記2b381351...と一致。終了・OS復元はまだ未実施。P2-6 OS UI試験はSimulatorのAR非対応判定がpermission要求を妨げるため、投入前に診断入口を修正中。

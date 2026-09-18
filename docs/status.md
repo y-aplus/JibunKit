@@ -4,7 +4,7 @@
 
 ## 0.8.4後の検証
 
-AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。次はBLE cold復元の診断観測とAR中断条件の評価を並列で進める。0.8.4後の診断変更は公開IPAへ未反映。
+AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。BLEは新processでOS復元と同一世代Notifyを実機確認済み。現在はscene別選択復元の追加検証と通常版への影響確認を進めている。0.8.4後の変更は公開IPAへ未反映。
 
 保存専用Action（P2-13）は5a97857/CI35343811711と既存source別実機/共通入力証拠を照合して採用範囲を完了。[判定記録](verification/2026-09-18-ar-followup.md)。P2-6もCI35347692100のOS言語表示確認を含め採用範囲を完了。
 

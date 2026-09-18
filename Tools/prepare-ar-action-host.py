@@ -9,10 +9,13 @@ from pathlib import Path
 
 APP_SOURCES = (
     "Tests/P2AR/P2ARProbe.swift",
+    "Tests/P2Appearance/P2AppearanceProbe.swift",
     "Tests/TemplateIntegration/P1IncomingProbe.swift",
 )
 NATIVE_SOURCES = (
     "Tests/P2AR/P2ARNativeTests.swift",
+    "Tests/P2Appearance/P2AppearanceNativeTests.swift",
+    "Tests/P2WidgetLocalization/P2WidgetLocalizationNativeTests.swift",
     "Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift",
     "Tests/P2Action/P2ActionProbe.swift",
     "Tests/P2Action/P2ActionNativeTests.swift",
@@ -54,6 +57,9 @@ def prepare(host):
         '''public static let app = FeatureBuildConfiguration(features: [
         FeatureBuildRequirement(owner: "p2-ar-probe", infoPlist: [
             "NSCameraUsageDescription": "AR検証でカメラを使用します。",
+        ], localizedInfoPlist: [
+            "en": ["NSCameraUsageDescription": "Use the camera for the foreground AR feature."],
+            "ja": ["NSCameraUsageDescription": "前景のAR機能でカメラを使用します。"],
         ]),
     ])''',
     )
@@ -67,7 +73,7 @@ def prepare(host):
     changes[registry] = once(
         registry.read_text(encoding="utf-8"),
         "static let all = makeRegistry([",
-        "static let all = makeRegistry(P2ARProbe.definitions + P1IncomingProbe.definitions + [",
+        "static let all = makeRegistry(P2ARProbe.definitions + P2AppearanceProbe.definitions + P1IncomingProbe.definitions + [",
     )
 
     project = host / PROJECT_FILES[0]

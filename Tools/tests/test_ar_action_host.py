@@ -42,7 +42,7 @@ class ARActionHostTests(unittest.TestCase):
         project = (root / "Project.swift").read_text(encoding="utf-8")
         registry = (root / "Sources/JibunKit/MiniAppRegistry.swift").read_text(encoding="utf-8")
         requirements = (root / MODULE.PROJECT_FILES[2]).read_text(encoding="utf-8")
-        self.assertIn("P2ARProbe.definitions + P1IncomingProbe.definitions + [", registry)
+        self.assertIn("P2ARProbe.definitions + P2AppearanceProbe.definitions + P1IncomingProbe.definitions + [", registry)
         self.assertNotIn("P2ActionProbe", registry)
         self.assertTrue((root / "Sources/JibunKit/ARActionDiagnostics/P2AR/P2ARProbe.swift").is_file())
         self.assertTrue((root / "Sources/JibunKit/ARActionDiagnostics/TemplateIntegration/P1IncomingProbe.swift").is_file())

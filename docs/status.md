@@ -6,6 +6,8 @@ P2-I外部データidentity/Pushは`codex/p2-identity-push`で実装・自動試
 
 P2-Fの通常ARはIssue #6と既存Captureの再利用可能性を照合して採用範囲を確定し、`codex/p2-ar`で実装を開始。開始元sceneの明示束縛、native ARSession接続、旧callback世代の拒否と停止cleanup保持を追加。P2-13は既存受信処理を再利用するoptional保存専用Action extensionを採用し、Shareと共通controllerへ接続した。AR/Actionのnative試験・IPA検査を一括準備中で、P2-12/P2-13はpartialのまま、実行証拠はまだない。[契約](delivery/P2-ar-contract.md)。
 
+P2-6はidle/外観・Spotlight選択item・Widget翻訳・採用P2権限用途説明を採用し、既存成果の再利用と追加fixtureを実装中。まだ実OS描画・自動消灯等の証拠が残りpartial。[採用契約](delivery/P2-adoption-contract.md)。
+
 P2-1/P2-2の採用通常範囲はcomplete。306874fで再生/録音・写真/音声動画、a142108で文書保存/取消・QR・イヤホン抜去停止・通常版復帰後の既存データ保持を確認。native28件と通常通知UIはCI35102558612のsource付き証拠を、版変更だけの出荷へ再利用した。写真初回の不明エラー、以前のLive B単発値差分は原因未確定として保持。1.0全体は未完。P2-B/P2-Iの残る実OS検証と、開発中のP2-Sを分けて管理する。以下の旧版節はsourceを明示した履歴。
 
 ## 開発中の背景処理・位置情報

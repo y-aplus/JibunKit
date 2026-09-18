@@ -676,9 +676,9 @@
         }
       ],
       "scope_decision": {
-        "status": "pending",
-        "reason": "",
-        "adopted_scope": ""
+        "status": "adopted",
+        "reason": "Source-specific idle/Spotlight/metadata/resource evidence supports reuse. Remaining normal appearance isolation, actual widget copy localization and adopted P2 permission dialog metadata can use native containment and existing build helpers. See docs/delivery/P2-adoption-contract.md. Adoption is not completion.",
+        "adopted_scope": "Feature/operation idle leases with selected-scene binding; explicit SwiftUI environment/presentation and contained UIKit appearance; owned Spotlight selected-item/index cleanup; normal Widget en/ja copy and adopted P2 permission descriptions. Preserve physical/OS rendering gaps. Universal process-global UIAppearance/SDK interception, arbitrary user activity/query continuation and arbitrary extension/general permission mediation remain distinct later scope; required dependencies of mandatory P2 are not excluded."
       }
     },
     {

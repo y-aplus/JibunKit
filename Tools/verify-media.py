@@ -72,6 +72,28 @@ def check_requirements(info, surface="media"):
         raise ValueError("Diagnostic app identity changed")
 
 
+
+def check_localized_usage_descriptions(app, info):
+    """Read the built app resources, not the generator's input dictionaries."""
+    keys = [key for key in info if key.startswith("NS") and key.endswith("UsageDescription")]
+    if not keys:
+        return []
+    for language in ("en", "ja"):
+        path = app / f"{language}.lproj/InfoPlist.strings"
+        values = plistlib.loads(path.read_bytes())
+        for key in keys:
+            value = values.get(key)
+            if not isinstance(value, str) or not value.strip() or value == key:
+                raise ValueError(f"Missing built {language} permission description: {key}")
+    widget = app / "PlugIns/JibunKitWidget_Extension.appex"
+    for language in ("en", "ja"):
+        path = widget / f"{language}.lproj/InfoPlist.strings"
+        values = plistlib.loads(path.read_bytes())
+        if any(key in values for key in keys):
+            raise ValueError("App permission descriptions leaked into the Widget target")
+    return keys
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
@@ -81,7 +103,7 @@ def main():
     is_media = args.surface == "media"
     families = {"media": ["MediaAudio", "MediaCapture", "MediaIntegration"],
                 "background-location": ["P2Background", "P2Location"],
-                "identity-push": ["P2Identity", "P2Push"], "ble-scenes": ["P2Bluetooth", "P2Scenes"], "ar-action": ["P2AR", "P2Action"]}[args.surface]
+                "identity-push": ["P2Identity", "P2Push"], "ble-scenes": ["P2Bluetooth", "P2Scenes"], "ar-action": ["P2AR", "P2Action", "P2Appearance"]}[args.surface]
     label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush", "ble-scenes": "BluetoothScenes", "ar-action": "ARAction"}[args.surface]
     scheme = label + "NativeTests"
     evidence = Path(os.environ["RUNNER_TEMP"]) / label
@@ -174,7 +196,9 @@ def main():
                     if args.surface == "identity-push" else
                     [(root / "Tests/P2BluetoothScenesHost/HostNativeTests.swift").read_text(encoding="utf-8")]
                     if args.surface == "ble-scenes" else
-                    [(root / "Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift").read_text(encoding="utf-8")]
+                    [(root / path).read_text(encoding="utf-8") for path in [
+                        "Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift",
+                        "Tests/P2WidgetLocalization/P2WidgetLocalizationNativeTests.swift"]]
                     if args.surface == "ar-action" else []))
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
@@ -182,6 +206,7 @@ def main():
             app = derived / "Build/Products/Release-iphoneos/JibunKit_App.app"
             info = plistlib.loads((app / "Info.plist").read_bytes())
             check_requirements(info, args.surface)
+            result["localized_usage_descriptions"] = check_localized_usage_descriptions(app, info)
             shutil.copyfile(app / "Info.plist", evidence / "app-Info.plist")
 
             def entitlement(name):

@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import tempfile
+import plistlib
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("media_verification", ROOT / "Tools/verify-media.py")
@@ -56,3 +58,22 @@ class MediaVerificationTests(unittest.TestCase):
             broken = dict(info, NSCameraUsageDescription=description)
             with self.assertRaises(ValueError):
                 MODULE.check_requirements(broken, "ar-action")
+
+    def test_permission_localization_requires_real_built_app_and_no_widget_leak(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            app = Path(temporary)
+            widget = app / "PlugIns/JibunKitWidget_Extension.appex"
+            key = "NSCameraUsageDescription"
+            for root in (app, widget):
+                for language in ("en", "ja"):
+                    path = root / f"{language}.lproj/InfoPlist.strings"
+                    path.parent.mkdir(parents=True)
+                    path.write_bytes(plistlib.dumps({key: "camera"} if root == app else {}))
+            self.assertEqual(MODULE.check_localized_usage_descriptions(app, {key: "base"}), [key])
+            (widget / "en.lproj/InfoPlist.strings").write_bytes(plistlib.dumps({key: "leaked"}))
+            with self.assertRaisesRegex(ValueError, "leaked"):
+                MODULE.check_localized_usage_descriptions(app, {key: "base"})
+            (widget / "en.lproj/InfoPlist.strings").write_bytes(plistlib.dumps({}))
+            (app / "ja.lproj/InfoPlist.strings").write_bytes(plistlib.dumps({}))
+            with self.assertRaisesRegex(ValueError, "Missing built ja"):
+                MODULE.check_localized_usage_descriptions(app, {key: "base"})

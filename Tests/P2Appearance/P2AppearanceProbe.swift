@@ -88,7 +88,7 @@ final class P2AppearanceFeature {
 }
 
 @MainActor
-private final class P2AppearanceRuntimeHolder: @unchecked Sendable {
+private final class P2AppearanceRuntimeHolder {
     weak var feature: P2AppearanceFeature?
     func configure(_ runtime: MiniAppRuntime) throws { try feature?.configure(runtime) }
 }

@@ -107,7 +107,7 @@ let project = Project(
             bundleId: "com.jibunkit.app.Widget", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: widgetBuild.infoPlist),
             sources: ["Sources/JibunKitWidget/**"],
-            resources: ["GeneratedFeatureResources/Widget/**"],
+            resources: ["GeneratedFeatureResources/Widget/**", "Sources/JibunKitWidget/Resources/**"],
             entitlements: .dictionary(widgetBuild.entitlements),
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),

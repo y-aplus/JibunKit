@@ -540,7 +540,7 @@
       "state": "partial",
       "title": "背景起動・転送再接続・継続処理",
       "existing": "開発branch da62672/CI35176070341: 継続処理の一意job/owner、通常/shared refresh/URLSessionのlifetime受付・cleanup join。Core continued6件・背景native10件（実HTTP A取消/B保存含む）成功。未出荷 f6f6c04/CI35243182556で背景19＋位置9native件、診断IPA成功。実機でbackground URLSession host callback→再接続→保存→host completion解放を確認。",
-      "remaining": "既知の実装不足なし。通常schedulerのOS選択による実起動と終了後URLSession再起動は未実証。同一processの実背景HTTP callback→保存→completion解放は確認済み。継続処理はnative直接比較でもcode1で実開始未確認、ユーザー指示により追加追究停止。単体/fakeをOS起動証拠に置き換えず、定時配送を保証しない。",
+      "remaining": "既知の実装不足なし。4a1340a/CI35365770330の診断IPAで、run78450873/task1の別processでのOS callback→owner再接続→10bytes保存→completion返却を実機確認。OSの起動契機は未判定。通常schedulerのOS選択による実起動は未観測。継続処理はnative直接比較でもcode1で実開始未確認、ユーザー指示により追加追究停止。採用契約の完了判定を見直し中であり、定時配送を保証しない。",
       "deferred": "特殊GPU/複雑scheduler・全OS不具合回避",
       "criteria": [
         {
@@ -872,7 +872,7 @@
       "state": "partial",
       "title": "通常複数window・scene",
       "existing": "iPad Simulatorで実window生成・指定owner配送・片側破棄/保持をnative検証。99632e3/CI35355170934で終了後の元二session ID・別owner/値の復元、片側破棄後B保持、無効保存owner消去を実OS UI検証。native82/OS UI5成功。",
-      "remaining": "既知の実装不足なし。通常版のcold URLと保存選択の優先順位を出荷回帰で確認する。物理iPadはユーザーがsideload準備を見送ったため未確認のまま、操作待ちから外す。Simulator成功を実機成功へ読み替えず最終検証範囲に明記する。",
+      "remaining": "既知の実装不足なし。通常版のcold URLと保存選択の優先順位はfeab170/CI35357260854で成功。物理iPadはユーザーがsideload準備を見送ったため未確認のまま、操作待ちから外す。Simulator成功を実機成功へ読み替えず最終検証範囲に明記する。",
       "deferred": "任意View/実行instanceの自動理解・一般化",
       "criteria": [
         {

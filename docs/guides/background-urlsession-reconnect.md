@@ -79,3 +79,8 @@ tokenへ`finish()`を呼ぶ順序を維持してください。逆順にする�
 この基盤はOSがbackground転送を実行する時刻、強制終了後の継続、ネットワーク条件、
 再起動配送を保証しません。provider/unit試験とiOS buildはowner routingとnative API
 接続の検証であり、実際のOS転送・cold launch配送の実機証拠ではありません。
+
+2026-09-19、診断source `4a1340a` ではこれらの自動試験と別に、実機で診断終了後の別processの
+OS callback→owner再接続→同run/taskの10bytes保存→host completion返却を確認しました。
+永続証拠はrun `78450873`、task 1。起動契機は未判定で、OSによる自動起動時刻の証明ではありません。
+詳細は[実機記録](../verification/2026-09-19-background-http-device.md)。

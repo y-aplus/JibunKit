@@ -1,5 +1,7 @@
 # 0.8.5後のOS配送検証準備
 
+現在状態: 背景HTTPの別process復元を[実機確認](2026-09-19-background-http-device.md)し、ユーザーの明示的な停止解除を受けて作業を再開した。以下の停止予定・未確認表記は実施時点の履歴。
+
 公開0.8.5の後続作業。変更は診断fixture/試験/runnerに限定し、通常製品を変更しない。ユーザーは「次に実機確認が発生したところでしばらく停止」と予告済み。今回の位置/HTTP差分を一括レビュー・CI・IPA取得まで進め、実機手順を提示した時点で全スレッドを停止し、再開指示を待つ。
 
 ## 位置: 前景geofenceの実OS callback
@@ -39,3 +41,13 @@ a317524はコンパイル成功、nativeの既存HTTP admission/cleanup試験1�
 4a1340ab3cedfe10fded79fa975d4a4bd65d160cはnative87件/OS UI6件成功、失敗0/skip0。geofenceの実enter/exit callback試験も58.701秒で成功。Release/IPAの署名/CRC検査成功。ダウンロードしたstructured summaryとIPAを照合した。新しいHTTP診断の実機結果はまだない。
 
 [診断IPA・再開時手順](2026-09-19-background-http-device.md)を準備。ユーザー予告に従い提示後は全スレッドの実装・新CIを停止し、再開指示を待つ。公開0.8.5/mainは維持し、この診断変更を未検証のまま正式版へ追加しない。
+
+
+## 停止解除後の残件レビュー
+
+2026-09-19、背景HTTPの実機chain成立を受領後、ユーザーが停止を解除した。上記「結果はまだない」「停止」は当時の履歴。
+
+- P2-4: 別process・同一run/owner/task・本番host callback・owner再接続・同callback processの保存/SHA・task完了・実host completion返却を照合できた。限定レビューでは新たな実装不足は認めない。ただしBackgroundTasksの実OS開始/期限は未観測、継続処理はnative直接比較でもcode1で追究停止。この差を消さず、P2-4全体はpartialを維持する。
+- P2-11: 元二session/owner/値の復元、片側破棄と他方保持、無効ownerの復活防止、通常cold URL優先まで成功。新たな実装不足や有効な追加自動試験は認めない。物理iPadは未確認・準備見送りで、追加依頼しない。Simulator成功を物理成功に読み替えない。
+- P2-3: owner/generation配送、共有枠、永続化/rollback、許可、停止join/遅着拒否、host再接続の実装不足は認めない。Simulator終了後のRegion配送だけを独立した有界診断として準備する。OSによる別process起動とownerログの新イベントが成立条件。再現不能を即座に製品欠陥とせず、通常CI必須にも追加しない。実iBeacon電波は代替できない。
+- P2-8/P2-10: 署名・サービス環境を用意できない既知条件を再質問しない。実通信未検証を明記したまま1.0を判定可能とするか、完成境界の判断をユーザーへ質問した。回答前に除外・合格扱いはしない。

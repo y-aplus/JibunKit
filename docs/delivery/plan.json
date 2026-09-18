@@ -631,7 +631,7 @@
       "state": "partial",
       "title": "低負荷残件の採否と採用範囲",
       "existing": "c66b624の外観5/Widget翻訳1と用途説明bundle検査が成功。実機でidle点灯維持/非選択後通常消灯を確認。Spotlight既存成果を再利用。",
-      "remaining": "代表権限dialog・Widget実OS言語描画等の未観測条件を出荷前に整理。自動検証済み文字列/配置の手動反復はしない。",
+      "remaining": "Widgetの実OS言語描画と代表権限dialogの表示は未観測。既存bundle/native/idle実機の証拠を再利用し、元の採用条件に必要な最小検証へ絞る。自動検証済み文字列/配置の手動反復はしない",
       "deferred": "採用しない残件も台帳へ根拠を維持",
       "criteria": [
         {
@@ -976,8 +976,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "追加extensionの採否と採用範囲",
-      "existing": "保存専用Action extensionを採用。c66b624実機でOS入口、URL/ファイルの対象ownerへの取込み、取消、A無効化/B継続を確認。",
-      "remaining": "通常版への復帰/保持と出荷候補の版・文書検査を一括で実施。任意extensionの自動統合とはしない。",
+      "existing": "保存専用Action extensionを採用。c66b624実機でOS入口、URL/ファイルの対象ownerへの取込み、取消、A無効化/B継続を確認。。0.8.4の版・文書・公開検査と通常Counter/Reminder保持は完了。ただしAction inbox保持そのものの実機証拠とはしない",
+      "remaining": "plain-text Action入口の既存Share共通経路との証拠再利用と、Action/owner登録省略期間を挟んだpending inbox保持の自動検証を照合。通常版のCounter/Reminder保持・版/文書検査を再要求しない。任意extensionの自動統合とはしない",
       "deferred": "任意既存extensionの自動統合",
       "criteria": [
         {

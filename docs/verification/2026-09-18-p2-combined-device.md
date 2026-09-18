@@ -65,3 +65,11 @@ AppleのcancelPeripheralConnection資料は他アプリの接続が物理linkを
 ユーザー指摘により、Accessory単独でのread/notify成功が未確認である点を明示。次の実機切り分けはSensor無効・Accessoryのみを新規接続して受信確認→Sensor追加後の双方受信→Sensor停止後Accessory維持の順にする。Accessory単独で失敗する場合はその段階の記録で止め、共有transport説を先行確定しない。
 
 診断修正fe1a6e5708fa5de4eb5fa855748cc8b661eb5e18は[CI35309744549](https://github.com/y-aplus/JibunKit/actions/runs/35309744549)でnative69件（failure0/skip0）、Release/IPA検査成功、13分33秒。[診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-ble-trace-check-20260918/JibunKit-P2-combined-check.ipa)を公開し無認証GET/SHA/全entry CRC照合済み。6,403,421 bytes、SHA-256 `ef5c53fc590741e963132b496c73a0c3abe91e8ea02a7a282e1a95b8c5fb6c38`。実機切り分けは未実施。
+
+## fe1a6e5でのBLE再確認結果
+
+Sensorを無効のままAccessory単独で接続・購読し、`11 12`受信成功。その後Sensorを再有効化して同じAndroidへ接続・購読すると、`13 14`は両Featureで受信。Sensorだけ無効化した後もAccessoryが`15 16`を受信した。これでAccessory単独未確認という切り分けの不足を補い、当該候補・機器・操作順における両受信と片側停止後の他方維持を確認した。
+
+ユーザーは屋外で周囲の広告が多数表示されるためscan停止を希望。scan停止は接続解除ではない旨を案内。修正前のdelegate/object競合の内部原因はtrace未受領のため確定しない。逆順やcold復元等をこの成功から推定しない。
+
+同じ候補でAccessoryのscan停止後に`17 18`を受信。明示切断後、同じAndroidへ再接続・service/characteristic再検索・再購読し`19 1A`受信に成功。scan停止と接続寿命の分離、および通常切断/再接続後の通知再開を実機確認。cold復元・OSによる自動再接続はこの手順の対象ではない。

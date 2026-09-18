@@ -11,7 +11,7 @@
 - BLE診断ボタンの同時操作を避ける配置に修正。nativeのscan時delegate再設定と接続object置換を除去し、復元されたGATT objectの世代索引・Feature起動前の通知保留を補う。保留超過は明示失敗とする。
 - 再署名後の背景登録ID整合とFeature別起動エラー処理を追加し、起動クラッシュ後に実機起動成功を確認。背景HTTPは同一processでOS callbackから保存/completionまで実測。継続処理code1の根本原因とcold配送は未確認。
 - AR・Action・idle、BLE通常通信/両Feature受信/片側停止後維持/再接続を診断IPAで実機確認。iPad実機は今回見送り、実二windowはSimulatorの証拠のみ。
-- 出荷候補の通常IPA/保存回帰は検証中。診断Featureを通常IPAへ含めず、既存Counter/Reminderの保存IDを維持する。
+- 通常候補IPAで既存Counter/Reminder保持とJSON書き出し・読込を実機確認。Files自動UIの失敗は未解決として保持し、最終出荷CIを実施する。診断Featureを通常IPAへ含めず、既存Counter/Reminderの保存IDを維持する。
 
 ## [0.8.3] - 2026-09-17
 

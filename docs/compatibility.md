@@ -1,5 +1,7 @@
 # 1.0の互換性とFeatureの責任境界
 
+> 2026-09-18: 出荷候補は0.8.4/build14、PREVIOUS（現公開版）は0.8.3/build13。通常候補のデータ保持・JSON読込を実機確認し、最終出荷CIを準備中。[今回の証拠と未確認](verification/2026-09-18-0.8.4-release.md)。以下の0.8.3出荷説明は前回公開時点の履歴です。
+
 公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機、版変更後CIと公開IPA/ZIP検査を完了しました。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
 更新日: 2026-09-17。公開版0.8.3/build13とmainは[現在状態](status.md)を参照。
 0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。

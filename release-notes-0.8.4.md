@@ -15,7 +15,9 @@
 - c66b624の統合native69件と、ARの実frame/離脱停止/再開/停止、ActionのURL/ファイル/取消/片側無効化、idle点灯維持/通常消灯復帰の実機結果。
 - fe1a6e5の実BLE read/write/notify、両Feature同時受信、片側停止後の他方維持、scan停止/切断再接続後受信。
 - 7e4c740/CI35325946663でnative73件（失敗/skipなし）と共有BLE/window24件。復元GATT索引、早着通知/旧世代拒否、起動待ちbuffer上限を追加自動検証。14分36秒。
-- 41c97f1/CI35298791125の通常共有443件（既存Keychain skip2）・Records11件・選択Counter復元/取消/再起動・Reminder保持は当該sourceの証拠。今回版の通常回帰/IPA検査は別途実施します。
+- 41c97f1/CI35298791125の通常共有443件（既存Keychain skip2）・Records11件・選択Counter復元/取消/再起動・Reminder保持は当該sourceの証拠。c0eb6b2/CI35327736417の通常build/IPA/共有試験も成功。今回の通常IPAでCounter/Reminder保持とCounter JSON書き出し・読み込み・復元対象表示を実機確認しました。
+
+- Filesの自動UIはOS FileProviderの参照解決エラーで失敗し、新規Simulator比較も選択操作で中断しました。自動試験の安定化は未解決です。今回実機では読込が成功していますが、実復元の再操作は依頼していません。
 
 ## 未確認・制約
 

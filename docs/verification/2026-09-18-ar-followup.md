@@ -14,3 +14,11 @@ CI35335272799の診断compile失敗（internal scene initializer）は、診断�
 2026-09-18、ユーザーが上記診断IPAの手順1〜5をすべてOKと回答。AR実frame増加、Camera B reject時のA継続、stopCurrentでA停止/B実camera稼働、B停止後A暗黙再開なし、A明示再開後frame増加を確認。sourceはddb0f83で、通常0.8.4の再実機や別Feature管理全体の実証とはしない。OS delegate由来のinterruption/復帰は今回依頼しておらず未観測を維持。
 
 次の境界はBLE cold復元のprocess識別・永続観測の診断整備と、AR OS中断の観測妥当性レビュー。必要な観測がない状態でユーザーへ反復操作を依頼しない。Files独立比較は[別記録](2026-09-18-files-independent-comparison.md)で両bridgeのOS参照解決失敗を確認済み。
+
+## OS中断観測のレビューと次の一括境界
+
+実機camera競合成功と、OS interruptionの未観測を分離する。Appleの一般的な中断例である背景移動は本hostのscene離脱停止と競合するため、その操作を中断復帰の成功証拠にしない。確実な短時間triggerが得られていないので追加実機試行は依頼しない。
+
+診断ログは従来booleanだけでend→frameを対応付けており、matching began・実行世代・中断sequenceの照合が不足していた。また同一ARSessionのraw delegateがcurrentForwarderを取得する境界は、保持された旧forwarderを拒否する既存試験だけでは十分に検証できない。これを実OS障害と断定せず、診断の帰属・成功表示を先に修正する。
+
+次のCIはAR相関修正とBLE process/cold復元診断をまとめたp2-combined一回とする。各workerは独立試験を添えて提出、親で契約・差分確認後に投入する。通常製品IPA・署名環境不足の実通信・Files独立比較は再実行しない。旧run/end-without-began/stop後frameで復帰成功を作らないこと、BLEで単なる手動起動をcold成功としないことを負条件に含む。

@@ -53,3 +53,9 @@ Action/Shareの差は入口presentationで、provider loader/保存/取消は共
 先行記録の「ユーザーはFast App Termination項目があると回答」は「はい」の帰属を取り違えた記録。後にユーザーが「アプリの高速終了」という日本語項目の存在を明示確認した。日本語名は実機操作記録 https://qiita.com/Shimokita/items/b650ae070b758f3635e9 でも確認した。
 
 P2-6は実OS Widget英語表示と代表camera許可文言のSimulator UI試験を統合。camera文言は診断専用の実permission APIを使い、ARKit hardware support判定に遮られない入口とする。通常ARの同意/所有権/非対応判定を変更しない。生成・runnerローカル11試験成功。OS UI2件の成功・skip0を必須とし、一括p2-combined CIで検証する。
+
+## OS表示自動試験の結果
+
+18a94bd50dc19052501ba883db29ba01e587abc8 / CI35347692100は18分14秒で成功。取得したos-ui-summary.jsonでiPad(A16) iOS26.5 Simulator上の2件成功/失敗0/skip0、test-summary.jsonでnative80件成功/失敗0/skip0を確認。実SpringBoardのCounter Widget gallery/home英語描画と実camera OS許可文言を検証した。実機の全言語/全権限組合せの確認ではない。BLE接続世代負試験9475781はこのCIより後に追加したため、まだ実行済みに含めない。次の関連CIにまとめる。
+
+P2-5は既存の実機OS操作/管理/再起動と31478f2・CI35075825942の実4Feature非初期値/世代保持回帰を照合し採用通常範囲をcompleteとした。過去の230/200差分は原因不明・非再現の履歴として残す。修正済みやユーザー誤操作とは断定しない。

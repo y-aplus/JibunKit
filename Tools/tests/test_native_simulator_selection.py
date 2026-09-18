@@ -55,7 +55,17 @@ class NativeSimulatorSelectionTests(unittest.TestCase):
         devices['com.apple.CoreSimulator.SimRuntime.iOS-26-5'].append(
             {'name': 'iPad Air', 'udid': 'pad', 'isAvailable': True})
         self.assertEqual(self.select('26', '', devices, 'ble-scenes'), 'pad')
+        self.assertEqual(self.select('26', '', devices, 'location-cold'), 'pad')
         self.assertEqual(self.select('26', '', devices), 'phone')
+
+    def testColdLocationWorkflowIsIsolatedAndReportsUnobserved(self):
+        workflow = (ROOT / '.github/workflows/native-surface.yml').read_text(encoding='utf-8')
+        cold = workflow.split('            location-cold)', 1)[1].split('              ;;', 1)[0]
+        self.assertIn('-scheme P2LocationColdOSUITests', cold)
+        self.assertIn('-only-testing:P2LocationColdOSUITests/', cold)
+        self.assertIn("outcome = 'unobserved-skip'", cold)
+        self.assertIn('-maximum-test-execution-time-allowance 240', cold)
+        self.assertNotIn('verify-media.py', cold)
 
     def testUnavailableIPadIsNotARealWindowTestDevice(self):
         devices = {'com.apple.CoreSimulator.SimRuntime.iOS-26-5': [

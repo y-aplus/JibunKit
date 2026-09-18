@@ -15,15 +15,11 @@ final class P2ARFeature {
     let state: P2ARState
     let owner: MiniAppCaptureOwner
     let contenderOwner: MiniAppCaptureOwner
-    let session: ARSession
-    let configuration: ARWorldTrackingConfiguration
-    let eventBridge: MiniAppARSessionEventBridge
-    let adapter: MiniAppARSessionAdapter
-    let delegate: P2ARFeatureDelegate
     let lifetime: MiniAppFeatureLifetime
     private let consentGate: P2ARConsentGate
     private let contenderOperation: @MainActor () -> MiniAppCaptureOperation
     private var contenderScenes: [UUID: MiniAppSceneActivityDispatcher] = [:]
+    private(set) var activeRun: P2ARRun?
 
     init(
         id: MiniAppID = MiniAppID("p2-ar"),
@@ -54,42 +50,11 @@ final class P2ARFeature {
             state.status = "AR利用可能"
             state.append("runtime connected generation=\(state.runtimeGeneration)")
         }
-        let arSession = ARSession()
-        let arConfiguration = ARWorldTrackingConfiguration()
-        let bridge = MiniAppARSessionEventBridge()
-        let featureDelegate = P2ARFeatureDelegate(state: state)
-        session = arSession
-        configuration = arConfiguration
-        eventBridge = bridge
-        delegate = featureDelegate
-        adapter = MiniAppARSessionAdapter(
-            session: arSession,
-            configuration: arConfiguration,
-            runOptions: [.resetTracking, .removeExistingAnchors],
-            restartOptions: [],
-            eventBridge: bridge,
-            isSupported: { ARWorldTrackingConfiguration.isSupported },
-            installForwarder: { [weak featureDelegate] in featureDelegate?.install($0) },
-            removeForwarder: { [weak featureDelegate] in featureDelegate?.remove(generation: $0) }
-        )
-        arSession.delegate = featureDelegate
-        captureOwner.stateChanged = { [weak state] captureState in
-            state?.observeARState(captureState)
-            switch captureState {
-            case .requesting: state?.status = "AR許可確認中"
-            case .starting: state?.status = "AR開始中"
-            case .running: state?.status = "AR実行中"
-            case .stopping(let reason): state?.status = "AR停止中: \(reason)"
-            case .suspended(let reason): state?.status = "AR中断/停止: \(reason)"
-            case .failed(let failure): state?.status = "AR失敗: \(failure)"
-            case .stopped: state?.status = "AR Feature停止"
-            case .idle: state?.status = "AR利用可能"
-            }
-        }
         contender.stateChanged = { [weak state] captureState in
             state?.contenderStatus = "Camera B: \(captureState)"
             state?.append("Camera B owner state=\(captureState)")
         }
+        captureOwner.stateChanged = { [weak self] in self?.receiveARState($0) }
     }
 
     var definition: MiniAppDefinition {
@@ -117,17 +82,50 @@ final class P2ARFeature {
 
     func start(in sceneID: UUID?) async {
         guard let sceneID else { state.status = "scene未接続"; return }
+        let run = P2ARRun(state: state)
+        activeRun = run
+        state.activate(run: run.id)
         do {
-            try await owner.start(try adapter.operation(), sceneScope: .scene(sceneID))
+            try await owner.start(try run.adapter.operation(), sceneScope: .scene(sceneID))
             state.status = "AR実行中"
         } catch {
+            finish(run: run, reason: "start failed")
             state.status = "AR開始失敗: \(error)"
         }
     }
 
     func stop() async {
+        let run = activeRun
         await owner.stop()
+        if let run { finish(run: run, reason: "explicit stop") }
         state.status = "AR停止・camera解放"
+    }
+
+    private func receiveARState(_ captureState: MiniAppCaptureState) {
+        let runID = activeRun?.id
+        state.observeARState(captureState, run: runID)
+        switch captureState {
+        case .requesting: state.status = "AR許可確認中"
+        case .starting: state.status = "AR開始中"
+        case .running: state.status = "AR実行中"
+        case .stopping(let reason): state.status = "AR停止中: \(reason)"
+        case .suspended(let reason): state.status = "AR中断/停止: \(reason)"
+        case .failed(let failure): state.status = "AR失敗: \(failure)"
+        case .stopped: state.status = "AR Feature停止"
+        case .idle: state.status = "AR利用可能"
+        }
+        switch captureState {
+        case .suspended(.interrupted(_)): break
+        case .stopping(_), .suspended(_), .failed(_), .stopped:
+            if let run = activeRun { finish(run: run, reason: "owner state \(captureState)") }
+        default: break
+        }
+    }
+
+    private func finish(run: P2ARRun, reason: String) {
+        guard activeRun === run else { return }
+        activeRun = nil
+        state.deactivate(run: run.id, reason: reason)
     }
 
     func startContender(switching: MiniAppCaptureSwitch, in sceneID: UUID?) async {
@@ -197,44 +195,104 @@ final class P2ARState: ObservableObject {
     @Published var runtimeGeneration = 0
     @Published var contenderStatus = "Camera B: 停止中"
     @Published private(set) var observationLines: [String] = []
-    private var waitingForFrameAfterInterruption = false
+    private struct Interruption {
+        let run: UUID
+        let sequence: Int
+        var ended = false
+        var restarted = false
+        var receivedFrame = false
+    }
+    private var activeRun: UUID?
+    private var nextSequence = 0
+    private var interruption: Interruption?
 
     func append(_ message: String) {
         observationLines.append("\(Date.now.ISO8601Format()) \(message)")
         if observationLines.count > 80 { observationLines.removeFirst(observationLines.count - 80) }
     }
 
-    func osInterruptionBegan() {
-        append("OS ARSessionDelegate interruption began")
+    func activate(run: UUID) {
+        activeRun = run
+        interruption = nil
+        append("AR run=\(short(run)) activated")
     }
 
-    func osInterruptionEnded() {
-        waitingForFrameAfterInterruption = true
-        append("OS ARSessionDelegate interruption ended; restart pending")
+    func deactivate(run: UUID, reason: String) {
+        guard activeRun == run else {
+            append("unattributed deactivate ignored run=\(short(run)) reason=\(reason)")
+            return
+        }
+        activeRun = nil
+        interruption = nil
+        append("AR run=\(short(run)) deactivated reason=\(reason)")
     }
 
-    func observeARState(_ value: MiniAppCaptureState) {
-        append("AR owner state=\(value)")
-        if waitingForFrameAfterInterruption, case .running = value {
-            append("AR restart completed after OS interruption")
-        } else if waitingForFrameAfterInterruption {
+    func interruptionBegan(run: UUID, source: String) {
+        guard activeRun == run else {
+            append("unattributed \(source) interruption began ignored run=\(short(run))")
+            return
+        }
+        guard interruption == nil else {
+            append("duplicate \(source) interruption began ignored run=\(short(run))")
+            return
+        }
+        nextSequence += 1
+        interruption = .init(run: run, sequence: nextSequence)
+        append("\(source) interruption began run=\(short(run)) seq=\(nextSequence)")
+    }
+
+    func interruptionEnded(run: UUID, source: String) {
+        guard activeRun == run, var current = interruption,
+              current.run == run, !current.ended else {
+            append("unmatched \(source) interruption ended ignored run=\(short(run))")
+            return
+        }
+        current.ended = true
+        interruption = current
+        append("\(source) interruption ended run=\(short(run)) seq=\(current.sequence); restart pending")
+    }
+
+    func observeARState(_ value: MiniAppCaptureState, run: UUID?) {
+        append("AR owner state=\(value) run=\(run.map { short($0) } ?? "none")")
+        guard let run, activeRun == run, var current = interruption,
+              current.run == run, current.ended, !current.restarted else { return }
+        if case .running = value {
+            current.restarted = true
+            interruption = current
+            append("AR restart completed run=\(short(run)) seq=\(current.sequence)")
+        } else {
             switch value {
             case .failed(_), .stopped, .suspended(.failure(_)), .suspended(.user),
                  .suspended(.featureStopped), .suspended(.switched(to: _)):
-                waitingForFrameAfterInterruption = false
-                append("AR interruption recovery ended without a resumed frame")
+                interruption = nil
+                append("AR interruption recovery ended without resumed frame run=\(short(run)) seq=\(current.sequence)")
             default: break
             }
         }
     }
 
-    func receivedFrame() {
-        frameCount += 1
-        if waitingForFrameAfterInterruption {
-            waitingForFrameAfterInterruption = false
-            append("first frame after OS interruption")
+    func receivedFrame(run: UUID, source: String) {
+        guard activeRun == run else {
+            append("unattributed \(source) frame ignored run=\(short(run))")
+            return
         }
+        frameCount += 1
+        guard var current = interruption, current.run == run, current.ended,
+              current.restarted, !current.receivedFrame else { return }
+        current.receivedFrame = true
+        interruption = current
+        append("first frame after interruption run=\(short(run)) seq=\(current.sequence)")
     }
+
+    func receivedAnchors(_ count: Int, run: UUID) {
+        guard activeRun == run else {
+            append("unattributed anchors ignored run=\(short(run)) count=\(count)")
+            return
+        }
+        anchorCount += count
+    }
+
+    private func short(_ value: UUID) -> String { String(value.uuidString.suffix(8)) }
 }
 
 @MainActor
@@ -247,14 +305,45 @@ private final class P2ARConsentGate {
     }
 }
 
-/// The Feature remains the ARSession delegate. It receives standard frame and
-/// anchor callbacks, forwarding only lifetime events to the Core bridge.
+@MainActor
+final class P2ARRun {
+    let id: UUID
+    let session: ARSession
+    let delegate: P2ARFeatureDelegate
+    let adapter: MiniAppARSessionAdapter
+
+    init(state: P2ARState) {
+        let runID = UUID()
+        let session = ARSession()
+        let bridge = MiniAppARSessionEventBridge()
+        let delegate = P2ARFeatureDelegate(run: runID, state: state)
+        id = runID
+        self.session = session
+        self.delegate = delegate
+        adapter = MiniAppARSessionAdapter(
+            session: session,
+            configuration: ARWorldTrackingConfiguration(),
+            runOptions: [.resetTracking, .removeExistingAnchors],
+            restartOptions: [],
+            eventBridge: bridge,
+            isSupported: { ARWorldTrackingConfiguration.isSupported },
+            installForwarder: { [weak delegate] in delegate?.install($0) },
+            removeForwarder: { [weak delegate] in delegate?.remove(generation: $0) }
+        )
+        session.delegate = delegate
+    }
+}
+
+/// One delegate belongs to exactly one ARSession run. A delayed callback keeps
+/// that run ID and can never borrow the next run's forwarder.
 final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendable {
+    private let run: UUID
     private weak var state: P2ARState?
     private let lock = NSLock()
     private var forwarder: MiniAppARSessionEventForwarder?
 
-    init(state: P2ARState) {
+    init(run: UUID, state: P2ARState) {
+        self.run = run
         self.state = state
         super.init()
     }
@@ -274,26 +363,44 @@ final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendabl
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        Task { @MainActor [weak state] in state?.receivedFrame() }
+        recordFrame(source: "OS ARSessionDelegate")
     }
 
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
         let count = anchors.count
-        Task { @MainActor [weak state] in state?.anchorCount += count }
+        Task { @MainActor [weak state, run] in state?.receivedAnchors(count, run: run) }
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
-        Task { @MainActor [weak state] in state?.osInterruptionBegan() }
-        currentForwarder()?.interruptionBegan()
+        recordInterruptionBegan(source: "OS ARSessionDelegate")
     }
 
     func sessionInterruptionEnded(_ session: ARSession) {
-        Task { @MainActor [weak state] in state?.osInterruptionEnded() }
-        currentForwarder()?.interruptionEnded()
+        recordInterruptionEnded(source: "OS ARSessionDelegate")
     }
 
     func session(_ session: ARSession, didFailWithError error: any Error) {
         currentForwarder()?.runtimeFailed(reason: String(describing: error), canRestart: false)
+    }
+
+    func recordInterruptionBegan(source: String) {
+        let forwarder = currentForwarder()
+        Task { @MainActor [weak state, run] in
+            state?.interruptionBegan(run: run, source: source)
+            forwarder?.interruptionBegan()
+        }
+    }
+
+    func recordInterruptionEnded(source: String) {
+        let forwarder = currentForwarder()
+        Task { @MainActor [weak state, run] in
+            state?.interruptionEnded(run: run, source: source)
+            forwarder?.interruptionEnded()
+        }
+    }
+
+    func recordFrame(source: String) {
+        Task { @MainActor [weak state, run] in state?.receivedFrame(run: run, source: source) }
     }
 }
 

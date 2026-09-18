@@ -6,13 +6,14 @@ import JibunKitCore
 
 @MainActor
 final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
-    func testProbeUsesNormalDefinitionLifetimePermissionAndFeatureDelegate() {
+    func testProbeUsesNormalDefinitionLifetimePermissionAndPerRunFeatureDelegate() {
         let definition = P2ARProbe.definitions[0]
         XCTAssertEqual(definition.id, MiniAppID("p2-ar"))
         XCTAssertNotNil(definition.lifetime)
         XCTAssertNotNil(definition.onSceneActivityChange)
         XCTAssertEqual(definition.permissions.map(\.id), ["camera"])
-        XCTAssertTrue(P2ARProbe.feature.session.delegate === P2ARProbe.feature.delegate)
+        let run = P2ARRun(state: P2ARState())
+        XCTAssertTrue(run.session.delegate === run.delegate)
     }
 
     func testSimulatorReportsUnsupportedAndDoesNotClaimTracking() async throws {
@@ -115,20 +116,59 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         await feature.lifetime.stop()
     }
 
-    func testArtificialObservationEventsAreTimestampedBoundedAndMarkRestartFrame() {
+    func testArtificialObservationEventsCorrelateRunSequenceRestartAndFrame() {
         let state = P2ARState()
         for index in 0..<85 { state.append("artificial test event \(index)") }
         XCTAssertEqual(state.observationLines.count, 80)
         XCTAssertTrue(state.observationLines.first?.contains("artificial test event 5") == true)
 
-        state.osInterruptionBegan()
-        state.osInterruptionEnded()
-        state.observeARState(.running([.camera]))
-        state.receivedFrame()
+        let run = UUID()
+        state.activate(run: run)
+        state.interruptionBegan(run: run, source: "artificial")
+        state.interruptionEnded(run: run, source: "artificial")
+        state.observeARState(.running([.camera]), run: run)
+        state.receivedFrame(run: run, source: "artificial")
 
-        XCTAssertTrue(state.observationLines.contains { $0.contains("OS ARSessionDelegate interruption began") })
-        XCTAssertTrue(state.observationLines.contains { $0.contains("AR restart completed after OS interruption") })
-        XCTAssertTrue(state.observationLines.contains { $0.contains("first frame after OS interruption") })
+        let correlated = state.observationLines.filter { $0.contains("run=\(run.uuidString.suffix(8))") }
+        XCTAssertTrue(correlated.contains { $0.contains("artificial interruption began") && $0.contains("seq=1") })
+        XCTAssertTrue(correlated.contains { $0.contains("artificial interruption ended") && $0.contains("seq=1") })
+        XCTAssertTrue(correlated.contains { $0.contains("AR restart completed") && $0.contains("seq=1") })
+        XCTAssertTrue(correlated.contains { $0.contains("first frame after interruption") && $0.contains("seq=1") })
+    }
+
+    func testUnmatchedAndOldRunArtificialCallbacksCannotReportRecovery() async {
+        let state = P2ARState()
+        let oldRun = UUID(), currentRun = UUID()
+        let oldDelegate = P2ARFeatureDelegate(run: oldRun, state: state)
+        state.activate(run: currentRun)
+
+        oldDelegate.recordInterruptionBegan(source: "artificial-old")
+        oldDelegate.recordInterruptionEnded(source: "artificial-old")
+        oldDelegate.recordFrame(source: "artificial-old")
+        await eventually { state.observationLines.count >= 4 }
+        state.interruptionEnded(run: currentRun, source: "artificial-no-begin")
+        state.observeARState(.running([.camera]), run: currentRun)
+        state.receivedFrame(run: oldRun, source: "artificial-stale")
+
+        XCTAssertFalse(state.observationLines.contains { $0.contains("AR restart completed") })
+        XCTAssertFalse(state.observationLines.contains { $0.contains("first frame after interruption") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("unmatched artificial-no-begin interruption ended ignored") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("unattributed artificial-old interruption began ignored") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("unattributed artificial-stale frame ignored") })
+    }
+
+    func testStoppedRunLateFrameCannotCompleteInterruption() {
+        let state = P2ARState(), run = UUID()
+        state.activate(run: run)
+        state.interruptionBegan(run: run, source: "artificial")
+        state.interruptionEnded(run: run, source: "artificial")
+        state.deactivate(run: run, reason: "test stop")
+        state.observeARState(.running([.camera]), run: run)
+        state.receivedFrame(run: run, source: "artificial-late")
+
+        XCTAssertFalse(state.observationLines.contains { $0.contains("AR restart completed") })
+        XCTAssertFalse(state.observationLines.contains { $0.contains("first frame after interruption") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("unattributed artificial-late frame ignored") })
     }
 
     private func allowedStore(owner: MiniAppID) throws -> MiniAppConsentStore {

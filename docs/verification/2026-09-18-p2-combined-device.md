@@ -49,3 +49,5 @@ f6f6c04で実機確認したHTTP転送のbackground host callback→Feature再�
 Android GATT設定・広告準備後、ユーザーの画像でBLE SensorのForm同一行にスキャン/停止等の標準Buttonが隣接していることを確認。スキャン意図の操作後に状態はスキャン停止。両action発火の実測ログはなく因果は未確定だが、Formの行actionの曖昧さを除去するため全5組（scan、service検索、characteristic検索、read/write、subscribe/unsubscribe）をそれぞれ独立行へ変更し、scanは開始/停止を明示する。通信・所有者の実装は変更しない。
 
 修正版はp2-combinedの既存69 native/Release検査を一括実行し、実機で単独scanと後続通信を再開する。既存AR/Action/idleの結果は保持。表示修正のため通常回帰全体は再投入しない。Androidは利用可能、iPadはユーザー申告で約3時間後目安（利用開始を自動的に仮定しない）。
+
+修正版afd9086187ebd3105a98d68386c0704ee9ea3569は[CI35306613429](https://github.com/y-aplus/JibunKit/actions/runs/35306613429)でnative69件成功（failure0/skip0）、Release/IPA検査成功。所要15分11秒。[修正版IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-ble-ui-check-20260918/JibunKit-P2-combined-check.ipa)を公開し、無認証再取得のSHA-256 `9d380452e4560298917ac507ee654717801807166a0fe650c245c5adc10c54df`と全entry CRC一致を確認。6,386,486 bytes。UIの実タップとBLE無線は未確認で、69 native試験で代用しない。元候補c66b624のAR/Action/idle実機結果は維持する。

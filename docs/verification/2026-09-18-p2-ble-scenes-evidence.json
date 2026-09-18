@@ -98,6 +98,12 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35295505063",
       "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
       "conclusion": "success: shared BLE14 + scene10, native13 zero skips/failures, diagnostic Release IPA verified; job11m47"
+    },
+    {
+      "id": "35296983783",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35296983783",
+      "source": "809822abb0c2220d330c8d33ebbe8d4c87dd9464",
+      "conclusion": "failure: exact filename tap still leaves Files picker unchanged. Not proof that importer callback did not run. Next combined AR/Action checkpoint adds row enabled/hittable and DEBUG BackupImport presentation/completion/load logs, tests icon-region hypothesis, preserves cancellation/full restore/other-owner assertions. No product import regression ruled out yet."
     }
   ],
   "evidence": [

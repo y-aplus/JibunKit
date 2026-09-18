@@ -779,10 +779,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "BLE通常接続・背景再接続",
-      "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。",
-      "remaining": "59f7081診断版の実機ログで12:56:16Zの新processにおけるOS復元callback、同一owner/generationのconnectedとNotify2バイト配送を確認。後続processはconnectedのみであり最新表示が過去の通知成功を隠していた。OS自動起動か手動再入場起動かは未判定。診断表示の履歴保持を修正・自動検証し、採用範囲の完了判定に反映する。",
+      "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。59f7081実機ログで新processのOS復元と同一owner/generation Notify2バイトを確認。1138ded/CI35352655988のnative82件で履歴保持・世代混同拒否・通常再接続を復元扱いしない負試験も成功。",
+      "remaining": "なし（採用通常範囲）。OS自動起動か手動再入場起動かは未判定で、自動起動や一定時間内の配送を実証・保証したとは記載しない。後続processのconnectedのみの記録は過去の完全な復元Notify証拠と分けて保持する。",
       "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
       "criteria": [
         {

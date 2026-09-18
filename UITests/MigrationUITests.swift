@@ -174,6 +174,15 @@ final class MigrationUITests: XCTestCase {
         showMiniAppList()
         tap(app.buttons["miniapp.reminder"])
         XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.terminate()
+        app.launch()
+        // Establish that a different owner really is restored, rather than
+        // claiming URL precedence from an unsaved in-memory selection.
+        XCTAssertTrue(app.textFields["例: 水を飲む"].waitForExistence(timeout: 10))
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
         app.terminate()
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/counter")))
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10))

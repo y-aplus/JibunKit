@@ -200,7 +200,8 @@ private struct P2BluetoothView: View {
     var body: some View {
         Form {
             Text(feature.status).accessibilityIdentifier("p2.bluetooth.\(feature.id.rawValue).status")
-            HStack { Button("スキャン") { feature.scan() }; Button("停止") { feature.stopScan() } }
+            Button("スキャン開始") { feature.scan() }
+            Button("スキャン停止") { feature.stopScan() }
             ForEach(feature.peripherals) { peripheral in
                 Button(peripheral.name ?? peripheral.id.uuidString) { feature.connect(peripheral) }
             }
@@ -208,20 +209,16 @@ private struct P2BluetoothView: View {
             Section("GATT指定") {
                 TextField("Service UUID", text: $feature.serviceUUID)
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                HStack {
-                    Button("全Service検索") { feature.discoverAllServices() }
-                    Button("指定Service検索") { feature.discover() }
-                }
+                Button("全Service検索") { feature.discoverAllServices() }
+                Button("指定Service検索") { feature.discover() }
                 if feature.discoveredServices.isEmpty { Text("Service候補: 未取得") }
                 ForEach(feature.discoveredServices, id: \.self) { value in
                     Button("Service候補: \(value)") { feature.selectService(value) }
                 }
                 TextField("Characteristic UUID", text: $feature.characteristicUUID)
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                HStack {
-                    Button("全Characteristic検索") { feature.discoverAllCharacteristics() }
-                    Button("指定Characteristic検索") { feature.discoverCharacteristic() }
-                }
+                Button("全Characteristic検索") { feature.discoverAllCharacteristics() }
+                Button("指定Characteristic検索") { feature.discoverCharacteristic() }
                 if feature.discoveredCharacteristics.isEmpty { Text("Characteristic候補: 未取得") }
                 ForEach(feature.discoveredCharacteristics, id: \.self) { value in
                     Button("Characteristic候補: \(value)") { feature.selectCharacteristic(value) }
@@ -230,8 +227,10 @@ private struct P2BluetoothView: View {
             Section("値診断") {
                 TextField("送信bytes hex（例: 01 FF）", text: $feature.writeHex)
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                HStack { Button("Read") { feature.read() }; Button("Write with response") { feature.write() } }
-                HStack { Button("Subscribe") { feature.subscribe(true) }; Button("Unsubscribe") { feature.subscribe(false) } }
+                Button("Read") { feature.read() }
+                Button("Write with response") { feature.write() }
+                Button("Subscribe") { feature.subscribe(true) }
+                Button("Unsubscribe") { feature.subscribe(false) }
                 LabeledContent("Read結果", value: feature.lastReadHex)
                 LabeledContent("Write結果", value: feature.writeResult)
                 LabeledContent("Notify状態", value: feature.notifyResult)

@@ -73,6 +73,17 @@ public struct MiniAppBluetoothOwnerLease: Sendable, Equatable {
     fileprivate let token: UUID
 }
 
+func miniAppBluetoothUniqueIndex<Value>(
+    _ values: [Value], identifier: (Value) -> String
+) -> (unique: [String: Value], ambiguous: Set<String>) {
+    var unique: [String: Value] = [:], ambiguous: Set<String> = []
+    for value in values {
+        let key = identifier(value)
+        if unique[key] == nil { unique[key] = value } else { ambiguous.insert(key) }
+    }
+    return (unique, ambiguous)
+}
+
 @MainActor
 public protocol MiniAppBluetoothNativeCentral: AnyObject {
     var power: MiniAppBluetoothPower { get }
@@ -95,6 +106,8 @@ public protocol MiniAppBluetoothNativeCentral: AnyObject {
 public final class MiniAppBluetoothCoordinator {
     public typealias NativeFactory = @MainActor (MiniAppID, String) -> any MiniAppBluetoothNativeCentral
     private struct Consumer { let lease: MiniAppBluetoothOwnerLease; let receive: @MainActor @Sendable (MiniAppBluetoothEvent) -> Void }
+    private struct Transition { let id: UUID; let task: Task<Void, Never> }
+    private struct PeripheralKey: Hashable { let owner: MiniAppID; let peripheral: UUID }
     private struct OwnerState {
         let native: any MiniAppBluetoothNativeCentral
         var lease: MiniAppBluetoothOwnerLease?
@@ -104,10 +117,15 @@ public final class MiniAppBluetoothCoordinator {
         var admitted = false
         var restorationOpen = false
         var onRestore: (@MainActor @Sendable () -> Void)?
+        var stopTransition: Transition?
     }
     public static let shared = MiniAppBluetoothCoordinator()
     private let factory: NativeFactory
     private var owners: [MiniAppID: OwnerState] = [:]
+    private var busyOwners: Set<MiniAppID> = []
+    private var ownerWaiters: [MiniAppID: [CheckedContinuation<Void, Never>]] = [:]
+    private var busyPeripherals: Set<PeripheralKey> = []
+    private var peripheralWaiters: [PeripheralKey: [CheckedContinuation<Void, Never>]] = [:]
     public init(factory: @escaping NativeFactory = { MiniAppCoreBluetoothCentral(owner: $0, restorationIdentifier: $1) }) { self.factory = factory }
     public static func restorationIdentifier(for owner: MiniAppID) -> String { "dev.jibunkit.bluetooth.central.\(owner.storageNamespace)" }
 
@@ -115,6 +133,7 @@ public final class MiniAppBluetoothCoordinator {
                                    onRestore: @escaping @MainActor @Sendable () -> Void) {
         guard admitted else { return }
         if var state = owners[owner] {
+            guard state.stopTransition == nil else { return }
             state.admitted = true; state.restorationOpen = true; state.onRestore = onRestore; owners[owner] = state
             return
         }
@@ -124,7 +143,12 @@ public final class MiniAppBluetoothCoordinator {
     }
     @discardableResult
     public func connect(owner: MiniAppID,
-                        receive: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) -> MiniAppBluetoothOwnerLease {
+                        receive: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) async -> MiniAppBluetoothOwnerLease {
+        await acquireOwner(owner); defer { releaseOwner(owner) }
+        while let transition = owners[owner]?.stopTransition {
+            await transition.task.value
+            if owners[owner]?.stopTransition?.id == transition.id { await Task.yield() }
+        }
         var state = state(for: owner, admitted: true)
         let lease = MiniAppBluetoothOwnerLease(owner: owner, token: UUID())
         state.lease = lease; state.consumer = Consumer(lease: lease, receive: receive); state.admitted = true
@@ -135,9 +159,19 @@ public final class MiniAppBluetoothCoordinator {
     public func isConnected(_ lease: MiniAppBluetoothOwnerLease) -> Bool { owners[lease.owner]?.consumer?.lease == lease }
     public func disconnect(_ lease: MiniAppBluetoothOwnerLease) async {
         guard var state = owners[lease.owner], state.lease == lease else { return }
+        if let transition = state.stopTransition { await transition.task.value; return }
         state.consumer = nil; state.admitted = false; state.restorationOpen = false
-        state.connections.removeAll(); state.pendingRestoration.removeAll(); owners[lease.owner] = state
-        await state.native.stopAll()
+        state.connections.removeAll(); state.pendingRestoration.removeAll()
+        owners[lease.owner] = state
+        await acquireOwner(lease.owner); defer { releaseOwner(lease.owner) }
+        guard var current = owners[lease.owner], current.lease == lease else { return }
+        let native = current.native
+        let transition = Transition(id: UUID(), task: Task { @MainActor in await native.stopAll() })
+        current.stopTransition = transition; owners[lease.owner] = current
+        await transition.task.value
+        if var current = owners[lease.owner], current.stopTransition?.id == transition.id {
+            current.stopTransition = nil; owners[lease.owner] = current
+        }
     }
     public func unregister(_ lease: MiniAppBluetoothOwnerLease) async {
         guard let state = owners[lease.owner], state.lease == lease else { return }
@@ -153,9 +187,13 @@ public final class MiniAppBluetoothCoordinator {
     }
     public func stopScan(_ lease: MiniAppBluetoothOwnerLease) throws { try active(lease).native.stopScan() }
     public func connect(_ lease: MiniAppBluetoothOwnerLease, peripheral: UUID) async throws -> MiniAppBluetoothConnection {
+        await acquireOwner(lease.owner); defer { releaseOwner(lease.owner) }
+        let key = PeripheralKey(owner: lease.owner, peripheral: peripheral)
+        await acquire(key); defer { release(key) }
         var state = try active(lease); try requireAvailable(state.native)
         if let old = state.connections.removeValue(forKey: peripheral) {
-            owners[lease.owner] = state; await state.native.disconnect(peripheral: peripheral, generation: old)
+            owners[lease.owner] = state
+            await state.native.disconnect(peripheral: peripheral, generation: old)
             state = try active(lease)
         }
         let generation = UUID(); state.connections[peripheral] = generation; owners[lease.owner] = state
@@ -163,8 +201,12 @@ public final class MiniAppBluetoothCoordinator {
         return .init(owner: lease.owner, peripheral: peripheral, generation: generation)
     }
     public func disconnect(_ connection: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) async throws {
+        await acquireOwner(lease.owner); defer { releaseOwner(lease.owner) }
+        let key = PeripheralKey(owner: lease.owner, peripheral: connection.peripheral)
+        await acquire(key); defer { release(key) }
         var state = try checked(connection, lease: lease); state.connections.removeValue(forKey: connection.peripheral)
-        owners[lease.owner] = state; await state.native.disconnect(peripheral: connection.peripheral, generation: connection.generation)
+        owners[lease.owner] = state
+        await state.native.disconnect(peripheral: connection.peripheral, generation: connection.generation)
     }
     public func discoverServices(_ ids: [String]?, on c: MiniAppBluetoothConnection, lease: MiniAppBluetoothOwnerLease) throws {
         let s = try checked(c, lease: lease); s.native.discoverServices(ids, peripheral: c.peripheral, generation: c.generation)
@@ -205,6 +247,28 @@ public final class MiniAppBluetoothCoordinator {
         guard native.authorization != .denied && native.authorization != .restricted else { throw MiniAppBluetoothFailure.permissionDenied(native.authorization) }
         guard native.power == .poweredOn else { throw MiniAppBluetoothFailure.bluetoothUnavailable(native.power) }
     }
+    private func acquireOwner(_ owner: MiniAppID) async {
+        while busyOwners.contains(owner) {
+            await withCheckedContinuation { ownerWaiters[owner, default: []].append($0) }
+        }
+        busyOwners.insert(owner)
+    }
+    private func releaseOwner(_ owner: MiniAppID) {
+        busyOwners.remove(owner)
+        let waiters = ownerWaiters.removeValue(forKey: owner) ?? []
+        waiters.forEach { $0.resume() }
+    }
+    private func acquire(_ key: PeripheralKey) async {
+        while busyPeripherals.contains(key) {
+            await withCheckedContinuation { peripheralWaiters[key, default: []].append($0) }
+        }
+        busyPeripherals.insert(key)
+    }
+    private func release(_ key: PeripheralKey) {
+        busyPeripherals.remove(key)
+        let waiters = peripheralWaiters.removeValue(forKey: key) ?? []
+        waiters.forEach { $0.resume() }
+    }
     private func receive(_ event: MiniAppBluetoothEvent, owner: MiniAppID) {
         guard var state = owners[owner], state.admitted else { return }
         switch event {
@@ -243,12 +307,17 @@ public final class MiniAppBluetoothService {
     public func prepareRestoration(admitted: Bool, onRestore: @escaping @MainActor @Sendable () -> Void) {
         coordinator.prepareRestoration(owner: owner, admitted: admitted, onRestore: onRestore)
     }
-    public func connect(to runtime: MiniAppRuntime) throws {
-        let lease = coordinator.connect(owner: owner) { [weak self] in self?.receive?($0) }
+    public func connect(to runtime: MiniAppRuntime) async throws {
+        let lease = await coordinator.connect(owner: owner) { [weak self] in self?.receive?($0) }
         let coordinator = coordinator
-        try runtime.onShutdownAsync { [weak self] in
-            await coordinator.disconnect(lease)
-            if self?.lease == lease { self?.runtime = nil }
+        do {
+            try runtime.onShutdownAsync { [weak self] in
+                await coordinator.disconnect(lease)
+                if self?.lease == lease { self?.runtime = nil }
+            }
+        } catch {
+            await coordinator.unregister(lease)
+            throw error
         }
         self.lease = lease; self.runtime = runtime
     }

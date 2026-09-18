@@ -18,7 +18,7 @@ final class P2BluetoothFeature: ObservableObject {
         guard consents.consent(for: id, permissionID: "bluetooth") == .allowed else {
             throw MiniAppBluetoothFailure.permissionDenied(.notDetermined)
         }
-        try service.connect(to: runtime)
+        try await service.connect(to: runtime)
     }
     @Published var status = "停止中"
     @Published var peripherals: [MiniAppBluetoothPeripheral] = []

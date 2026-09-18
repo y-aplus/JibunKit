@@ -21,6 +21,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     private var cancelling: Set<UUID> = []
     private var disconnectWaiters: [UUID: [CheckedContinuation<Void, Never>]] = [:]
     private var services: [UUID: [String: CBService]] = [:]
+    private var ambiguousServiceUUIDs: [UUID: Set<String>] = [:]
     private var serviceDiscoveryGenerations: [UUID: UUID] = [:]
     private var characteristics: [UUID: [MiniAppBluetoothCharacteristic: CBCharacteristic]] = [:]
     private var serviceGenerations: [ObjectIdentifier: UUID] = [:]
@@ -68,6 +69,9 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         peripheral.discoverServices(ids?.map { CBUUID(string: $0) })
     }
     public func discoverCharacteristics(_ ids: [String]?, service: String, peripheral id: UUID, generation: UUID) {
+        guard ambiguousServiceUUIDs[id]?.contains(service) != true else {
+            return fail(id, generation, "Multiple services share UUID \(service); select a device-specific CBService directly")
+        }
         guard let peripheral = checked(id, generation), let service = services[id]?[service] else {
             return fail(id, generation, "Service is not known")
         }
@@ -168,7 +172,10 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         guard let generation = generations[peripheral.identifier] else { return }
         guard serviceDiscoveryGenerations.removeValue(forKey: peripheral.identifier) == generation else { return }
         if let error { return fail(peripheral.identifier, generation, error.localizedDescription) }
-        let found = peripheral.services ?? []; services[peripheral.identifier] = Dictionary(uniqueKeysWithValues: found.map { ($0.uuid.uuidString, $0) })
+        let found = peripheral.services ?? []
+        let index = miniAppBluetoothUniqueIndex(found) { $0.uuid.uuidString }
+        services[peripheral.identifier] = index.unique
+        ambiguousServiceUUIDs[peripheral.identifier] = index.ambiguous
         for service in found { serviceGenerations[ObjectIdentifier(service)] = generation }
         emit(.services(peripheral: peripheral.identifier, generation: generation,
                        identifiers: found.map { $0.uuid.uuidString }))
@@ -237,6 +244,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         guard generations[id] == generation else { return }
         generations[id] = nil; restoredGenerations.remove(generation); cancelling.remove(id)
         serviceDiscoveryGenerations[id] = nil
+        ambiguousServiceUUIDs[id] = nil
         if let owned = services.removeValue(forKey: id)?.values {
             for service in owned { serviceGenerations[ObjectIdentifier(service)] = nil }
         }

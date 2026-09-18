@@ -7,7 +7,7 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
         let pool = FakePool(), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let a = MiniAppBluetoothService(owner: MiniAppID("ble-a"), coordinator: coordinator)
         let b = MiniAppBluetoothService(owner: MiniAppID("ble-b"), coordinator: coordinator)
-        let ra = MiniAppRuntime(), rb = MiniAppRuntime(); try a.connect(to: ra); try b.connect(to: rb)
+        let ra = MiniAppRuntime(), rb = MiniAppRuntime(); try await a.connect(to: ra); try await b.connect(to: rb)
         let events = EventBox(); a.receive = { events.values.append($0) }
         let ca = try await a.connect(peripheral: UUID()), cb = try await b.connect(peripheral: UUID())
         pool[a.owner].blockStop = true
@@ -23,7 +23,7 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
     func testNormalLateConnectedNeverReAdoptsAfterExplicitDisconnect() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-late"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime()
-        try service.connect(to: runtime); let events = EventBox(); service.receive = { events.values.append($0) }
+        try await service.connect(to: runtime); let events = EventBox(); service.receive = { events.values.append($0) }
         let connection = try await service.connect(peripheral: UUID()); try await service.disconnect(connection)
         pool[owner].emit(.connected(peripheral: connection.peripheral, generation: connection.generation, restored: false))
         XCTAssertTrue(events.values.isEmpty)
@@ -32,24 +32,53 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
 
     func testReconnectJoinsOldNativeGenerationBeforeStartingNew() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-reconnect"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try await service.connect(to: runtime)
         let events = EventBox(); service.receive = { events.values.append($0) }
         let peripheral = UUID(), first = try await service.connect(peripheral: peripheral)
         pool[owner].blockDisconnect = true
         let task = Task { @MainActor in try await service.connect(peripheral: peripheral) }
         await pool[owner].disconnectEntered.wait()
+        let thirdTask = Task { @MainActor in try await service.connect(peripheral: peripheral) }
         XCTAssertEqual(pool[owner].connectGenerations, [first.generation])
         pool[owner].releaseDisconnect.open(); let second = try await task.value
-        XCTAssertEqual(pool[owner].connectGenerations, [first.generation, second.generation])
+        let third = try await thirdTask.value
+        XCTAssertEqual(pool[owner].connectGenerations, [first.generation, second.generation, third.generation])
         pool[owner].emit(.services(peripheral: peripheral, generation: first.generation, identifiers: ["OLD"]))
-        pool[owner].emit(.services(peripheral: peripheral, generation: second.generation, identifiers: ["NEW"]))
-        XCTAssertEqual(events.values, [.services(peripheral: peripheral, generation: second.generation, identifiers: ["NEW"])])
+        pool[owner].emit(.services(peripheral: peripheral, generation: second.generation, identifiers: ["ALSO-OLD"]))
+        pool[owner].emit(.services(peripheral: peripheral, generation: third.generation, identifiers: ["NEW"]))
+        XCTAssertEqual(events.values, [.services(peripheral: peripheral, generation: third.generation, identifiers: ["NEW"])])
+    }
+
+    func testNewLeaseWaitsForOldOwnerStopJoin() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-owner-barrier"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let old = MiniAppBluetoothService(owner: owner, coordinator: coordinator), replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime(); try await old.connect(to: oldRuntime)
+        pool[owner].blockStop = true
+        let stopping = Task { @MainActor in await oldRuntime.shutdown() }
+        await pool[owner].stopEntered.wait()
+        let starting = Task { @MainActor in try await replacement.connect(to: newRuntime) }
+        await Task.yield()
+        XCTAssertEqual(pool.created.count, 1)
+        pool[owner].releaseStop.open(); await stopping.value; try await starting.value
+        _ = try await replacement.connect(peripheral: UUID())
+        await newRuntime.shutdown()
+    }
+
+    func testClosedRuntimeRegistrationRollsBackCreatedLease() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-runtime-rollback"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let closed = MiniAppRuntime(); await closed.shutdown()
+        let failed = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        await XCTAssertThrowsErrorAsync { try await failed.connect(to: closed) }
+        let replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime()
+        try await replacement.connect(to: runtime)
+        XCTAssertEqual(pool.created.count, 2)
+        await runtime.shutdown()
     }
 
     func testColdRestoreStartsLifetimeAndSnapshotWaitsForConsumer() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-restore"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let lifetime = MiniAppFeatureLifetime(id: owner) { runtime in try service.connect(to: runtime) }
+        let lifetime = MiniAppFeatureLifetime(id: owner) { runtime in try await service.connect(to: runtime) }
         let events = EventBox(); service.receive = { events.values.append($0) }
         service.prepareRestoration(admitted: true) { Task { try? await lifetime.start() } }
         let peripheral = UUID(), generation = UUID()
@@ -69,7 +98,7 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
     func testOldServiceCannotUnregisterReplacementLease() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-lease"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let old = MiniAppBluetoothService(owner: owner, coordinator: coordinator), replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime(); try old.connect(to: oldRuntime); try replacement.connect(to: newRuntime)
+        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime(); try await old.connect(to: oldRuntime); try await replacement.connect(to: newRuntime)
         await old.unregisterAllOwned()
         _ = try await replacement.connect(peripheral: UUID())
         XCTAssertEqual(pool[owner].stopCount, 0)
@@ -78,7 +107,7 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
 
     func testPowerPermissionAndWriteBackpressureAreVisible() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-write"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
-        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try service.connect(to: runtime)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime(); try await service.connect(to: runtime)
         pool[owner].power = .poweredOff
         XCTAssertThrowsError(try service.scan())
         pool[owner].power = .poweredOn; let c = try await service.connect(peripheral: UUID())
@@ -93,6 +122,15 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
             serviceData: ["180D": Data([1, 2])], serviceUUIDs: ["180D"], txPower: -4, isConnectable: true)
         XCTAssertEqual(snapshot.manufacturerData, Data([0, 255]))
         XCTAssertEqual(snapshot.serviceData["180D"], Data([1, 2]))
+    }
+
+    func testDuplicateServiceUUIDIndexDoesNotTrapAndMarksAmbiguity() {
+        let result = miniAppBluetoothUniqueIndex(["180D:first", "180F:only", "180D:second"]) {
+            String($0.prefix(4))
+        }
+        XCTAssertEqual(result.unique["180D"], "180D:first")
+        XCTAssertEqual(result.unique["180F"], "180F:only")
+        XCTAssertEqual(result.ambiguous, ["180D"])
     }
 }
 
@@ -125,3 +163,7 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
     func open() { openState = true; waiters.forEach { $0.resume() }; waiters.removeAll() }
 }
 @MainActor private final class EventBox { var values: [MiniAppBluetoothEvent] = [] }
+
+@MainActor private func XCTAssertThrowsErrorAsync(_ body: () async throws -> Void) async {
+    do { try await body(); XCTFail("Expected error") } catch { }
+}

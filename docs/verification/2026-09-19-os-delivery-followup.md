@@ -64,3 +64,8 @@ source `aeac077`、専用CI [35370477913](https://github.com/y-aplus/JibunKit/ac
 登録時のoutside確認後、backgroundからprocess終了→位置境界変更→OSのbackground process→owner永続イベントと異なるprocess tokenを確認する。enter/exitそれぞれで終了を挟む。foregroundへの手動再起動は成功条件に含めない。XCTest terminateがOSの自動再起動を抑止する可能性も含め、この環境で再現しないことを製品欠陥と即断しない。
 
 結果は `observed-passed` / `unobserved-skip` / `failure` に分け、未観測は通常製品gateの合格ではない。compile/実行/結果件数異常は失敗。xcresult・raw summary・分類結果を保存し、一度の結果を切り分ける。現時点はCI処理中、watch完了をrootへ自動通知する。
+
+
+### CI35370477913の準備失敗
+
+Swift buildは成功したが、outside位置取得前に `osAuthorizationDenied(notDetermined)` で停止（試験81.984秒）。終了後配送には未到達。既存combined実行ではnative試験が先にappをインストールするが、専用入口では初回install前にprivacy grantを行っていた。build-for-testing→simctl install→location-always grant→test-without-buildingへ修正し、実行順をローカル回帰で確認。関連8件成功。製品コードは変更しない。この準備修正後に一度、同じ有界観測を実行する。

@@ -182,9 +182,15 @@ jobs:
               python3 -m unittest Tools.tests.test_p2_combined_host
               python3 Tools/prepare-p2-combined-host.py --host .
               tuist generate --no-open
+              xcodebuild build-for-testing -workspace JibunKit.xcworkspace -scheme P2LocationColdOSUITests \
+                -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+                -derivedDataPath "$RUNNER_TEMP/LocationColdDerivedData" \
+                CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual \
+                2>&1 | tee "$RUNNER_TEMP/LocationCold/build.log"
+              xcrun simctl install "$SIMULATOR_ID" "$RUNNER_TEMP/LocationColdDerivedData/Build/Products/Debug-iphonesimulator/JibunKit_App.app"
               xcrun simctl privacy "$SIMULATOR_ID" grant location-always com.jibunkit.app
               set +e
-              xcodebuild test -workspace JibunKit.xcworkspace -scheme P2LocationColdOSUITests \
+              xcodebuild test-without-building -workspace JibunKit.xcworkspace -scheme P2LocationColdOSUITests \
                 -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
                 -derivedDataPath "$RUNNER_TEMP/LocationColdDerivedData" \
                 -resultBundlePath "$RUNNER_TEMP/LocationCold/tests.xcresult" \

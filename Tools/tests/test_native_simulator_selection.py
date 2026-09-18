@@ -66,6 +66,9 @@ class NativeSimulatorSelectionTests(unittest.TestCase):
         self.assertIn("outcome = 'unobserved-skip'", cold)
         self.assertIn('-maximum-test-execution-time-allowance 240', cold)
         self.assertNotIn('verify-media.py', cold)
+        self.assertLess(cold.index('xcodebuild build-for-testing'), cold.index('simctl install'))
+        self.assertLess(cold.index('simctl install'), cold.index('grant location-always'))
+        self.assertLess(cold.index('grant location-always'), cold.index('xcodebuild test-without-building'))
 
     def testUnavailableIPadIsNotARealWindowTestDevice(self):
         devices = {'com.apple.CoreSimulator.SimRuntime.iOS-26-5': [

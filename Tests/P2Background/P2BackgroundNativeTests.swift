@@ -15,19 +15,25 @@ final class P2BackgroundNativeTests: XCTestCase {
         let originProcess = UUID(), callbackProcess = UUID(), run = UUID()
         let origin = P2BackgroundTransferEvidence(owner: owner, files: files, process: originProcess)
         let description = try origin.begin(sessionIdentifier: "session-a", taskIdentifier: 7, run: run)
-        XCTAssertTrue(origin.canTerminateForDiagnostic(pendingTaskDescriptions: [description]))
-        origin.noteTerminationRequested()
+        let pending = [P2BackgroundTransferEvidence.PendingTask(identifier: 7, taskDescription: description)]
+        XCTAssertTrue(origin.canTerminateForDiagnostic(pendingTasks: pending))
+        XCTAssertFalse(origin.canTerminateForDiagnostic(pendingTasks: [
+            .init(identifier: 8, taskDescription: description)
+        ]))
+        XCTAssertTrue(origin.noteTerminationRequested())
+        XCTAssertTrue(origin.canExitAfterTerminationMarker(pendingTasks: pending))
 
         let restored = P2BackgroundTransferEvidence(owner: owner, files: files, process: callbackProcess)
         restored.noteHostCallback(sessionIdentifier: "session-a")
-        restored.noteOwnerReconnected()
+        restored.noteOwnerReconnected(run: run)
         restored.noteSaved(taskDescription: description, taskIdentifier: 7, size: 12, sha256: "abc123")
         restored.noteTaskCompletion(taskDescription: description, taskIdentifier: 7, error: nil)
-        restored.noteFinishedEvents()
-        restored.noteHostCompletionReturned()
+        restored.noteFinishedEvents(run: run)
+        restored.noteHostCompletionReturned(run: run)
 
-        XCTAssertTrue(try XCTUnwrap(restored.record).isColdRestorationEvidence)
-        XCTAssertTrue(restored.summary.contains("cold復元証拠: 成立"))
+        XCTAssertTrue(try XCTUnwrap(restored.record).satisfiesColdChain)
+        XCTAssertTrue(restored.summary.contains("cold復元chain: 成立"))
+        XCTAssertTrue(restored.summary.contains("OSの起動契機は未判定"))
         XCTAssertEqual(restored.record?.run, run)
         XCTAssertEqual(restored.record?.owner, owner.rawValue)
         XCTAssertEqual(restored.record?.delegateTaskIdentifier, 7)
@@ -41,14 +47,15 @@ final class P2BackgroundNativeTests: XCTestCase {
         let warmProcess = UUID()
         let warm = P2BackgroundTransferEvidence(owner: warmOwner, files: warmFiles, process: warmProcess)
         let warmDescription = try warm.begin(sessionIdentifier: "session-warm", taskIdentifier: 2, run: UUID())
-        warm.noteTerminationRequested()
+        let warmRun = try XCTUnwrap(warm.record?.run)
+        XCTAssertTrue(warm.noteTerminationRequested())
         warm.noteHostCallback(sessionIdentifier: "session-warm")
-        warm.noteOwnerReconnected()
+        warm.noteOwnerReconnected(run: warmRun)
         warm.noteSaved(taskDescription: warmDescription, taskIdentifier: 2, size: 4, sha256: "cafe")
         warm.noteTaskCompletion(taskDescription: warmDescription, taskIdentifier: 2, error: nil)
-        warm.noteFinishedEvents()
-        warm.noteHostCompletionReturned()
-        XCTAssertFalse(try XCTUnwrap(warm.record).isColdRestorationEvidence, "same-process delivery is not cold evidence")
+        warm.noteFinishedEvents(run: warmRun)
+        warm.noteHostCompletionReturned(run: warmRun)
+        XCTAssertFalse(try XCTUnwrap(warm.record).satisfiesColdChain, "same-process delivery is not cold evidence")
 
         let owner = MiniAppID("evidence-reject")
         let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
@@ -59,11 +66,75 @@ final class P2BackgroundNativeTests: XCTestCase {
         evidence.noteHostCallback(sessionIdentifier: "session-a")
         evidence.noteSaved(taskDescription: description, taskIdentifier: 99, size: 4, sha256: "deadbeef")
         evidence.noteTaskCompletion(taskDescription: description, taskIdentifier: 3, error: nil)
-        evidence.noteFinishedEvents()
-        evidence.noteHostCompletionReturned()
-        XCTAssertFalse(try XCTUnwrap(evidence.record).isColdRestorationEvidence)
+        evidence.noteFinishedEvents(run: evidence.record?.run)
+        evidence.noteHostCompletionReturned(run: evidence.record?.run)
+        XCTAssertFalse(try XCTUnwrap(evidence.record).satisfiesColdChain)
         XCTAssertEqual(evidence.record?.rejection, "run/owner/task混在")
-        XCTAssertFalse(evidence.canTerminateForDiagnostic(pendingTaskDescriptions: [description]))
+        XCTAssertFalse(evidence.canTerminateForDiagnostic(pendingTasks: [
+            .init(identifier: 3, taskDescription: description)
+        ]))
+    }
+
+    func testTransferEvidenceDoesNotClaimUnpersistedSuccessOrOverwriteCorruptEvidence() throws {
+        enum WriteFailure: Error { case denied }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let owner = MiniAppID("evidence-persist")
+        let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
+        let process = UUID()
+        let original = P2BackgroundTransferEvidence(owner: owner, files: files, process: process)
+        let run = UUID()
+        let description = try original.begin(sessionIdentifier: "session", taskIdentifier: 1, run: run)
+        XCTAssertTrue(original.noteTerminationRequested())
+        let failing = P2BackgroundTransferEvidence(owner: owner, files: files, process: UUID(),
+                                                    write: { _, _ in throw WriteFailure.denied })
+        failing.noteHostCallback(sessionIdentifier: "session")
+        failing.noteOwnerReconnected(run: run)
+        failing.noteSaved(taskDescription: description, taskIdentifier: 1, size: 5, sha256: "abcde")
+        failing.noteTaskCompletion(taskDescription: description, taskIdentifier: 1, error: nil)
+        failing.noteFinishedEvents(run: run)
+        failing.noteHostCompletionReturned(run: run)
+        XCTAssertTrue(try XCTUnwrap(failing.record).satisfiesColdChain,
+                      "regression setup must make only persistence distinguish the result")
+        XCTAssertTrue(failing.summary.contains("証拠未永続化"))
+        XCTAssertFalse(failing.summary.contains("chain: 成立"))
+
+        let exitOwner = MiniAppID("evidence-exit-failure")
+        let exitFiles = try MiniAppFiles(context: MiniAppContext(id: exitOwner), containerURL: root)
+        let exitProcess = UUID()
+        let seeded = P2BackgroundTransferEvidence(owner: exitOwner, files: exitFiles, process: exitProcess)
+        _ = try seeded.begin(sessionIdentifier: "session", taskIdentifier: 9, run: UUID())
+        let exitFailing = P2BackgroundTransferEvidence(owner: exitOwner, files: exitFiles, process: exitProcess,
+                                                        write: { _, _ in throw WriteFailure.denied })
+        XCTAssertFalse(exitFailing.noteTerminationRequested())
+
+        let corruptOwner = MiniAppID("evidence-corrupt")
+        let corruptFiles = try MiniAppFiles(context: MiniAppContext(id: corruptOwner), containerURL: root)
+        let corrupt = Data("keep corrupt evidence".utf8)
+        try corruptFiles.write(corrupt, named: P2BackgroundTransferEvidence.filename)
+        let unreadable = P2BackgroundTransferEvidence(owner: corruptOwner, files: corruptFiles)
+        XCTAssertFalse(unreadable.canBegin())
+        XCTAssertThrowsError(try unreadable.begin(sessionIdentifier: "session", taskIdentifier: 2, run: UUID()))
+        XCTAssertEqual(try corruptFiles.read(named: P2BackgroundTransferEvidence.filename), corrupt)
+    }
+
+    func testWarmCompletionAllowsRetryAndLateFinishedEventsCannotAttachToNextRun() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let owner = MiniAppID("evidence-retry")
+        let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
+        let evidence = P2BackgroundTransferEvidence(owner: owner, files: files)
+        let firstRun = UUID()
+        let firstDescription = try evidence.begin(sessionIdentifier: "session", taskIdentifier: 1, run: firstRun)
+        evidence.noteSaved(taskDescription: firstDescription, taskIdentifier: 1, size: 1, sha256: "01")
+        evidence.noteTaskCompletion(taskDescription: firstDescription, taskIdentifier: 1, error: nil)
+        XCTAssertTrue(evidence.canBegin(), "foreground completion without host callback must be terminal")
+
+        let secondRun = UUID()
+        _ = try evidence.begin(sessionIdentifier: "session", taskIdentifier: 2, run: secondRun)
+        evidence.noteFinishedEvents(run: firstRun)
+        XCTAssertNil(evidence.record?.finishedEventsProcess, "late prior-run event must not attach to replacement")
+        XCTAssertEqual(evidence.record?.run, secondRun)
     }
 
     func testBackgroundObservationLogPreservesDeliveryStateAcrossProcessesAndIsolatesOwners() throws {
@@ -494,7 +565,7 @@ final class P2BackgroundNativeTests: XCTestCase {
         connection.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession.shared)
         await eventually { completion.count == 1 }
         let savedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("download保存") })
-        let finishedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("cold復元証拠") })
+        let finishedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("cold復元chain") })
         XCTAssertLessThan(savedIndex, finishedIndex)
         let observations = feature.observations.entries.map(\.event)
         XCTAssertLessThan(try XCTUnwrap(observations.firstIndex(of: "HTTP完了: ファイル保存")),

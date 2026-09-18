@@ -483,6 +483,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     private var registration: MiniAppBackgroundURLSessionRegistration?
     private var session: URLSession?
     private var events: MiniAppBackgroundURLSessionEvents?
+    private var eventsRun: UUID?
     private var evidence: P2BackgroundTransferEvidence?
     private weak var runtime: MiniAppRuntime?
     private var boundRuntimeID: ObjectIdentifier?
@@ -527,12 +528,17 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         guard let identifier = registration?.identifier else { return "未登録" }
         guard let evidence else { return "転送証拠未登録" }
         guard runtime === expected, !expected.isClosed else { return "受付拒否: runtime停止中" }
+        guard evidence.canBegin() else { return "受付拒否: 未完了runまたは読込不能な診断証拠あり" }
         ensureSession(identifier: identifier)
         let task = session!.downloadTask(with: url)
         let run = UUID()
         do { task.taskDescription = try evidence.begin(
             sessionIdentifier: identifier, taskIdentifier: task.taskIdentifier, run: run)
-        } catch { return "受付拒否: 未完了の診断runあり" }
+        } catch {
+            delegateState.ignore(taskID: task.taskIdentifier)
+            task.cancel()
+            return "受付拒否: 診断runを永続化できません"
+        }
         feature?.observations.record("HTTP転送要求（OS再接続とは別）")
         task.resume()
         return "download開始 run=\(run.uuidString.prefix(8)) task=\(task.taskIdentifier) owner=\(owner.rawValue)"
@@ -541,10 +547,19 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     func terminateProcessForDiagnostic() async -> String {
         guard let session, let evidence else { return "診断終了拒否: 転送未開始" }
         let tasks = await session.allTasks
-        guard evidence.canTerminateForDiagnostic(pendingTaskDescriptions: tasks.map(\.taskDescription)) else {
+        let pending = tasks.map { P2BackgroundTransferEvidence.PendingTask(
+            identifier: $0.taskIdentifier, taskDescription: $0.taskDescription) }
+        guard evidence.canTerminateForDiagnostic(pendingTasks: pending) else {
             return "診断終了拒否: pending task/永続runを確認できません"
         }
-        evidence.noteTerminationRequested()
+        guard evidence.noteTerminationRequested() else {
+            return "診断終了拒否: 終了markerを永続化できません"
+        }
+        let confirmedTasks = (await session.allTasks).map { P2BackgroundTransferEvidence.PendingTask(
+            identifier: $0.taskIdentifier, taskDescription: $0.taskDescription) }
+        guard evidence.canExitAfterTerminationMarker(pendingTasks: confirmedTasks) else {
+            return "診断終了拒否: 終了直前のpending task/marker一致を確認できません"
+        }
         feature?.observations.record("診断process終了要求（pending task・永続run確認済み）")
         _ = UIApplication.shared.beginBackgroundTask(withName: "P2BackgroundColdRestorationDiagnostic")
         Darwin.exit(0)
@@ -578,7 +593,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
 
     private func beginReconnect(identifier: String, events: MiniAppBackgroundURLSessionEvents) {
         feature?.observations.record("host URLSession callback受信")
-        evidence?.noteHostCallback(sessionIdentifier: identifier)
+        eventsRun = evidence?.noteHostCallback(sessionIdentifier: identifier)
         Task { @MainActor [weak self] in
             guard let self, let feature = self.feature else { events.finish(); return }
             do {
@@ -589,7 +604,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 try bind(runtime: runtime)
                 self.events = events
                 ensureSession(identifier: identifier)
-                evidence?.noteOwnerReconnected()
+                evidence?.noteOwnerReconnected(run: eventsRun)
                 feature.observations.record("HTTP再接続受付・delegate待ち")
                 status("OS callback再接続・delegate event待ち")
             } catch {
@@ -610,6 +625,8 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         while let record = pendingRecords.removeValue(forKey: nextRecord) {
             nextRecord += 1
             switch record.kind {
+            case .ignored:
+                continue
             case .completion(let message, let result):
                 if let saved = result.saved {
                     evidence?.noteSaved(taskDescription: result.taskDescription,
@@ -623,12 +640,14 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 status(message)
             case .finishedEvents:
                 let finished = events
+                let finishedRun = eventsRun
                 events = nil
-                evidence?.noteFinishedEvents()
-                finished?.finish()
-                if finished != nil { evidence?.noteHostCompletionReturned() }
-                feature?.observations.record(finished == nil ? "HTTP全delegate完了（host callbackなし）" : "HTTP全delegate完了・host completion返却後")
-                status(finished == nil ? "全delegate event完了（host callbackなし）" : (evidence?.summary ?? "全delegate event完了・host completion返却後"))
+                eventsRun = nil
+                evidence?.noteFinishedEvents(run: finishedRun)
+                let returned = finished?.finish() == true
+                if returned { evidence?.noteHostCompletionReturned(run: finishedRun) }
+                feature?.observations.record(returned ? "HTTP全delegate完了・host completion返却後" : "HTTP全delegate完了（host completion返却なし）")
+                status(returned ? (evidence?.summary ?? "全delegate event完了・host completion返却後") : "全delegate event完了（host completion返却なし）")
             case .invalidated(let reason):
                 session = nil
                 isInvalidating = false
@@ -636,6 +655,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 status("native session無効化完了" + (reason.map { ": \($0)" } ?? ""))
                 let finished = events
                 events = nil
+                eventsRun = nil
                 finished?.finish()
                 let waiters = invalidationWaiters
                 invalidationWaiters.removeAll()
@@ -679,7 +699,7 @@ private struct P2URLDelegateRecord: Sendable {
         let saved: Saved?
         let errorDescription: String?
     }
-    enum Kind: Sendable { case completion(String, Completion), finishedEvents, invalidated(String?) }
+    enum Kind: Sendable { case ignored, completion(String, Completion), finishedEvents, invalidated(String?) }
     let sequence: Int
     let kind: Kind
 }
@@ -690,6 +710,12 @@ private final class P2URLDelegateState: @unchecked Sendable {
     private struct Stored { let taskDescription: String?; let result: Result<P2URLDelegateRecord.Saved, Error> }
     private var locations: [Int: Stored] = [:]
     private var completionCount = 0
+    private var ignoredTaskIDs: Set<Int> = []
+
+    func ignore(taskID: Int) {
+        lock.lock(); defer { lock.unlock() }
+        ignoredTaskIDs.insert(taskID)
+    }
 
     func store(taskID: Int, taskDescription: String?, location: URL, destination: URL) {
         lock.lock(); defer { lock.unlock() }
@@ -698,15 +724,15 @@ private final class P2URLDelegateState: @unchecked Sendable {
                 try FileManager.default.removeItem(at: destination)
             }
             try FileManager.default.moveItem(at: location, to: destination)
-            let data = try Data(contentsOf: destination)
-            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            let (size, digest) = try hashFile(at: destination)
             locations[taskID] = Stored(taskDescription: taskDescription,
-                                       result: .success(.init(size: data.count, sha256: digest)))
+                                       result: .success(.init(size: size, sha256: digest)))
         } catch { locations[taskID] = Stored(taskDescription: taskDescription, result: .failure(error)) }
     }
 
     func complete(taskID: Int, taskDescription: String?, error: Error?) -> P2URLDelegateRecord {
         lock.lock(); defer { lock.unlock() }
+        if ignoredTaskIDs.remove(taskID) != nil { return record(.ignored) }
         completionCount += 1
         let message: String
         let stored = locations.removeValue(forKey: taskID)
@@ -744,6 +770,18 @@ private final class P2URLDelegateState: @unchecked Sendable {
     private func record(_ kind: P2URLDelegateRecord.Kind) -> P2URLDelegateRecord {
         defer { nextSequence += 1 }
         return .init(sequence: nextSequence, kind: kind)
+    }
+
+    private func hashFile(at url: URL) throws -> (Int, String) {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        var hasher = SHA256()
+        var size = 0
+        while let chunk = try handle.read(upToCount: 64 * 1024), !chunk.isEmpty {
+            size += chunk.count
+            hasher.update(data: chunk)
+        }
+        return (size, hasher.finalize().map { String(format: "%02x", $0) }.joined())
     }
 }
 

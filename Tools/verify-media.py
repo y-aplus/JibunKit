@@ -252,7 +252,7 @@ def main():
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",
                     "windows": "two distinct owner sessions restored, then one destroyed",
-                    "location": "standard update delivered while app remained backgrounded",
+                    "location": "background standard update plus foreground geofence enter/exit callbacks",
                     "physical_device": "not exercised",
                 }
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",

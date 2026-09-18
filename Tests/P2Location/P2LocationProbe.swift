@@ -16,6 +16,7 @@ enum P2LocationProbe {
 @MainActor
 final class P2LocationFeature {
     enum Kind { case tracker, regions }
+    private static let diagnosticGeofenceID = "diagnostic-geofence"
     let id: MiniAppID
     let kind: Kind
     let coordinator: MiniAppLocationCoordinator
@@ -103,6 +104,30 @@ final class P2LocationFeature {
             observations.record(state.status)
         }
     }
+    func registerDiagnosticGeofence() {
+        report {
+            if let existing = service.registrations.first(where: {
+                $0.localID == Self.diagnosticGeofenceID
+            }) {
+                try service.unregister(localID: existing.localID, generation: existing.generation)
+            }
+            let registration = try service.register(
+                localID: Self.diagnosticGeofenceID,
+                region: .geofence(latitude: 37.3349, longitude: -122.0090, radius: 150,
+                                   notifyOnEntry: true, notifyOnExit: true))
+            state.status = "geofence登録 \(registration.localID)"; refreshRegistrations()
+            observations.record(state.status)
+        }
+    }
+    func unregisterDiagnosticGeofence() {
+        guard let registration = service.registrations.first(where: {
+            $0.localID == Self.diagnosticGeofenceID
+        }) else { return }
+        unregister(registration)
+    }
+    func requestDiagnosticGeofenceState() {
+        report { try service.requestState(localID: Self.diagnosticGeofenceID) }
+    }
     func registerBeacon() {
         report {
             let registration = try service.register(localID: "diagnostic-beacon", region: .beacon(
@@ -138,8 +163,12 @@ final class P2LocationFeature {
                 )
             }
         case .authorizationChanged(let value): observations.record("OS許可callback: \(value.rawValue)")
-        case .entered(let value): observations.record("進入callback: \(value.localID)")
-        case .exited(let value): observations.record("退出callback: \(value.localID)")
+        case .entered(let value):
+            let persisted = observations.record("進入callback: \(value.localID)")
+            postDiagnosticGeofenceSignal("enter", registration: value, persisted: persisted)
+        case .exited(let value):
+            let persisted = observations.record("退出callback: \(value.localID)")
+            postDiagnosticGeofenceSignal("exit", registration: value, persisted: persisted)
         case .state(let value, let regionState): observations.record("状態callback: \(value.localID) \(regionState)")
         case .monitoringFailed: observations.record("監視失敗callback")
         case .failed: observations.record("位置失敗callback")
@@ -157,6 +186,21 @@ final class P2LocationFeature {
     }
     private func report(_ operation: () throws -> Void) {
         do { try operation() } catch { state.status = "拒否/失敗: \(error)" }
+    }
+    private func postDiagnosticGeofenceSignal(
+        _ event: String,
+        registration: MiniAppLocationRegistration,
+        persisted: P2LocationObservationLog.Entry?
+    ) {
+        guard id == MiniAppID("p2-location-regions"),
+              registration.localID == Self.diagnosticGeofenceID,
+              persisted != nil else { return }
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(rawValue:
+                "com.jibunkit.tests.p2-location-regions.geofence-\(event)" as CFString),
+            nil, nil, true
+        )
     }
     private func refreshRegistrations() { state.registrations = service.registrations }
 }
@@ -197,11 +241,19 @@ private struct P2LocationView: View {
                     .accessibilityIdentifier("p2.location.tracker.stop")
             } else {
                 Button("現在地を取得") { feature.start(background: false) }
+                    .accessibilityIdentifier("p2.location.regions.current-location")
                 Button("位置更新停止") { feature.stopUpdates() }
+                    .accessibilityIdentifier("p2.location.regions.stop")
                 TextField("緯度", value: $state.latitude, format: .number)
                 TextField("経度", value: $state.longitude, format: .number)
                 TextField("半径m", value: $state.radius, format: .number)
                 Button("入力地点のgeofence登録") { feature.registerGeofence() }
+                Button("診断geofence登録") { feature.registerDiagnosticGeofence() }
+                    .accessibilityIdentifier("p2.location.regions.diagnostic-geofence")
+                Button("診断geofence状態確認") { feature.requestDiagnosticGeofenceState() }
+                    .accessibilityIdentifier("p2.location.regions.diagnostic-geofence-state")
+                Button("診断geofence解除") { feature.unregisterDiagnosticGeofence() }
+                    .accessibilityIdentifier("p2.location.regions.diagnostic-geofence-remove")
                 Button("診断iBeacon登録") { feature.registerBeacon() }
                 ForEach(state.registrations) { registration in
                     HStack {

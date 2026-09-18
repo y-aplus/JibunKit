@@ -60,3 +60,10 @@ identity初回a5bf420/550cd74を統合し、同じ担当へ一括修正。管理
 `docs/verification/2026-09-18-p2-identity-push-evidence.json`で事前範囲を固定する。同一SHAで通常/shared（全共有試験、Records、通常IPA、Search UI）とidentity-push native（全12method、署名専用CloudKitを除く、診断Release IPA）を2run並列投入する。前者24分/後者22分見込み。直近通常18分06秒/native12分48秒を準備・upload込みの基準に余裕を加えた。初回予算3run内で、再試行前は原因と対象を記録する。
 
 今回のnative成功だけではAPNs実配信/CloudKit実通信完了にしない。正しい署名・container・providerが必要な確認は別に残す。P2-Bの未確認も閉じない。ユーザー睡眠中に実機操作を求めない。
+
+
+## 変更後の出荷gate
+
+`plan.json` の `P2-8.signed-service` / `P2-10.signed-service` だけを `approved-unverified` とする。報告書は同じscope/reasonを持つ `approved_unverified` 記録を必須とし、結果は `unverified-approved-exclusion` に固定する。除外項目をpassed evidenceへ混ぜること、一般のownership/integration/device/docsへ同じ免除を付けることは拒否する。既存source時点の報告書は当時の計画に対する履歴であり、新しい最終報告書では変更後の記録を用いる。
+
+親統合後のdelivery positive/negative試験21件とplan検査が成功。通常構成の代表証拠の最終照合は残し、P2-8/P2-10をこの承認だけでcompleteへ変更しない。

@@ -738,7 +738,7 @@
       "state": "partial",
       "title": "外部データidentity・同期共存",
       "existing": "owner/container/account/localIDと世代を分離、native CloudKit private zone adapter、停止後削除/復元/account切替。共有9件・統合native6件/host構成をCI35249566535/35253192466で検証。",
-      "remaining": "署名条件を満たす実CloudKit通信と通常OS中断/復帰・管理の確認。fake試験を実通信証拠にしない。",
+      "remaining": "署名専用の実通信は承認済み未検証（signed-service）。通常構成のowner隔離・管理・復帰の既存証拠を最終照合する。通信成功へ読み替えない。",
       "deferred": "任意既存container/schemaの自動移行・汎用同期サービス",
       "criteria": [
         {
@@ -750,7 +750,7 @@
         },
         {
           "id": "P2-8.integration",
-          "description": "通常Featureと実OS入口で利用可能な署名構成でcontainer/account/data所有、同期中の削除/復帰・B保持。条件の根拠を明示",
+          "description": "通常Featureの外部同期におけるowner/container/account/data所有、取消・復帰・B保持。CloudKit実通信はsigned-serviceに分離し、汎用HTTP等の必須範囲を維持",
           "kinds": [
             "simulator",
             "device"
@@ -758,7 +758,7 @@
         },
         {
           "id": "P2-8.device",
-          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "description": "無料署名の通常構成における入口・復帰・既存データ保持・片側管理とB保持を代表実機証拠で確認。署名専用実通信はsigned-serviceに分離し、未検証を合格にしない",
           "kinds": [
             "device"
           ]
@@ -769,6 +769,18 @@
           "kinds": [
             "inspection"
           ]
+        },
+        {
+          "id": "P2-8.signed-service",
+          "description": "有料署名・container設定を要するCloudKit実通信とそのOS復帰",
+          "kinds": [
+            "device"
+          ],
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "有料署名・container設定を要するCloudKit実通信とそのOS復帰",
+            "reason": "2026-09-19ユーザー確定。無料署名での通常利用にそぐわないため任意条件付き提供とし、1.0必須の実通信検証から外す。実通信未検証を維持する。"
+          }
         }
       ]
     },
@@ -827,7 +839,7 @@
       "state": "partial",
       "title": "APNs・必要な通知extension",
       "existing": "app token/Feature server identity、Runtime所有配送・cold admission・失敗回復・整数保持、実delegate接続。共有9件・native3件・host3件をCI35249566535/35253192466で検証。",
-      "remaining": "有効署名/providerを使うAPNs登録/配信・背景入口の確認。通知extensionは通常範囲の必要性/接続を文書化、実extension実行とは区別。",
+      "remaining": "署名専用の実通信は承認済み未検証（signed-service）。通常構成のowner隔離・管理・復帰の既存証拠を最終照合する。通信成功へ読み替えない。",
       "deferred": "複数backendを横断する汎用push基盤",
       "criteria": [
         {
@@ -839,7 +851,7 @@
         },
         {
           "id": "P2-10.integration",
-          "description": "通常Featureと実OS入口でapp tokenとFeature/server identity、正しい配送・必要extension、失敗/取消/再登録のB維持、署名/server条件説明",
+          "description": "通常Featureの通知所有者・server identity・delegate配送・失敗/取消/再登録時B保持を検証。注入callbackと実APNs配信を区別し、後者はsigned-serviceに分離",
           "kinds": [
             "simulator",
             "device"
@@ -847,7 +859,7 @@
         },
         {
           "id": "P2-10.device",
-          "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
+          "description": "無料署名の通常構成における入口・復帰・既存データ保持・片側管理とB保持を代表実機証拠で確認。署名専用実通信はsigned-serviceに分離し、未検証を合格にしない",
           "kinds": [
             "device"
           ]
@@ -858,6 +870,18 @@
           "kinds": [
             "inspection"
           ]
+        },
+        {
+          "id": "P2-10.signed-service",
+          "description": "有料署名・provider設定を要するAPNs実登録・実配信とその背景入口",
+          "kinds": [
+            "device"
+          ],
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "有料署名・provider設定を要するAPNs実登録・実配信とその背景入口",
+            "reason": "2026-09-19ユーザー確定。無料署名での通常利用にそぐわないため任意条件付き提供とし、1.0必須の実通信検証から外す。実通信未検証を維持する。"
+          }
         }
       ]
     },

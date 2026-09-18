@@ -259,6 +259,7 @@ class DeliveryTests(unittest.TestCase):
         }
         for uid, (scope, reason) in decisions.items():
             unit = next(u for u in self.plan["units"] if u["id"] == uid)
+            unit["criteria"] = [c for c in unit["criteria"] if c["id"] != f"{uid}.signed-service"]
             unit["criteria"].append({
                 "id": f"{uid}.signed-service",
                 "description": scope,
@@ -300,6 +301,7 @@ class DeliveryTests(unittest.TestCase):
             delivery.validate_plan(self.plan)
 
         del unit["criteria"][0]["conditional_verification"]
+        unit["criteria"] = [c for c in unit["criteria"] if c["id"] != "P2-8.signed-service"]
         unit["criteria"].append({"id": "P2-8.signed-service", "description": "CloudKit live service",
             "kinds": ["device"], "conditional_verification": {
                 "status": "approved-unverified", "scope": "", "reason": "approved"}})

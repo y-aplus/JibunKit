@@ -1,6 +1,6 @@
-# JibunKit 0.8.4 — 公開前候補
+# JibunKit 0.8.4 — 背景・BLE・window等の接続基盤
 
-公開VERSION候補は0.8.4/build14、最新公開版PREVIOUSは0.8.3/build13。まだ公開・main統合していません。1.0.0の完成判定ではありません。
+公開VERSIONは0.8.4/build14、PREVIOUSは0.8.3/build13。1.0.0の完成判定ではありません。
 
 ## この版の変更
 
@@ -27,4 +27,9 @@
 - 継続処理のOS開始はnative直接比較でも受付エラーがあり未確認。以前のLive B単発値差分など、未解明の観測は保持します。
 - 同じBLE機器の両owner通信は修正版で成立しましたが、旧不具合の内部原因は併用時ログ不足のため未確定です。
 
-[対象別の実機記録](docs/verification/2026-09-18-p2-combined-device.md)と[出荷準備記録](docs/verification/2026-09-18-0.8.4-release.md)を参照。公開時に候補source/runと配布IPAのSHAを追記します。旧release/tag/assetは変更しません。
+[対象別の実機記録](https://github.com/y-aplus/JibunKit/blob/0878ede3799d732a511b6c507014f030ca50e858/docs/verification/2026-09-18-p2-combined-device.md)と[出荷記録](https://github.com/y-aplus/JibunKit/blob/main/docs/verification/2026-09-18-0.8.4-release.md)を参照。出荷source/runとSHAは以下に示します。旧release/tag/assetは変更しません。
+
+
+出荷source: `0878ede3799d732a511b6c507014f030ca50e858`。CI35333186866成功（5分30秒）。実機確認したc0eb6b2から製品コード・版の差分なし。Filesの自動試験は再実行せず、上記の実機とsource別証拠を参照しています。
+
+IPA: 4,746,203 bytes。SHA-256: `932463711a70ca97c34c3ed1b8f6213eec4b7853372a7d6c23d02ecf7dd76f54`。

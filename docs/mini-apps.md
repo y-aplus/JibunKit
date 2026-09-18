@@ -1,8 +1,7 @@
 # ミニアプリの追加
 
-> 2026-09-18: 出荷候補は0.8.4/build14、PREVIOUS（現公開版）は0.8.3/build13。通常候補のデータ保持・JSON読込を実機確認し、最終出荷CIを準備中。[今回の証拠と未確認](verification/2026-09-18-0.8.4-release.md)。以下の0.8.3出荷説明は前回公開時点の履歴です。
 
-公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。音声・撮影/scanの対象別実機、版変更後CIと公開IPA/ZIP検査を完了しました。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
+公開VERSIONは0.8.4/build14、PREVIOUSは0.8.3/build13。対象別実機・出荷CI・公開IPA検査を完了。[証拠と未解決事項](verification/2026-09-18-0.8.4-release.md)。
 操作可能Widget/Controlを追加する場合は[標準型の登録・共有状態・管理/復元接続](guides/interactive-widgets.md)へ進む。0.8.1以降の追加経路で、0.8.0以前には含まれない。
 
 JibunKitのミニアプリは、ビルド時にSwift Packageへ組み込む。組み込み単位は`@main`を持つ独立アプリtargetではなく、SwiftライブラリtargetとしてコンパイルできるFeatureである。動的プラグイン、任意のIPA読込み、ミニアプリストアは対象ではない。

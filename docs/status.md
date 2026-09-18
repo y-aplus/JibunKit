@@ -1,6 +1,10 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-18。通常0.8.4候補のデータ保持・JSON読込を実機確認済み。Files自動試験の未解決事項を残し、最終出荷CIへ進む。開発branchでは0.8.4/build14候補を準備中（未公開・main未統合）。[出荷準備](verification/2026-09-18-0.8.4-release.md)。公開安定版は[0.8.3/build13](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)（前版0.8.2/build12）。音声・撮影/scanの対象別実機、CI35169921272、main統合、公開IPA/ZIP無認証取得と整合性確認まで完了。[出荷照合](verification/2026-09-17-0.8.3-release.md)。
+更新日: 2026-09-18。公開版/mainは0.8.4/build14（前版0.8.3/build13）。出荷source0878ede、CI35333186866成功、通常候補でデータ保持/JSON読込を実機確認し、main統合と正式IPA公開・再取得照合まで完了。[出荷記録](verification/2026-09-18-0.8.4-release.md)。1.0は未完。Files自動UIの不安定、OS cold配送、実位置/電波、署名条件付き通信等の残件は維持する。iPad実機はユーザーが見送り、待機対象ではない。
+
+## 0.8.4へ至るsource別履歴
+
+以下は当時の状態・未統合表記を保持した履歴。現在の公開範囲は上記出荷記録を正本とする。
 
 未出荷統合候補の基点は`codex/p2-ar`のc66b624。[CI35300688982](https://github.com/y-aplus/JibunKit/actions/runs/35300688982)でiPad Simulator native69件（failure0/skip0）、全19 Feature実host起動、外観/翻訳/用途説明、統合IPA検査が成功（14分37秒）。診断IPAと戻し用通常IPAを[公開・取得照合済み](verification/2026-09-18-p2-combined-device.md)。c66b624実機でARのframe受信・離脱停止・再開/停止、ActionのURL/ファイル所有者別取込み・取消・A無効化/B保持、idle点灯維持/通常消灯復帰を確認。残る実機確認とCloudKit/APNs署名条件の1.0判定があり、0.8.4正式公開とmain統合を準備中。P2-F全体は未完了。
 

@@ -2,16 +2,16 @@
 
 このプロジェクトの利用者に影響する変更を記録します。
 
-## [Unreleased — 0.8.4候補]
+## [0.8.4] - 2026-09-18
 
-0.8.4/build14を準備中。公開安定版は0.8.3。1.0は未完。
+0.8.4/build14を公開。出荷CI35333186866、対象別実機と公開IPA再取得を確認。1.0は未完。
 
 - 背景処理・位置・BLE・外部データidentity/APNs・複数windowのFeature所有/寿命とhost接続を追加。署名条件付き通信やOSのcold復元等は未確認として明示する。
 - 前景ARSessionの所有・scene離脱停止、任意採用の保存専用Action extension、Feature外観/idleの接続例、通常Widgetのen/ja文言を追加。
 - BLE診断ボタンの同時操作を避ける配置に修正。nativeのscan時delegate再設定と接続object置換を除去し、復元されたGATT objectの世代索引・Feature起動前の通知保留を補う。保留超過は明示失敗とする。
 - 再署名後の背景登録ID整合とFeature別起動エラー処理を追加し、起動クラッシュ後に実機起動成功を確認。背景HTTPは同一processでOS callbackから保存/completionまで実測。継続処理code1の根本原因とcold配送は未確認。
 - AR・Action・idle、BLE通常通信/両Feature受信/片側停止後維持/再接続を診断IPAで実機確認。iPad実機は今回見送り、実二windowはSimulatorの証拠のみ。
-- 通常候補IPAで既存Counter/Reminder保持とJSON書き出し・読込を実機確認。Files自動UIの失敗は未解決として保持し、最終出荷CIを実施する。診断Featureを通常IPAへ含めず、既存Counter/Reminderの保存IDを維持する。
+- 通常候補IPAで既存Counter/Reminder保持とJSON書き出し・読込を実機確認。Files自動UIの失敗は未解決として保持し、出荷CIは成功。診断Featureを通常IPAへ含めず、既存Counter/Reminderの保存IDを維持する。
 
 ## [0.8.3] - 2026-09-17
 

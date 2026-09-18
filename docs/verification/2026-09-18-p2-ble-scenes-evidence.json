@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "wave": "P2-S",
-  "source": "227ab3b006d0b8d5d641a11d3505dd0498900453",
+  "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
   "contract": {
     "baseline": "afb8f50ebfc13137ab2c98af6817bc4c525ade28",
     "interfaces": "docs/delivery/P2-ble-scenes-contract.md; owner BLE leases and runtime cleanup; OS window session plus ephemeral generation; existing Feature management and selective restore.",
@@ -86,6 +86,18 @@
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35293163823",
       "source": "4577853a1e738f63d8171d64945bb8076aca9a0c",
       "conclusion": "cancelled before inspection/cancel request; includes same known deadlocking scene test. No native follow-up/IPA success inferred. No further cancellation applied."
+    },
+    {
+      "id": "35295502996",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35295502996",
+      "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
+      "conclusion": "dispatched; normal/shared/selected restore UI completion pending"
+    },
+    {
+      "id": "35295505063",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35295505063",
+      "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
+      "conclusion": "success: shared BLE14 + scene10, native13 zero skips/failures, diagnostic Release IPA verified; job11m47"
     }
   ],
   "evidence": [
@@ -278,6 +290,24 @@
       "observation": "iPad Simulator actually created a second window; actual root registry routed A/B separately, destroyed the addressed window and retained the other connection. Native9 methods matched immutable source, zero skips/failures.",
       "review": "Real UIKit/WindowGroup operation, not two standalone Swift objects. Physical iPad and OS session restoration remain device checks.",
       "reuse_reason": "Post-dispatch changes are Bluetooth Core/diagnostic UI and verification workflow; window implementation and native host tests unchanged."
+    },
+    {
+      "criterion": "P2-9.ownership",
+      "kind": "unit",
+      "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35295505063",
+      "observation": "BLE14 shared tests cover owner leases, cancellation joins, reconnect overlap, restored ticket delivery after runtime admission and rollback; fake native boundary only.",
+      "review": "Compared all24 shared method results to expected classes; zero failures. Native13 results cover actual UIKit window interaction separately. No radio/cold-device inference."
+    },
+    {
+      "criterion": "P2-11.ownership",
+      "kind": "unit",
+      "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35295505063",
+      "observation": "Scene10 shared tests cover two owner/session state, reentrant cleanup, detached join and disabled admission; formerly deadlocked test now passes with actual cleanup join retained.",
+      "review": "Compared all24 shared method results to expected classes; zero failures. Native13 results cover actual UIKit window interaction separately. No radio/cold-device inference."
     }
   ],
   "deferred_device": {
@@ -374,7 +404,7 @@
   "planned_device_checks": [
     {
       "criterion": "P2-9.integration",
-      "source": "227ab3b006d0b8d5d641a11d3505dd0498900453",
+      "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
       "checkpoint": "1.0.0",
       "procedure": "After actual candidate CI success, use a known BLE peripheral for discovery/read/write/subscribe and native reconnect/restoration. Confirm B retains state when A stops. Simulator fake callbacks are not proof of radio or OS restoration."
     }
@@ -382,16 +412,18 @@
   "review_pending": false,
   "post_dispatch_changes": {
     "source": "4577853a1e738f63d8171d64945bb8076aca9a0c",
-    "scope": "Restored BLE ticket lookup and admission buffering, configurable UUID/hex diagnostic UI/results, validation tests. Group into third planned run with targeted shared Core tests; not covered by first run."
+    "scope": "Restored BLE ticket lookup and admission buffering, configurable UUID/hex diagnostic UI/results, validation tests. Group into third planned run with targeted shared Core tests; not covered by first run.",
+    "status": "Included and validated by35295505063; normal host regression still pending35295502996."
   },
   "native_verification": {
-    "source": "c35afe778fa9068721fb4235c4769c3aad551296",
-    "run": "35292107259",
-    "passed": 9,
+    "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
+    "run": "35295505063",
+    "shared_passed": 24,
+    "passed": 13,
     "failed": 0,
     "skipped": 0,
     "ipa_crc": "passed",
-    "ipa_sha256": "7e8c693ab92f1c2be4f30c75cdec89455beeb2dfdd8cdc4b040dae68a613a90d",
+    "ipa_sha256": "111bf64c7263dd1784ec86e10305190b3d88285f62e236bc5a11d5dc4adbfc69",
     "app_version": "0.8.3/build13",
     "physical_radio": "not tested",
     "physical_iPad": "not tested"

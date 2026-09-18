@@ -84,6 +84,18 @@ let project = Project(
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
         .target(
+            name: "FilePickerComparison", destinations: .iOS, product: .app,
+            bundleId: "com.jibunkit.file-picker-comparison", deploymentTargets: .iOS("26.0"),
+            infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
+            sources: ["Tests/FilePickerComparison/**"]
+        ),
+        .target(
+            name: "FilePickerComparisonUITests", destinations: .iOS, product: .uiTests,
+            bundleId: "com.jibunkit.file-picker-comparison-tests", deploymentTargets: .iOS("26.0"),
+            infoPlist: .default, sources: ["Tests/FilePickerComparisonUITests/**"],
+            dependencies: [.target(name: "FilePickerComparison")]
+        ),
+        .target(
             name: "BackupHarness", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.backup-harness", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
@@ -152,6 +164,9 @@ let project = Project(
         ),
     ] + actionTargets,
     schemes: [
+        .scheme(name: "FilePickerComparisonUITests", shared: true,
+                buildAction: .buildAction(targets: ["FilePickerComparison"]),
+                testAction: .targets(["FilePickerComparisonUITests"], configuration: .debug)),
         .scheme(name: "IncomingNativeTests", shared: true,
                 buildAction: .buildAction(targets: ["JibunKit-App"]),
                 testAction: .targets(["IncomingNativeTests"], configuration: .debug)),

@@ -68,7 +68,20 @@
       ]
     }
   ],
-  "runs": [],
+  "runs": [
+    {
+      "id": "35292105440",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35292105440",
+      "source": "c35afe778fa9068721fb4235c4769c3aad551296",
+      "conclusion": "dispatched; completion evidence pending, not passed"
+    },
+    {
+      "id": "35292107259",
+      "url": "https://github.com/y-aplus/JibunKit/actions/runs/35292107259",
+      "source": "c35afe778fa9068721fb4235c4769c3aad551296",
+      "conclusion": "dispatched; completion evidence pending, not passed"
+    }
+  ],
   "evidence": [
     {
       "criterion": "P0-2.presentation",
@@ -270,7 +283,7 @@
   "release": {},
   "metrics": {
     "review_rounds": 3,
-    "parent_messages": 8,
+    "parent_messages": 10,
     "ci_job_minutes": 0
   },
   "acceptance": {
@@ -332,5 +345,9 @@
       "procedure": "After actual candidate CI success, use a known BLE peripheral for discovery/read/write/subscribe and native reconnect/restoration. Confirm B retains state when A stops. Simulator fake callbacks are not proof of radio or OS restoration."
     }
   ],
-  "review_pending": false
+  "review_pending": false,
+  "post_dispatch_changes": {
+    "source": "4be1b71",
+    "scope": "Restored Bluetooth connection ticket lookup plus buffering until service runtime admission; two new unit tests. Separate diagnostic UI follow-up in progress. These changes are not included in the dispatched c35afe7 runs and require later validation."
+  }
 }

@@ -1,0 +1,13 @@
+# Purpose-limited Action Extension
+
+JibunKit's Action Extension is an optional, adopted configuration for receiving an item from another app. It presents the same owner-scoped inbox admission flow as the Share Extension, copies the selected input into the chosen mini-app's durable inbox, and completes with an empty returned-items array. It does not edit the source item or produce a transformed document.
+
+This target is intentionally not part of every normal build. A host that adopts it must add a distinct Action Extension target and signing identifier, compile `Sources/JibunKitIncomingExtensionUI/MiniAppIncomingExtensionViewController.swift` and `Sources/JibunKitAction/ActionViewController.swift` into that target, link `JibunKitCore`, embed the extension, and give the host and extension the same App Group entitlement used by the incoming store. The Share target likewise compiles the shared controller plus its existing thin `ShareViewController` entry.
+
+Configure the Action target's extension point as `com.apple.ui-services`, set `NSExtensionPrincipalClass` to the target-qualified `ActionViewController`, and use activation rules limited to the input types the host intends to accept. Keep the Share target on `com.apple.share-services`; the two entries have separate titles, guidance, and accessibility identifiers even though their durable-save implementation is shared.
+
+Completion means that `MiniAppIncomingStore.enqueue` has committed a receipt after rechecking the selected owner's admission. Cancellation joins any provider/copy task before temporary files are released, then calls `cancelRequest`. A successful request calls `completeRequest(returningItems: [])`, because this example is a save action rather than an editing action.
+
+Validate the adopted target on a physical device in P2-F: invoke the Action entry from at least two source apps, exercise text, URL, and file inputs allowed by its activation rules, verify two owners remain isolated, disable an owner during admission, cancel during provider loading and copying, and confirm temporary input files are released. Also verify the Action entry itself in the system action sheet. Share fixtures or Share Extension coverage do not prove that the Action Extension is discoverable or launched by iOS.
+
+This is an incoming-save example and a basis for a host-specific Action Extension. Arbitrary native screens or arbitrary actions are not automatically exposed through it. A Notification Service Extension is also unnecessary for ordinary APNs delivery; if a product later needs notification payload mutation or attachment download, that is a separate extension design and lifecycle decision rather than something completed merely by omitting `mutable-content`.

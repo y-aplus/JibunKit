@@ -13,11 +13,19 @@ final class FilePickerComparisonUITests: XCTestCase {
 
     func testNativeOpenThenRelaunchedSwiftUIOpenReadIdenticalFixture() {
         tap(app.buttons["picker.export-native"])
-        XCTAssertTrue(openOnMyIPhoneIfNeeded(), "保存先の「このiPhone内」へ到達できません")
+        guard openOnMyIPhoneIfNeeded() else {
+            capture("export-location-failure")
+            XCTFail("保存先の「このiPhone内」へ到達できません")
+            return
+        }
         let save = app.buttons["保存"]
         XCTAssertTrue(save.waitForExistence(timeout: 15), "native exportの保存ボタンがありません")
         if save.exists { save.tap() }
-        XCTAssertTrue(waitForStatus(prefix: "uikit-export.callback", timeout: 15), "native export callbackがありません")
+        guard waitForStatus(prefix: "uikit-export.callback", timeout: 15) else {
+            capture("export-callback-failure")
+            XCTFail("native export callbackがありません。import比較は未実施")
+            return
+        }
 
         tap(app.buttons["picker.import-native"])
         let nativeSelected = selectExportedFile()

@@ -14,8 +14,8 @@
   "dependencies": {
     "P2-I": "Inherited afb8f50. Normal/shared35249566535 and native35253192466 passed. Actual signed CloudKit/APNs communication remains open and is not accepted by this wave."
   },
-  "planned_ci_runs": 5,
-  "budget_exception": "Initial budget3 exceeded because shared scene fixture deadlocked, exhausting normal45m and companion scoped30m runs. One diagnosis before retry: exact last started test and source reveal gate release placed after awaiting its join. Move newest connect into Task, observe intermediate cleanup, release gate, then await both results. Other held-cleanup tests reviewed. Product cleanup contract unchanged. Add10m shared-step timeout in normal and native workflows to fail before whole-job budget. Repeat normal(shared/IPA/selected restore UI) and combined native plus scoped shared at one fixed source; no per-worker/per-case CI.",
+  "planned_ci_runs": 6,
+  "budget_exception": "Initial budget3 exceeded because shared scene fixture deadlocked, exhausting normal45m and companion scoped30m runs. One diagnosis before retry: exact last started test and source reveal gate release placed after awaiting its join. Move newest connect into Task, observe intermediate cleanup, release gate, then await both results. Other held-cleanup tests reviewed. Product cleanup contract unchanged. Add10m shared-step timeout in normal and native workflows to fail before whole-job budget. Repeat normal(shared/IPA/selected restore UI) and combined native plus scoped shared at one fixed source; no per-worker/per-case CI. Third unsuccessful run diagnosed separately: original fixture self-wait affected first two; repaired shared439/IPA now pass, remaining failure is OS Files container tap with unchanged picker screenshot. Use one focused UI run only; retain immutable-source shared/native/IPA results and all restore/B-preservation assertions.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -91,7 +91,7 @@
       "id": "35295502996",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35295502996",
       "source": "b2f9a04749b51a9f674c3b7c3d4cf34e109205e7",
-      "conclusion": "dispatched; normal/shared/selected restore UI completion pending"
+      "conclusion": "failure only in Files selection UI: shared439 (2 existing skips, zero failures), Records11, normal IPA and standalone/backup harness builds passed. Selected JSON exported, listed and tapped but Files picker stayed open at MigrationUITests.swift:89; restoration not reached. Screenshot/hierarchy confirm visible filename. Retry fixture targets filename StaticText instead of container Cell; production unchanged."
     },
     {
       "id": "35295505063",
@@ -399,6 +399,12 @@
       "inputs_and_filters": "native-surface.yml surface=ble-scenes ios_major=26; shared BLE/scene plus native diagnostics",
       "expected_elapsed_minutes": 24,
       "estimate_basis": "Previous P2-I normal18m12 and P2-S native11m16. Fix deterministic test self-wait rather than increasing timeout; shared step capped10m, expected compilation/tests under5m. Full normal host still needs verification because cancelled run never reached build."
+    },
+    {
+      "id": "focused-files",
+      "inputs_and_filters": "build-ios.yml simulator_tests=true focused_ui_validation=true ui_test_filter=MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter",
+      "expected_elapsed_minutes": 15,
+      "estimate_basis": "Full repaired normal job reached this single UI test after successful builds; UI took107s including failing15s dismissal wait. Focused lane skips shared/normal IPA/module/standalone/harness work; reserves15m for setup, simulator build, actual Files roundtrip and upload."
     }
   ],
   "planned_device_checks": [

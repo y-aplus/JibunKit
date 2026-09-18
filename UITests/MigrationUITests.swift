@@ -84,7 +84,9 @@ final class MigrationUITests: XCTestCase {
             tap(list)
             XCTAssertTrue(file.waitForExistence(timeout: 15), app.debugDescription)
             capture("backup-files-list")
-            tap(file)
+            // Target the visible filename rather than Files' container cell,
+            // whose synthesized hit point can leave the picker unchanged.
+            tap(file.staticTexts[filename])
             capture("backup-after-file-selection")
             XCTAssertTrue(app.collectionViews["File View"].waitForNonExistence(timeout: 15), app.debugDescription)
         }

@@ -237,10 +237,10 @@ def main():
                 (evidence / "os-ui-summary.json").write_text(
                     json.dumps(ui_summary, indent=2), encoding="utf-8")
                 if (ui_summary.get("result") != "Passed"
-                        or ui_summary.get("passedTests") != 2
+                        or ui_summary.get("passedTests") != 3
                         or ui_summary.get("failedTests") != 0
                         or ui_summary.get("skippedTests") != 0):
-                    raise ValueError("Expected two passing OS UI tests without skips")
+                    raise ValueError("Expected three passing OS UI tests without skips")
                 result["simulator_os_ui"] = {
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",

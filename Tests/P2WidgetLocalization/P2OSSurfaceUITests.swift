@@ -82,6 +82,10 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         XCTAssertNotEqual(aSession, bSession)
         XCTAssertNotEqual(retainedA, retainedB, "The two restored windows need distinguishable state")
 
+        // Give SwiftUI the normal background lifecycle before process death;
+        // killing an active app does not establish a scene save opportunity.
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
         app.terminate()
         app.launch()
         windows = waitForWindows(count: 2)

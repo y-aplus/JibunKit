@@ -886,6 +886,7 @@ jobs:
         if: inputs.simulator_tests
         env:
           REQUESTED_RUNTIME: ${{ inputs.simulator_runtime }}
+          UI_TEST_FILTER: ${{ inputs.ui_test_filter }}
         shell: bash
         run: |
           set -euo pipefail
@@ -908,6 +909,23 @@ jobs:
           print(candidates[0]['udid'])
           PY
           )"
+          if [[ "$UI_TEST_FILTER" == "MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter" ]]; then
+            # Isolate the FileProvider bookmark failure in the runner's precreated
+            # device. Do not erase or mutate that device, or bypass Files import.
+            read -r device_type runtime < <(python3 - "$RUNNER_TEMP/simulators.json" "$sim_id" <<'PYDEVICE'
+          import json, sys
+          devices = json.load(open(sys.argv[1]))['devices']
+          for runtime, candidates in devices.items():
+              for device in candidates:
+                  if device['udid'] == sys.argv[2]:
+                      print(device['deviceTypeIdentifier'], runtime)
+                      raise SystemExit(0)
+          raise SystemExit('Selected simulator missing')
+          PYDEVICE
+            )
+            sim_id="$(xcrun simctl create "Backup-Files-${GITHUB_RUN_ID}" "$device_type" "$runtime")"
+            echo "Fresh Files comparison device: $sim_id runtime=$runtime type=$device_type"
+          fi
           echo "SIMULATOR_ID=$sim_id" >> "$GITHUB_ENV"
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b

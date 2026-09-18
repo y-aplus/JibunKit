@@ -75,10 +75,11 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         let store = try allowedStore(owner: feature.id)
         feature.attachConsent(store)
         try await feature.lifetime.start()
-        let sceneID = UUID()
-        feature.definition.onSceneActivityChange?(.init(
-            featureID: feature.id, sceneID: sceneID, phase: .active, isSelected: true
-        ))
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [
+            .init(id: feature.id) { feature.definition.onSceneActivityChange?($0) }
+        ])
+        dispatcher.connect(phase: .active, selectedID: feature.id)
+        let sceneID = try XCTUnwrap(dispatcher.connectionID)
         let arOperation = MiniAppCaptureOperation(resources: [.camera]) {
             calls.arStarts += 1
             return { _ in calls.arStops += 1 }
@@ -102,6 +103,15 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         try await feature.owner.start(arOperation, sceneScope: .scene(sceneID))
         XCTAssertEqual(feature.owner.state, .running([.camera]))
         XCTAssertEqual(calls.arStarts, 2)
+
+        await feature.startContender(switching: .stopCurrent, in: sceneID)
+        dispatcher.update(phase: .background, selectedID: feature.id)
+        await eventually { feature.contenderOwner.state == .suspended(.background) }
+        dispatcher.update(phase: .active, selectedID: feature.id)
+        await feature.startContender(switching: .reject, in: sceneID)
+        XCTAssertEqual(feature.contenderOwner.state, .running([.camera]))
+        dispatcher.disconnect()
+        await eventually { feature.contenderOwner.state == .suspended(.disconnected) }
         await feature.lifetime.stop()
     }
 

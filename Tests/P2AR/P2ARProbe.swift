@@ -23,6 +23,7 @@ final class P2ARFeature {
     let lifetime: MiniAppFeatureLifetime
     private let consentGate: P2ARConsentGate
     private let contenderOperation: @MainActor () -> MiniAppCaptureOperation
+    private var contenderScenes: [UUID: MiniAppSceneActivityDispatcher] = [:]
 
     init(
         id: MiniAppID = MiniAppID("p2-ar"),
@@ -131,8 +132,14 @@ final class P2ARFeature {
 
     func startContender(switching: MiniAppCaptureSwitch, in sceneID: UUID?) async {
         guard let sceneID else { state.contenderStatus = "Camera B: scene未接続"; return }
+        guard let contenderSceneID = contenderScenes[sceneID]?.connectionID else {
+            state.contenderStatus = "Camera B: 対応scene未接続"
+            return
+        }
         do {
-            try await contenderOwner.start(contenderOperation(), switching: switching, sceneScope: .scene(sceneID))
+            try await contenderOwner.start(
+                contenderOperation(), switching: switching, sceneScope: .scene(contenderSceneID)
+            )
             state.contenderStatus = "Camera B: 実行中"
         } catch {
             state.contenderStatus = "Camera B: 拒否/失敗 \(error)"
@@ -147,10 +154,25 @@ final class P2ARFeature {
 
     private func receiveSceneActivity(_ activity: MiniAppSceneActivity) {
         owner.receive(activity)
-        contenderOwner.receive(.init(
-            featureID: contenderOwner.id, sceneID: activity.sceneID,
-            phase: activity.phase, isSelected: activity.isSelected
-        ))
+        if let phase = activity.phase {
+            let dispatcher: MiniAppSceneActivityDispatcher
+            if let existing = contenderScenes[activity.sceneID] {
+                dispatcher = existing
+            } else {
+                dispatcher = MiniAppSceneActivityDispatcher(handlers: [
+                    .init(id: contenderOwner.id) { [weak contenderOwner = contenderOwner] in
+                        contenderOwner?.receive($0)
+                    }
+                ])
+                contenderScenes[activity.sceneID] = dispatcher
+            }
+            dispatcher.connect(
+                phase: phase,
+                selectedID: activity.isSelected ? contenderOwner.id : nil
+            )
+        } else if let dispatcher = contenderScenes.removeValue(forKey: activity.sceneID) {
+            dispatcher.disconnect()
+        }
     }
 
     private static func makeRealCameraOperation() -> MiniAppCaptureOperation {

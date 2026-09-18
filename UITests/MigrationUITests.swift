@@ -92,6 +92,15 @@ final class MigrationUITests: XCTestCase {
             XCTAssertTrue(file.isHittable, "Backup JSON is present but not hittable: \(app.debugDescription)")
             file.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.5)).tap()
             capture("backup-after-file-selection")
+            // The remote Files view can keep focus without completing selection
+            // (CI 35327736417). Retry the same visible document once, not the
+            // import/restore operation; retain evidence of the first missed tap.
+            if !app.buttons["backup.restore"].waitForExistence(timeout: 5), file.exists, file.isHittable {
+                print("Backup picker remained visible; retrying the exact filename once")
+                capture("backup-picker-before-single-retry")
+                tap(file.staticTexts[filename])
+                capture("backup-picker-after-single-retry")
+            }
             XCTAssertTrue(app.buttons["backup.restore"].waitForExistence(timeout: 20), app.debugDescription)
         }
         XCTAssertTrue(file.waitForExistence(timeout: 10))

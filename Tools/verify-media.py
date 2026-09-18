@@ -48,14 +48,14 @@ def require_test_passes(report, summary, sources):
 
 
 def check_requirements(info, surface="media"):
-    if surface not in {"media", "background-location", "identity-push", "ble-scenes"}:
+    if surface not in {"media", "background-location", "identity-push", "ble-scenes", "ar-action"}:
         raise ValueError("Unknown native host surface")
-    descriptions = (["NSBluetoothAlwaysUsageDescription"] if surface == "ble-scenes" else [] if surface == "identity-push" else ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
+    descriptions = (["NSCameraUsageDescription"] if surface == "ar-action" else ["NSBluetoothAlwaysUsageDescription"] if surface == "ble-scenes" else [] if surface == "identity-push" else ["NSCameraUsageDescription", "NSMicrophoneUsageDescription"] if surface == "media"
                     else ["NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription"])
     for key in descriptions:
         if not isinstance(info.get(key), str) or not info[key].strip():
             raise ValueError(f"Missing media usage description: {key}")
-    modes = {"bluetooth-central"} if surface == "ble-scenes" else {"remote-notification"} if surface == "identity-push" else {"audio"} if surface == "media" else {"fetch", "processing", "location"}
+    modes = set() if surface == "ar-action" else {"bluetooth-central"} if surface == "ble-scenes" else {"remote-notification"} if surface == "identity-push" else {"audio"} if surface == "media" else {"fetch", "processing", "location"}
     if not modes <= set(info.get("UIBackgroundModes", [])):
         raise ValueError("Missing required background modes")
     if surface == "ble-scenes" and info.get("UIApplicationSceneManifest", {}).get("UIApplicationSupportsMultipleScenes") is not True:
@@ -75,14 +75,14 @@ def check_requirements(info, surface="media"):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
-    parser.add_argument("--surface", choices=["media", "background-location", "identity-push", "ble-scenes"], default="media")
+    parser.add_argument("--surface", choices=["media", "background-location", "identity-push", "ble-scenes", "ar-action"], default="media")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[1]
     is_media = args.surface == "media"
     families = {"media": ["MediaAudio", "MediaCapture", "MediaIntegration"],
                 "background-location": ["P2Background", "P2Location"],
-                "identity-push": ["P2Identity", "P2Push"], "ble-scenes": ["P2Bluetooth", "P2Scenes"]}[args.surface]
-    label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush", "ble-scenes": "BluetoothScenes"}[args.surface]
+                "identity-push": ["P2Identity", "P2Push"], "ble-scenes": ["P2Bluetooth", "P2Scenes"], "ar-action": ["P2AR", "P2Action"]}[args.surface]
+    label = {"media": "Media", "background-location": "BackgroundLocation", "identity-push": "IdentityPush", "ble-scenes": "BluetoothScenes", "ar-action": "ARAction"}[args.surface]
     scheme = label + "NativeTests"
     evidence = Path(os.environ["RUNNER_TEMP"]) / label
     evidence.mkdir(exist_ok=True)
@@ -132,7 +132,7 @@ def main():
             native_error = None
             timeouts = ([] if is_media else ["-test-timeouts-enabled", "YES",
                 "-default-test-execution-time-allowance", "60",
-                "-maximum-test-execution-time-allowance", "240" if args.surface in {"identity-push", "ble-scenes"} else "120"])
+                "-maximum-test-execution-time-allowance", "240" if args.surface in {"identity-push", "ble-scenes", "ar-action"} else "120"])
             try:
                 command = ["xcodebuild", "test", *common, "-scheme", scheme,
                        "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
@@ -140,7 +140,7 @@ def main():
                        f"-only-testing:{scheme}", "-parallel-testing-enabled", "NO",
                        *timeouts,
                        "CODE_SIGNING_ALLOWED=YES", "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"]
-                if not is_media:
+                if args.surface in {"background-location", "identity-push", "ble-scenes"}:
                     command = ["python3", root / "Tests/Fixtures/network_server.py", "--run-command", *command]
                 run(command, root, "native-tests")
             except subprocess.CalledProcessError as error:
@@ -173,7 +173,9 @@ def main():
                     [(root / "Tests/P2IdentityPushHost/HostNativeTests.swift").read_text(encoding="utf-8")]
                     if args.surface == "identity-push" else
                     [(root / "Tests/P2BluetoothScenesHost/HostNativeTests.swift").read_text(encoding="utf-8")]
-                    if args.surface == "ble-scenes" else []))
+                    if args.surface == "ble-scenes" else
+                    [(root / "Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift").read_text(encoding="utf-8")]
+                    if args.surface == "ar-action" else []))
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")
@@ -193,6 +195,9 @@ def main():
                  app / "PlugIns/JibunKitWidget_Extension.appex"], root, "sign-widget")
             run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
                  "--entitlements-root", root / "Derived"], root, "sign-share")
+            if args.surface == "ar-action":
+                run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
+                     "--kind", "Action", "--entitlements-root", root / "Derived"], root, "sign-action")
             run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",
                  "--entitlements", entitlement("JibunKit-App.entitlements"), app], root, "sign-app")
             run(["codesign", "--verify", "--deep", "--strict", app], root, "verify-signatures")
@@ -200,7 +205,7 @@ def main():
             payload.mkdir(parents=True)
             run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
             ipa = evidence / {"media": "JibunKit-P2-C-check.ipa", "background-location": "JibunKit-P2-B-check.ipa",
-                              "identity-push": "JibunKit-P2-I-check.ipa", "ble-scenes": "JibunKit-P2-S-check.ipa"}[args.surface]
+                              "identity-push": "JibunKit-P2-I-check.ipa", "ble-scenes": "JibunKit-P2-S-check.ipa", "ar-action": "JibunKit-P2-AR-Action-check.ipa"}[args.surface]
             run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
             run(["unzip", "-t", ipa], root, "ipa-crc")
             run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")

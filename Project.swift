@@ -46,6 +46,38 @@ let generatedFeatureResources = "GeneratedFeatureResources"
 try appBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/App")
 try widgetBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Widget")
 
+let actionBuild = try EnabledFeatureBuildRequirements.action?.compose(infoPlist: [
+    "CFBundleDisplayName": "JibunKitへ保存", "CFBundleShortVersionString": "0.8.3",
+    "CFBundleVersion": "13", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "NSExtension": [
+        "NSExtensionPointIdentifier": "com.apple.ui-services",
+        "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ActionViewController",
+        "NSExtensionAttributes": [
+            "NSExtensionActivationRule": "extensionItems.@count > 0 AND SUBQUERY(extensionItems, $item, $item.attachments.@count > 0 AND SUBQUERY($item.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO 'public.data').@count == $item.attachments.@count).@count == extensionItems.@count",
+        ],
+    ],
+], entitlements: sharedEntitlements, localizedInfoPlist: [
+    "en": ["CFBundleDisplayName": "Save to JibunKit"],
+    "ja": ["CFBundleDisplayName": "JibunKitへ保存"],
+])
+try actionBuild?.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Action")
+let actionDependencies: [TargetDependency] = actionBuild == nil ? [] : [.target(name: "JibunKitAction-Extension")]
+let actionTargets: [Target]
+if let actionBuild {
+    actionTargets = [.target(
+        name: "JibunKitAction-Extension", destinations: .iOS, product: .appExtension,
+        bundleId: "com.jibunkit.app.Action", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: actionBuild.infoPlist),
+        sources: ["Sources/JibunKitAction/**", "Sources/JibunKitIncomingExtensionUI/**"],
+        resources: ["GeneratedFeatureResources/Action/**"],
+        entitlements: .dictionary(actionBuild.entitlements),
+        dependencies: [.package(product: "JibunKitCore")],
+        settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
+    )]
+} else {
+    actionTargets = []
+}
+
 let project = Project(
     name: "JibunKit",
     packages: [.package(path: ".")],
@@ -68,7 +100,7 @@ let project = Project(
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension"),
-                           .target(name: "JibunKitShare-Extension")]
+                           .target(name: "JibunKitShare-Extension")] + actionDependencies
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
@@ -93,7 +125,7 @@ let project = Project(
                     ],
                 ],
             ]),
-            sources: ["Sources/JibunKitShare/**"],
+            sources: ["Sources/JibunKitShare/**", "Sources/JibunKitIncomingExtensionUI/**"],
             entitlements: .dictionary(sharedEntitlements),
             dependencies: [.package(product: "JibunKitCore")],
             settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
@@ -118,7 +150,7 @@ let project = Project(
             sources: ["Examples/Counter/**"],
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),
-    ],
+    ] + actionTargets,
     schemes: [
         .scheme(name: "IncomingNativeTests", shared: true,
                 buildAction: .buildAction(targets: ["JibunKit-App"]),

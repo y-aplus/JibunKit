@@ -20,15 +20,6 @@ class ARActionHostTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, target)
-        requirements = root / MODULE.PROJECT_FILES[2]
-        requirements.write_text(
-            requirements.read_text(encoding="utf-8").replace(
-                "    public static let widget = FeatureBuildConfiguration()",
-                "    public static let widget = FeatureBuildConfiguration()\n"
-                "    public static let action: FeatureBuildConfiguration? = nil",
-            ),
-            encoding="utf-8",
-        )
         for relative in MODULE.REQUIRED_SOURCES:
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)

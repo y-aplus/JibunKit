@@ -48,3 +48,11 @@ class MediaVerificationTests(unittest.TestCase):
             del broken[key]
             with self.assertRaises(ValueError):
                 MODULE.check_requirements(broken)
+
+    def test_ar_requires_camera_but_no_background_capability(self):
+        info = {"CFBundleIdentifier": "com.jibunkit.app", "NSCameraUsageDescription": "foreground AR"}
+        MODULE.check_requirements(info, "ar-action")
+        for description in [None, "", " "]:
+            broken = dict(info, NSCameraUsageDescription=description)
+            with self.assertRaises(ValueError):
+                MODULE.check_requirements(broken, "ar-action")

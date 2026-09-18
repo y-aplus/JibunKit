@@ -43,7 +43,7 @@ class ContinuingHostTests(unittest.TestCase):
         self.assertIn("ContinuingProbe.definitions + [", registry)
         self.assertIn("CounterMiniApp.definition", registry)
         self.assertIn("ReminderMiniApp.definition", registry)
-        self.assertIn("externalAccess: definition.effectiveExternalAccess", registry)
+        self.assertIn("externalAccess: MiniAppWindowOwnership.externalAccess(for: definition)", registry)
         widget = (root / "Sources/JibunKitWidget/CounterWidget.swift").read_text(encoding="utf-8")
         self.assertEqual(widget.count("        CounterWidget()"), 1)
         self.assertIn("FeatureBAlarmLiveActivity()", widget)

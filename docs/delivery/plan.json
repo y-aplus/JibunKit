@@ -1022,9 +1022,9 @@
         }
       ],
       "scope_decision": {
-        "status": "pending",
-        "reason": "",
-        "adopted_scope": ""
+        "status": "adopted",
+        "reason": "Existing incoming provider loader, owner catalog/admission, durable receipt and cancellation join can be reused by an optional Action extension target. UI and storage semantics are shared with Share, while the OS extension entry and package identity require separate verification. See docs/guides/action-extension.md. This does not exclude an extension required by another mandatory P2 capability.",
+        "adopted_scope": "Optional save-only Action extension for text/URL/file input into a selected Feature inbox; explicit target opt-in, owner admission, cancellation, durable completion and other-owner preservation. Arbitrary existing extension auto-integration and bespoke notification content UI remain outside this adopted scope; mutable-content notification service requirements, if adopted, belong to P2-10."
       }
     }
   ],

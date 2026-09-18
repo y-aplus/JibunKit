@@ -134,6 +134,59 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(correlated.contains { $0.contains("artificial interruption ended") && $0.contains("seq=1") })
         XCTAssertTrue(correlated.contains { $0.contains("AR restart completed") && $0.contains("seq=1") })
         XCTAssertTrue(correlated.contains { $0.contains("first frame after interruption") && $0.contains("seq=1") })
+
+        state.interruptionBegan(run: run, source: "artificial-second")
+        state.interruptionEnded(run: run, source: "artificial-second")
+        state.observeARState(.running([.camera]), run: run)
+        state.receivedFrame(run: run, source: "artificial-second")
+        XCTAssertTrue(state.observationLines.contains {
+            $0.contains("artificial-second interruption began") && $0.contains("seq=2")
+        })
+        XCTAssertTrue(state.observationLines.contains {
+            $0.contains("first frame after interruption") && $0.contains("seq=2")
+        })
+    }
+
+    func testRepeatedStartWhileStartingKeepsOriginalRunAndDelegate() async throws {
+        let gate = P2ARStartGate()
+        let feature = P2ARFeature(
+            id: MiniAppID("p2-ar-repeat-start"), coordinator: .init(),
+            permissions: P2ARAllowedPermission(),
+            runFactory: { state in
+                P2ARRun(state: state, operation: MiniAppCaptureOperation(resources: [.camera]) {
+                    await gate.wait()
+                    return { _ in }
+                })
+            }
+        )
+        let store = try allowedStore(owner: feature.id)
+        feature.attachConsent(store)
+        try await feature.lifetime.start()
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [
+            .init(id: feature.id) { feature.definition.onSceneActivityChange?($0) }
+        ])
+        dispatcher.connect(phase: .active, selectedID: feature.id)
+        let sceneID = try XCTUnwrap(dispatcher.connectionID)
+
+        let first = Task { await feature.start(in: sceneID) }
+        await eventually { feature.owner.state == .starting && feature.activeRun != nil }
+        let originalRun = try XCTUnwrap(feature.activeRun)
+        weak var originalDelegate: P2ARFeatureDelegate? = originalRun.delegate
+        await feature.start(in: sceneID)
+
+        XCTAssertTrue(feature.activeRun === originalRun)
+        XCTAssertTrue(feature.activeRun?.delegate === originalDelegate)
+        XCTAssertTrue(feature.state.observationLines.contains { $0.contains("duplicate AR start ignored") })
+        await gate.release()
+        await first.value
+        XCTAssertEqual(feature.owner.state, .running([.camera]))
+        XCTAssertTrue(feature.activeRun === originalRun)
+        XCTAssertNotNil(originalDelegate)
+        await feature.start(in: sceneID)
+        XCTAssertTrue(feature.activeRun === originalRun)
+        XCTAssertTrue(feature.activeRun?.delegate === originalDelegate)
+        await feature.stop()
+        await feature.lifetime.stop()
     }
 
     func testUnmatchedAndOldRunArtificialCallbacksCannotReportRecovery() async {
@@ -190,6 +243,22 @@ private final class P2ARContenderCalls {
     var arStops = 0
     var contenderStarts = 0
     var contenderStops = 0
+}
+
+private actor P2ARStartGate {
+    private var released = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    func wait() async {
+        if released { return }
+        await withCheckedContinuation { continuation = $0 }
+    }
+
+    func release() {
+        released = true
+        continuation?.resume()
+        continuation = nil
+    }
 }
 
 @MainActor

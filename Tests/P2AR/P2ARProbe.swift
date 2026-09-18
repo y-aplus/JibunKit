@@ -18,6 +18,7 @@ final class P2ARFeature {
     let lifetime: MiniAppFeatureLifetime
     private let consentGate: P2ARConsentGate
     private let contenderOperation: @MainActor () -> MiniAppCaptureOperation
+    private let runFactory: @MainActor (P2ARState) -> P2ARRun
     private var contenderScenes: [UUID: MiniAppSceneActivityDispatcher] = [:]
     private(set) var activeRun: P2ARRun?
 
@@ -25,7 +26,8 @@ final class P2ARFeature {
         id: MiniAppID = MiniAppID("p2-ar"),
         coordinator: MiniAppCaptureCoordinator = .shared,
         permissions: any MiniAppCapturePermissionClient = MiniAppAVCapturePermissionClient(),
-        contenderOperation: (@MainActor () -> MiniAppCaptureOperation)? = nil
+        contenderOperation: (@MainActor () -> MiniAppCaptureOperation)? = nil,
+        runFactory: (@MainActor (P2ARState) -> P2ARRun)? = nil
     ) {
         self.id = id
         let state = P2ARState()
@@ -43,6 +45,7 @@ final class P2ARFeature {
         )
         contenderOwner = contender
         self.contenderOperation = contenderOperation ?? { Self.makeRealCameraOperation() }
+        self.runFactory = runFactory ?? { P2ARRun(state: $0) }
         lifetime = MiniAppFeatureLifetime(id: id) { [captureOwner, contender, state] runtime in
             try captureOwner.connect(to: runtime)
             try contender.connect(to: runtime)
@@ -82,11 +85,15 @@ final class P2ARFeature {
 
     func start(in sceneID: UUID?) async {
         guard let sceneID else { state.status = "scene未接続"; return }
-        let run = P2ARRun(state: state)
+        guard activeRun == nil else {
+            state.append("duplicate AR start ignored; active run retained")
+            return
+        }
+        let run = runFactory(state)
         activeRun = run
         state.activate(run: run.id)
         do {
-            try await owner.start(try run.adapter.operation(), sceneScope: .scene(sceneID))
+            try await owner.start(try run.operation(), sceneScope: .scene(sceneID))
             state.status = "AR実行中"
         } catch {
             finish(run: run, reason: "start failed")
@@ -280,8 +287,8 @@ final class P2ARState: ObservableObject {
         guard var current = interruption, current.run == run, current.ended,
               current.restarted, !current.receivedFrame else { return }
         current.receivedFrame = true
-        interruption = current
         append("first frame after interruption run=\(short(run)) seq=\(current.sequence)")
+        interruption = nil
     }
 
     func receivedAnchors(_ count: Int, run: UUID) {
@@ -311,8 +318,9 @@ final class P2ARRun {
     let session: ARSession
     let delegate: P2ARFeatureDelegate
     let adapter: MiniAppARSessionAdapter
+    private let operationOverride: MiniAppCaptureOperation?
 
-    init(state: P2ARState) {
+    init(state: P2ARState, operation: MiniAppCaptureOperation? = nil) {
         let runID = UUID()
         let session = ARSession()
         let bridge = MiniAppARSessionEventBridge()
@@ -320,6 +328,7 @@ final class P2ARRun {
         id = runID
         self.session = session
         self.delegate = delegate
+        operationOverride = operation
         adapter = MiniAppARSessionAdapter(
             session: session,
             configuration: ARWorldTrackingConfiguration(),
@@ -331,6 +340,11 @@ final class P2ARRun {
             removeForwarder: { [weak delegate] in delegate?.remove(generation: $0) }
         )
         session.delegate = delegate
+    }
+
+    func operation() throws -> MiniAppCaptureOperation {
+        if let operationOverride { return operationOverride }
+        return try adapter.operation()
     }
 }
 

@@ -49,14 +49,20 @@ final class P2LocationObservationLog: ObservableObject {
         }
     }
 
-    func record(_ event: String, at date: Date = Date()) {
-        entries.append(.init(receivedAt: date, process: process, appState: appState(), event: event))
+    @discardableResult
+    func record(_ event: String, at date: Date = Date()) -> Entry? {
+        let entry = Entry(receivedAt: date, process: process, appState: appState(), event: event)
+        entries.append(entry)
         entries = Array(entries.suffix(64))
-        guard writable, let files else { return }
+        guard writable, let files else { return nil }
         do {
             try files.write(JSONEncoder().encode(entries), named: Self.filename)
             error = nil
-        } catch { self.error = "記録保存失敗: \(error)" }
+            return entry
+        } catch {
+            self.error = "記録保存失敗: \(error)"
+            return nil
+        }
     }
 }
 

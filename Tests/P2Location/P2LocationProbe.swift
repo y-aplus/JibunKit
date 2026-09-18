@@ -125,15 +125,15 @@ final class P2LocationFeature {
         switch event {
         case .locations(_, let samples):
             let previous = state.lastSample
-            observations.record("位置callback \(samples.count)件")
-            if UIApplication.shared.applicationState == .background,
+            let persisted = observations.record("位置callback \(samples.count)件")
+            if id == MiniAppID("p2-location-tracker"), persisted?.appState == "background",
                let previous, let current = samples.last,
                CLLocation(latitude: previous.latitude, longitude: previous.longitude)
                 .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude)) >= 50 {
                 CFNotificationCenterPostNotification(
                     CFNotificationCenterGetDarwinNotifyCenter(),
                     CFNotificationName(rawValue:
-                        "com.jibunkit.tests.p2-location.background-callback" as CFString),
+                        "com.jibunkit.tests.p2-location-tracker.background-callback" as CFString),
                     nil, nil, true
                 )
             }
@@ -211,7 +211,10 @@ private struct P2LocationView: View {
                     }
                 }
             }
-            if let sample = state.lastSample { Text("\(sample.latitude), \(sample.longitude) ±\(sample.horizontalAccuracy)m") }
+            if let sample = state.lastSample {
+                Text("\(sample.latitude), \(sample.longitude) ±\(sample.horizontalAccuracy)m")
+                    .accessibilityIdentifier("p2.location.\(feature.id.rawValue).sample")
+            }
             P2LocationObservationView(owner: feature.id, log: feature.observations)
         }
         .onAppear { feature.attachConsent(consentStore) }

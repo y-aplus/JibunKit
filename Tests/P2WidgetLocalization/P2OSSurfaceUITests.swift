@@ -123,27 +123,39 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         XCUIDevice.shared.system.open(try XCTUnwrap(
             URL(string: "jibunkit://mini-app/p2-location-tracker")))
         let disclosure = app.buttons["受信記録（座標なし・最新64件）"]
-        tap(disclosure, in: app)
         let observations = app.staticTexts["p2.location.p2-location-tracker.observations"]
-        XCTAssertTrue(observations.waitForExistence(timeout: 10), app.debugDescription)
-        let initialObservationCount = observations.label.split(separator: "\n").count
-        tap(disclosure, in: app)
         let events = app.staticTexts["p2.location.p2-location-tracker.events"]
         let beforeEvents = events.label
         let start = app.buttons["p2.location.tracker.background"]
         tap(start, in: app)
         let status = app.staticTexts["p2.location.p2-location-tracker.status"]
+        let sample = app.staticTexts["p2.location.p2-location-tracker.sample"]
         let baselineDeadline = Date().addingTimeInterval(15)
-        while (events.label == beforeEvents || !status.label.hasPrefix("位置更新 "))
+        while (events.label == beforeEvents
+                || !status.label.hasPrefix("位置更新 ")
+                || !sample.label.contains("37.3349")
+                || !sample.label.contains("-122.009"))
                 && Date() < baselineDeadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
         XCTAssertNotEqual(events.label, beforeEvents, app.debugDescription)
         XCTAssertTrue(status.label.hasPrefix("位置更新 "), app.debugDescription)
+        XCTAssertTrue(sample.label.contains("37.3349") && sample.label.contains("-122.009"),
+                      app.debugDescription)
+        tap(disclosure, in: app)
+        XCTAssertTrue(observations.waitForExistence(timeout: 10), app.debugDescription)
+        let baselineLines = observations.label.split(separator: "\n").map(String.init)
+        let baselineLocation = try XCTUnwrap(baselineLines.last { $0.contains("位置callback") })
+        let process = try XCTUnwrap(baselineLocation.split(separator: " ").first {
+            $0.hasPrefix("起動")
+        })
+        tap(disclosure, in: app)
 
         let delivered = XCTDarwinNotificationExpectation(
-            notificationName: "com.jibunkit.tests.p2-location.background-callback")
+            notificationName: "com.jibunkit.tests.p2-location-tracker.background-callback")
         XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10),
+                      "App did not reach runningBackground before location injection")
         XCUIDevice.shared.location = XCUILocation(
             location: CLLocation(latitude: 37.3360, longitude: -122.0090))
         XCTAssertEqual(XCTWaiter.wait(for: [delivered], timeout: 30), .completed,
@@ -152,12 +164,13 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         app.activate()
         tap(disclosure, in: app)
         XCTAssertTrue(observations.waitForExistence(timeout: 10), app.debugDescription)
-        let lines = observations.label.split(separator: "\n")
-        XCTAssertGreaterThan(lines.count, initialObservationCount)
-        let backgroundEntry = lines.contains {
-            $0.contains("[background]") && $0.contains("位置callback")
+        let lines = observations.label.split(separator: "\n").map(String.init)
+        let old = Set(baselineLines)
+        let backgroundEntry = lines.first {
+            !old.contains($0) && $0.contains("[background]")
+                && $0.contains(String(process)) && $0.contains("位置callback")
         }
-        XCTAssertTrue(backgroundEntry, observations.label)
+        XCTAssertNotNil(backgroundEntry, observations.label)
         XCTAssertFalse(app.staticTexts[
             "p2.location.p2-location-tracker.observation-error"].exists, app.debugDescription)
         tap(disclosure, in: app)

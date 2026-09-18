@@ -44,6 +44,8 @@ private struct P2SceneOwnerView: View {
             if let windowConnection {
                 Text(windowConnection.sessionID.rawValue)
                     .accessibilityIdentifier("p2.scene.session")
+                Text(UIApplication.shared.openSessions.map(\.persistentIdentifier).sorted().joined(separator: "\n"))
+                    .accessibilityIdentifier("p2.scene.open-sessions")
             }
             Button("increment") { count += 1 }.accessibilityIdentifier("p2.scene.increment")
             Button("new window") {

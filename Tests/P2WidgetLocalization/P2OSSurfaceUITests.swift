@@ -89,6 +89,18 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
         app.terminate()
         app.launch()
+        XCTAssertTrue(app.staticTexts["p2.scene.owner"].firstMatch.waitForExistence(timeout: 15),
+                      app.debugDescription)
+        let reopened = try XCTUnwrap(contentWindows().first)
+        let savedSessions = Set(value("p2.scene.open-sessions", in: reopened)
+            .split(separator: "\n").map(String.init))
+        XCTAssertEqual(savedSessions, Set([aSession, bSession]),
+                       "Both original OS sessions must survive process termination")
+        // An archived UISceneSession need not have a connected UIWindowScene.
+        // Reactivate the retained session, never create a replacement window.
+        if contentWindows().count == 1 {
+            tap(reopened.buttons["p2.scene.activate-other"], in: reopened)
+        }
         windows = waitForWindows(count: 2)
         aWindow = try window(owner: "p2-scene-a", in: windows)
         bWindow = try window(owner: "p2-scene-b", in: windows)

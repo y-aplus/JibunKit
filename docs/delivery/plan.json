@@ -493,8 +493,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "位置・背景更新・監視",
-      "existing": "開発branch da62672/CI35176070341: owner別位置service、native設定/SDK値、永続Region予約/20枠/破損保護、世代/同意/管理/復元を実装。Core24件・native7件成功。未出荷 3af8e32実機で前景位置、geofence/iBeacon登録・一覧・解除を確認。82f61bbの時刻付きログではactive中の位置受信のみ確認。",
-      "remaining": "既知の実装不足なし。背景状態の実位置callback、実境界通過、iBeacon電波受信、終了後OS配送は未観測。前景位置・Region/iBeacon登録解除・同意解除は確認済みで反復しない。Simulator背景配送の成立条件を先に調査する。iPad準備やAndroid送信アプリ導入を現在のユーザー操作待ちにしない。",
+      "existing": "開発branch da62672/CI35176070341: owner別位置service、native設定/SDK値、永続Region予約/20枠/破損保護、世代/同意/管理/復元を実装。Core24件・native7件成功。未出荷 3af8e32実機で前景位置、geofence/iBeacon登録・一覧・解除を確認。82f61bb実機ログはactive中の位置受信。1138ded/CI35352655988でSimulatorの実background位置callbackと同processの新規永続記録を確認。",
+      "remaining": "既知の実装不足なし。Simulator背景配送は確認済み。実機の背景位置callback、実境界通過、iBeacon電波受信、終了後OS配送は未観測。前景位置・Region/iBeacon登録解除・同意解除は確認済みで反復しない。iPad準備やAndroid送信アプリ導入を現在のユーザー操作待ちにしない。",
       "deferred": "大量監視枠の透過仮想化/予測最適化",
       "criteria": [
         {

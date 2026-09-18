@@ -97,3 +97,11 @@ OS UIは計5件をclass/method名ごとにstructured resultから検証する。
 cbf6938のnative82件はfailure0で成功、camera/Widget OS UIも成功。二window UIはB選択後・終了再起動前にXCTest window数3/期待2で失敗した。失敗時の実hierarchyにはA/Bそれぞれのowner/session/countと、Otherだけを持つ空の補助UIWindowが含まれる。製品sceneが3つ生成された証拠ではない。host NavigationStackを含むwindowへ計数を限定し、独立したsession ID照合は維持する。隠れたAを閉じる前にはOSの既存session activationで前面化する診断入口を使い、非表示画面の座標tapは行わない。
 
 次候補はこの修正、無効保存選択の消去とUI回帰、背景位置1ケースをまとめ、OS UI計5件/関連native/Release・IPAを一回で検証する。ローカル35試験成功。今回がこの復元UI境界の初失敗で、同じ数え方の再試行はしない。Swift実行は次CIで判定する。
+
+## CI35352655988: 成功した追加試験と二windowの再切り分け
+
+source1138dedでnative82件成功。OS UIは5件中4件成功し、背景位置callback（65.529秒）と無効な保存owner除去・再導入時に再openしない回帰（44.224秒）が初めて成功した。前者はSimulatorの実Core Location配送とbackground状態の永続記録を確認したもので、実機の境界通過/iBeacon電波/cold配送まで確認したものではない。
+
+二windowは作成・別owner/値・session IDの保存まで通過し、background→終了→起動後に接続windowがBだけの1件で失敗した。前回の空UIWindow誤計数は解消。Appleの[openSessions説明](https://developer.apple.com/documentation/uikit/uiapplication/opensessions)は、archived sessionにはconnected sceneがなく、再選択時にsession情報からUIを再作成することを明記している。二window同時接続を起動直後の必須条件にしていた試験を修正する。
+
+再起動後にopenSessionsが元のA/B両IDと完全一致することを確認し、接続が一つなら既存の他方sessionをrequestSceneSessionActivationで再表示する。その後両ID/owner/countの保持と片側破棄を確認する。新規session作成で復元を代用せず、待機時間も延長しない。この境界は2回目の失敗で、いずれも失敗箇所とOS hierarchyを確認してから変更した。

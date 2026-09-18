@@ -7,6 +7,65 @@ import SwiftUI
 
 @MainActor
 final class P2BackgroundNativeTests: XCTestCase {
+    func testTransferEvidenceRequiresDifferentProcessAndOneMatchingLogicalTask() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let owner = MiniAppID("evidence-a")
+        let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
+        let originProcess = UUID(), callbackProcess = UUID(), run = UUID()
+        let origin = P2BackgroundTransferEvidence(owner: owner, files: files, process: originProcess)
+        let description = try origin.begin(sessionIdentifier: "session-a", taskIdentifier: 7, run: run)
+        XCTAssertTrue(origin.canTerminateForDiagnostic(pendingTaskDescriptions: [description]))
+        origin.noteTerminationRequested()
+
+        let restored = P2BackgroundTransferEvidence(owner: owner, files: files, process: callbackProcess)
+        restored.noteHostCallback(sessionIdentifier: "session-a")
+        restored.noteOwnerReconnected()
+        restored.noteSaved(taskDescription: description, taskIdentifier: 7, size: 12, sha256: "abc123")
+        restored.noteTaskCompletion(taskDescription: description, taskIdentifier: 7, error: nil)
+        restored.noteFinishedEvents()
+        restored.noteHostCompletionReturned()
+
+        XCTAssertTrue(try XCTUnwrap(restored.record).isColdRestorationEvidence)
+        XCTAssertTrue(restored.summary.contains("cold復元証拠: 成立"))
+        XCTAssertEqual(restored.record?.run, run)
+        XCTAssertEqual(restored.record?.owner, owner.rawValue)
+        XCTAssertEqual(restored.record?.delegateTaskIdentifier, 7)
+    }
+
+    func testTransferEvidenceRejectsWarmDeliveryReissueAndMixedTask() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let warmOwner = MiniAppID("evidence-warm")
+        let warmFiles = try MiniAppFiles(context: MiniAppContext(id: warmOwner), containerURL: root)
+        let warmProcess = UUID()
+        let warm = P2BackgroundTransferEvidence(owner: warmOwner, files: warmFiles, process: warmProcess)
+        let warmDescription = try warm.begin(sessionIdentifier: "session-warm", taskIdentifier: 2, run: UUID())
+        warm.noteTerminationRequested()
+        warm.noteHostCallback(sessionIdentifier: "session-warm")
+        warm.noteOwnerReconnected()
+        warm.noteSaved(taskDescription: warmDescription, taskIdentifier: 2, size: 4, sha256: "cafe")
+        warm.noteTaskCompletion(taskDescription: warmDescription, taskIdentifier: 2, error: nil)
+        warm.noteFinishedEvents()
+        warm.noteHostCompletionReturned()
+        XCTAssertFalse(try XCTUnwrap(warm.record).isColdRestorationEvidence, "same-process delivery is not cold evidence")
+
+        let owner = MiniAppID("evidence-reject")
+        let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
+        let process = UUID()
+        let evidence = P2BackgroundTransferEvidence(owner: owner, files: files, process: process)
+        let description = try evidence.begin(sessionIdentifier: "session-a", taskIdentifier: 3, run: UUID())
+        XCTAssertThrowsError(try evidence.begin(sessionIdentifier: "session-a", taskIdentifier: 4, run: UUID()))
+        evidence.noteHostCallback(sessionIdentifier: "session-a")
+        evidence.noteSaved(taskDescription: description, taskIdentifier: 99, size: 4, sha256: "deadbeef")
+        evidence.noteTaskCompletion(taskDescription: description, taskIdentifier: 3, error: nil)
+        evidence.noteFinishedEvents()
+        evidence.noteHostCompletionReturned()
+        XCTAssertFalse(try XCTUnwrap(evidence.record).isColdRestorationEvidence)
+        XCTAssertEqual(evidence.record?.rejection, "run/owner/task混在")
+        XCTAssertFalse(evidence.canTerminateForDiagnostic(pendingTaskDescriptions: [description]))
+    }
+
     func testBackgroundObservationLogPreservesDeliveryStateAcrossProcessesAndIsolatesOwners() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -435,11 +494,11 @@ final class P2BackgroundNativeTests: XCTestCase {
         connection.urlSessionDidFinishEvents(forBackgroundURLSession: URLSession.shared)
         await eventually { completion.count == 1 }
         let savedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("download保存") })
-        let finishedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("host completion解放") })
+        let finishedIndex = try XCTUnwrap(statuses.firstIndex { $0.contains("cold復元証拠") })
         XCTAssertLessThan(savedIndex, finishedIndex)
         let observations = feature.observations.entries.map(\.event)
         XCTAssertLessThan(try XCTUnwrap(observations.firstIndex(of: "HTTP完了: ファイル保存")),
-                          try XCTUnwrap(observations.firstIndex(of: "HTTP全delegate完了・host completion解放")))
+                          try XCTUnwrap(observations.firstIndex(of: "HTTP全delegate完了・host completion返却後")))
         XCTAssertFalse(observations.contains { $0.contains("example.invalid") || $0.contains(".download") })
 
         feature.lifetime.setStartAllowed(false)

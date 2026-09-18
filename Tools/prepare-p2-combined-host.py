@@ -15,6 +15,7 @@ DIAGNOSTIC_FAMILIES = (
 
 APP_EXPECTED_SOURCES = (
     "Tests/P2Background/P2BackgroundObservationLog.swift",
+    "Tests/P2Background/P2BackgroundTransferEvidence.swift",
     "Tests/P2Background/P2BackgroundProbe.swift",
     "Tests/P2Background/P2ContinuedNativeComparison.swift",
     "Tests/P2Location/P2LocationObservationLog.swift",

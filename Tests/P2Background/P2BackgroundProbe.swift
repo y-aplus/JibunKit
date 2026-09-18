@@ -1,5 +1,7 @@
 #if os(iOS)
 import Foundation
+import CryptoKit
+import Darwin
 import JibunKitCore
 import SwiftUI
 
@@ -181,6 +183,9 @@ final class P2BackgroundFeature: ObservableObject {
         guard let runtime, !runtime.isClosed else { transferStatus = "受付拒否: Feature停止中"; return }
         transferStatus = await P2BackgroundServices.startDownload(
             owner: id, urlText: urlText, runtime: runtime)
+    }
+    func terminateTransferProcessForDiagnostic() async {
+        transferStatus = await P2BackgroundServices.terminateTransferProcessForDiagnostic(owner: id)
     }
 
     func admitOrdinary(_ execution: MiniAppBackgroundTaskExecution) {
@@ -451,6 +456,11 @@ private enum P2BackgroundServices {
         return await connection.start(url: url, runtime: runtime)
     }
 
+    static func terminateTransferProcessForDiagnostic(owner: MiniAppID) async -> String {
+        guard let connection = urlConnections[owner] else { return "診断終了拒否: connection未登録" }
+        return await connection.terminateProcessForDiagnostic()
+    }
+
     private static func sharedRefreshCenter() throws -> MiniAppSharedRefreshCenter {
         if let sharedCenter { return sharedCenter }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -473,6 +483,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
     private var registration: MiniAppBackgroundURLSessionRegistration?
     private var session: URLSession?
     private var events: MiniAppBackgroundURLSessionEvents?
+    private var evidence: P2BackgroundTransferEvidence?
     private weak var runtime: MiniAppRuntime?
     private var boundRuntimeID: ObjectIdentifier?
     private var isInvalidating = false
@@ -494,6 +505,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
 
     func register(context: MiniAppContext) throws {
         try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+        evidence = P2BackgroundTransferEvidence(owner: owner, files: try MiniAppFiles.shared(context: context))
         registration = try MiniAppBackgroundURLSessionReconnectRegistry.shared.register(
             context: context, profile: "diagnostic") { [weak self] identifier, events in
                 guard let self else { throw P2BackgroundConnectionFailure.released }
@@ -513,12 +525,29 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
 
     func start(url: URL, runtime expected: MiniAppRuntime) async -> String {
         guard let identifier = registration?.identifier else { return "未登録" }
+        guard let evidence else { return "転送証拠未登録" }
         guard runtime === expected, !expected.isClosed else { return "受付拒否: runtime停止中" }
         ensureSession(identifier: identifier)
         let task = session!.downloadTask(with: url)
+        let run = UUID()
+        do { task.taskDescription = try evidence.begin(
+            sessionIdentifier: identifier, taskIdentifier: task.taskIdentifier, run: run)
+        } catch { return "受付拒否: 未完了の診断runあり" }
         feature?.observations.record("HTTP転送要求（OS再接続とは別）")
         task.resume()
-        return "download開始 task=\(task.taskIdentifier) owner=\(owner.rawValue)"
+        return "download開始 run=\(run.uuidString.prefix(8)) task=\(task.taskIdentifier) owner=\(owner.rawValue)"
+    }
+
+    func terminateProcessForDiagnostic() async -> String {
+        guard let session, let evidence else { return "診断終了拒否: 転送未開始" }
+        let tasks = await session.allTasks
+        guard evidence.canTerminateForDiagnostic(pendingTaskDescriptions: tasks.map(\.taskDescription)) else {
+            return "診断終了拒否: pending task/永続runを確認できません"
+        }
+        evidence.noteTerminationRequested()
+        feature?.observations.record("診断process終了要求（pending task・永続run確認済み）")
+        _ = UIApplication.shared.beginBackgroundTask(withName: "P2BackgroundColdRestorationDiagnostic")
+        Darwin.exit(0)
     }
 
     func deactivate() async { await deactivate(expected: runtime) }
@@ -549,6 +578,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
 
     private func beginReconnect(identifier: String, events: MiniAppBackgroundURLSessionEvents) {
         feature?.observations.record("host URLSession callback受信")
+        evidence?.noteHostCallback(sessionIdentifier: identifier)
         Task { @MainActor [weak self] in
             guard let self, let feature = self.feature else { events.finish(); return }
             do {
@@ -559,6 +589,7 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                 try bind(runtime: runtime)
                 self.events = events
                 ensureSession(identifier: identifier)
+                evidence?.noteOwnerReconnected()
                 feature.observations.record("HTTP再接続受付・delegate待ち")
                 status("OS callback再接続・delegate event待ち")
             } catch {
@@ -579,15 +610,25 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         while let record = pendingRecords.removeValue(forKey: nextRecord) {
             nextRecord += 1
             switch record.kind {
-            case .completion(let message):
+            case .completion(let message, let result):
+                if let saved = result.saved {
+                    evidence?.noteSaved(taskDescription: result.taskDescription,
+                                        taskIdentifier: result.taskIdentifier,
+                                        size: saved.size, sha256: saved.sha256)
+                }
+                evidence?.noteTaskCompletion(taskDescription: result.taskDescription,
+                                             taskIdentifier: result.taskIdentifier,
+                                             error: result.errorDescription.map(P2RecordedTransferError.init))
                 feature?.observations.record(message.hasPrefix("download保存") ? "HTTP完了: ファイル保存" : "HTTP完了: 失敗/保存未確認")
                 status(message)
             case .finishedEvents:
                 let finished = events
                 events = nil
-                feature?.observations.record(finished == nil ? "HTTP全delegate完了（host callbackなし）" : "HTTP全delegate完了・host completion解放")
-                status("全delegate event完了・host completion解放")
+                evidence?.noteFinishedEvents()
                 finished?.finish()
+                if finished != nil { evidence?.noteHostCompletionReturned() }
+                feature?.observations.record(finished == nil ? "HTTP全delegate完了（host callbackなし）" : "HTTP全delegate完了・host completion返却後")
+                status(finished == nil ? "全delegate event完了（host callbackなし）" : (evidence?.summary ?? "全delegate event完了・host completion返却後"))
             case .invalidated(let reason):
                 session = nil
                 isInvalidating = false
@@ -607,13 +648,15 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
                                didFinishDownloadingTo location: URL) {
         let destination = destinationDirectory.appendingPathComponent(
             "\(downloadTask.taskIdentifier)-\(UUID().uuidString).download")
-        delegateState.store(taskID: downloadTask.taskIdentifier, location: location,
+        delegateState.store(taskID: downloadTask.taskIdentifier,
+                            taskDescription: downloadTask.taskDescription, location: location,
                             destination: destination)
     }
 
     nonisolated func urlSession(_ session: URLSession, task: URLSessionTask,
                                didCompleteWithError error: Error?) {
-        let record = delegateState.complete(taskID: task.taskIdentifier, error: error)
+        let record = delegateState.complete(taskID: task.taskIdentifier,
+                                            taskDescription: task.taskDescription, error: error)
         Task { @MainActor [weak self] in self?.receive(record) }
     }
 
@@ -629,7 +672,14 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
 }
 
 private struct P2URLDelegateRecord: Sendable {
-    enum Kind: Sendable { case completion(String), finishedEvents, invalidated(String?) }
+    struct Saved: Sendable { let size: Int; let sha256: String }
+    struct Completion: Sendable {
+        let taskIdentifier: Int
+        let taskDescription: String?
+        let saved: Saved?
+        let errorDescription: String?
+    }
+    enum Kind: Sendable { case completion(String, Completion), finishedEvents, invalidated(String?) }
     let sequence: Int
     let kind: Kind
 }
@@ -637,33 +687,51 @@ private struct P2URLDelegateRecord: Sendable {
 private final class P2URLDelegateState: @unchecked Sendable {
     private let lock = NSLock()
     private var nextSequence = 1
-    private var locations: [Int: Result<URL, Error>] = [:]
+    private struct Stored { let taskDescription: String?; let result: Result<P2URLDelegateRecord.Saved, Error> }
+    private var locations: [Int: Stored] = [:]
     private var completionCount = 0
 
-    func store(taskID: Int, location: URL, destination: URL) {
+    func store(taskID: Int, taskDescription: String?, location: URL, destination: URL) {
         lock.lock(); defer { lock.unlock() }
         do {
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.removeItem(at: destination)
             }
             try FileManager.default.moveItem(at: location, to: destination)
-            locations[taskID] = .success(destination)
-        } catch { locations[taskID] = .failure(error) }
+            let data = try Data(contentsOf: destination)
+            let digest = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            locations[taskID] = Stored(taskDescription: taskDescription,
+                                       result: .success(.init(size: data.count, sha256: digest)))
+        } catch { locations[taskID] = Stored(taskDescription: taskDescription, result: .failure(error)) }
     }
 
-    func complete(taskID: Int, error: Error?) -> P2URLDelegateRecord {
+    func complete(taskID: Int, taskDescription: String?, error: Error?) -> P2URLDelegateRecord {
         lock.lock(); defer { lock.unlock() }
         completionCount += 1
         let message: String
-        let result = locations.removeValue(forKey: taskID)
+        let stored = locations.removeValue(forKey: taskID)
+        let result = stored?.result
         if let error { message = "download失敗 events=\(completionCount): \(error)" }
         else if let result {
             switch result {
-            case .success(let url): message = "download保存 events=\(completionCount): \(url.lastPathComponent)"
+            case .success(let saved): message = "download保存 events=\(completionCount): size=\(saved.size) sha256=\(saved.sha256)"
             case .failure(let error): message = "保存失敗 events=\(completionCount): \(error)"
             }
         } else { message = "download完了だが保存先なし events=\(completionCount)" }
-        return record(.completion(message))
+        let saved: P2URLDelegateRecord.Saved?
+        let storedError: String?
+        if let result {
+            switch result {
+            case .success(let value): saved = value; storedError = nil
+            case .failure(let failure): saved = nil; storedError = String(describing: failure)
+            }
+        } else {
+            saved = nil; storedError = nil
+        }
+        let completion = P2URLDelegateRecord.Completion(
+            taskIdentifier: taskID, taskDescription: stored?.taskDescription ?? taskDescription,
+            saved: saved, errorDescription: error.map { String(describing: $0) } ?? storedError)
+        return record(.completion(message, completion))
     }
 
     func finishedEvents() -> P2URLDelegateRecord { lockedRecord(.finishedEvents) }
@@ -678,6 +746,8 @@ private final class P2URLDelegateState: @unchecked Sendable {
         return .init(sequence: nextSequence, kind: kind)
     }
 }
+
+private struct P2RecordedTransferError: Error { let description: String; init(_ description: String) { self.description = description } }
 
 private enum P2BackgroundConnectionFailure: Error { case released }
 private enum P2BackgroundAdmissionFailure: Error { case closed, servicesNotRegistered }
@@ -709,6 +779,10 @@ private struct P2BackgroundProbeView: View {
             Button("background download開始") {
                 Task { await feature.startDownload(urlText: downloadURL) }
             }
+            Button("転送中のprocessを終了（診断）", role: .destructive) {
+                Task { await feature.terminateTransferProcessForDiagnostic() }
+            }
+            Text("pending taskと永続runを確認できた場合だけ終了します。force quitや転送の再要求は行いません。")
         }
     }
 }

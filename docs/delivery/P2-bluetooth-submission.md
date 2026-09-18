@@ -5,7 +5,7 @@
 - `MiniAppBluetoothCoordinator` and `MiniAppBluetoothService`: tokenized owner admission, scan/connect/disconnect, service/characteristic discovery, backpressured read/write/subscribe, generation filtering, joined shutdown, lease-safe unregister, and cold restoration handoff into the same lifetime.
 - `MiniAppCoreBluetoothCentral`: normal CoreBluetooth central adapter with owner-specific restoration identifiers and retained peripheral/service/characteristic delegates.
 - Pure XCTest coverage for two-owner isolation, owner-stop and same-peripheral transition barriers, runtime-registration rollback, stale/duplicate callbacks, power/authorization gates, disabled restoration, and write backpressure.
-- `P2BluetoothProbe`: two ordinary Feature definitions using independent `MiniAppFeatureLifetime` instances; native tests exercise definitions and manager construction.
+- `P2BluetoothProbe`: two ordinary Feature definitions using independent, explicitly initialized `MiniAppFeatureLifetime` instances. Native fixture lifecycle/management tests inject fake centrals and never instantiate `CBCentralManager`; the real adapter is compile-only until an explicit device run.
 
 ## Host integration
 

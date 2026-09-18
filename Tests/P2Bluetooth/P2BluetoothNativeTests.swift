@@ -12,10 +12,9 @@ final class P2BluetoothNativeTests: XCTestCase {
         XCTAssertEqual(definitions.flatMap(\.permissions).map(\.id), ["bluetooth", "bluetooth"])
     }
     func testFeatureLifetimesAreIndependent() async throws {
-        let definitions = P2BluetoothProbe.definitions
-        let store = MiniAppConsentStore(defaults: .standard)
+        let fixture = try makeFixture(), definitions = fixture.definitions, store = fixture.store
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suite) }
         definitions.forEach { store.setConsent(.allowed, for: $0.id, permissionID: "bluetooth") }
-        defer { definitions.forEach { store.removeConsent(for: $0.id, permissionID: "bluetooth") } }
         try await definitions[0].lifetime?.start(); try await definitions[1].lifetime?.start()
         let runtimeB = definitions[1].lifetime?.runtime
         await definitions[0].lifetime?.stop()
@@ -30,10 +29,9 @@ final class P2BluetoothNativeTests: XCTestCase {
     }
 
     func testManagementDisableStopsOnlySelectedFeature() async throws {
-        let definitions = P2BluetoothProbe.definitions
-        let featureConsents = MiniAppConsentStore(defaults: .standard)
+        let fixture = try makeFixture(), definitions = fixture.definitions, featureConsents = fixture.store
+        defer { fixture.defaults.removePersistentDomain(forName: fixture.suite) }
         definitions.forEach { featureConsents.setConsent(.allowed, for: $0.id, permissionID: "bluetooth") }
-        defer { definitions.forEach { featureConsents.removeConsent(for: $0.id, permissionID: "bluetooth") } }
         let suite = "P2BluetoothManagement.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -43,12 +41,47 @@ final class P2BluetoothNativeTests: XCTestCase {
         }, defaults: defaults, consents: MiniAppConsentStore(defaults: defaults))
         try await definitions[0].lifetime?.start(); try await definitions[1].lifetime?.start()
         let runtimeB = definitions[1].lifetime?.runtime
-        P2BluetoothProbe.accessory.status = "B noninitial"
+        fixture.features[1].status = "B noninitial"
         try await management.disable(definitions[0].id)
         XCTAssertTrue(definitions[1].lifetime?.runtime === runtimeB)
-        XCTAssertEqual(P2BluetoothProbe.accessory.status, "B noninitial")
+        XCTAssertEqual(fixture.features[1].status, "B noninitial")
         await definitions[1].lifetime?.stop()
-        await P2BluetoothProbe.accessory.service.unregisterAllOwned()
+        await fixture.features[1].service.unregisterAllOwned()
     }
+
+    private func makeFixture() throws -> (features: [P2BluetoothFeature], definitions: [MiniAppDefinition],
+                                           store: MiniAppConsentStore, defaults: UserDefaults, suite: String) {
+        let suite = "P2BluetoothFixture.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        let store = MiniAppConsentStore(defaults: defaults)
+        let pool = P2BluetoothNativeFakePool()
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let features = [
+            P2BluetoothFeature(id: MiniAppID("p2-bluetooth-sensor"), title: "BLE Sensor", coordinator: coordinator, consents: store),
+            P2BluetoothFeature(id: MiniAppID("p2-bluetooth-accessory"), title: "BLE Accessory", coordinator: coordinator, consents: store),
+        ]
+        return (features, features.map(\.definition), store, defaults, suite)
+    }
+}
+
+@MainActor private final class P2BluetoothNativeFakePool {
+    lazy var make: MiniAppBluetoothCoordinator.NativeFactory = { _, _ in P2BluetoothNativeFakeCentral() }
+}
+
+@MainActor private final class P2BluetoothNativeFakeCentral: MiniAppBluetoothNativeCentral {
+    var power: MiniAppBluetoothPower = .poweredOn
+    var authorization: MiniAppBluetoothAuthorization = .allowed
+    var eventHandler: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
+    func scan(serviceUUIDs: [String]?, allowDuplicates: Bool) {}
+    func stopScan() {}
+    func connect(peripheral: UUID, generation: UUID) {}
+    func disconnect(peripheral: UUID, generation: UUID) async {}
+    func discoverServices(_ serviceUUIDs: [String]?, peripheral: UUID, generation: UUID) {}
+    func discoverCharacteristics(_ characteristicUUIDs: [String]?, service: String, peripheral: UUID, generation: UUID) {}
+    func read(_ characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
+    func write(_ data: Data, to characteristic: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType,
+               peripheral: UUID, generation: UUID) throws {}
+    func setNotify(_ enabled: Bool, for characteristic: MiniAppBluetoothCharacteristic, peripheral: UUID, generation: UUID) {}
+    func stopAll() async {}
 }
 #endif

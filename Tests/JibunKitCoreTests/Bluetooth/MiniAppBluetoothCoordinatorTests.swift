@@ -64,11 +64,37 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
         await newRuntime.shutdown()
     }
 
+    func testStopPublishedDuringReconnectWinsBeforeNewLeaseAdmission() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-stop-reconnect"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let old = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        let replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        let oldRuntime = MiniAppRuntime(), newRuntime = MiniAppRuntime(); try await old.connect(to: oldRuntime)
+        let peripheral = UUID(), first = try await old.connect(peripheral: peripheral)
+        pool[owner].blockDisconnect = true; pool[owner].blockStop = true
+        let reconnecting = Task { @MainActor in try await old.connect(peripheral: peripheral) }
+        await pool[owner].disconnectEntered.wait()
+        let stopping = Task { @MainActor in await oldRuntime.shutdown() }
+        await Task.yield()
+        let starting = Task { @MainActor in try await replacement.connect(to: newRuntime) }
+        await Task.yield()
+        pool[owner].releaseDisconnect.open()
+        do { _ = try await reconnecting.value; XCTFail("Stop must reject reconnect") }
+        catch MiniAppBluetoothFailure.stopped { }
+        await pool[owner].stopEntered.wait()
+        XCTAssertEqual(pool[owner].connectGenerations, [first.generation])
+        pool[owner].releaseStop.open(); await stopping.value; try await starting.value
+        _ = try await replacement.connect(peripheral: peripheral)
+        await newRuntime.shutdown()
+    }
+
     func testClosedRuntimeRegistrationRollsBackCreatedLease() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-runtime-rollback"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let closed = MiniAppRuntime(); await closed.shutdown()
         let failed = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
-        await XCTAssertThrowsErrorAsync { try await failed.connect(to: closed) }
+        do {
+            try await failed.connect(to: closed)
+            XCTFail("Expected closed runtime registration failure")
+        } catch MiniAppRuntime.Failure.closed { }
         let replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator), runtime = MiniAppRuntime()
         try await replacement.connect(to: runtime)
         XCTAssertEqual(pool.created.count, 2)
@@ -163,7 +189,3 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
     func open() { openState = true; waiters.forEach { $0.resume() }; waiters.removeAll() }
 }
 @MainActor private final class EventBox { var values: [MiniAppBluetoothEvent] = [] }
-
-@MainActor private func XCTAssertThrowsErrorAsync(_ body: () async throws -> Void) async {
-    do { try await body(); XCTFail("Expected error") } catch { }
-}

@@ -14,12 +14,7 @@ final class P2BluetoothFeature: ObservableObject {
     let id: MiniAppID, title: String
     let service: MiniAppBluetoothService
     let consents: MiniAppConsentStore
-    lazy var lifetime = MiniAppFeatureLifetime(id: id) { [service, consents, id] runtime in
-        guard consents.consent(for: id, permissionID: "bluetooth") == .allowed else {
-            throw MiniAppBluetoothFailure.permissionDenied(.notDetermined)
-        }
-        try await service.connect(to: runtime)
-    }
+    let lifetime: MiniAppFeatureLifetime
     @Published var status = "停止中"
     @Published var peripherals: [MiniAppBluetoothPeripheral] = []
     @Published private(set) var connection: MiniAppBluetoothConnection?
@@ -28,7 +23,14 @@ final class P2BluetoothFeature: ObservableObject {
     init(id: MiniAppID, title: String, coordinator: MiniAppBluetoothCoordinator = .shared,
          consents: MiniAppConsentStore = MiniAppConsentStore(defaults: .standard)) {
         self.id = id; self.title = title; self.consents = consents
-        service = MiniAppBluetoothService(owner: id, coordinator: coordinator)
+        let service = MiniAppBluetoothService(owner: id, coordinator: coordinator)
+        self.service = service
+        lifetime = MiniAppFeatureLifetime(id: id) { [service, consents, id] runtime in
+            guard consents.consent(for: id, permissionID: "bluetooth") == .allowed else {
+                throw MiniAppBluetoothFailure.permissionDenied(.notDetermined)
+            }
+            try await service.connect(to: runtime)
+        }
         service.receive = { [weak self] event in self?.receive(event) }
     }
     var definition: MiniAppDefinition {

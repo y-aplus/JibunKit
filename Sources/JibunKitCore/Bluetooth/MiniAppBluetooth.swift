@@ -144,11 +144,16 @@ public final class MiniAppBluetoothCoordinator {
     @discardableResult
     public func connect(owner: MiniAppID,
                         receive: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) async -> MiniAppBluetoothOwnerLease {
-        await acquireOwner(owner); defer { releaseOwner(owner) }
-        while let transition = owners[owner]?.stopTransition {
-            await transition.task.value
-            if owners[owner]?.stopTransition?.id == transition.id { await Task.yield() }
+        while true {
+            if let transition = owners[owner]?.stopTransition {
+                await transition.task.value
+                continue
+            }
+            await acquireOwner(owner)
+            if owners[owner]?.stopTransition == nil { break }
+            releaseOwner(owner)
         }
+        defer { releaseOwner(owner) }
         var state = state(for: owner, admitted: true)
         let lease = MiniAppBluetoothOwnerLease(owner: owner, token: UUID())
         state.lease = lease; state.consumer = Consumer(lease: lease, receive: receive); state.admitted = true
@@ -162,16 +167,14 @@ public final class MiniAppBluetoothCoordinator {
         if let transition = state.stopTransition { await transition.task.value; return }
         state.consumer = nil; state.admitted = false; state.restorationOpen = false
         state.connections.removeAll(); state.pendingRestoration.removeAll()
+        let transitionID = UUID(), native = state.native
+        let transition = Transition(id: transitionID, task: Task { @MainActor [weak self] in
+            guard let self else { await native.stopAll(); return }
+            await self.finishStop(owner: lease.owner, lease: lease, transitionID: transitionID, native: native)
+        })
+        state.stopTransition = transition
         owners[lease.owner] = state
-        await acquireOwner(lease.owner); defer { releaseOwner(lease.owner) }
-        guard var current = owners[lease.owner], current.lease == lease else { return }
-        let native = current.native
-        let transition = Transition(id: UUID(), task: Task { @MainActor in await native.stopAll() })
-        current.stopTransition = transition; owners[lease.owner] = current
         await transition.task.value
-        if var current = owners[lease.owner], current.stopTransition?.id == transition.id {
-            current.stopTransition = nil; owners[lease.owner] = current
-        }
     }
     public func unregister(_ lease: MiniAppBluetoothOwnerLease) async {
         guard let state = owners[lease.owner], state.lease == lease else { return }
@@ -252,6 +255,15 @@ public final class MiniAppBluetoothCoordinator {
             await withCheckedContinuation { ownerWaiters[owner, default: []].append($0) }
         }
         busyOwners.insert(owner)
+    }
+    private func finishStop(owner: MiniAppID, lease: MiniAppBluetoothOwnerLease,
+                            transitionID: UUID, native: any MiniAppBluetoothNativeCentral) async {
+        await acquireOwner(owner); defer { releaseOwner(owner) }
+        guard owners[owner]?.lease == lease, owners[owner]?.stopTransition?.id == transitionID else { return }
+        await native.stopAll()
+        if var state = owners[owner], state.stopTransition?.id == transitionID {
+            state.stopTransition = nil; owners[owner] = state
+        }
     }
     private func releaseOwner(_ owner: MiniAppID) {
         busyOwners.remove(owner)

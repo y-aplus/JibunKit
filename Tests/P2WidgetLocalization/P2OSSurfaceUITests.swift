@@ -97,6 +97,9 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         XCTAssertEqual(value("p2.scene.count", in: aWindow), retainedA)
         XCTAssertEqual(value("p2.scene.count", in: bWindow), retainedB)
 
+        if !aWindow.buttons["p2.scene.close-window"].isHittable {
+            tap(bWindow.buttons["p2.scene.activate-other"], in: bWindow)
+        }
         tap(aWindow.buttons["p2.scene.close-window"], in: aWindow)
         windows = waitForWindows(count: 1)
         bWindow = try window(owner: "p2-scene-b", in: windows)
@@ -179,11 +182,18 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
 
     private func waitForWindows(count: Int) -> [XCUIElement] {
         let deadline = Date().addingTimeInterval(20)
-        while app.windows.count != count && Date() < deadline {
+        while contentWindows().count != count && Date() < deadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
-        XCTAssertEqual(app.windows.count, count, app.debugDescription)
-        return app.windows.allElementsBoundByIndex
+        let windows = contentWindows()
+        XCTAssertEqual(windows.count, count, app.debugDescription)
+        return windows
+    }
+
+    private func contentWindows() -> [XCUIElement] {
+        // XCTest also exposes an empty auxiliary UIWindow after search. Only
+        // windows containing the host NavigationStack represent our scenes.
+        app.windows.allElementsBoundByIndex.filter { $0.navigationBars.count > 0 }
     }
 
     private func window(owner: String, in windows: [XCUIElement]) throws -> XCUIElement {

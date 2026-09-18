@@ -53,6 +53,19 @@ private struct P2SceneOwnerView: View {
             }
             .accessibilityIdentifier("p2.scene.new-window")
             if let windowConnection {
+                Button("activate other window") {
+                    let others = UIApplication.shared.openSessions.filter {
+                        $0.persistentIdentifier != windowConnection.sessionID.rawValue
+                    }
+                    guard others.count == 1, let other = others.first else {
+                        windowError = "expected one other session"
+                        return
+                    }
+                    UIApplication.shared.requestSceneSessionActivation(
+                        other, userActivity: nil, options: nil,
+                        errorHandler: { windowError = $0.localizedDescription })
+                }
+                .accessibilityIdentifier("p2.scene.activate-other")
                 Button("close this window") {
                     guard MiniAppUIKitWindowSceneRequester().destroyWindow(
                         sessionID: windowConnection.sessionID,

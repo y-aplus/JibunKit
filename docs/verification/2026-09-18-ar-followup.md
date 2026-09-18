@@ -91,3 +91,9 @@ b36b8b3の無効scene選択消去に対し、保存ownerを起動前からregist
 背景位置はb763e49/65209f3でXCUILocationによるP0確認→実background状態→P1移動→callback記録保存成功に限ったtracker専用Darwin通知→再入場後の新規同process/background記録を確認する。古いログ、保存失敗、別owner、前景受信を成功にしない。実電波/geofence/cold配送を主張しない。
 
 OS UIは計5件をclass/method名ごとにstructured resultから検証する。ローカル35試験・py_compile・diff check成功。Swift/Xcodeは未実行。進行中CI35350686130はこれらの後続修正を含まないため、その結果を受領後に一括して次CIへ投入する。追加ユーザー操作は不要。
+
+## CI35350686130の切り分けと次投入
+
+cbf6938のnative82件はfailure0で成功、camera/Widget OS UIも成功。二window UIはB選択後・終了再起動前にXCTest window数3/期待2で失敗した。失敗時の実hierarchyにはA/Bそれぞれのowner/session/countと、Otherだけを持つ空の補助UIWindowが含まれる。製品sceneが3つ生成された証拠ではない。host NavigationStackを含むwindowへ計数を限定し、独立したsession ID照合は維持する。隠れたAを閉じる前にはOSの既存session activationで前面化する診断入口を使い、非表示画面の座標tapは行わない。
+
+次候補はこの修正、無効保存選択の消去とUI回帰、背景位置1ケースをまとめ、OS UI計5件/関連native/Release・IPAを一回で検証する。ローカル35試験成功。今回がこの復元UI境界の初失敗で、同じ数え方の再試行はしない。Swift実行は次CIで判定する。

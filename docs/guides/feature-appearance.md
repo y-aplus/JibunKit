@@ -1,0 +1,20 @@
+# Featureの外観と画面点灯要求
+
+Featureの外観は、独立アプリで使えたアプリ全体の設定をそのままhost全体へ適用しない。通常の接続ではSwiftUI環境、presentation preference、UIKit controller traitを区別する。
+
+`environment(\.colorScheme, ...)`はそのSwiftUI subtreeが読む環境値を変更する。UIKitのtraitや別presentationまで変更した証拠にはしない。`preferredColorScheme`は単なるview-local環境値ではなく、presentationをホストするcontrollerへ上向きに働き、sheetを含むpresentation全体へ伝播し得る。同じpresentation内でAとBに相反するpreferred値を置く構成は隔離契約にしない。Featureごとに別のpresentation/controller境界がある場合だけ、その境界と別windowが保持されることを実traitで確認する。
+
+UIKitではFeatureが所有するcontainer/root controllerの`overrideUserInterfaceStyle`を使う。これはそのcontroller subtreeへ適用され、兄弟controllerやwindowのstyleを変更しない。`UIAppearance`の無条件なglobal proxy、`UIApplication`やhost windowへの直接style設定、第三者SDKのprocess-global theme setterはこの通常契約の対象外である。必要ならFeature固有containerに限定したappearance APIまたはSDK adapterを設計し、A/B同時利用と終了後の復元を別途検証する。
+
+`Tests/P2Appearance`のfixtureは次を分けて観測する。
+
+- SwiftUI environmentが読む`colorScheme`
+- `preferredColorScheme`を持つ実`UIHostingController`のtraitと別windowのtrait
+- Feature所有UIKit controllerのoverrideと兄弟/windowのtrait
+- 通常`NavigationStack` rootおよびsheet内の環境値・UIKit trait
+
+probeのA/Bは通常の`MiniAppDefinition`、`MiniAppFeatureLifetime`、`onSceneActivityChange`を使う。画面点灯要求は既存`MiniAppSceneIdleTimer`へ接続し、UIに`requested`（Featureの意図）と`effective`（現在leaseを持つowner）を別表示する。Aが要求中でもB選択時はAのeffectiveを解除し、Bの要求を有効化する。backgroundではeffectiveを解除し、activeで選択された場合に要求を復元する。
+
+このfixtureが確認するのは`UIApplication.isIdleTimerDisabled`へ至る要求合成とtraitの読戻しである。実機が設定時間後も点灯し続けること、最後の解除後に実際に暗転・自動ロックすることは未確認であり、物理端末で別に確認する。任意sheetのさらに外側、別sceneのhost構成、global appearance setterを自動隔離したとは扱わない。
+
+生成hostへ接続するときは、`P2AppearanceProbe.swift`をapp sourceへコピーして`P2AppearanceProbe.definitions`をregistryへ加える。`P2AppearanceNativeTests.swift`だけを専用native test targetへ入れ、`@testable import JibunKit_App`がコピー済みprobeを検査できるよう`JibunKit-App`と`JibunKitCore`へ依存させる。probe原本をtest targetにも重複コンパイルしない。製品`Project.swift`や通常registryへfixtureを常設しない。

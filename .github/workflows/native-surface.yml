@@ -186,7 +186,7 @@ jobs:
               set +e
               xcodebuild test -workspace JibunKit.xcworkspace -scheme P2LocationColdOSUITests \
                 -configuration Debug -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
-                -derivedDataPath "$RUNNER_TEMP/LocationCold/DerivedData" \
+                -derivedDataPath "$RUNNER_TEMP/LocationColdDerivedData" \
                 -resultBundlePath "$RUNNER_TEMP/LocationCold/tests.xcresult" \
                 -only-testing:P2LocationColdOSUITests/P2LocationColdOSUITests/testTerminatedGeofenceEnterAndExitPersistFromNewProcesses \
                 -parallel-testing-enabled NO -test-timeouts-enabled YES \

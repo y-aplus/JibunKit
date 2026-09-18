@@ -21,3 +21,11 @@ background URLSessionのSimulator上の自動再起動を製品の合否ゲー�
 native合格後、Release/署名/IPA CRCを先に検証し、最後にOS UIを実行する順へ変更。OS UI失敗時も検査済み診断IPAをartifactに残すが、result.passed=false/CI失敗を維持する。単にIPAを得るためだけの再ビルドを避ける。新しい位置試験はOS UI計6件に含まれ、名前ごとの成功/skipなし判定は維持する。
 
 位置/runnerのローカル13試験・py_compile・diff検査成功。HTTP差分提出後にnative件数・全差分・CI時間上限を確認して一回にまとめる。現在の追加実機操作なし。
+
+## HTTP提出の統合レビュー
+
+worker6134cde/be77b19を統合。保存失敗時の成功表示、破損ファイルの上書き、通常完了後の再試行不能、生成済み未開始taskの放置、全ファイル一括hashを修正してからCIへ進める。親で保存processを別記録し「旧processで保存・新processで完了だけ」を拒否する試験と、エラー終了後のhost completion返却を記録して再試行を許す試験も追加した。finish()のBool=trueを実completion呼出し条件にする。
+
+表示は明確に「OSの起動契機は未判定」とし、手動再入場を自動起動の証明にしない。過去の保存済み転送証拠を表示するボタンを追加し、ユーザーが開くまでにprocessが再び終了していても診断結果を読める。通常IPAに含まれないfixtureのみ。公開0.8.5へ変更を加えていない。
+
+既存httpbingo drip URLをこのPCから再確認し、HTTP200/10bytes/12.107秒。これは実機のcold転送成功ではなく、診断用通信先の応答確認だけ。ローカル35試験・py_compile・diff検査成功。一括CIのOS UIは6件、nativeはsourceから抽出した全件合格を要求。前回15分52秒にgeofenceの最大95秒と追加nativeを加え、準備/upload込み25分以内を想定する。

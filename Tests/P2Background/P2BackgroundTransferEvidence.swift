@@ -19,6 +19,7 @@ final class P2BackgroundTransferEvidence: ObservableObject {
         var delegateTaskIdentifier: Int?
         var savedSize: Int?
         var savedSHA256: String?
+        var savedProcess: UUID?
         var taskCompletionObserved = false
         var taskCompletedWithoutError = false
         var finishedEventsProcess: UUID?
@@ -38,6 +39,7 @@ final class P2BackgroundTransferEvidence: ObservableObject {
                   ownerReconnectedProcess == callback,
                   delegateProcess == callback,
                   delegateTaskIdentifier == originTaskIdentifier,
+                  savedProcess == callback,
                   savedSize != nil,
                   savedSHA256 != nil,
                   taskCompletionObserved,
@@ -137,6 +139,7 @@ final class P2BackgroundTransferEvidence: ObservableObject {
             $0.delegateTaskIdentifier = taskIdentifier
             $0.savedSize = size
             $0.savedSHA256 = sha256
+            $0.savedProcess = process
         }
     }
 
@@ -152,12 +155,12 @@ final class P2BackgroundTransferEvidence: ObservableObject {
     }
 
     func noteFinishedEvents(run: UUID?) {
-        guard record?.run == run, record?.rejection == nil else { return }
+        guard record?.run == run else { return }
         mutateAndPersist { $0.finishedEventsProcess = process }
     }
 
     func noteHostCompletionReturned(run: UUID?) {
-        guard record?.run == run, record?.rejection == nil else { return }
+        guard record?.run == run else { return }
         mutateAndPersist { $0.hostCompletionReturnedProcess = process }
     }
 

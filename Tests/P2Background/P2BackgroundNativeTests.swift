@@ -7,6 +7,37 @@ import SwiftUI
 
 @MainActor
 final class P2BackgroundNativeTests: XCTestCase {
+    func testTransferEvidenceRejectsOldProcessSaveAndAllowsRetryAfterFailedCompletion() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let owner = MiniAppID("evidence-save-process")
+        let files = try MiniAppFiles(context: MiniAppContext(id: owner), containerURL: root)
+        let run = UUID()
+        let original = P2BackgroundTransferEvidence(owner: owner, files: files, process: UUID())
+        let description = try original.begin(sessionIdentifier: "session", taskIdentifier: 1, run: run)
+        original.noteSaved(taskDescription: description, taskIdentifier: 1, size: 10, sha256: "old")
+        XCTAssertTrue(original.noteTerminationRequested())
+        let restored = P2BackgroundTransferEvidence(owner: owner, files: files, process: UUID())
+        _ = restored.noteHostCallback(sessionIdentifier: "session")
+        restored.noteOwnerReconnected(run: run)
+        restored.noteTaskCompletion(taskDescription: description, taskIdentifier: 1, error: nil)
+        restored.noteFinishedEvents(run: run)
+        restored.noteHostCompletionReturned(run: run)
+        XCTAssertFalse(try XCTUnwrap(restored.record).satisfiesColdChain,
+                       "Saving in the previous process must not prove restored-process saving")
+
+        let retry = UUID()
+        let next = try restored.begin(sessionIdentifier: "session", taskIdentifier: 2, run: retry)
+        _ = restored.noteHostCallback(sessionIdentifier: "session")
+        restored.noteTaskCompletion(taskDescription: next, taskIdentifier: 2,
+                                    error: NSError(domain: NSURLErrorDomain, code: -999))
+        XCTAssertFalse(restored.canBegin())
+        restored.noteFinishedEvents(run: retry)
+        restored.noteHostCompletionReturned(run: retry)
+        XCTAssertTrue(restored.canBegin(), "Failed terminal transfer must not block every later attempt")
+        XCTAssertFalse(try XCTUnwrap(restored.record).satisfiesColdChain)
+    }
+
     func testTransferEvidenceRequiresDifferentProcessAndOneMatchingLogicalTask() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

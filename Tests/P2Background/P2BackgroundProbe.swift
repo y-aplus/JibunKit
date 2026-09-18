@@ -187,6 +187,9 @@ final class P2BackgroundFeature: ObservableObject {
     func terminateTransferProcessForDiagnostic() async {
         transferStatus = await P2BackgroundServices.terminateTransferProcessForDiagnostic(owner: id)
     }
+    func showSavedTransferEvidence() {
+        transferStatus = P2BackgroundServices.transferEvidence(owner: id)
+    }
 
     func admitOrdinary(_ execution: MiniAppBackgroundTaskExecution) {
         observations.record("通常scheduler callback受信")
@@ -461,6 +464,10 @@ private enum P2BackgroundServices {
         return await connection.terminateProcessForDiagnostic()
     }
 
+    static func transferEvidence(owner: MiniAppID) -> String {
+        urlConnections[owner]?.evidenceSummary ?? "転送証拠: connection未登録"
+    }
+
     private static func sharedRefreshCenter() throws -> MiniAppSharedRefreshCenter {
         if let sharedCenter { return sharedCenter }
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -564,6 +571,8 @@ final class P2BackgroundURLConnection: NSObject, URLSessionDownloadDelegate, @un
         _ = UIApplication.shared.beginBackgroundTask(withName: "P2BackgroundColdRestorationDiagnostic")
         Darwin.exit(0)
     }
+
+    var evidenceSummary: String { evidence?.summary ?? "転送証拠: 未開始" }
 
     func deactivate() async { await deactivate(expected: runtime) }
 
@@ -820,6 +829,7 @@ private struct P2BackgroundProbeView: View {
             Button("転送中のprocessを終了（診断）", role: .destructive) {
                 Task { await feature.terminateTransferProcessForDiagnostic() }
             }
+            Button("保存済みの転送証拠を表示") { feature.showSavedTransferEvidence() }
             Text("pending taskと永続runを確認できた場合だけ終了します。force quitや転送の再要求は行いません。")
         }
     }

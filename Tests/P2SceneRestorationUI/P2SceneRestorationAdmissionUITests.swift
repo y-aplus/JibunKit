@@ -19,24 +19,30 @@ final class P2SceneRestorationAdmissionUITests: XCTestCase {
         XCUIDevice.shared.system.open(sceneAURL)
         XCTAssertTrue(owner("p2-scene-a").waitForExistence(timeout: 15), app.debugDescription)
 
-        app.terminate()
+        backgroundAndTerminate()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
         XCTAssertTrue(owner("p2-scene-a").waitForExistence(timeout: 15),
                       "The precondition must use an OS-restored scene selection: \(app.debugDescription)")
 
-        app.terminate()
+        backgroundAndTerminate()
         app.launchArguments.append("--p2-scenes-omit-a-at-launch")
         app.launch()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 15), app.debugDescription)
         XCTAssertFalse(owner("p2-scene-a").exists)
 
-        app.terminate()
+        backgroundAndTerminate()
         app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         app.launch()
         XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 15),
                       "A returned owner must not revive a discarded scene selection: \(app.debugDescription)")
         XCTAssertFalse(owner("p2-scene-a").exists)
+    }
+
+    private func backgroundAndTerminate() {
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
+        app.terminate()
     }
 
     private func owner(_ value: String) -> XCUIElement {

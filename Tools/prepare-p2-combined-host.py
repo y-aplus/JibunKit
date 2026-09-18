@@ -49,6 +49,7 @@ NATIVE_EXPECTED_SOURCES = (
 )
 
 UI_EXPECTED_SOURCES = (
+    "Tests/P2SceneRestorationUI/P2SceneRestorationAdmissionUITests.swift",
     "Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift",
     "Tests/PackageWidgets/WidgetGallerySupport.swift",
 )
@@ -204,7 +205,7 @@ def prepare(host):
         "    targets: [\n"
         '        .target(name: "P2CombinedOSUITests", destinations: .iOS, product: .uiTests,\n'
         '            bundleId: "com.jibunkit.p2-combined-ui-tests", deploymentTargets: .iOS("26.0"),\n'
-        '            infoPlist: .default, sources: ["Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift", "Tests/PackageWidgets/WidgetGallerySupport.swift"],\n'
+        '            infoPlist: .default, sources: ["Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift", "Tests/PackageWidgets/WidgetGallerySupport.swift", "Tests/P2SceneRestorationUI/P2SceneRestorationAdmissionUITests.swift"],\n'
         '            dependencies: [.target(name: "JibunKit-App")]),\n'
         '        .target(name: "P2CombinedNativeTests", destinations: .iOS, product: .unitTests,\n'
         '            bundleId: "com.jibunkit.p2-combined-tests", deploymentTargets: .iOS("26.0"),\n'

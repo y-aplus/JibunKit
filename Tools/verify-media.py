@@ -18,7 +18,7 @@ import time
 def require_test_passes(report, summary, sources):
     expected = []
     for source in sources:
-        classes = re.findall(r"\bclass\s+(\w+)\s*:\s*XCTestCase", source)
+        classes = re.findall(r"\bclass\s+(\w+)\s*:\s*(?:XCTestCase|WidgetGalleryTestCase)", source)
         methods = re.findall(r"\bfunc\s+(test\w+)\s*\(", source)
         if len(classes) != 1 or not methods or len(methods) != len(set(methods)):
             raise ValueError("Expected one XCTestCase with unique test methods per media test source")
@@ -227,7 +227,7 @@ def main():
                      "-configuration", "Debug",
                      "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
                      "-resultBundlePath", evidence / "os-ui-tests.xcresult",
-                     "-only-testing:P2CombinedOSUITests/P2OSSurfaceUITests",
+                     "-only-testing:P2CombinedOSUITests",
                      "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=YES",
                      "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "os-ui-tests")
                 ui_summary = json.loads(run([
@@ -236,11 +236,16 @@ def main():
                     "os-ui-summary", limit=60))
                 (evidence / "os-ui-summary.json").write_text(
                     json.dumps(ui_summary, indent=2), encoding="utf-8")
-                if (ui_summary.get("result") != "Passed"
-                        or ui_summary.get("passedTests") != 3
-                        or ui_summary.get("failedTests") != 0
-                        or ui_summary.get("skippedTests") != 0):
-                    raise ValueError("Expected three passing OS UI tests without skips")
+                ui_tests = json.loads(run([
+                    "xcrun", "xcresulttool", "get", "test-results", "tests",
+                    "--path", evidence / "os-ui-tests.xcresult"], root,
+                    "os-ui-cases", limit=60))
+                (evidence / "os-ui-cases.json").write_text(
+                    json.dumps(ui_tests, indent=2), encoding="utf-8")
+                result["os_ui_passed_tests"] = require_test_passes(ui_tests, ui_summary, [
+                    (root / name).read_text(encoding="utf-8") for name in [
+                        "Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift",
+                        "Tests/P2SceneRestorationUI/P2SceneRestorationAdmissionUITests.swift"]])
                 result["simulator_os_ui"] = {
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",

@@ -36,6 +36,15 @@ class MediaVerificationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 MODULE.require_test_passes(self.report(), summary, self.sources)
 
+    def test_os_ui_helper_subclass_requires_actual_named_pass(self):
+        sources = ["final class AudioTests: WidgetGalleryTestCase { func testOwner() {} }",
+                   "final class CaptureTests: XCTestCase { func testOwner() {} }"]
+        self.assertEqual(len(MODULE.require_test_passes(self.report(), self.summary(), sources)), 2)
+        report = self.report()
+        report["testNodes"][0]["children"][0]["nodeIdentifier"] = "WrongClass/testOwner()"
+        with self.assertRaises(ValueError):
+            MODULE.require_test_passes(report, self.summary(), sources)
+
     def test_no_test_declarations_cannot_pass(self):
         for sources in [[], ["final class Empty: XCTestCase {}"]]:
             with self.assertRaises(ValueError):

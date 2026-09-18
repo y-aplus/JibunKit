@@ -115,3 +115,9 @@ source1138dedでnative82件成功。OS UIは5件中4件成功し、背景位置c
 独立レビューとsource別証拠を照合し、BLE通常接続・背景復元の採用範囲をcompleteへ更新した。通常無線と両owner/片側管理の実機、59f7081の実OS新process・同一復元世代Notify、1138ded/CI35352655988のnative82件（履歴再読込・異process/owner/generationの混合拒否・切断後の通常再接続を復元扱いしない負試験を含む）で判定した。window UIの失敗とBLE native成功を混同しない。
 
 OSが何を契機にprocessを起動したかは未判定のまま残し、自動起動/遅延保証の証拠にはしない。アプリ側のstable restoration ID、background mode、launch時manager再生成、owner admission、callback世代とcleanupの契約を確認した。特殊機器全網羅や全OS状態の直積試験へ拡張しない。親D24全体や1.0全体が完了したという意味ではない。
+
+## CI35355170934成功・通常版候補へ
+
+99632e3e489be015acddb5858214b290da14e22dのrunは15分52秒で成功。取得したstructured summaryでiPad(A16)/iOS26.5のnative82件・OS UI5件、いずれも失敗0/skip0を確認。二window復元試験は44.308秒。保存元二session ID/owner/値を再表示後に照合し、A破棄後B保持まで成功した。Release/署名/IPA CRCも成功。物理iPad成功とはしない。
+
+通常版は0.8.5/build15候補に進める。be3669dまでに既存UIの一覧前提を修正し、通常リマインダーの実復元を前提条件にcold counter URL優先を検証する。通常build/IPA・共有/Module・限定UIを一括実行し、生成Feature/RecordsとFiles自動UIは未変更証拠を再利用する。版変更時、旧診断workflowのbuild期待値13が残っていた箇所も15へ同期した。旧公開0.8.4記録は変更しない。

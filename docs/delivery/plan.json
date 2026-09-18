@@ -871,8 +871,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "通常複数window・scene",
-      "existing": "iPad Simulatorで実window生成・指定owner配送・片側破棄/保持をnative検証。統合host73件候補へ継承。",
-      "remaining": "実iPadOS Simulatorで二window生成/指定配送/片側破棄を確認済み。実OSの終了後session復元/再接続を追加自動検証する。物理iPadはユーザーがsideload準備を見送ったため未確認のまま、操作待ちから外す。",
+      "existing": "iPad Simulatorで実window生成・指定owner配送・片側破棄/保持をnative検証。99632e3/CI35355170934で終了後の元二session ID・別owner/値の復元、片側破棄後B保持、無効保存owner消去を実OS UI検証。native82/OS UI5成功。",
+      "remaining": "既知の実装不足なし。通常版のcold URLと保存選択の優先順位を出荷回帰で確認する。物理iPadはユーザーがsideload準備を見送ったため未確認のまま、操作待ちから外す。Simulator成功を実機成功へ読み替えず最終検証範囲に明記する。",
       "deferred": "任意View/実行instanceの自動理解・一般化",
       "criteria": [
         {

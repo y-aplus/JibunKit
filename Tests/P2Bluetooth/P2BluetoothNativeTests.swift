@@ -1,6 +1,7 @@
 #if os(iOS)
 import XCTest
-import JibunKitCore
+@testable import JibunKitCore
+@preconcurrency import CoreBluetooth
 @testable import JibunKit_App
 
 @MainActor
@@ -127,6 +128,80 @@ final class P2BluetoothNativeTests: XCTestCase {
         await fixture.features[1].service.unregisterAllOwned()
     }
 
+    func testRestoredGATTGraphIndexesOriginalNativeObjectIdentities() {
+        let service = CBMutableService(type: CBUUID(string: "180D"), primary: true)
+        let characteristic = CBMutableCharacteristic(type: CBUUID(string: "2A37"),
+            properties: [.read, .notify], value: nil, permissions: [.readable])
+        service.characteristics = [characteristic]
+        let restored = MiniAppBluetoothRestoredAttributes([service])
+        XCTAssertTrue(restored.services["180D"] === service)
+        XCTAssertTrue(restored.characteristics[.init(service: "180D", characteristic: "2A37")] === characteristic)
+        XCTAssertTrue(restored.ambiguousServices.isEmpty)
+    }
+
+    func testRestoredGATTGraphDoesNotGuessAmongRepeatedUUIDs() {
+        let first = CBMutableService(type: CBUUID(string: "180D"), primary: true)
+        let second = CBMutableService(type: CBUUID(string: "180D"), primary: true)
+        let c1 = CBMutableCharacteristic(type: CBUUID(string: "2A37"),
+            properties: [.notify], value: nil, permissions: [.readable])
+        let c2 = CBMutableCharacteristic(type: CBUUID(string: "2A37"),
+            properties: [.notify], value: nil, permissions: [.readable])
+        first.characteristics = [c1]; second.characteristics = [c2]
+        let duplicateServices = MiniAppBluetoothRestoredAttributes([first, second])
+        XCTAssertEqual(duplicateServices.ambiguousServices, ["180D"])
+        XCTAssertTrue(duplicateServices.characteristics.isEmpty)
+        first.characteristics = [c1, c2]
+        XCTAssertTrue(MiniAppBluetoothRestoredAttributes([first]).characteristics.isEmpty)
+        XCTAssertTrue(MiniAppBluetoothRestoredAttributes([]).services.isEmpty)
+    }
+
+    func testRestoredNotificationBeforeFeatureAdmissionIsDeliveredInOrderAndStoppedOwnerIsClosed() async throws {
+        let pool = P2BluetoothNativeFakePool()
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let owner = MiniAppID("restored-early-notify")
+        coordinator.prepareRestoration(owner: owner, admitted: true, onRestore: {})
+        let native = try XCTUnwrap(pool.centrals.first)
+        let peripheral = UUID(), generation = UUID()
+        let key = MiniAppBluetoothCharacteristic(service: "180D", characteristic: "2A37")
+        let connected = MiniAppBluetoothEvent.connected(peripheral: peripheral, generation: generation, restored: true)
+        let value = MiniAppBluetoothEvent.value(peripheral: peripheral, generation: generation,
+            characteristic: key, data: Data([0x11, 0x12]), notifying: true)
+        native.emit(connected)
+        native.emit(.value(peripheral: peripheral, generation: UUID(), characteristic: key,
+            data: Data([0xFF]), notifying: true))
+        native.emit(value)
+        let received = P2BluetoothReceivedEvents()
+        let lease = await coordinator.connect(owner: owner) { received.values.append($0) }
+        XCTAssertEqual(received.values, [connected, value])
+        await coordinator.disconnect(lease)
+        native.emit(value)
+        XCTAssertEqual(received.values, [connected, value])
+    }
+
+    func testRestoredStartupBufferIsBoundedAndReportsOverflow() async throws {
+        let pool = P2BluetoothNativeFakePool()
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let owner = MiniAppID("restored-overflow")
+        coordinator.prepareRestoration(owner: owner, admitted: true, onRestore: {})
+        let native = try XCTUnwrap(pool.centrals.first)
+        let peripheral = UUID(), generation = UUID()
+        native.emit(.connected(peripheral: peripheral, generation: generation, restored: true))
+        let key = MiniAppBluetoothCharacteristic(service: "180D", characteristic: "2A37")
+        for _ in 0..<300 {
+            native.emit(.value(peripheral: peripheral, generation: generation,
+                characteristic: key, data: Data([1]), notifying: true))
+        }
+        let received = P2BluetoothReceivedEvents()
+        let lease = await coordinator.connect(owner: owner) { received.values.append($0) }
+        XCTAssertEqual(received.values.count, 256)
+        let last = try XCTUnwrap(received.values.last)
+        guard case .failed(_, _, let message) = last else {
+            return XCTFail("Truncated restoration must be reported")
+        }
+        XCTAssertTrue(message.contains("overflow"))
+        await coordinator.disconnect(lease)
+    }
+
     private func makeFixture() throws -> (features: [P2BluetoothFeature], definitions: [MiniAppDefinition],
                                            store: MiniAppConsentStore, defaults: UserDefaults, suite: String) {
         let suite = "P2BluetoothFixture.\(UUID().uuidString)"
@@ -140,6 +215,10 @@ final class P2BluetoothNativeTests: XCTestCase {
         ]
         return (features, features.map(\.definition), store, defaults, suite)
     }
+}
+
+@MainActor private final class P2BluetoothReceivedEvents {
+    var values: [MiniAppBluetoothEvent] = []
 }
 
 @MainActor private final class P2BluetoothNativeFakePool {

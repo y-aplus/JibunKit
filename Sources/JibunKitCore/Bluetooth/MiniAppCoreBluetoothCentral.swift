@@ -2,6 +2,30 @@ import Foundation
 #if canImport(CoreBluetooth)
 @preconcurrency import CoreBluetooth
 
+/// The OS can restore a connected peripheral with an already discovered GATT
+/// graph. Rebuild the same identity indexes used by live delegate callbacks
+/// before admitting restored notifications. No manager or radio is created here.
+@MainActor
+struct MiniAppBluetoothRestoredAttributes {
+    let services: [String: CBService]
+    let ambiguousServices: Set<String>
+    let characteristics: [MiniAppBluetoothCharacteristic: CBCharacteristic]
+
+    init(_ restoredServices: [CBService]) {
+        let serviceIndex = miniAppBluetoothUniqueIndex(restoredServices) { $0.uuid.uuidString }
+        services = serviceIndex.unique
+        ambiguousServices = serviceIndex.ambiguous
+        var result: [MiniAppBluetoothCharacteristic: CBCharacteristic] = [:]
+        for (serviceID, service) in serviceIndex.unique where !serviceIndex.ambiguous.contains(serviceID) {
+            let index = miniAppBluetoothUniqueIndex(service.characteristics ?? []) { $0.uuid.uuidString }
+            for (characteristicID, characteristic) in index.unique where !index.ambiguous.contains(characteristicID) {
+                result[.init(service: serviceID, characteristic: characteristicID)] = characteristic
+            }
+        }
+        characteristics = result
+    }
+}
+
 @MainActor
 public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNativeCentral,
     @preconcurrency CBCentralManagerDelegate, @preconcurrency CBPeripheralDelegate {
@@ -187,6 +211,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
             peripherals[peripheral.identifier] = peripheral; peripheral.delegate = self
             guard peripheral.state == .connected || peripheral.state == .connecting else { continue }
             let generation = UUID(); generations[peripheral.identifier] = generation
+            restoreAttributes(peripheral, generation: generation)
             if peripheral.state == .connected {
                 emit(.connected(peripheral: peripheral.identifier, generation: generation, restored: true))
             } else { restoredGenerations.insert(generation) }
@@ -277,6 +302,19 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
         guard let generation = generations[peripheral.identifier], !cancelling.contains(peripheral.identifier) else { return }
         emit(.readyToWriteWithoutResponse(peripheral: peripheral.identifier, generation: generation,
             maximumLength: peripheral.maximumWriteValueLength(for: .withoutResponse)))
+    }
+    private func restoreAttributes(_ peripheral: CBPeripheral, generation: UUID) {
+        let restored = MiniAppBluetoothRestoredAttributes(peripheral.services ?? [])
+        services[peripheral.identifier] = restored.services
+        ambiguousServiceUUIDs[peripheral.identifier] = restored.ambiguousServices
+        characteristics[peripheral.identifier] = restored.characteristics
+        for service in restored.services.values {
+            serviceGenerations[ObjectIdentifier(service)] = generation
+        }
+        for characteristic in restored.characteristics.values {
+            characteristicGenerations[ObjectIdentifier(characteristic)] = generation
+        }
+        trace("restored attributes services=\(restored.services.count) characteristics=\(restored.characteristics.count)", peripheral)
     }
     private func peripheral(_ id: UUID) -> CBPeripheral? {
         if let value = peripherals[id] { return value }

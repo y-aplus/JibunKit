@@ -630,8 +630,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "低負荷残件の採否と採用範囲",
-      "existing": "idle timer/scene接続、Spotlight、翻訳・説明合成の既存成果",
-      "remaining": "idle実機/外観分離/Spotlight/Widget翻訳/権限dialogを関連P2と評価し採用範囲を検証",
+      "existing": "c66b624の外観5/Widget翻訳1と用途説明bundle検査が成功。実機でidle点灯維持/非選択後通常消灯を確認。Spotlight既存成果を再利用。",
+      "remaining": "代表権限dialog・Widget実OS言語描画等の未観測条件を出荷前に整理。自動検証済み文字列/配置の手動反復はしない。",
       "deferred": "採用しない残件も台帳へ根拠を維持",
       "criteria": [
         {
@@ -781,8 +781,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "BLE通常接続・背景再接続",
-      "existing": "既存寿命/権限/状態配送を再利用",
-      "remaining": "scan/connect/disconnect、ON/OFF、read/write/subscribe、宣言した背景利用のstate restorationとB維持",
+      "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。",
+      "remaining": "OSによるstate restoration/cold配送は未観測。復元GATT graphの世代索引欠落を修正して自動検証中。通常通信の成功とOS復元を区別。",
       "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
       "criteria": [
         {
@@ -871,8 +871,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "通常複数window・scene",
-      "existing": "既存window別navigationとscene routerを再利用",
-      "remaining": "実OSの二window独立状態、生成/破棄/復帰、指定sceneへの配送と他window/Feature保持",
+      "existing": "iPad Simulatorで実window生成・指定owner配送・片側破棄/保持をnative検証。統合host73件候補へ継承。",
+      "remaining": "iPad実機はsideload環境準備をユーザーが見送ったため未確認として保持。追加操作待ちから外し、Simulator証拠との境界を出荷時に説明。",
       "deferred": "任意View/実行instanceの自動理解・一般化",
       "criteria": [
         {
@@ -915,8 +915,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "通常ARの採否と採用範囲",
-      "existing": "P2撮影/captureの成果を再利用して評価",
-      "remaining": "単一前景sessionの開始/停止/中断復帰が比較的低負荷に成立する範囲を採用・検証",
+      "existing": "通常前景ARを採用しARSession接続/scene束縛/停止/世代試験成功。c66b624実機でframe受信・離脱停止・再開/明示停止を確認。",
+      "remaining": "OS割込み等の残る検証条件を既存Capture証拠と照合。高度world state等は採用範囲外として理由を保持。",
       "deferred": "高度world state/長期再位置合わせ",
       "criteria": [
         {
@@ -976,8 +976,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "追加extensionの採否と採用範囲",
-      "existing": "P1共有/Widget、P2通知等の種類別成果を再利用",
-      "remaining": "種類別に採否評価して通常接続/所有/終了/他owner維持を検証。P2主機能の必要extensionは除外不可",
+      "existing": "保存専用Action extensionを採用。c66b624実機でOS入口、URL/ファイルの対象ownerへの取込み、取消、A無効化/B継続を確認。",
+      "remaining": "通常版への復帰/保持と出荷候補の版・文書検査を一括で実施。任意extensionの自動統合とはしない。",
       "deferred": "任意既存extensionの自動統合",
       "criteria": [
         {

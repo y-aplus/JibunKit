@@ -114,6 +114,16 @@ public final class MiniAppBluetoothCoordinator {
         var consumer: Consumer?
         var connections: [UUID: UUID] = [:]
         var pendingRestoration: [MiniAppBluetoothEvent] = []
+        mutating func enqueueRestoration(_ event: MiniAppBluetoothEvent) {
+            // Keep startup retention bounded. Overflow is an explicit failure,
+            // never reported as a complete replay of the restored event stream.
+            if pendingRestoration.count < 256 {
+                pendingRestoration.append(event)
+            } else {
+                pendingRestoration[255] = .failed(peripheral: nil, generation: nil,
+                    message: "Bluetooth restoration event buffer overflow; reconcile peripheral state")
+            }
+        }
         var admitted = false
         var restorationOpen = false
         var onRestore: (@MainActor @Sendable () -> Void)?
@@ -296,7 +306,7 @@ public final class MiniAppBluetoothCoordinator {
                 if let consumer = state.consumer {
                     owners[owner] = state; consumer.receive(event)
                 } else {
-                    state.pendingRestoration.append(event); owners[owner] = state; state.onRestore?()
+                    state.enqueueRestoration(event); owners[owner] = state; state.onRestore?()
                 }
                 return
             }
@@ -309,7 +319,15 @@ public final class MiniAppBluetoothCoordinator {
         case .failed(let p?, let g?, _): guard state.connections[p] == g else { return }
         default: break
         }
-        state.consumer?.receive(event)
+        if let consumer = state.consumer {
+            consumer.receive(event)
+        } else if state.restorationOpen, !state.pendingRestoration.isEmpty {
+            // Restored connection events can arrive before the Feature's async
+            // lifetime has attached its consumer. Preserve their order with the
+            // restored-connected event instead of silently dropping the values.
+            state.enqueueRestoration(event)
+            owners[owner] = state
+        }
     }
 }
 

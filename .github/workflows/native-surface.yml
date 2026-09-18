@@ -124,7 +124,7 @@ jobs:
           xcrun simctl bootstatus "$sim_id" -b
 
       - name: Test BLE and scene shared logic
-        if: matrix.surface == 'ble-scenes'
+        if: matrix.surface == 'ble-scenes' || matrix.surface == 'p2-combined'
         timeout-minutes: 10
         shell: bash
         run: |

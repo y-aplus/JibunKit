@@ -12,7 +12,9 @@ enum P2ScenesProbe {
     static let secondID = MiniAppID("p2-scene-b")
 
     static var definitions: [MiniAppDefinition] {
-        [definition(id: firstID, title: "Scene A"), definition(id: secondID, title: "Scene B")]
+        let values = [definition(id: firstID, title: "Scene A"), definition(id: secondID, title: "Scene B")]
+        guard ProcessInfo.processInfo.arguments.contains("--p2-scenes-omit-a-at-launch") else { return values }
+        return values.filter { $0.id != firstID }
     }
 
     private static func definition(id: MiniAppID, title: String) -> MiniAppDefinition {

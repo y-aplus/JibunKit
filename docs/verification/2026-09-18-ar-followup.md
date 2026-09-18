@@ -79,3 +79,7 @@ BLEの過去process完全証拠欄80028f7と再接続負試験9475781を統合�
 ## 残るOS観測の限定
 
 独立reviewでP2-3/P2-4/P2-12の既知の実装不足は見つからなかった。ARは通常実camera/frame/明示停止再開とnative中断相関を再利用し、残件を実OS delegate中断→終了→同run frame復帰の未観測へ限定する。scene離脱による能動pauseは代用しない。着信・高負荷の反復や、ユーザーが見送ったiPad準備を新たな操作待ちにしない。位置は既存前景callback/監視登録解除を繰り返さず、Simulatorの実背景配送が成立するかを投入前に確認する。通常schedulerの任意時間内配送をCI成功条件にせず、継続処理code1の追加追究停止指示も維持する。
+
+## 復元選択の独立レビュー修正
+
+復元開始時点で保存ownerが無効/未登録の場合、navigation.activeIDが元からnilだとonChangeが発火せずSceneStorageに古いIDが残る経路を発見。後日同IDを再有効化/再導入した際の意図しない再openを防ぐため、SceneStorage読込境界でregisteredIDs（enabled集合）に含まれない値を明示的にnilへ戻す。通常navigationのadmissionを維持し、別sceneで有効なownerを変更しない。修正は実行中cbf6938のCIには含まれず、位置試験と合わせた次境界で限定回帰を追加する。

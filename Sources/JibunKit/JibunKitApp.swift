@@ -87,7 +87,14 @@ private struct MiniAppSceneRoot: View {
             }
             .onChange(of: restoredOwner, initial: true) { _, restoredOwner in
                 guard navigation.activeID == nil, let restoredOwner else { return }
-                navigation.open(MiniAppID(restoredOwner))
+                let candidate = MiniAppID(restoredOwner)
+                guard MiniAppRegistry.registeredIDs.contains(candidate) else {
+                    // A rejected selection must not survive until this owner
+                    // is enabled or introduced again in a later process.
+                    self.restoredOwner = nil
+                    return
+                }
+                navigation.open(candidate)
             }
     }
 }

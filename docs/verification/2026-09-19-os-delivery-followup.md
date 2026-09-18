@@ -33,3 +33,9 @@ worker6134cde/be77b19を統合。保存失敗時の成功表示、破損ファ�
 ## CI35364846699の切り分け
 
 a317524はコンパイル成功、nativeの既存HTTP admission/cleanup試験1件が失敗。転送runを生成しないfake delegate fixtureが、新しいcold chain表示を要求していたことが原因。保存表示の存在と、既存の永続観測による保存→host completion返却順、実completion counterを確認し、cold成功を主張しないassertへ修正する。新しい証拠相関/保存失敗/再試行試験は成功。native段階の失敗なので今回のRelease/OS UIは未実行。製品障害やgeofence不成立とは判断しない。この境界の初失敗として原因を確認後に再投入する。
+
+## CI35365770330成功・停止境界
+
+4a1340ab3cedfe10fded79fa975d4a4bd65d160cはnative87件/OS UI6件成功、失敗0/skip0。geofenceの実enter/exit callback試験も58.701秒で成功。Release/IPAの署名/CRC検査成功。ダウンロードしたstructured summaryとIPAを照合した。新しいHTTP診断の実機結果はまだない。
+
+[診断IPA・再開時手順](2026-09-19-background-http-device.md)を準備。ユーザー予告に従い提示後は全スレッドの実装・新CIを停止し、再開指示を待つ。公開0.8.5/mainは維持し、この診断変更を未検証のまま正式版へ追加しない。

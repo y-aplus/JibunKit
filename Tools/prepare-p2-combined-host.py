@@ -48,6 +48,11 @@ NATIVE_EXPECTED_SOURCES = (
     "Sources/JibunKitAction/ActionViewController.swift",
 )
 
+UI_EXPECTED_SOURCES = (
+    "Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift",
+    "Tests/PackageWidgets/WidgetGallerySupport.swift",
+)
+
 EXPECTED_REGISTRY_IDS = (
     "p2-background-a", "p2-background-b",
     "p2-location-tracker", "p2-location-regions",
@@ -91,7 +96,7 @@ def diagnostic_destination(host, relative):
 
 def prepare(host):
     host = host.resolve()
-    required = APP_EXPECTED_SOURCES + NATIVE_EXPECTED_SOURCES + PROJECT_FILES
+    required = APP_EXPECTED_SOURCES + NATIVE_EXPECTED_SOURCES + UI_EXPECTED_SOURCES + PROJECT_FILES
     for relative in required:
         if not (host / relative).is_file():
             raise ValueError(f"Missing combined P2 host file: {relative}")
@@ -197,6 +202,10 @@ def prepare(host):
         project.read_text(encoding="utf-8"),
         "    targets: [\n",
         "    targets: [\n"
+        '        .target(name: "P2CombinedOSUITests", destinations: .iOS, product: .uiTests,\n'
+        '            bundleId: "com.jibunkit.p2-combined-ui-tests", deploymentTargets: .iOS("26.0"),\n'
+        '            infoPlist: .default, sources: ["Tests/P2WidgetLocalization/P2OSSurfaceUITests.swift", "Tests/PackageWidgets/WidgetGallerySupport.swift"],\n'
+        '            dependencies: [.target(name: "JibunKit-App")]),\n'
         '        .target(name: "P2CombinedNativeTests", destinations: .iOS, product: .unitTests,\n'
         '            bundleId: "com.jibunkit.p2-combined-tests", deploymentTargets: .iOS("26.0"),\n'
         f"            infoPlist: .default, sources: [{sources}],\n"
@@ -206,6 +215,9 @@ def prepare(host):
         text,
         "    schemes: [\n",
         "    schemes: [\n"
+        '        .scheme(name: "P2CombinedOSUITests", shared: true,\n'
+        '            buildAction: .buildAction(targets: ["JibunKit-App"]),\n'
+        '            testAction: .targets(["P2CombinedOSUITests"], configuration: .debug)),\n'
         '        .scheme(name: "P2CombinedNativeTests", shared: true,\n'
         '            buildAction: .buildAction(targets: ["JibunKit-App"]),\n'
         '            testAction: .targets(["P2CombinedNativeTests"], configuration: .debug)),\n',

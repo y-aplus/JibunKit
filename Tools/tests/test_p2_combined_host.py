@@ -21,7 +21,7 @@ class P2CombinedHostTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, target)
-        for relative in MODULE.APP_EXPECTED_SOURCES + MODULE.NATIVE_EXPECTED_SOURCES:
+        for relative in MODULE.APP_EXPECTED_SOURCES + MODULE.NATIVE_EXPECTED_SOURCES + MODULE.UI_EXPECTED_SOURCES:
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             source = ROOT / relative
@@ -55,7 +55,10 @@ class P2CombinedHostTests(unittest.TestCase):
             self.assertEqual(registry.count(probe + ".definitions"), 1)
         self.assertNotIn("P2ActionProbe.definitions", registry)
         self.assertIn('name: "P2CombinedNativeTests"', project)
-        source_list = re.search(r'infoPlist: \.default, sources: \[(.*?)\]', project).group(1)
+        self.assertIn('name: "P2CombinedOSUITests"', project)
+        source_list = re.search(
+            r'name: "P2CombinedNativeTests".*?infoPlist: \.default, sources: \[(.*?)\]',
+            project, re.DOTALL).group(1)
         compiled = re.findall(r'"([^"]+)"', source_list)
         self.assertEqual(len(compiled), len(MODULE.NATIVE_EXPECTED_SOURCES))
         self.assertEqual(len(compiled), len({Path(item).name for item in compiled}))

@@ -207,6 +207,23 @@ def main():
                         "Tests/P2BluetoothScenesHost/HostNativeTests.swift",
                         "Tests/P2CombinedHost/HostNativeTests.swift"]]
                     if args.surface == "p2-combined" else []))
+            if args.surface == "p2-combined":
+                # Reset only this app's camera decision. Do not erase unrelated
+                # privacy state, and let XCUITest observe the actual OS prompt.
+                run(["xcrun", "simctl", "privacy", args.simulator_id, "reset", "camera",
+                     "com.jibunkit.app"], root, "reset-camera-privacy", limit=60)
+                run(["xcodebuild", "test", *common, "-scheme", "P2CombinedOSUITests",
+                     "-configuration", "Debug",
+                     "-destination", f"platform=iOS Simulator,id={args.simulator_id}",
+                     "-resultBundlePath", evidence / "os-ui-tests.xcresult",
+                     "-only-testing:P2CombinedOSUITests/P2OSSurfaceUITests",
+                     "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=YES",
+                     "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "os-ui-tests")
+                result["simulator_os_ui"] = {
+                    "widget": "English Counter gallery preview and home rendering",
+                    "camera": "English system permission purpose text",
+                    "physical_device": "not exercised",
+                }
             run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
                  "-configuration", "Release", "-destination", "generic/platform=iOS",
                  "CODE_SIGNING_ALLOWED=NO"], root, "release-build")

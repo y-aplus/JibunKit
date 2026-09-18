@@ -10,6 +10,8 @@ AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が�
 
 P2-9（BLE）は実機の通常通信・両owner/管理・新processの同一復元世代NotifyとCI35352655988のnative回帰を照合し、採用通常範囲を完了。OS自動起動の契機は未判定であり、起動時刻の保証はしない。P2-3はSimulator背景位置callbackを確認したが実電波等の残件を維持する。P2-11は99632e3/CI35355170934で保存した元の二session・owner・値の再接続と片側破棄/他方保持が成功。物理iPadは未確認で操作待ちではない。通常版のcold URL優先もCI35357260854で成功。
 
+P2-8/P2-10の採用通常範囲は完了。通常HTTP/通知の実機証拠、identity/pushのnative所有者・管理・delegate接続、後続共有管理変更の回帰を[最終照合](verification/2026-09-19-p2-identity-push-final-evidence.json)した。署名専用実通信は承認済み未検証であり、通信成功や正式出荷の全件文書監査とは区別する。
+
 ## 現在の外部条件
 
 0.8.5の通常CI35357260854と実機代表1–2は成功。共有443件（既存skip2）・Module11件・選択復元/cold URL優先UIと通常IPAを確認した。4a1340a/CI35365770330でnative87件・OS UI6件が成功し、Simulator geofenceの実enter/exitも確認。背景HTTPは実機で別processの同一転送に対するOS callback・owner再接続・保存・completion返却chain成立を確認した（[記録](verification/2026-09-19-background-http-device.md)）。OSの起動契機は未判定。ユーザーの停止解除を受け、0daaeb9/CI35371803883ではSimulator終了後のenter/exitを別background processとowner永続ログで確認（86.643秒、skipなし）。残件の最終照合を進める。現在の追加実機操作はない。

@@ -67,3 +67,5 @@ identity初回a5bf420/550cd74を統合し、同じ担当へ一括修正。管理
 `plan.json` の `P2-8.signed-service` / `P2-10.signed-service` だけを `approved-unverified` とする。報告書は同じscope/reasonを持つ `approved_unverified` 記録を必須とし、結果は `unverified-approved-exclusion` に固定する。除外項目をpassed evidenceへ混ぜること、一般のownership/integration/device/docsへ同じ免除を付けることは拒否する。既存source時点の報告書は当時の計画に対する履歴であり、新しい最終報告書では変更後の記録を用いる。
 
 親統合後のdelivery positive/negative試験21件とplan検査が成功。通常構成の代表証拠の最終照合は残し、P2-8/P2-10をこの承認だけでcompleteへ変更しない。
+
+親の最終照合で、6beb877のHTTP/通知実機記録と対象ファイルの差分なし、c4703a1のidentity/push/host差分なし、後続管理変更のCI35357260854/35365770330を確認した。旧報告の「Sources全体が不変」という記載は当時の境界へ限定し直した。新最終reportはci stageとdelivery21試験に成功し、採用通常範囲をcompleteとした。署名専用実通信未検証と正式release文書監査は引き続き別扱い。

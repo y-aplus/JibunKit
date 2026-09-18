@@ -735,10 +735,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "外部データidentity・同期共存",
       "existing": "owner/container/account/localIDと世代を分離、native CloudKit private zone adapter、停止後削除/復元/account切替。共有9件・統合native6件/host構成をCI35249566535/35253192466で検証。",
-      "remaining": "署名専用の実通信は承認済み未検証（signed-service）。通常構成のowner隔離・管理・復帰の既存証拠を最終照合する。通信成功へ読み替えない。",
+      "remaining": "なし（採用通常範囲）。署名専用CloudKit/APNs実通信はsigned-serviceの承認済み未検証として残す。2026-09-19-p2-identity-push-final-evidence.jsonで通常範囲のsource別証拠と後続差分を照合。正式出荷の文書全件監査は別工程。",
       "deferred": "任意既存container/schemaの自動移行・汎用同期サービス",
       "criteria": [
         {
@@ -836,10 +836,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "APNs・必要な通知extension",
       "existing": "app token/Feature server identity、Runtime所有配送・cold admission・失敗回復・整数保持、実delegate接続。共有9件・native3件・host3件をCI35249566535/35253192466で検証。",
-      "remaining": "署名専用の実通信は承認済み未検証（signed-service）。通常構成のowner隔離・管理・復帰の既存証拠を最終照合する。通信成功へ読み替えない。",
+      "remaining": "なし（採用通常範囲）。署名専用CloudKit/APNs実通信はsigned-serviceの承認済み未検証として残す。2026-09-19-p2-identity-push-final-evidence.jsonで通常範囲のsource別証拠と後続差分を照合。正式出荷の文書全件監査は別工程。",
       "deferred": "複数backendを横断する汎用push基盤",
       "criteria": [
         {

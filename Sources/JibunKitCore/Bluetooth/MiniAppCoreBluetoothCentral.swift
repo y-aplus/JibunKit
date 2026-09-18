@@ -132,8 +132,11 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     }
     public func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral,
                                advertisementData: [String: Any], rssi RSSI: NSNumber) {
-        if peripherals[peripheral.identifier] !== peripheral {
-            trace("discovered (delegate unchanged)", peripheral)
+        // Nearby advertisements must not evict connection evidence from a
+        // bounded diagnostic log. Only report an active object's replacement.
+        if generations[peripheral.identifier] != nil,
+           peripherals[peripheral.identifier] !== peripheral {
+            trace("discovered alternate object; active object retained", peripheral)
         }
         // Discovery is not an ownership transfer. In particular, ongoing scans
         // must not replace a delegate installed by a connection.

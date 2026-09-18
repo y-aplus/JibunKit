@@ -73,3 +73,9 @@ Sensorを無効のままAccessory単独で接続・購読し、`11 12`受信成�
 ユーザーは屋外で周囲の広告が多数表示されるためscan停止を希望。scan停止は接続解除ではない旨を案内。修正前のdelegate/object競合の内部原因はtrace未受領のため確定しない。逆順やcold復元等をこの成功から推定しない。
 
 同じ候補でAccessoryのscan停止後に`17 18`を受信。明示切断後、同じAndroidへ再接続・service/characteristic再検索・再購読し`19 1A`受信に成功。scan停止と接続寿命の分離、および通常切断/再接続後の通知再開を実機確認。cold復元・OSによる自動再接続はこの手順の対象ではない。
+
+## 受領traceの判定と記録量の修正
+
+受領した80行は周囲の未接続機器のdiscovered記録が大半で、両owner併用時の記録は保持枠から失われていた。残存traceでは05:47:04ZにAccessoryのcancel/disconnected、05:47:19–20Zに同じperipheral objectの別generationでconnect/connected、05:48:28–29Zにnotify要求/成功callback、05:48:40Zにerror=false・notifying=true・2bytesのvalue callbackを確認。delegateはAccessoryで一致。これらは通常切断・再接続・通知再開を裏付けるが、元不具合のdelegate横取りやA/B object共有を確定する証拠ではない。周囲の機器ID・メモリアドレスは公開文書へ転載しない。
+
+診断sinkの発見記録を、接続中identifierへ別objectが返された場合だけに限定する。接続/購読/callback/切断記録は維持し、通常周辺広告で重要な記録を押し出さない。製品動作は変更せず、この記録修正だけのIPA入替えや成功手順の再試験は要求しない。次の必要なCIへまとめる。

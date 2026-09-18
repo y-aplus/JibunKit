@@ -22,17 +22,21 @@ let adapter = MiniAppARSessionAdapter(
     runOptions: [.resetTracking, .removeExistingAnchors],
     restartOptions: [],
     eventBridge: events,
-    isSupported: { ARWorldTrackingConfiguration.isSupported }
+    isSupported: { ARWorldTrackingConfiguration.isSupported },
+    installForwarder: { delegate.install($0) },
+    removeForwarder: { delegate.remove(generation: $0) }
 )
 ```
 
-adapterは`session.delegate`を設定しない。Featureのdelegateがframe／anchorを通常どおり受け、次の三つだけbridgeへforwardする。
+adapterは`session.delegate`を設定しない。Featureのdelegateがframe／anchorを通常どおり受け、各runで受け取る`MiniAppARSessionEventForwarder`へ次の三つだけforwardする。
 
-- `sessionWasInterrupted` → `events.interruptionBegan()`
-- `sessionInterruptionEnded` → `events.interruptionEnded()`
-- `didFailWithError` → `events.runtimeFailed(reason:canRestart:)`
+- `sessionWasInterrupted` → `forwarder.interruptionBegan()`
+- `sessionInterruptionEnded` → `forwarder.interruptionEnded()`
+- `didFailWithError` → `forwarder.runtimeFailed(reason:canRestart:)`
 
-またはFeatureがframe／anchor callbackを必要としない場合だけbridge自身をdelegateとして設定できる。delegate callback queueはFeatureの責任であり、bridgeのforward入口は任意queueから値だけを`MainActor`へ渡す。`ARSession`、frame、anchorはそのhopを越えて保持・送信しない。
+forwarderはrun generationを値として固定する。旧delegate処理が保持したforwarderを停止後または次runで呼んでも、新generationへ付け替えず破棄する。bridge自身をdelegateにする場合もcallback入口でgenerationを固定してから`MainActor`へ渡すため、`Task`実行待ち中のstop/new runで再ラベルしない。delegate callback queueはFeatureの責任であり、`ARSession`、frame、anchorはactor hopを越えて保持・送信しない。
+
+開始済みoperationの停止closureはadapterではなく、開始時のsession、bridge、forwarder generationを強く保持する。Featureがadapter参照を先に解放しても、`pause()`、event stream終了、camera解放が完了するまでcleanupを省略しない。
 
 ## sceneと寿命
 
@@ -69,12 +73,12 @@ ARKitが自動的に回復できる具体条件やreset方針をCoreは決めな
 
 ## 試験境界
 
-Core unitではscene固定、許可待ち離脱、開始／停止join、generation、中断復帰／失敗、A/B camera競合と他owner保持を検証する。AR bridgeのfake eventは所有状態の試験であり、実trackingではない。
+Core unitではscene固定、許可待ち離脱、開始／停止join、callback入口generation、旧forwarder拒否、adapter解放後cleanup、中断復帰／失敗、A/B camera競合と他owner保持を検証する。AR bridgeのfake eventは所有状態の試験であり、実trackingではない。
 
 iPad／iPhone SimulatorではARKitのcompile、通常Feature接続、unsupported拒否、fake eventを確認できる。Simulator上の`ARSession`生成、delegate呼出し、Swiftオブジェクトは実camera、実frame、実中断の証拠ではない。
 
-物理ARKit対応端末では通常Feature UIからcamera同意とOS許可を通し、実`ARFrame`、停止後のcamera解放、写真／scanとの直列切替、OS中断と復帰、background停止後の明示再開、Feature無効化／削除時の他owner保持、同一IPA上書き／Refreshを別途確認する。端末型、OS、許可状態、中断再現操作を証拠に記録する。
+物理ARKit対応端末では通常Feature UIからcamera同意とOS許可を通し、実`ARFrame`、停止後のcamera解放、写真／scanとの直列切替、OS中断と復帰、background停止後の明示再開、Feature無効化／削除時の他owner保持、同一IPA上書き／Refreshを手動シナリオで別途確認する。物理専用XCTestを通常Simulator targetへ混在させない。端末型、OS、許可状態、中断再現操作を証拠に記録する。
 
 ## 親hostに必要な接続
 
-親所有のhostは`MiniAppSceneActivityDispatcher`の現在connection IDをrootへ公開し、SwiftUI environment `miniAppSceneActivityID: UUID?`として注入する。`Tests/P2AR/P2ARProbe.swift`と`P2ARNativeTests.swift`を診断targetへ追加し、probe definitionを通常registryへ含める。既存の`NSCameraUsageDescription`合成がAR targetにも入ることを生成後Info.plistで確認する。ARを任意Featureとして扱い非対応端末でもhostを提供する場合、`UIRequiredDeviceCapabilities=arkit`を一律追加せずconfigurationの`isSupported`で拒否する。`Sources/JibunKit`、`Project.swift`、workflow、plan／ledgerはこの担当変更に含めない。
+親所有のhostは`MiniAppSceneActivityDispatcher`の現在connection IDをrootへ公開し、SwiftUI environment `miniAppSceneActivityID: UUID?`として注入する。`Tests/P2AR/P2ARProbe.swift`と`P2ARNativeTests.swift`を診断targetへ追加し、probe definitionを通常registryへ含める。iOS条件の`Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift`はmacOS shared testでは実行されないため、同じsourceをiOS native test targetへ明示収録する。既存の`NSCameraUsageDescription`合成がAR targetにも入ることを生成後Info.plistで確認する。ARを任意Featureとして扱い非対応端末でもhostを提供する場合、`UIRequiredDeviceCapabilities=arkit`を一律追加せずconfigurationの`isSupported`で拒否する。`Sources/JibunKit`、`Project.swift`、workflow、plan／ledgerはこの担当変更に含めない。

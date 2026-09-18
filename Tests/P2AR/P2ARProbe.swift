@@ -19,14 +19,8 @@ final class P2ARFeature {
     let eventBridge: MiniAppARSessionEventBridge
     let adapter: MiniAppARSessionAdapter
     let delegate: P2ARFeatureDelegate
+    let lifetime: MiniAppFeatureLifetime
     private let consentGate: P2ARConsentGate
-
-    lazy var lifetime = MiniAppFeatureLifetime(id: id) { [weak self] runtime in
-        guard let self else { return }
-        try self.owner.connect(to: runtime)
-        self.state.runtimeGeneration += 1
-        self.state.status = "AR利用可能"
-    }
 
     init(
         id: MiniAppID = MiniAppID("p2-ar"),
@@ -38,14 +32,20 @@ final class P2ARFeature {
         self.state = state
         let gate = P2ARConsentGate(owner: id)
         consentGate = gate
-        owner = MiniAppCaptureOwner(
+        let captureOwner = MiniAppCaptureOwner(
             id: id, coordinator: coordinator, permissions: permissions,
             consent: { [gate] in gate.allows($0) }
         )
+        owner = captureOwner
+        lifetime = MiniAppFeatureLifetime(id: id) { [captureOwner, state] runtime in
+            try captureOwner.connect(to: runtime)
+            state.runtimeGeneration += 1
+            state.status = "AR利用可能"
+        }
         let arSession = ARSession()
         let arConfiguration = ARWorldTrackingConfiguration()
         let bridge = MiniAppARSessionEventBridge()
-        let featureDelegate = P2ARFeatureDelegate(state: state, events: bridge)
+        let featureDelegate = P2ARFeatureDelegate(state: state)
         session = arSession
         configuration = arConfiguration
         eventBridge = bridge
@@ -56,9 +56,23 @@ final class P2ARFeature {
             runOptions: [.resetTracking, .removeExistingAnchors],
             restartOptions: [],
             eventBridge: bridge,
-            isSupported: { ARWorldTrackingConfiguration.isSupported }
+            isSupported: { ARWorldTrackingConfiguration.isSupported },
+            installForwarder: { [weak featureDelegate] in featureDelegate?.install($0) },
+            removeForwarder: { [weak featureDelegate] in featureDelegate?.remove(generation: $0) }
         )
         arSession.delegate = featureDelegate
+        captureOwner.stateChanged = { [weak state] captureState in
+            switch captureState {
+            case .requesting: state?.status = "AR許可確認中"
+            case .starting: state?.status = "AR開始中"
+            case .running: state?.status = "AR実行中"
+            case .stopping(let reason): state?.status = "AR停止中: \(reason)"
+            case .suspended(let reason): state?.status = "AR中断/停止: \(reason)"
+            case .failed(let failure): state?.status = "AR失敗: \(failure)"
+            case .stopped: state?.status = "AR Feature停止"
+            case .idle: state?.status = "AR利用可能"
+            }
+        }
     }
 
     var definition: MiniAppDefinition {
@@ -69,6 +83,10 @@ final class P2ARFeature {
                 .init(id: "camera", title: "カメラ", purpose: "前景AR表示に使います",
                       deniedBehavior: "ARSessionを開始しません")
             ],
+            onConsentChange: { [weak captureOwner = owner] permissionID, decision in
+                guard permissionID == "camera", decision != .allowed else { return }
+                Task { @MainActor in await captureOwner?.suspend(.featureStopped) }
+            },
             onSceneActivityChange: { [weak self] in self?.owner.receive($0) }
         ) { [self] _ in P2ARView(feature: self) }
     }
@@ -115,12 +133,26 @@ private final class P2ARConsentGate {
 /// anchor callbacks, forwarding only lifetime events to the Core bridge.
 final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendable {
     private weak var state: P2ARState?
-    private let events: MiniAppARSessionEventBridge
+    private let lock = NSLock()
+    private var forwarder: MiniAppARSessionEventForwarder?
 
-    init(state: P2ARState, events: MiniAppARSessionEventBridge) {
+    init(state: P2ARState) {
         self.state = state
-        self.events = events
         super.init()
+    }
+
+    nonisolated func install(_ value: MiniAppARSessionEventForwarder) {
+        lock.withLock { forwarder = value }
+    }
+
+    nonisolated func remove(generation: UUID) {
+        lock.withLock {
+            if forwarder?.generation == generation { forwarder = nil }
+        }
+    }
+
+    private nonisolated func currentForwarder() -> MiniAppARSessionEventForwarder? {
+        lock.withLock { forwarder }
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
@@ -133,15 +165,15 @@ final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendabl
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
-        events.interruptionBegan()
+        currentForwarder()?.interruptionBegan()
     }
 
     func sessionInterruptionEnded(_ session: ARSession) {
-        events.interruptionEnded()
+        currentForwarder()?.interruptionEnded()
     }
 
     func session(_ session: ARSession, didFailWithError error: any Error) {
-        events.runtimeFailed(reason: String(describing: error), canRestart: false)
+        currentForwarder()?.runtimeFailed(reason: String(describing: error), canRestart: false)
     }
 }
 

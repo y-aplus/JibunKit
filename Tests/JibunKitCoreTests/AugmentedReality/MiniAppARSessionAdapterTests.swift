@@ -39,21 +39,67 @@ final class MiniAppARSessionAdapterTests: XCTestCase {
 
     func testFeatureForwardedEventsUseOneGenerationAndFinishOnEnd() async throws {
         let bridge = MiniAppARSessionEventBridge()
-        let events = try bridge.begin()
+        let (events, forwarder) = try bridge.begin()
         var iterator = events.stream.makeAsyncIterator()
-        bridge.interruptionBegan(reason: "camera unavailable")
+        forwarder.interruptionBegan(reason: "camera unavailable")
         let interrupted = await iterator.next()
-        bridge.interruptionEnded()
+        forwarder.interruptionEnded()
         let resumed = await iterator.next()
-        bridge.runtimeFailed(reason: "reset", canRestart: true)
+        forwarder.runtimeFailed(reason: "reset", canRestart: true)
         let failed = await iterator.next()
-        bridge.end()
+        bridge.end(generation: events.generation)
         let ended = await iterator.next()
 
         XCTAssertEqual(interrupted, .interrupted(generation: events.generation, reason: "camera unavailable"))
         XCTAssertEqual(resumed, .interruptionEnded(generation: events.generation))
         XCTAssertEqual(failed, .runtimeFailed(generation: events.generation, reason: "reset", canRestart: true))
         XCTAssertNil(ended)
+    }
+
+    func testDelayedCallbackAndRetainedOldForwarderCannotRelabelIntoNewRun() async throws {
+        let bridge = MiniAppARSessionEventBridge()
+        let (oldEvents, oldForwarder) = try bridge.begin()
+        bridge.interruptionBegan(reason: "queued-old-callback")
+        bridge.end(generation: oldEvents.generation)
+        let (newEvents, newForwarder) = try bridge.begin()
+        var iterator = newEvents.stream.makeAsyncIterator()
+        oldForwarder.interruptionBegan(reason: "retained-old-token")
+        newForwarder.interruptionBegan(reason: "current")
+
+        let delivered = await iterator.next()
+        XCTAssertEqual(delivered, .interrupted(generation: newEvents.generation, reason: "current"))
+        XCTAssertNotEqual(oldForwarder.generation, newForwarder.generation)
+        bridge.end(generation: newEvents.generation)
+    }
+
+    func testStartedOperationStronglyKeepsCleanupAfterAdapterRelease() async throws {
+        let session = ARSession()
+        let bridge = MiniAppARSessionEventBridge()
+        let calls = ARCallCounts()
+        var adapter: MiniAppARSessionAdapter? = MiniAppARSessionAdapter(
+            session: session,
+            configuration: ARWorldTrackingConfiguration(),
+            eventBridge: bridge,
+            isSupported: { true },
+            runSession: { _, _, _ in calls.runs += 1 },
+            pauseSession: { _ in calls.pauses += 1 }
+        )
+        let operation = try XCTUnwrap(adapter).operation()
+        let owner = MiniAppCaptureOwner(
+            id: MiniAppID("ar-cleanup"), coordinator: .init(),
+            permissions: ARPermissions(), consent: { _ in true }
+        )
+        let runtime = MiniAppRuntime(); try owner.connect(to: runtime)
+        let sceneID = UUID()
+        owner.receive(.init(featureID: owner.id, sceneID: sceneID, phase: .active, isSelected: true))
+        try await owner.start(operation, sceneScope: .scene(sceneID))
+        adapter = nil
+        await owner.stop()
+
+        XCTAssertEqual(calls.runs, 1)
+        XCTAssertEqual(calls.pauses, 1)
+        let (next, _) = try bridge.begin()
+        bridge.end(generation: next.generation)
     }
 }
 
@@ -66,6 +112,12 @@ private final class ARPermissions: MiniAppCapturePermissionClient {
         requested.append(resource)
         return true
     }
+}
+
+@MainActor
+private final class ARCallCounts {
+    var runs = 0
+    var pauses = 0
 }
 
 @MainActor

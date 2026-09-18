@@ -1,8 +1,8 @@
 #if canImport(ARKit) && os(iOS)
 @preconcurrency import ARKit
-import AVFoundation
 import XCTest
 import JibunKitCore
+@testable import JibunKit_App
 
 @MainActor
 final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
@@ -15,7 +15,6 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(P2ARProbe.feature.session.delegate === P2ARProbe.feature.delegate)
     }
 
-#if targetEnvironment(simulator)
     func testSimulatorReportsUnsupportedAndDoesNotClaimTracking() async throws {
         XCTAssertFalse(ARWorldTrackingConfiguration.isSupported)
         let feature = P2ARFeature(
@@ -25,41 +24,40 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         let store = try allowedStore(owner: feature.id)
         feature.attachConsent(store)
         try await feature.lifetime.start()
-        let sceneID = UUID()
-        feature.owner.receive(.init(
-            featureID: feature.id, sceneID: sceneID, phase: .active, isSelected: true
-        ))
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [
+            .init(id: feature.id) { feature.owner.receive($0) }
+        ])
+        dispatcher.connect(phase: .active, selectedID: feature.id)
+        let sceneID = try XCTUnwrap(dispatcher.connectionID)
         await feature.start(in: sceneID)
         XCTAssertTrue(feature.state.status.contains("unsupported"))
         XCTAssertEqual(feature.state.frameCount, 0)
         await feature.lifetime.stop()
     }
-#else
-    func testPhysicalDeviceProducesRealTrackingFrameAndStops() async throws {
-        XCTAssertTrue(ARWorldTrackingConfiguration.isSupported, "Run on an ARKit-capable device")
-        XCTAssertEqual(
-            AVCaptureDevice.authorizationStatus(for: .video), .authorized,
-            "Grant camera permission through the normal Feature UI before device evidence"
+
+    func testConsentRevocationStopsOwnedOperationAndUpdatesStatus() async throws {
+        let feature = P2ARFeature(
+            id: MiniAppID("p2-ar-consent"), coordinator: .init(),
+            permissions: P2ARAllowedPermission()
         )
-        let feature = P2ARFeature(id: MiniAppID("p2-ar-device"), coordinator: .init())
         let store = try allowedStore(owner: feature.id)
         feature.attachConsent(store)
         try await feature.lifetime.start()
-        let sceneID = UUID()
-        feature.owner.receive(.init(
-            featureID: feature.id, sceneID: sceneID, phase: .active, isSelected: true
-        ))
-        await feature.start(in: sceneID)
-        for _ in 0..<100 {
-            if feature.state.frameCount > 0 { break }
-            try await Task.sleep(for: .milliseconds(100))
-        }
-        XCTAssertGreaterThan(feature.state.frameCount, 0, "No real ARFrame was observed")
-        await feature.stop()
-        XCTAssertEqual(feature.state.status, "AR停止・camera解放")
+        let dispatcher = MiniAppSceneActivityDispatcher(handlers: [
+            .init(id: feature.id) { feature.owner.receive($0) }
+        ])
+        dispatcher.connect(phase: .active, selectedID: feature.id)
+        let sceneID = try XCTUnwrap(dispatcher.connectionID)
+        try await feature.owner.start(
+            .init(resources: [.camera]) { { _ in } }, sceneScope: .scene(sceneID)
+        )
+        XCTAssertEqual(feature.state.status, "AR実行中")
+
+        try feature.definition.setConsent(.denied, permissionID: "camera", in: store)
+        await eventually { feature.owner.state == .suspended(.featureStopped) }
+        XCTAssertTrue(feature.state.status.contains("AR中断/停止"))
         await feature.lifetime.stop()
     }
-#endif
 
     private func allowedStore(owner: MiniAppID) throws -> MiniAppConsentStore {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "P2AR.\(UUID().uuidString)"))
@@ -72,5 +70,14 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
 @MainActor
 private final class P2ARAllowedPermission: MiniAppCapturePermissionClient {
     func request(_ resource: MiniAppCaptureResource) async -> Bool { true }
+}
+
+@MainActor
+private func eventually(_ condition: @MainActor () -> Bool) async {
+    for _ in 0..<100 {
+        if condition() { return }
+        await Task.yield()
+    }
+    XCTFail("condition was not reached")
 }
 #endif

@@ -4,7 +4,7 @@
 
 P2-I外部データidentity/Pushは`codex/p2-identity-push`で実装・自動試験まで進行。通常CI35249566535で共有415件（既存Keychain skip2）・Records11件・通常IPA・検索UI、診断CI35253192466でnative12件（skip0）・診断IPAを確認。実署名CloudKit通信/APNs配信は未確認のためP2-8/P2-10はpartialを維持し、main/公開版へ未統合。[証拠](verification/2026-09-18-p2-identity-push-evidence.json)。BLE/通常複数window（P2-S）は`codex/p2-ble-scenes`で実装・親レビュー中。実WindowGroup接続、管理/復元時のscene資源解放、診断host/iPad選択の準備を追加し、関連ローカル19試験が成功。BLEの取消join中の再接続などを修正し、c35afe7の診断CI35292107259でiPad実windowを含むnative9件とIPA検査が成功（11分16秒）。同sourceの通常/shared CI35292105440と追加検証35293163823はcancelled。通常runの共有scene試験で、保持したcleanupの解放前にそのjoinをawaitする試験自身のデッドロックを特定し修正。修正後b2f9a04のCI35295505063で共有24件・native13件・診断IPAが成功（11分47秒）。復元BLE ticket/診断UIを含む。通常CI35295502996は共有439件（既存skip2）・Records11件・通常IPA/buildに成功し、FilesでJSON選択後のUI遷移だけ失敗。809822a/35296983783のファイル名を対象にした限定再試験も失敗し、ログ/画面から再切り分け中。実BLE通信と実iPad確認は未実施。[作業契約](delivery/P2-ble-scenes-contract.md)。iBeacon実機はユーザーの起床後以降、継続処理code1の追加追究は停止。
 
-P2-Fの通常ARはIssue #6と既存Captureの再利用可能性を照合して採用範囲を確定し、`codex/p2-ar`で実装を開始。開始元sceneの明示束縛、native ARSession接続、旧callback世代の拒否と停止cleanup保持を追加。P2-13は既存受信処理を再利用するoptional保存専用Action extensionを採用し、Shareと共通controllerへ接続した。AR/Actionのnative試験・IPA検査を一括準備中で、P2-12/P2-13はpartialのまま、実行証拠はまだない。[契約](delivery/P2-ar-contract.md)。
+P2-Fの通常ARはIssue #6と既存Captureの再利用可能性を照合して採用範囲を確定し、`codex/p2-ar`で実装を開始。開始元sceneの明示束縛、native ARSession接続、旧callback世代の拒否と停止cleanup保持を追加。P2-13は既存受信処理を再利用するoptional保存専用Action extensionを採用し、Shareと共通controllerへ接続した。41c97f1/35298792032でAR/Action native9件（skip0）と診断IPA/取得SHA・CRCを確認（8分41秒）。実tracking/Action OS入口と後続の外観/翻訳native試験は未完のため、P2-12/P2-13はpartialのまま。[契約](delivery/P2-ar-contract.md)。
 
 P2-6はidle/外観・Spotlight選択item・Widget翻訳・採用P2権限用途説明を採用し、既存成果の再利用と追加fixtureを実装中。まだ実OS描画・自動消灯等の証拠が残りpartial。[採用契約](delivery/P2-adoption-contract.md)。
 

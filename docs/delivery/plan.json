@@ -782,7 +782,7 @@
       "state": "partial",
       "title": "BLE通常接続・背景再接続",
       "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。",
-      "remaining": "OS state restoration/cold配送は未観測。復元GATT graph・早着通知は7e4c740/CI35325946663のnative/shared試験で成功。次は診断のprocess識別と永続観測を整え、通常通信成功をOS cold復元の証拠へ拡張しない",
+      "remaining": "59f7081診断版の実機で新processのOS復元callback経由connectedと受信値2324を確認。OS自動起動か手動再入場起動かは未判定。同一世代復元Notify成功表示も未報告。復元GATT graph・早着通知のnative/shared証拠と合わせ、採用通常範囲の残件を評価する。通常通信成功だけで自動cold配送成功としない",
       "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
       "criteria": [
         {

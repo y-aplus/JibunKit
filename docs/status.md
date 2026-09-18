@@ -30,7 +30,7 @@ P2-1/P2-2の採用通常範囲はcomplete。306874fで再生/録音・写真/音
 
 **P2-Bは起動修正と背景HTTP callbackを実機確認済み。継続処理の受付失敗は直接APIでも再現し、追加追究を停止している。** SIGTRAPの起動処理を特定。再署名後の背景ID対応とFeature別の起動失敗処理を追加し、3af8e32/CI35180204806で共有393件（既存skip2）、native19件と通常検索/両IPAが成功。修正版の実機起動成功を受領。継続処理Aは受付後0/60のままで、取消表示を確認。継続処理のOS開始は未確認。位置は前景取得とホーム画面からの復帰時点でのevent増加を実機確認したが、82f61bbの時刻付き記録では開始直後active中の位置callbackと30秒後の停止を確認し、background中の位置callbackは未観測。Region/iBeaconの登録・一覧・各解除も実機確認済みで、境界通過・電波受信・cold配送は未確認。即時受付診断・時刻付き記録と取消後の遅着開始防止は8b3584a/CI35231831131で共有395件・native21件・通常検索と両IPAが成功。診断IPA公開後の実機でも即時要求・同期submit成功のみでOS開始通知がない。Appleが旧APIのエラー欠落とiOS27の非同期submitを説明しているため、新API対応と位置の永続受信記録を82f61bb/CI35235454126で一括検証。共有397件、iOS27 native24件、通常検索/両IPAが成功し診断版を公開照合済み。新APIの実機結果はcode1とduetactivityscheduler接続エラー。受付失敗の画面配送を確認したがOS開始は未確認。全体/appのBackground Refresh有効を受領し、同じhost/署名で共通処理を迂回するOS直接比較をdaa49cdへ追加。CI35238784459でnative26件と診断IPAが成功し公開GETまで確認、実機直接比較でもprefix/wildcard一致・active・Background Refresh available・低電力なしで同じcode1を受領。共通経路だけの不具合ではないが、host/署名/OSの根本原因は未確定。通常/共有は変更がない82f61bbを再利用。ユーザー指示に従い継続処理の追加診断は停止し、OS開始未確認を保持。独立した通常scheduler/URLSessionの永続受信記録は、CI35241889661のテスト構文ミスを修正し、f6f6c04/CI35243182556でnative28件・診断Release/IPAが成功。f6f6c04実機でHTTP転送要求の1秒後、active中のファイル保存成功を確認。初回はhost URLSession callbackなし。続く低速応答でbackground中のhost URLSession callback→再接続→保存→全delegate完了/host completion解放を実機確認。同一processのため終了後cold再起動は未確認。旧診断版の再試行は不要。以下のCI成功は実機起動成功を意味しない。
 
-P2-Bの初期検証として、branch `codex/p2-background-location`のsource `da62672`では[CI35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)が成功した。共有389件（既存Keychain2skip）、背景10件・位置7件のnative試験、通常検索UI、通常/診断IPAを検証。P2-3/P2-4は、実OS背景起動・位置/Region/iBeaconの実測を残すためpartial。mainの公開runtimeは0.8.3のままである。[今回の確認範囲](verification/2026-09-17-p2-background-location-device.md)。
+P2-Bの初期検証として、branch `codex/p2-background-location`のsource `da62672`では[CI35176070341](https://github.com/y-aplus/JibunKit/actions/runs/35176070341)が成功した。共有389件（既存Keychain2skip）、背景10件・位置7件のnative試験、通常検索UI、通常/診断IPAを検証。P2-3/P2-4は、実OS背景起動・位置/Region/iBeaconの実測を残すためpartial。当該CI実施時点の公開版は0.8.3。現在の公開版は冒頭の0.8.4を参照。[今回の確認範囲](verification/2026-09-17-p2-background-location-device.md)。
 
 ## 0.8.0公開版
 
@@ -78,3 +78,7 @@ e984d44の診断IPAで一括実機確認が完了。Widget/Control各二候補�
 ## 0.8.2のP2-L
 
 Live Activities/AlarmKitの共通所有・寿命・照合、通常管理/復元接続を実装。共通326件（skip2）、Records11件、独立A/B/Combinedのapp/Widget/metadata、Live native4/Alarm native2、通常診断host管理UI1、通常/診断IPAが成功。OS開始/更新/停止・Alarm標準stop callback・片側管理/復元・通常版復帰の一括実機を確認。Live Bが上書き前に期待230ではなく200と表示された観測は原因未特定で、210からの限定再確認では再現しなかった。P2-5はpartialを維持。0.8.2/build12はCI35075825942と取得IPA検査が成功し、公開IPA/ZIPの再取得まで完了。実4Featureの非初期値/世代について片側管理・JSON復元後の他方保持を自動試験で確認した。[一括実機手順](verification/2026-09-16-p2-continuing-surfaces-device.md)・[source別証拠](verification/2026-09-16-p2-continuing-surfaces.md)。
+
+## 0.8.4後の進行中検証
+
+BLEは59f7081診断版で、新processにおけるOS復元callback経由connectedと受信値2324を実機確認した。OS自動起動の契機および復元Notifyの同一世代成功表示は未確認。詳細は[追跡記録](verification/2026-09-18-ar-followup.md)。P2-6の実OS英語Widget/代表camera許可文言をCI35347692100で検証中。P2-9とP2-5は既存証拠と採用条件の照合を別スレッドで進めており、追加実機操作は要求していない。

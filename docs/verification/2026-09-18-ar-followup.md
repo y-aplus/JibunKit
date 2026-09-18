@@ -28,3 +28,9 @@ CI35335272799の診断compile失敗（internal scene initializer）は、診断�
 ARはrunごとのsession/delegateへ分離し、旧run callbackとbeganなしendを拒否。重複開始時に既存runを保持し、中断完結後に次sequenceを受け付ける試験を追加した。BLEは接続begin/completed/failedを分離、復元通知のowner/generation照合、保存120件/message512文字・揮発80件を検証する。表示は新processでの復元callback観測であり、OS自動cold起動の証明とはしない。
 
 Core変更は既存の任意diagnostics sink（通常nil）へのwillRestoreState trace追加のみ。通常通信・公開APIの動作変更はない。ローカル生成4試験成功。p2-combinedで両診断・native/shared・Release/IPAを一括検証する。実機で未検証の新観測を、以前のAR/BLE実機成功へ上乗せしない。
+
+## 統合CI結果
+
+59f7081b2830f48691d4cc2c41891f54ce9460d2 / CI35342293484は11分55秒で成功。native79件、共有BLE/window24件、failure0/skip0、Release/IPA検査成功。取得IPA6,459,039 bytes、SHA-256 `2b381351fbbf49c4a7becc7dc0c1662105ee505a2d65323bd97d9f14a9d646e2`、全entry CRC照合済み。ARの世代相関・重複開始・複数中断、BLEの接続成功限定・世代照合・永続上限の追加試験を含む。実OS interruptionや自動cold起動の成功ではない。
+
+診断IPAはartifactとして保持し、新しい有効な実機手順が確定するまで追加インストールを要求しない。次はBLE復元の再現可能なOS条件と、P2-6/P2-13の古いremaining/実際の未検証の照合をread-onlyで並行確認する。根拠のない時間待ちを実機タスクにはしない。

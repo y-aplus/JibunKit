@@ -239,10 +239,14 @@ class DeliveryTests(unittest.TestCase):
             delivery.validate_plan(self.plan)
 
     def test_pending_conditional_scope_cannot_be_complete_or_enter_final_ci(self):
+        unit = next(u for u in self.plan["units"] if u["id"] == "P2-12")
+        # Exercise an undecided fixture even after the real plan adopts AR.
+        unit["scope_decision"] = {"status": "pending", "reason": "", "adopted_scope": ""}
+        unit["state"] = "partial"
         report = self.report("P2-F", with_device=True)
         with self.assertRaisesRegex(ValueError, "scope decision pending"):
             delivery.validate_report(self.plan, report, "ci")
-        next(u for u in self.plan["units"] if u["id"] == "P2-12")["state"] = "complete"
+        unit["state"] = "complete"
         with self.assertRaisesRegex(ValueError, "undecided scope"):
             delivery.validate_plan(self.plan)
 

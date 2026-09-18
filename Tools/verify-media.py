@@ -230,6 +230,17 @@ def main():
                      "-only-testing:P2CombinedOSUITests/P2OSSurfaceUITests",
                      "-parallel-testing-enabled", "NO", "CODE_SIGNING_ALLOWED=YES",
                      "CODE_SIGN_IDENTITY=-", "CODE_SIGN_STYLE=Manual"], root, "os-ui-tests")
+                ui_summary = json.loads(run([
+                    "xcrun", "xcresulttool", "get", "test-results", "summary",
+                    "--path", evidence / "os-ui-tests.xcresult"], root,
+                    "os-ui-summary", limit=60))
+                (evidence / "os-ui-summary.json").write_text(
+                    json.dumps(ui_summary, indent=2), encoding="utf-8")
+                if (ui_summary.get("result") != "Passed"
+                        or ui_summary.get("passedTests") != 2
+                        or ui_summary.get("failedTests") != 0
+                        or ui_summary.get("skippedTests") != 0):
+                    raise ValueError("Expected two passing OS UI tests without skips")
                 result["simulator_os_ui"] = {
                     "widget": "English Counter gallery preview and home rendering",
                     "camera": "English system permission purpose text",

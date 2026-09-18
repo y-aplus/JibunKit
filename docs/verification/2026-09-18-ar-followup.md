@@ -45,3 +45,11 @@ Action/Shareの差は入口presentationで、provider loader/保存/取消は共
 ## BLE終了試験の準備
 
 ユーザーはFast App Termination項目があると回答。Apple DTSの自然終了を模した復元試験案（https://developer.apple.com/forums/thread/840468）を根拠に、まず設定を変更せず診断版で接続・購読を準備する。tag p2-ble-restoration-20260918へ59f7081の検証済みIPAを公開し、公開URLから再取得したSHA-256が上記2b381351...と一致。終了・OS復元はまだ未実施。P2-6 OS UI試験はSimulatorのAR非対応判定がpermission要求を妨げるため、投入前に診断入口を修正中。
+
+## BLE実機・新process復元の観測
+
+ユーザーは診断版で購読・2122受信後、「アプリの高速終了」を用いた手順を実施し、受信値2324と「新processでOS復元callbackからconnectedを確認（OSの起動契機は未判定）」を報告した。新processでOS復元callback経由の接続復元と最終受信値を確認。OS自動起動か手動再入場による起動かは未判定、同一世代の復元Notify判定表示は未報告なので、その成功までは加算しない。OFFへ戻す手順は案内済み。
+
+先行記録の「ユーザーはFast App Termination項目があると回答」は「はい」の帰属を取り違えた記録。後にユーザーが「アプリの高速終了」という日本語項目の存在を明示確認した。日本語名は実機操作記録 https://qiita.com/Shimokita/items/b650ae070b758f3635e9 でも確認した。
+
+P2-6は実OS Widget英語表示と代表camera許可文言のSimulator UI試験を統合。camera文言は診断専用の実permission APIを使い、ARKit hardware support判定に遮られない入口とする。通常ARの同意/所有権/非対応判定を変更しない。生成・runnerローカル11試験成功。OS UI2件の成功・skip0を必須とし、一括p2-combined CIで検証する。

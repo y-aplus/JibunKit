@@ -14,7 +14,7 @@
   "dependencies": {
     "P2-I": "Inherited afb8f50. Normal/shared35249566535 and native35253192466 passed. Actual signed CloudKit/APNs communication remains open and is not accepted by this wave."
   },
-  "planned_ci_runs": 2,
+  "planned_ci_runs": 3,
   "budget_exception": "",
   "jobs": [
     {
@@ -79,7 +79,7 @@
       "id": "35292107259",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35292107259",
       "source": "c35afe778fa9068721fb4235c4769c3aad551296",
-      "conclusion": "dispatched; completion evidence pending, not passed"
+      "conclusion": "success: actual iPad Simulator native9/9, zero skips/failures; real second-session creation/delivery/destruction and restore resource tests passed. Release IPA verified. Job11m16 including setup/upload."
     }
   ],
   "evidence": [
@@ -262,6 +262,16 @@
       "observation": "Normal host A/B real ASWebAuthenticationSession callback, OS B cancellation and retained A completed result passed128.630s. Prior independent native5 proof retained separately.",
       "review": "Selected normal-host method passed; callbacks require Return to App link and proper owner; B uses OS close control. Authentication preparation did not fail this run.",
       "reuse_reason": "Prior source evidence retained, not a rerun. Core Audio/Capture, storage/schema/Feature management/backup/widgets/intents/network unchanged from306874f. Host scene registration and scanner presentation anchor changed; fullScreen/re-presentation/scene disconnect native regressions and normal notification routing UI passed in repair run35102558612. Existing physical recording/video success is scoped to306874f. Release candidate runtime/tests/package identical to a142108; only3bundle versions/build and workflow expectations plus documentation changed. Original evidence source preserved; no physical rerun claim. P2-B delta against559e95e adds background/location Core and diagnostic fixtures plus optional consent-change hook. Existing notification/inbox/Web/widget/intent/storage/presentation/generator runtime paths and identifiers are unchanged. Shared tests rerun. Consent picker keeps the existing choice UI; saved-consent-before-hook/failure denial is newly tested by P2LocationNativeTests; prior manual management success covers existing controls only, not new location effects. Launch repair retains prior successful physical behavior only for unchanged features; new failed-owner start gate and host labels are pending full shared/native and normal Search regression. It does not claim the crashed P2 candidate works on device. P2-I adds isolated identity/push modules and delegate callbacks; existing Feature UI/storage/metadata, notification tap/presentation and web implementations are unchanged from inherited P2-B. Ordinary host navigation and full shared tests rerun; no signed APNs/CloudKit success inferred. P2-S changes add BLE and window resource ownership; this retained evidence describes the unchanged original capability only. New management/restore/window behavior is separately scheduled and is not inferred from these old results."
+    },
+    {
+      "criterion": "P2-11.integration",
+      "kind": "simulator",
+      "source": "c35afe778fa9068721fb4235c4769c3aad551296",
+      "result": "passed",
+      "reference": "https://github.com/y-aplus/JibunKit/actions/runs/35292107259",
+      "observation": "iPad Simulator actually created a second window; actual root registry routed A/B separately, destroyed the addressed window and retained the other connection. Native9 methods matched immutable source, zero skips/failures.",
+      "review": "Real UIKit/WindowGroup operation, not two standalone Swift objects. Physical iPad and OS session restoration remain device checks.",
+      "reuse_reason": "Post-dispatch changes are Bluetooth Core/diagnostic UI and verification workflow; window implementation and native host tests unchanged."
     }
   ],
   "deferred_device": {
@@ -335,6 +345,12 @@
       "inputs_and_filters": "native-surface.yml surface=ble-scenes ios_major=26; required iPad Simulator, all Bluetooth/scene/host tests, diagnostic Release IPA. BLE uses injected fake for lifecycle, no wireless claim.",
       "expected_elapsed_minutes": 24,
       "estimate_basis": "Previous combined native35253192466 job13m27 including setup/upload; reserve10m for iPad two-window transitions and new test sources. Test/stage timeouts remain bounded."
+    },
+    {
+      "id": "native-followup",
+      "inputs_and_filters": "native-surface.yml surface=ble-scenes ios_major=26; adds swift test --filter MiniAppBluetoothCoordinatorTests|MiniAppWindowSceneRegistryTests before all native tests and diagnostic IPA",
+      "expected_elapsed_minutes": 24,
+      "estimate_basis": "Measured first native run11m16; reserve up to12m for shared Swift compilation/tests and diagnostic UI follow-up. No duplicate normal IPA/UI run because new product changes are confined to BLE Core plus probe; first normal validation remains pending."
     }
   ],
   "planned_device_checks": [
@@ -348,6 +364,18 @@
   "review_pending": false,
   "post_dispatch_changes": {
     "source": "4be1b71",
-    "scope": "Restored Bluetooth connection ticket lookup plus buffering until service runtime admission; two new unit tests. Separate diagnostic UI follow-up in progress. These changes are not included in the dispatched c35afe7 runs and require later validation."
+    "scope": "Restored BLE ticket lookup and admission buffering, configurable UUID/hex diagnostic UI/results, validation tests. Group into third planned run with targeted shared Core tests; not covered by first run."
+  },
+  "native_verification": {
+    "source": "c35afe778fa9068721fb4235c4769c3aad551296",
+    "run": "35292107259",
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0,
+    "ipa_crc": "passed",
+    "ipa_sha256": "7e8c693ab92f1c2be4f30c75cdec89455beeb2dfdd8cdc4b040dae68a613a90d",
+    "app_version": "0.8.3/build13",
+    "physical_radio": "not tested",
+    "physical_iPad": "not tested"
   }
 }

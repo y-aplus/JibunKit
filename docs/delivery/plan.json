@@ -915,8 +915,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "通常ARの採否と採用範囲",
-      "existing": "通常前景ARを採用しARSession接続/scene束縛/停止/世代試験成功。c66b624実機でframe受信・離脱停止・再開/明示停止を確認。。ddb0f83/CI35336219498 native17件成功、実機でARと同一画面camera contenderの拒否/明示切替/B停止後A暗黙再開なし/A明示再開を確認",
-      "remaining": "OS delegate由来のinterruption/復帰の観測を既存native世代試験と区別して評価。実camera競合の代表確認は完了。高度world state共有は採用範囲外として理由を保持",
+      "existing": "通常前景ARを採用しARSession接続/scene束縛/停止/世代試験成功。c66b624実機でframe受信・離脱停止・再開/明示停止を確認。ddb0f83/CI35336219498 native17件成功、実機でARと同一画面camera contenderの拒否/明示切替/B停止後A暗黙再開なし/A明示再開を確認",
+      "remaining": "実OSが稼働中ARSessionへinterruption began/endedを配送し同一runでframeが復帰する一点は未観測。通常実AR/frame・scene離脱停止/明示再開・実camera競合とnative世代/復帰条件/失敗解放は検証済み、既知の実装不足なし。ホーム移動は能動停止なので代用せず、iPad実機準備や着信/高負荷の反復を現在のユーザー操作待ちにしない。",
       "deferred": "高度world state/長期再位置合わせ",
       "criteria": [
         {

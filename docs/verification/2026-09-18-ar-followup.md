@@ -74,3 +74,8 @@ BLEの過去process完全証拠欄80028f7と再接続負試験9475781を統合�
 複数windowは選択FeatureがAppNavigationのメモリだけに保持される不足を発見。c8e5de3で通常MiniAppSceneRootへscene別選択IDのSceneStorageを追加し、復元は登録・有効状態を確認する既存navigation経路へ接続する。任意NavigationPathの自動保存は追加しない。実OS二windowの異なるowner/countを保存し、background確認→終了→再起動→session/owner/count復元→片側破棄他方保持を追加OS UI試験で確認する。
 
 生成/runner/台帳ローカル31試験成功。次はp2-combined一回で追加BLE native2件とOS UI計3件、診断Release/IPAを検証。前回全体18分14秒（native6分05秒/OS UI3分58秒/Release3分21秒）に対し追加window UI3〜4分、準備upload込み25分内を見込む。通常製品IPAの最終検証はこのwindow経路を確認した後の出荷境界へまとめ、未変更のFiles不安定試験を同時に再実行しない。
+
+
+## 残るOS観測の限定
+
+独立reviewでP2-3/P2-4/P2-12の既知の実装不足は見つからなかった。ARは通常実camera/frame/明示停止再開とnative中断相関を再利用し、残件を実OS delegate中断→終了→同run frame復帰の未観測へ限定する。scene離脱による能動pauseは代用しない。着信・高負荷の反復や、ユーザーが見送ったiPad準備を新たな操作待ちにしない。位置は既存前景callback/監視登録解除を繰り返さず、Simulatorの実背景配送が成立するかを投入前に確認する。通常schedulerの任意時間内配送をCI成功条件にせず、継続処理code1の追加追究停止指示も維持する。

@@ -961,9 +961,9 @@
         }
       ],
       "scope_decision": {
-        "status": "pending",
-        "reason": "",
-        "adopted_scope": ""
+        "status": "adopted",
+        "reason": "Issue #6 current recommendation and source inspection: existing CaptureCoordinator/Owner, permission, scene activity and lifetime provide arbitration/stop/join; limited AR adapter and explicit originating-scene binding are sufficient without a second resource framework. See docs/delivery/P2-ar-contract.md. Implementation/OS verification pending.",
+        "adopted_scope": "Single foreground ARSession; native configuration/run options/delegate/frame freedom; start/explicit stop/interruption recovery; originating-scene stop and camera arbitration with other Features. Advanced world-map persistence/relocalization/background AR and simultaneous camera sessions remain outside this adopted scope."
       }
     },
     {

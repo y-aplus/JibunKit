@@ -30,6 +30,7 @@ private struct MiniAppSceneRoot: View {
     @State private var navigation = AppNavigation()
     @State private var registration: UUID?
     @State private var activity = MiniAppRegistry.makeSceneActivityDispatcher()
+    @State private var activityConnectionID: UUID?
     @State private var windowConnection = MiniAppWindowConnectionBridge(registry: AppSceneRouting.windows)
     @Environment(\.scenePhase) private var scenePhase
 
@@ -44,6 +45,7 @@ private struct MiniAppSceneRoot: View {
     var body: some View {
         MiniAppListScreen(navigation: navigation)
             .environment(\.miniAppConsentStore, MiniAppRegistry.consents)
+            .environment(\.miniAppSceneActivityID, activityConnectionID)
             .environment(\.miniAppWindowRegistry, AppSceneRouting.windows)
             .environment(\.miniAppWindowConnection, windowConnection.connection)
             // SwiftUI delivers this URL to a particular scene; keep that target.
@@ -57,12 +59,14 @@ private struct MiniAppSceneRoot: View {
             }
             .background(MiniAppSceneConnection(connect: {
                 activity.connect(phase: activityPhase, selectedID: navigation.activeID)
+                activityConnectionID = activity.connectionID
                 guard registration == nil else { return }
                 registration = AppSceneRouting.shared.register(isActive: scenePhase == .active) { [weak navigation] route in
                     navigation?.openNotificationRoute(route)
                 }
             }, disconnect: {
                 activity.disconnect()
+                activityConnectionID = nil
                 windowConnection.disconnect()
                 if let registration { AppSceneRouting.shared.unregister(registration) }
                 registration = nil

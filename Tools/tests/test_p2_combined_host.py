@@ -21,7 +21,8 @@ class P2CombinedHostTests(unittest.TestCase):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / relative, target)
-        for relative in MODULE.APP_EXPECTED_SOURCES + MODULE.NATIVE_EXPECTED_SOURCES + MODULE.UI_EXPECTED_SOURCES:
+        for relative in (MODULE.APP_EXPECTED_SOURCES + MODULE.NATIVE_EXPECTED_SOURCES
+                         + MODULE.UI_EXPECTED_SOURCES + MODULE.COLD_UI_EXPECTED_SOURCES):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             source = ROOT / relative
@@ -56,6 +57,8 @@ class P2CombinedHostTests(unittest.TestCase):
         self.assertNotIn("P2ActionProbe.definitions", registry)
         self.assertIn('name: "P2CombinedNativeTests"', project)
         self.assertIn('name: "P2CombinedOSUITests"', project)
+        self.assertIn('name: "P2LocationColdOSUITests"', project)
+        self.assertIn('Tests/P2LocationColdOSUI/P2LocationColdOSUITests.swift', project)
         source_list = re.search(
             r'name: "P2CombinedNativeTests".*?infoPlist: \.default, sources: \[(.*?)\]',
             project, re.DOTALL).group(1)

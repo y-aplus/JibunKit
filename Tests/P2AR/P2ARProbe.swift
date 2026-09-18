@@ -45,7 +45,7 @@ final class P2ARFeature {
             permissions: permissions, consent: { [gate] in gate.allows($0) }
         )
         contenderOwner = contender
-        self.contenderOperation = contenderOperation ?? Self.makeRealCameraOperation
+        self.contenderOperation = contenderOperation ?? { Self.makeRealCameraOperation() }
         lifetime = MiniAppFeatureLifetime(id: id) { [captureOwner, contender, state] runtime in
             try captureOwner.connect(to: runtime)
             try contender.connect(to: runtime)

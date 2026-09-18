@@ -82,3 +82,7 @@ iPad／iPhone SimulatorではARKitのcompile、通常Feature接続、unsupported
 ## 親hostに必要な接続
 
 親所有のhostは`MiniAppSceneActivityDispatcher`の現在connection IDをrootへ公開し、SwiftUI environment `miniAppSceneActivityID: UUID?`として注入する。`Tests/P2AR/P2ARProbe.swift`と`P2ARNativeTests.swift`を診断targetへ追加し、probe definitionを通常registryへ含める。iOS条件の`Tests/JibunKitCoreTests/AugmentedReality/MiniAppARSessionAdapterTests.swift`はmacOS shared testでは実行されないため、同じsourceをiOS native test targetへ明示収録する。既存の`NSCameraUsageDescription`合成がAR targetにも入ることを生成後Info.plistで確認する。ARを任意Featureとして扱い非対応端末でもhostを提供する場合、`UIRequiredDeviceCapabilities=arkit`を一律追加せずconfigurationの`isSupported`で拒否する。`Sources/JibunKit`、`Project.swift`、workflow、plan／ledgerはこの担当変更に含めない。
+
+## 0.8.4候補の証拠
+
+c66b624実機ではframe受信、開始元から離脱後の停止、再入場後の明示再開・停止を確認した。camera解放の内部完了は自動試験と分け、停止表示だけから別cameraとの実handoff成功を推定しない。7e4c740/CI35325946663のnative73件にはAR世代・寿命・非対応拒否の検証を含む。実OS interruption→resumeやARとphoto/scan間の切替は実機未観測であり、採用する契約と実測結果を区別する。決定的な拒否・停止・失敗・他owner保持の組合せを、すべて人手で再試験する方針ではない。

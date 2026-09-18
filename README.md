@@ -1,3 +1,5 @@
+> 開発branchの候補は0.8.4/build14（未公開・main未統合）。最新公開版は0.8.3です。[候補の範囲と未確認条件](release-notes-0.8.4.md)。
+
 > [0.8.3](https://github.com/y-aplus/JibunKit/releases/tag/0.8.3)を公開しました。音声・撮影・文書/QRの接続基盤と全画面表示時のscene修正を含みます。対象別実機と出荷CI・公開IPA/ZIP検査を完了。1.0は未達です。
 
 公開VERSIONは0.8.3/build13、PREVIOUSは0.8.2/build12。[今回の出荷照合](docs/verification/2026-09-17-0.8.3-release.md)と[変更・観測限界](release-notes-0.8.3.md)を参照してください。

@@ -12,7 +12,7 @@ Feature disable/removal/restore calls `await registry.suspendAndRelease(owner:)`
 
 ## Host connection
 
-The P2-S integration branch now wires the following into `Sources/JibunKit`, `Project.swift`, and the diagnostic workflow. CI and physical results remain separate from this source-level connection description:
+The host wires the following into `Sources/JibunKit`, `Project.swift`, and the diagnostic workflow. CI and physical results remain separate from this source-level connection description:
 
 1. Enable multiple scenes with `UIApplicationSupportsMultipleScenes = true` in the application scene manifest. Keep the normal `WindowGroup`; do not add a second navigation singleton.
 2. Create exactly one process-shared `@MainActor let windowScenes = MiniAppWindowSceneRegistry()` beside the existing shared `MiniAppSceneRouter`. After `MiniAppRegistry.makeManagement`, pass all persisted disabled owner IDs once to synchronous `bootstrapSuspendedOwners(_:)`, before a scene connects. This setup is outside the management provider's Sendable/nonactor `prepare` closure, so that closure does not synchronously cross into `MainActor`. Inject the same registry into every `MiniAppSceneRoot`; never instantiate a registry in a root.
@@ -35,3 +35,7 @@ On an iPad Simulator and separately on an iPad device when available:
 - Record request errors, actual session connect/disconnect callbacks, and session IDs. Do not describe adapter compilation, fake callbacks, or a skipped one-window run as an OS multiwindow pass.
 
 Simulator and device results must be reported separately. OS termination may discard in-memory navigation; only explicitly `@SceneStorage`-backed values are expected to restore, and arbitrary Feature view serialization is outside this contract.
+
+## 0.8.4 candidate evidence
+
+Source `7e4c740` / CI35325946663 exercised actual multiple UIWindowScene sessions in the iPad Simulator, alongside shared routing/lifecycle tests. Physical iPad checks were not performed: the user elected not to prepare a sideload environment. Creation/destruction, per-window interaction and session restoration therefore remain Simulator evidence, not physical-device evidence. Merely declaring SceneStorage does not prove OS session restoration.

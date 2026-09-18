@@ -59,3 +59,10 @@ P2-6は実OS Widget英語表示と代表camera許可文言のSimulator UI試験�
 18a94bd50dc19052501ba883db29ba01e587abc8 / CI35347692100は18分14秒で成功。取得したos-ui-summary.jsonでiPad(A16) iOS26.5 Simulator上の2件成功/失敗0/skip0、test-summary.jsonでnative80件成功/失敗0/skip0を確認。実SpringBoardのCounter Widget gallery/home英語描画と実camera OS許可文言を検証した。実機の全言語/全権限組合せの確認ではない。BLE接続世代負試験9475781はこのCIより後に追加したため、まだ実行済みに含めない。次の関連CIにまとめる。
 
 P2-5は既存の実機OS操作/管理/再起動と31478f2・CI35075825942の実4Feature非初期値/世代保持回帰を照合し採用通常範囲をcompleteとした。過去の230/200差分は原因不明・非再現の履歴として残す。修正済みやユーザー誤操作とは断定しない。
+
+
+## BLE永続ログによる復元通知の追加確認
+
+ユーザー提供の59f7081診断ログでは12:56:16Zの新process内で、AccessoryのwillRestoreState→ownerOnRestore→restoredConnected generation353F4A95→同generationのrestoredNotification（0B1EC4D4-1383-4460-B1E2-9AE98653CC1B、2bytes）→consumerConnectCompletedを確認した。12:57:16Zと13:21:58Zの別processではconnectedのみ。従って同一復元世代Notifyは実機確認済みに更新する。payload自体はログへ保存しないため2bytesを2324と断定しない。OSの起動契機は記録されておらず自動起動を断定しない。
+
+最新processだけのstatusは以前のprocessの成功を表示しないため、過去の完全な復元通知証拠を別欄へ時刻付きで示す診断修正を進める。再試行を増やす必要はなく、cross-process/owner/generationを混ぜない自動試験で検証する。

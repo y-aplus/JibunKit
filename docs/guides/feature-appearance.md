@@ -16,6 +16,6 @@ UIKitではFeatureが所有するcontainer/root controllerの`overrideUserInterf
 
 probeのA/Bは通常の`MiniAppDefinition`、`MiniAppFeatureLifetime`、`onSceneActivityChange`を使う。画面点灯要求は既存`MiniAppSceneIdleTimer`へ接続し、UIに`requested`（Featureの意図）と`effective`（現在leaseを持つowner）を別表示する。Aが要求中でもB選択時はAのeffectiveを解除し、Bの要求を有効化する。backgroundではeffectiveを解除し、activeで選択された場合に要求を復元する。
 
-このfixtureが確認するのは`UIApplication.isIdleTimerDisabled`へ至る要求合成とtraitの読戻しである。実機が設定時間後も点灯し続けること、最後の解除後に実際に暗転・自動ロックすることは未確認であり、物理端末で別に確認する。任意sheetのさらに外側、別sceneのhost構成、global appearance setterを自動隔離したとは扱わない。
+このfixtureが確認するのは`UIApplication.isIdleTimerDisabled`へ至る要求合成とtraitの読戻しである。c66b624診断版では、実機の要求中点灯維持と非選択後の通常自動ロックを確認済み。この実機証拠と自動trait試験を分けて扱う。任意sheetのさらに外側、別sceneのhost構成、global appearance setterを自動隔離したとは扱わない。
 
 生成hostへ接続するときは、`P2AppearanceProbe.swift`をapp sourceへコピーして`P2AppearanceProbe.definitions`をregistryへ加える。`P2AppearanceNativeTests.swift`だけを専用native test targetへ入れ、`@testable import JibunKit_App`がコピー済みprobeを検査できるよう`JibunKit-App`と`JibunKitCore`へ依存させる。probe原本をtest targetにも重複コンパイルしない。製品`Project.swift`や通常registryへfixtureを常設しない。

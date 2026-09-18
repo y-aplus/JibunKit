@@ -81,4 +81,4 @@ Live Activities/AlarmKitの共通所有・寿命・照合、通常管理/復元�
 
 ## 0.8.4後の進行中検証
 
-BLEは59f7081診断版で、新processにおけるOS復元callback経由connectedと受信値2324を実機確認した。OS自動起動の契機および復元Notifyの同一世代成功表示は未確認。詳細は[追跡記録](verification/2026-09-18-ar-followup.md)。P2-6の実OS英語Widget/代表camera許可文言をCI35347692100で検証中。P2-9とP2-5は既存証拠と採用条件の照合を別スレッドで進めており、追加実機操作は要求していない。
+BLEは59f7081診断版で、新processにおけるOS復元callback経由connectedと受信値2324を実機確認した。追加の永続ログで12:56:16Zの同一復元世代Notify2バイトも確認。OS自動起動の契機は未判定。詳細は[追跡記録](verification/2026-09-18-ar-followup.md)。P2-6の実OS英語Widget/代表camera許可文言はCI35347692100で2件成功、native80件成功。採用範囲はcomplete。P2-5も実機と既存4Feature保持回帰の合成でcomplete。BLEは過去processの成功が最新表示で隠れる診断を改善し、P2-11は実OS二window復元の追加自動試験を進める。追加実機操作は要求していない。

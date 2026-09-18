@@ -1,6 +1,6 @@
 # P2-6 採用範囲と検証境界
 
-2026-09-18。Issue #6の推奨境界に従い、既存成果で成立する通常範囲を採用する。需要が低そうだから未検証を除外する判断ではない。全体はpartial、現在の公開版は0.8.3。
+2026-09-18。Issue #6の推奨境界に従い、既存成果で成立する通常範囲を採用する。需要が低そうだから未検証を除外する判断ではない。現在の公開版は0.8.4。下記の採用範囲は既存実機と追加OS表示試験の合成によりcomplete。除外範囲まで完成としない。
 
 ## 採用する範囲
 
@@ -22,4 +22,8 @@ Spotlightの一般NSUserActivity/search query continuationや任意multiwindow�
 
 2本の既存Sol lowプロジェクトスレッドが外観/idle fixtureとWidget/用途説明を担当。親がProject、通常host生成、built bundle検査、採否/証拠を統合する。worker別CIは行わない。41c97f1のAR/Action初回CIは実行中のまま固定し、この追加分は次の一括検証候補へ含める。まだ実行していない試験結果を成功として扱わない。
 
-実機に委ねるのは自動消灯、代表権限dialog、実OSのWidget/Spotlight入口。Coreのrace、字句一致、生成物の配置は自動試験へ寄せる。採用権限を全種類×全言語で人手反復する手順にはしない。
+物理端末に委ねる自動消灯と、Simulatorでも観測できる代表権限dialog・Widgetの実OS描画を区別する。実OS入口の確認をすべて人手の実機に限定しない。Coreのrace、字句一致、生成物の配置は自動試験へ寄せる。採用権限を全種類×全言語で人手反復する手順にはしない。
+
+## 追加証拠（2026-09-18）
+
+c66b624の実機idle確認に加え、18a94bd/CI35347692100でiPad(A16) iOS26.5 Simulatorの実SpringBoard Widget英語gallery/home描画と実camera権限dialog文言の2試験が成功。native80件と合わせfailure0/skip0。英日全状態の字句・配置検査は既存bundle試験を再利用し、全言語×全権限の実機反復を追加しない。

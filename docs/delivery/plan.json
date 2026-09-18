@@ -628,10 +628,10 @@
       ],
       "priority": "P2",
       "milestone": "1.0.0",
-      "state": "partial",
+      "state": "complete",
       "title": "低負荷残件の採否と採用範囲",
-      "existing": "c66b624の外観5/Widget翻訳1と用途説明bundle検査が成功。実機でidle点灯維持/非選択後通常消灯を確認。Spotlight既存成果を再利用。",
-      "remaining": "Widgetの実OS言語描画と代表権限dialogの表示は未観測。既存bundle/native/idle実機の証拠を再利用し、元の採用条件に必要な最小検証へ絞る。自動検証済み文字列/配置の手動反復はしない",
+      "existing": "c66b624の外観5/Widget翻訳1と用途説明bundle検査が成功。実機でidle点灯維持/非選択後通常消灯を確認。Spotlight既存成果を再利用。 18a94bd/CI35347692100で実SpringBoard英語Widget gallery/homeと代表camera許可文言のOS UI2件、native80件成功。",
+      "remaining": "なし（採用範囲）。実機idle、実window外観/Spotlight既存成果、英日built bundle、Simulator実OS英語Widget/代表camera dialogの証拠を合成して判定。全言語×全権限の実機網羅ではない。",
       "deferred": "採用しない残件も台帳へ根拠を維持",
       "criteria": [
         {
@@ -782,7 +782,7 @@
       "state": "partial",
       "title": "BLE通常接続・背景再接続",
       "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。",
-      "remaining": "59f7081診断版の実機で新processのOS復元callback経由connectedと受信値2324を確認。OS自動起動か手動再入場起動かは未判定。同一世代復元Notify成功表示も未報告。復元GATT graph・早着通知のnative/shared証拠と合わせ、採用通常範囲の残件を評価する。通常通信成功だけで自動cold配送成功としない",
+      "remaining": "59f7081診断版の実機ログで12:56:16Zの新processにおけるOS復元callback、同一owner/generationのconnectedとNotify2バイト配送を確認。後続processはconnectedのみであり最新表示が過去の通知成功を隠していた。OS自動起動か手動再入場起動かは未判定。診断表示の履歴保持を修正・自動検証し、採用範囲の完了判定に反映する。",
       "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
       "criteria": [
         {
@@ -872,7 +872,7 @@
       "state": "partial",
       "title": "通常複数window・scene",
       "existing": "iPad Simulatorで実window生成・指定owner配送・片側破棄/保持をnative検証。統合host73件候補へ継承。",
-      "remaining": "iPad実機はsideload環境準備をユーザーが見送ったため未確認として保持。追加操作待ちから外し、Simulator証拠との境界を出荷時に説明。",
+      "remaining": "実iPadOS Simulatorで二window生成/指定配送/片側破棄を確認済み。実OSの終了後session復元/再接続を追加自動検証する。物理iPadはユーザーがsideload準備を見送ったため未確認のまま、操作待ちから外す。",
       "deferred": "任意View/実行instanceの自動理解・一般化",
       "criteria": [
         {

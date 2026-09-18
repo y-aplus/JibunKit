@@ -2,6 +2,10 @@
 
 更新日: 2026-09-18。公開版/mainは0.8.4/build14（前版0.8.3/build13）。出荷source0878ede、CI35333186866成功、通常候補でデータ保持/JSON読込を実機確認し、main統合と正式IPA公開・再取得照合まで完了。[出荷記録](verification/2026-09-18-0.8.4-release.md)。1.0は未完。Files自動UIの不安定、OS cold配送、実位置/電波、署名条件付き通信等の残件は維持する。iPad実機はユーザーが見送り、待機対象ではない。
 
+## 0.8.4後の検証
+
+AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。次はBLE cold復元の診断観測とAR中断条件の評価を並列で進める。0.8.4後の診断変更は公開IPAへ未反映。
+
 ## 現在の外部条件
 
 2026-09-18、ユーザーからCloudKit/APNsの実通信検証用の有料署名・サービス環境は現在用意できないと回答を受領。P2-8/P2-10は署名/サービス環境不足による実通信未検証を維持する。加入や購入は依頼していない。この回答を1.0完成基準の除外承認や実通信合格とは扱わない。環境から独立したFiles比較・AR/BLE残件の検証準備を進める。

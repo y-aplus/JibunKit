@@ -782,7 +782,7 @@
       "state": "partial",
       "title": "BLE通常接続・背景再接続",
       "existing": "fe1a6e5/CI35309744549でnative統合69件。Android実機で単独read/write/notify、両Feature通知、片側無効化後他方維持、scan停止・切断/再接続後受信を確認。",
-      "remaining": "OSによるstate restoration/cold配送は未観測。復元GATT graphの世代索引欠落を修正して自動検証中。通常通信の成功とOS復元を区別。",
+      "remaining": "OS state restoration/cold配送は未観測。復元GATT graph・早着通知は7e4c740/CI35325946663のnative/shared試験で成功。次は診断のprocess識別と永続観測を整え、通常通信成功をOS cold復元の証拠へ拡張しない",
       "deferred": "特殊周辺機器網羅・central/peripheral高度複合",
       "criteria": [
         {
@@ -915,8 +915,8 @@
       "milestone": "1.0.0",
       "state": "partial",
       "title": "通常ARの採否と採用範囲",
-      "existing": "通常前景ARを採用しARSession接続/scene束縛/停止/世代試験成功。c66b624実機でframe受信・離脱停止・再開/明示停止を確認。",
-      "remaining": "OS割込み等の残る検証条件を既存Capture証拠と照合。高度world state等は採用範囲外として理由を保持。",
+      "existing": "通常前景ARを採用しARSession接続/scene束縛/停止/世代試験成功。c66b624実機でframe受信・離脱停止・再開/明示停止を確認。。ddb0f83/CI35336219498 native17件成功、実機でARと同一画面camera contenderの拒否/明示切替/B停止後A暗黙再開なし/A明示再開を確認",
+      "remaining": "OS delegate由来のinterruption/復帰の観測を既存native世代試験と区別して評価。実camera競合の代表確認は完了。高度world state共有は採用範囲外として理由を保持",
       "deferred": "高度world state/長期再位置合わせ",
       "criteria": [
         {

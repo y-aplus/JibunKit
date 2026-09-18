@@ -36,6 +36,6 @@ On an iPad Simulator and separately on an iPad device when available:
 
 Simulator and device results must be reported separately. OS termination may discard in-memory navigation; only explicitly `@SceneStorage`-backed values are expected to restore, and arbitrary Feature view serialization is outside this contract.
 
-## 0.8.4 candidate evidence
+## Evidence after 0.8.4
 
-Source `7e4c740` / CI35325946663 exercised actual multiple UIWindowScene sessions in the iPad Simulator, alongside shared routing/lifecycle tests. Physical iPad checks were not performed: the user elected not to prepare a sideload environment. Creation/destruction, per-window interaction and session restoration therefore remain Simulator evidence, not physical-device evidence. Merely declaring SceneStorage does not prove OS session restoration.
+Source `7e4c740` / CI35325946663 exercised actual multiple UIWindowScene sessions in the iPad Simulator, alongside shared routing/lifecycle tests. Physical iPad checks were not performed: the user elected not to prepare a sideload environment. Actual creation/destruction and addressed per-window routing are Simulator evidence, not physical-device evidence. Registry generation/restoration tests do not yet establish real OS cold session restoration: a two-window terminate/relaunch UI test is being added for that boundary. Merely declaring SceneStorage does not prove OS session restoration.

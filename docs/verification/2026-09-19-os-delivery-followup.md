@@ -55,3 +55,12 @@ a317524はコンパイル成功、nativeの既存HTTP admission/cleanup試験1�
 ## CloudKit/APNsの判断結果
 
 ユーザーは無料署名志向の製品目的から、CloudKit/APNsを一般利用できる想定自体がそぐわないと回答。署名専用通信を条件付き任意機能として残し、1.0必須の実通信検証から外す。未検証の表記は維持し、汎用HTTPによる外部同期の契約は弱めない。計画・検証gateにこの境界を反映する。
+
+
+## 終了後Region配送の任意診断
+
+source `aeac077`、専用CI [35370477913](https://github.com/y-aplus/JibunKit/actions/runs/35370477913)へ一回投入。新規 `P2LocationColdOSUITests` だけを実行し、既存native87件・通常OS UI6件・Release/IPAを再実行しない。job上限25分、試験240秒、各境界通知45秒で打切る。親レビューでDerivedDataをartifact対象外へ移し、build cache uploadによる待ち時間を避けた。関連ローカル8試験とdiff検査成功。
+
+登録時のoutside確認後、backgroundからprocess終了→位置境界変更→OSのbackground process→owner永続イベントと異なるprocess tokenを確認する。enter/exitそれぞれで終了を挟む。foregroundへの手動再起動は成功条件に含めない。XCTest terminateがOSの自動再起動を抑止する可能性も含め、この環境で再現しないことを製品欠陥と即断しない。
+
+結果は `observed-passed` / `unobserved-skip` / `failure` に分け、未観測は通常製品gateの合格ではない。compile/実行/結果件数異常は失敗。xcresult・raw summary・分類結果を保存し、一度の結果を切り分ける。現時点はCI処理中、watch完了をrootへ自動通知する。

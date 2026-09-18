@@ -69,3 +69,10 @@ source `aeac077`、専用CI [35370477913](https://github.com/y-aplus/JibunKit/ac
 ### CI35370477913の準備失敗
 
 Swift buildは成功したが、outside位置取得前に `osAuthorizationDenied(notDetermined)` で停止（試験81.984秒）。終了後配送には未到達。既存combined実行ではnative試験が先にappをインストールするが、専用入口では初回install前にprivacy grantを行っていた。build-for-testing→simctl install→location-always grant→test-without-buildingへ修正し、実行順をローカル回帰で確認。関連8件成功。製品コードは変更しない。この準備修正後に一度、同じ有界観測を実行する。
+
+
+### CI35371803883: 終了後Region配送を観測
+
+source `0daaeb9`、[CI35371803883](https://github.com/y-aplus/JibunKit/actions/runs/35371803883) のartifact summaryは `observed-passed`、xcodebuild exit0、1 passed / 0 skipped / 0 failed。tests.logでも86.643秒成功を照合した。
+
+登録時outside確認後、process終了→enterの背景新process→owner永続ログ、さらにprocess終了→exitの別背景process→owner永続ログという試験の全assertが成立した。手動foreground起動前にDarwin通知とrunningBackgroundを確認しており、手動起動だけをOS背景復元と誤認しない。Simulator上の実OS配送証拠として採用する。物理端末の境界通過・iBeacon電波や端末再起動後unlockは未検証のまま。追加反復は行わない。

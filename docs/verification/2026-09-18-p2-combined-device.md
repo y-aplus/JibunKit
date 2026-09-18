@@ -63,3 +63,5 @@ Accessoryも同じperipheralへ接続・購読中表示。しかし`0D0E`はSens
 AppleのcancelPeripheralConnection資料は他アプリの接続が物理linkを維持し得るとするが、同一アプリの複数managerの隔離を今回の結果に代えて保証しない。もし同一objectまたは購読/切断の共有が確認されたら、peripheral単位のdelegate/接続interest/購読者管理と応答所有者の調停が必要。単純なcallback全owner転送ではread/writeの帰属が崩れるため行わない。
 
 ユーザー指摘により、Accessory単独でのread/notify成功が未確認である点を明示。次の実機切り分けはSensor無効・Accessoryのみを新規接続して受信確認→Sensor追加後の双方受信→Sensor停止後Accessory維持の順にする。Accessory単独で失敗する場合はその段階の記録で止め、共有transport説を先行確定しない。
+
+診断修正fe1a6e5708fa5de4eb5fa855748cc8b661eb5e18は[CI35309744549](https://github.com/y-aplus/JibunKit/actions/runs/35309744549)でnative69件（failure0/skip0）、Release/IPA検査成功、13分33秒。[診断IPA](https://github.com/y-aplus/JibunKit/releases/download/p2-ble-trace-check-20260918/JibunKit-P2-combined-check.ipa)を公開し無認証GET/SHA/全entry CRC照合済み。6,403,421 bytes、SHA-256 `ef5c53fc590741e963132b496c73a0c3abe91e8ea02a7a282e1a95b8c5fb6c38`。実機切り分けは未実施。

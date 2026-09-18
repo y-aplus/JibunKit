@@ -1,36 +1,32 @@
-# P2-S Android BLE peripheral setup
+# AndroidをBLE試験用の相手機器にする準備
 
-This is a preparation recipe, not radio evidence. It uses nRF Connect for Android as a controllable GATT peripheral. Do not install it or claim P2-S device completion until the candidate app and iPad build have both been approved.
+まだ実施依頼ではありません。候補IPAが合格してから、iPhoneまたはiPadと手元のAndroidで行う手順です。無線動作とmacroの実機UIは未確認です。
 
-## Android setup
+## Androidで最初に用意するもの
 
-The Android device must support BLE peripheral advertising. Android exposes this through `BluetoothAdapter.isMultipleAdvertisementSupported()` and a non-null `BluetoothLeAdvertiser`; nRF Connect must also show and successfully start its Advertiser. Turn Bluetooth on and grant the Nearby devices permissions requested by the app. Android 12 and later enforce `BLUETOOTH_ADVERTISE` for advertising and `BLUETOOTH_CONNECT` for communication. Older Android/app versions can additionally request Location for BLE scanning.
+nRF Connect for Androidの「Configure GATT Server」で、[設定値一覧](../../Tests/Fixtures/ble-peripheral/README.md)の専用serviceと2 characteristicを登録します。
 
-In nRF Connect, open **Configure GATT Server**, create and select a custom configuration, and enter the values from [the fixture README](../../Tests/Fixtures/ble-peripheral/README.md):
+- service: `ad539a02-1289-44dc-bd27-f991c68a1fb9`
+- Read/Write: `9e0f4195-64b6-4c4a-8ffa-e8dd8f4036d5`。READ + WRITE、openの読書きpermission。
+- Read/Notify: `0b1ec4d4-1383-4460-b1e2-9ae98653cc1b`。READ + NOTIFY。CCCDの存在も確認。
 
-1. Add primary service `ad539a02-1289-44dc-bd27-f991c68a1fb9`.
-2. Add characteristic `9e0f4195-64b6-4c4a-8ffa-e8dd8f4036d5` with READ and WRITE properties and open read/write permissions.
-3. Add characteristic `0b1ec4d4-1383-4460-b1e2-9ae98653cc1b` with READ and NOTIFY properties and open read/write permissions. nRF Connect adds its CCCD automatically.
-4. Import [JibunKit-P2S-notify.xml](../../Tests/Fixtures/ble-peripheral/JibunKit-P2S-notify.xml) in the Macros screen. Nordic publishes the macro XML grammar and examples; the fixture follows those documented elements and hexadecimal byte syntax.
-5. Set the Android local name to `JibunKit-P2S-5276`. Create a connectable advertisement containing the custom service UUID, then start the selected GATT server configuration and advertisement.
+[通知macro](../../Tests/Fixtures/ble-peripheral/JibunKit-P2S-notify.xml)をimportします。これは公式macro形式との照合とXML構文確認までで、Android上でのimport/実行成功ではありません。GATT設定XMLの公開schemaは確認できないため、そのファイルは推測で作っていません。
 
-Legacy advertising data is limited to 31 bytes. A 128-bit service UUID plus the complete local name and protocol overhead may not fit in one packet. Keep the service UUID in the primary advertisement and put the local name in the scan response, or shorten the advertised name if nRF Connect reports overflow. The Android address may rotate and is not a stable identifier.
+Advertiserでconnectableな広告を開始し、service UUIDと名前`JibunKit-P2S-5276`を載せます。広告が31 bytesに収まらなければ、名前をscan responseへ移すか短くし、service UUIDを優先します。AndroidはBLE advertising対応が必要で、Bluetoothと要求されたNearby devices許可を有効にします。
 
-Nordic documents that GATT server configurations can be imported from XML, but its public documentation does not specify that XML schema. For that reason this repository deliberately provides manual GATT setup plus a documented-format macro, not a guessed server-configuration file.
+## 接続後の確認
 
-## Safe JibunKit sequence
+現在のJibunKitの「スキャン」は全scanです。Service UUID欄を入力してもscan filterにはなりません。
 
-The current P2 Bluetooth probe calls an unfiltered `scan()`; the service UUID text field does not filter scan results. Use the advertised local name only to choose the likely Android device, then prove its identity after connecting:
+1. JibunKitから広告名で自分のAndroidを選んで接続します。まだWriteは押しません。
+2. Androidでimport済みmacroを開始します。最初にRead/Write値を`01 02`へ設定し、Readを待ちます。接続後の画面でmacroを起動できない場合は、そのUI条件を確認してから進め、未接続の状態で起動できるとは仮定しません。
+3. JibunKitで「全Service検索」。上記serviceが見つかったら、その「Service候補」を押してService UUID欄へ選択します。
+4. Read/Write UUIDをCharacteristic欄へ入れ、「指定Characteristic検索」→「Read」。結果が`01 02`になったことを確認します。
+5. Read/Notify UUIDへ切替え、「指定Characteristic検索」→「Subscribe」。「購読中」を確認します。
+6. Read/Write UUIDへ戻し、送信hexを`03 04`にして「Write with response」。Androidのmacroが値を照合し、通知`05 06`を送ります。
+7. Write成功と、Notify欄に`05 06`が出たことを確認します。エラーならその段階で止め、連打しません。
 
-1. Start the imported macro on Android. It sets the READ + WRITE characteristic to `01 02` and waits for a read.
-2. In JibunKit, scan and select `JibunKit-P2S-5276`. Do not write yet.
-3. Connect, discover all services, and verify service `ad539a02-1289-44dc-bd27-f991c68a1fb9` exists.
-4. Enter the READ + WRITE characteristic UUID, discover it, and read it. Continue only if the received value is exactly `01 02`.
-5. Enter the READ + NOTIFY characteristic UUID, discover it, and subscribe. Wait for the UI to show that notification is enabled.
-6. Return to the READ + WRITE characteristic, set the outgoing hex to `03 04`, and use **Write with response**. Android's macro checks that exact value and sends notification `05 06`.
-7. Verify JibunKit reports a successful write and receives `05 06` from the NOTIFY characteristic. Save both device logs with the UUIDs and timestamps.
-
-The local name and UUIDs prevent accidental selection in a controlled test area; they are not authentication or a security boundary.
+名前・UUID・初期値の照合は試験相手の取り違え防止であり、認証ではありません。一般の心拍計等にこの値を書き込む手順ではありません。iBeaconは別の方式で、このGATT試験の成功だけでは確認済みになりません。
 
 ## Primary references
 

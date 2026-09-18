@@ -22,3 +22,9 @@ CI35335272799の診断compile失敗（internal scene initializer）は、診断�
 診断ログは従来booleanだけでend→frameを対応付けており、matching began・実行世代・中断sequenceの照合が不足していた。また同一ARSessionのraw delegateがcurrentForwarderを取得する境界は、保持された旧forwarderを拒否する既存試験だけでは十分に検証できない。これを実OS障害と断定せず、診断の帰属・成功表示を先に修正する。
 
 次のCIはAR相関修正とBLE process/cold復元診断をまとめたp2-combined一回とする。各workerは独立試験を添えて提出、親で契約・差分確認後に投入する。通常製品IPA・署名環境不足の実通信・Files独立比較は再実行しない。旧run/end-without-began/stop後frameで復帰成功を作らないこと、BLEで単なる手動起動をcold成功としないことを負条件に含む。
+
+## 相関診断の統合候補
+
+ARはrunごとのsession/delegateへ分離し、旧run callbackとbeganなしendを拒否。重複開始時に既存runを保持し、中断完結後に次sequenceを受け付ける試験を追加した。BLEは接続begin/completed/failedを分離、復元通知のowner/generation照合、保存120件/message512文字・揮発80件を検証する。表示は新processでの復元callback観測であり、OS自動cold起動の証明とはしない。
+
+Core変更は既存の任意diagnostics sink（通常nil）へのwillRestoreState trace追加のみ。通常通信・公開APIの動作変更はない。ローカル生成4試験成功。p2-combinedで両診断・native/shared・Release/IPAを一括検証する。実機で未検証の新観測を、以前のAR/BLE実機成功へ上乗せしない。

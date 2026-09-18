@@ -13,7 +13,13 @@ enum P2BluetoothDiagnosticInput {
     static func normalizedUUID(_ input: String) -> String? {
         let value = input.trimmingCharacters(in: .whitespacesAndNewlines)
         if let uuid = UUID(uuidString: value) { return uuid.uuidString }
-        guard [4, 8, 32].contains(value.count), value.allSatisfy({ $0.isHexDigit }) else { return nil }
+        guard [4, 8, 32].contains(value.count),
+              value.allSatisfy({ "0123456789abcdefABCDEF".contains($0) }) else { return nil }
+        if value.count == 32 {
+            let digits = Array(value.uppercased())
+            return [0..<8, 8..<12, 12..<16, 16..<20, 20..<32]
+                .map { String(digits[$0]) }.joined(separator: "-")
+        }
         return value.uppercased()
     }
 
@@ -147,9 +153,9 @@ final class P2BluetoothFeature: ObservableObject {
         case .disconnected: status = "切断済み"; connection = nil; awaitingRead = false
         case .powerChanged(let power, _): status = "電源: \(power.rawValue)"
         case .services(_, _, let identifiers):
-            discoveredServices = identifiers; status = "Service候補 \(identifiers.count)件"
+            discoveredServices = Array(Set(identifiers)).sorted(); status = "Service候補 \(identifiers.count)件"
         case .characteristics(_, _, let service, let identifiers):
-            discoveredCharacteristics = identifiers; status = "\(service) のCharacteristic候補 \(identifiers.count)件"
+            discoveredCharacteristics = Array(Set(identifiers)).sorted(); status = "\(service) のCharacteristic候補 \(identifiers.count)件"
         case .value(_, _, let characteristic, let data, let notifying):
             let value = P2BluetoothDiagnosticInput.hex(data)
             if awaitingRead { lastReadHex = "\(characteristic.characteristic): \(value)"; awaitingRead = false }

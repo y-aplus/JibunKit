@@ -32,11 +32,12 @@ final class P2BluetoothNativeTests: XCTestCase {
         XCTAssertEqual(P2BluetoothDiagnosticInput.normalizedUUID(" 180d "), "180D")
         XCTAssertEqual(P2BluetoothDiagnosticInput.normalizedUUID("12345678"), "12345678")
         XCTAssertEqual(P2BluetoothDiagnosticInput.normalizedUUID("00112233445566778899aabbccddeeff"),
-                       "00112233445566778899AABBCCDDEEFF")
+                       "00112233-4455-6677-8899-AABBCCDDEEFF")
         XCTAssertEqual(P2BluetoothDiagnosticInput.normalizedUUID("00112233-4455-6677-8899-aabbccddeeff"),
                        "00112233-4455-6677-8899-AABBCCDDEEFF")
         XCTAssertNil(P2BluetoothDiagnosticInput.normalizedUUID("180"))
         XCTAssertNil(P2BluetoothDiagnosticInput.normalizedUUID("ZZZZ"))
+        XCTAssertNil(P2BluetoothDiagnosticInput.normalizedUUID("１８０Ｄ"))
     }
 
     func testDiagnosticHexValidationIsLosslessAndRejectsBeforeNativeUse() {

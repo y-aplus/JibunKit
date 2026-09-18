@@ -14,6 +14,7 @@ final class P2ARFeature {
     let id: MiniAppID
     let state: P2ARState
     let owner: MiniAppCaptureOwner
+    let contenderOwner: MiniAppCaptureOwner
     let session: ARSession
     let configuration: ARWorldTrackingConfiguration
     let eventBridge: MiniAppARSessionEventBridge
@@ -21,11 +22,13 @@ final class P2ARFeature {
     let delegate: P2ARFeatureDelegate
     let lifetime: MiniAppFeatureLifetime
     private let consentGate: P2ARConsentGate
+    private let contenderOperation: @MainActor () -> MiniAppCaptureOperation
 
     init(
         id: MiniAppID = MiniAppID("p2-ar"),
         coordinator: MiniAppCaptureCoordinator = .shared,
-        permissions: any MiniAppCapturePermissionClient = MiniAppAVCapturePermissionClient()
+        permissions: any MiniAppCapturePermissionClient = MiniAppAVCapturePermissionClient(),
+        contenderOperation: (@MainActor () -> MiniAppCaptureOperation)? = nil
     ) {
         self.id = id
         let state = P2ARState()
@@ -37,10 +40,18 @@ final class P2ARFeature {
             consent: { [gate] in gate.allows($0) }
         )
         owner = captureOwner
-        lifetime = MiniAppFeatureLifetime(id: id) { [captureOwner, state] runtime in
+        let contender = MiniAppCaptureOwner(
+            id: MiniAppID("p2-ar-camera-contender"), coordinator: coordinator,
+            permissions: permissions, consent: { [gate] in gate.allows($0) }
+        )
+        contenderOwner = contender
+        self.contenderOperation = contenderOperation ?? Self.makeRealCameraOperation
+        lifetime = MiniAppFeatureLifetime(id: id) { [captureOwner, contender, state] runtime in
             try captureOwner.connect(to: runtime)
+            try contender.connect(to: runtime)
             state.runtimeGeneration += 1
             state.status = "AR利用可能"
+            state.append("runtime connected generation=\(state.runtimeGeneration)")
         }
         let arSession = ARSession()
         let arConfiguration = ARWorldTrackingConfiguration()
@@ -62,6 +73,7 @@ final class P2ARFeature {
         )
         arSession.delegate = featureDelegate
         captureOwner.stateChanged = { [weak state] captureState in
+            state?.observeARState(captureState)
             switch captureState {
             case .requesting: state?.status = "AR許可確認中"
             case .starting: state?.status = "AR開始中"
@@ -73,6 +85,10 @@ final class P2ARFeature {
             case .idle: state?.status = "AR利用可能"
             }
         }
+        contender.stateChanged = { [weak state] captureState in
+            state?.contenderStatus = "Camera B: \(captureState)"
+            state?.append("Camera B owner state=\(captureState)")
+        }
     }
 
     var definition: MiniAppDefinition {
@@ -83,11 +99,14 @@ final class P2ARFeature {
                 .init(id: "camera", title: "カメラ", purpose: "前景AR表示に使います",
                       deniedBehavior: "ARSessionを開始しません")
             ],
-            onConsentChange: { [weak captureOwner = owner] permissionID, decision in
+            onConsentChange: { [weak captureOwner = owner, weak contenderOwner = contenderOwner] permissionID, decision in
                 guard permissionID == "camera", decision != .allowed else { return }
-                Task { @MainActor in await captureOwner?.suspend(.featureStopped) }
+                Task { @MainActor in
+                    await captureOwner?.suspend(.featureStopped)
+                    await contenderOwner?.suspend(.featureStopped)
+                }
             },
-            onSceneActivityChange: { [weak self] in self?.owner.receive($0) }
+            onSceneActivityChange: { [weak self] in self?.receiveSceneActivity($0) }
         ) { [self] _ in P2ARView(feature: self) }
     }
 
@@ -109,6 +128,43 @@ final class P2ARFeature {
         await owner.stop()
         state.status = "AR停止・camera解放"
     }
+
+    func startContender(switching: MiniAppCaptureSwitch, in sceneID: UUID?) async {
+        guard let sceneID else { state.contenderStatus = "Camera B: scene未接続"; return }
+        do {
+            try await contenderOwner.start(contenderOperation(), switching: switching, sceneScope: .scene(sceneID))
+            state.contenderStatus = "Camera B: 実行中"
+        } catch {
+            state.contenderStatus = "Camera B: 拒否/失敗 \(error)"
+            state.append("Camera B request result=\(error)")
+        }
+    }
+
+    func stopContender() async {
+        await contenderOwner.stop()
+        state.contenderStatus = "Camera B: 停止・camera解放"
+    }
+
+    private func receiveSceneActivity(_ activity: MiniAppSceneActivity) {
+        owner.receive(activity)
+        contenderOwner.receive(.init(
+            featureID: contenderOwner.id, sceneID: activity.sceneID,
+            phase: activity.phase, isSelected: activity.isSelected
+        ))
+    }
+
+    private static func makeRealCameraOperation() -> MiniAppCaptureOperation {
+        let producer = MiniAppAVCaptureSessionProducer(mode: .photo)
+        return MiniAppCaptureOperation(
+            resources: [.camera],
+            nativeEvents: { try await producer.events() },
+            restartNative: { try await producer.restartAfterInterruption() },
+            startNative: {
+                try await producer.start()
+                return { _ in await producer.stop() }
+            }
+        )
+    }
 }
 
 @MainActor
@@ -117,6 +173,46 @@ final class P2ARState: ObservableObject {
     @Published var frameCount = 0
     @Published var anchorCount = 0
     @Published var runtimeGeneration = 0
+    @Published var contenderStatus = "Camera B: 停止中"
+    @Published private(set) var observationLines: [String] = []
+    private var waitingForFrameAfterInterruption = false
+
+    func append(_ message: String) {
+        observationLines.append("\(Date.now.ISO8601Format()) \(message)")
+        if observationLines.count > 80 { observationLines.removeFirst(observationLines.count - 80) }
+    }
+
+    func osInterruptionBegan() {
+        append("OS ARSessionDelegate interruption began")
+    }
+
+    func osInterruptionEnded() {
+        waitingForFrameAfterInterruption = true
+        append("OS ARSessionDelegate interruption ended; restart pending")
+    }
+
+    func observeARState(_ value: MiniAppCaptureState) {
+        append("AR owner state=\(value)")
+        if waitingForFrameAfterInterruption, case .running = value {
+            append("AR restart completed after OS interruption")
+        } else if waitingForFrameAfterInterruption {
+            switch value {
+            case .failed(_), .stopped, .suspended(.failure(_)), .suspended(.user),
+                 .suspended(.featureStopped), .suspended(.switched(to: _)):
+                waitingForFrameAfterInterruption = false
+                append("AR interruption recovery ended without a resumed frame")
+            default: break
+            }
+        }
+    }
+
+    func receivedFrame() {
+        frameCount += 1
+        if waitingForFrameAfterInterruption {
+            waitingForFrameAfterInterruption = false
+            append("first frame after OS interruption")
+        }
+    }
 }
 
 @MainActor
@@ -156,7 +252,7 @@ final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendabl
     }
 
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        Task { @MainActor [weak state] in state?.frameCount += 1 }
+        Task { @MainActor [weak state] in state?.receivedFrame() }
     }
 
     func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
@@ -165,10 +261,12 @@ final class P2ARFeatureDelegate: NSObject, ARSessionDelegate, @unchecked Sendabl
     }
 
     func sessionWasInterrupted(_ session: ARSession) {
+        Task { @MainActor [weak state] in state?.osInterruptionBegan() }
         currentForwarder()?.interruptionBegan()
     }
 
     func sessionInterruptionEnded(_ session: ARSession) {
+        Task { @MainActor [weak state] in state?.osInterruptionEnded() }
         currentForwarder()?.interruptionEnded()
     }
 
@@ -197,6 +295,21 @@ private struct P2ARView: View {
                 .accessibilityIdentifier("p2.ar.start")
             Button("AR停止") { Task { await feature.stop() } }
                 .accessibilityIdentifier("p2.ar.stop")
+            Section("同一画面のcamera競合") {
+                Text(state.contenderStatus).accessibilityIdentifier("p2.ar.contender.status")
+                Button("Camera B要求（reject）") {
+                    Task { await feature.startContender(switching: .reject, in: sceneID) }
+                }
+                Button("Camera B要求（stopCurrent）") {
+                    Task { await feature.startContender(switching: .stopCurrent, in: sceneID) }
+                }
+                Button("Camera B停止") { Task { await feature.stopContender() } }
+            }
+            Section("AR観測（最大80行）") {
+                ShareLink("AR観測を共有", item: state.observationLines.joined(separator: "\n"))
+                Text(state.observationLines.isEmpty ? "記録なし" : state.observationLines.joined(separator: "\n"))
+                    .font(.caption.monospaced()).textSelection(.enabled)
+            }
         }
         .onAppear { feature.attachConsent(consentStore) }
     }

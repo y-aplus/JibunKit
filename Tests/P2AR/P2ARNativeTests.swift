@@ -59,6 +59,68 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
         await feature.lifetime.stop()
     }
 
+    func testSameSceneCameraContenderRejectsThenSwitchesWithoutImplicitARRestart() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let calls = P2ARContenderCalls()
+        let feature = P2ARFeature(
+            id: MiniAppID("p2-ar-contender-test"), coordinator: coordinator,
+            permissions: P2ARAllowedPermission(),
+            contenderOperation: {
+                MiniAppCaptureOperation(resources: [.camera]) {
+                    calls.contenderStarts += 1
+                    return { _ in calls.contenderStops += 1 }
+                }
+            }
+        )
+        let store = try allowedStore(owner: feature.id)
+        feature.attachConsent(store)
+        try await feature.lifetime.start()
+        let sceneID = UUID()
+        feature.definition.onSceneActivityChange?(.init(
+            featureID: feature.id, sceneID: sceneID, phase: .active, isSelected: true
+        ))
+        let arOperation = MiniAppCaptureOperation(resources: [.camera]) {
+            calls.arStarts += 1
+            return { _ in calls.arStops += 1 }
+        }
+        try await feature.owner.start(arOperation, sceneScope: .scene(sceneID))
+
+        await feature.startContender(switching: .reject, in: sceneID)
+        XCTAssertEqual(feature.owner.state, .running([.camera]))
+        XCTAssertEqual(calls.contenderStarts, 0)
+
+        await feature.startContender(switching: .stopCurrent, in: sceneID)
+        XCTAssertEqual(feature.owner.state, .suspended(.switched(to: feature.contenderOwner.id)))
+        XCTAssertEqual(feature.contenderOwner.state, .running([.camera]))
+        XCTAssertEqual(calls.arStops, 1)
+        XCTAssertEqual(calls.contenderStarts, 1)
+
+        await feature.stopContender()
+        XCTAssertEqual(feature.owner.state, .suspended(.switched(to: feature.contenderOwner.id)))
+        XCTAssertEqual(calls.arStarts, 1, "Stopping B must not implicitly restart AR")
+        XCTAssertEqual(calls.contenderStops, 1)
+        try await feature.owner.start(arOperation, sceneScope: .scene(sceneID))
+        XCTAssertEqual(feature.owner.state, .running([.camera]))
+        XCTAssertEqual(calls.arStarts, 2)
+        await feature.lifetime.stop()
+    }
+
+    func testArtificialObservationEventsAreTimestampedBoundedAndMarkRestartFrame() {
+        let state = P2ARState()
+        for index in 0..<85 { state.append("artificial test event \(index)") }
+        XCTAssertEqual(state.observationLines.count, 80)
+        XCTAssertTrue(state.observationLines.first?.contains("artificial test event 5") == true)
+
+        state.osInterruptionBegan()
+        state.osInterruptionEnded()
+        state.observeARState(.running([.camera]))
+        state.receivedFrame()
+
+        XCTAssertTrue(state.observationLines.contains { $0.contains("OS ARSessionDelegate interruption began") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("AR restart completed after OS interruption") })
+        XCTAssertTrue(state.observationLines.contains { $0.contains("first frame after OS interruption") })
+    }
+
     private func allowedStore(owner: MiniAppID) throws -> MiniAppConsentStore {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "P2AR.\(UUID().uuidString)"))
         let store = MiniAppConsentStore(defaults: defaults)
@@ -70,6 +132,14 @@ final class P2ARNativeTests: XCTestCase, @unchecked Sendable {
 @MainActor
 private final class P2ARAllowedPermission: MiniAppCapturePermissionClient {
     func request(_ resource: MiniAppCaptureResource) async -> Bool { true }
+}
+
+@MainActor
+private final class P2ARContenderCalls {
+    var arStarts = 0
+    var arStops = 0
+    var contenderStarts = 0
+    var contenderStops = 0
 }
 
 @MainActor

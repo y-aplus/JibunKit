@@ -16,6 +16,7 @@ final class P2ARFeature {
     let owner: MiniAppCaptureOwner
     let contenderOwner: MiniAppCaptureOwner
     let lifetime: MiniAppFeatureLifetime
+    private let permissionProbe: any MiniAppCapturePermissionClient
     private let consentGate: P2ARConsentGate
     private let contenderOperation: @MainActor () -> MiniAppCaptureOperation
     private let runFactory: @MainActor (P2ARState) -> P2ARRun
@@ -34,6 +35,7 @@ final class P2ARFeature {
         self.state = state
         let gate = P2ARConsentGate(owner: id)
         consentGate = gate
+        permissionProbe = permissions
         let captureOwner = MiniAppCaptureOwner(
             id: id, coordinator: coordinator, permissions: permissions,
             consent: { [gate] in gate.allows($0) }
@@ -106,6 +108,14 @@ final class P2ARFeature {
         await owner.stop()
         if let run { finish(run: run, reason: "explicit stop") }
         state.status = "AR停止・camera解放"
+    }
+
+    /// Diagnostic-only OS-copy probe. This deliberately bypasses ARKit's
+    /// hardware support gate so Simulator can display the real camera sheet;
+    /// it does not start AR or alter the Feature-consent policy.
+    func requestCameraPermissionForOSCopy() async {
+        let allowed = await permissionProbe.request(.camera)
+        state.status = allowed ? "camera OS許可" : "camera OS拒否"
     }
 
     private func receiveARState(_ captureState: MiniAppCaptureState) {
@@ -438,6 +448,10 @@ private struct P2ARView: View {
                 .accessibilityIdentifier("p2.ar.start")
             Button("AR停止") { Task { await feature.stop() } }
                 .accessibilityIdentifier("p2.ar.stop")
+            Button("camera OS文言を確認") {
+                Task { await feature.requestCameraPermissionForOSCopy() }
+            }
+            .accessibilityIdentifier("p2.ar.camera-permission-copy")
             Section("同一画面のcamera競合") {
                 Text(state.contenderStatus).accessibilityIdentifier("p2.ar.contender.status")
                 Button("Camera B要求（reject）") {

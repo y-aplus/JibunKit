@@ -37,26 +37,10 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
     }
 
     func testCameraPromptRendersRepresentativeEnglishUsageDescription() throws {
-        let consent = app.buttons["management.consent.p2-ar.camera"]
-        let management = app.buttons["management.open"]
-        XCTAssertTrue(management.waitForExistence(timeout: 10), app.debugDescription)
-        management.tap()
-        for _ in 0..<15 where !consent.isHittable { app.swipeUp() }
-        XCTAssertTrue(consent.waitForExistence(timeout: 10) && consent.isHittable, app.debugDescription)
-        consent.tap()
-        // The diagnostic management UI is intentionally Japanese; only the
-        // app-specific InfoPlist usage text under test is selected as English.
-        let allowFeature = app.buttons["許可"]
-        XCTAssertTrue(allowFeature.waitForExistence(timeout: 5), app.debugDescription)
-        allowFeature.tap()
-        let close = app.buttons["閉じる"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5), app.debugDescription)
-        close.tap()
-
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/p2-ar")))
-        let start = app.buttons["p2.ar.start"]
-        XCTAssertTrue(start.waitForExistence(timeout: 15), app.debugDescription)
-        start.tap()
+        let permissionCopy = app.buttons["p2.ar.camera-permission-copy"]
+        XCTAssertTrue(permissionCopy.waitForExistence(timeout: 15), app.debugDescription)
+        permissionCopy.tap()
 
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let purpose = springboard.staticTexts["Use the camera for the foreground AR feature."]

@@ -78,6 +78,13 @@ class MediaVerificationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Missing built ja"):
                 MODULE.check_localized_usage_descriptions(app, {key: "base"})
 
+    def test_widget_os_ui_requires_existing_english_simulator_language(self):
+        for value in ["(\n    en,\n    ja\n)", "(\n    en-US\n)"]:
+            MODULE.require_english_simulator_language(value)
+        for value in ["(\n    ja,\n    en\n)", "", "unexpected"]:
+            with self.assertRaisesRegex(ValueError, "English disposable Simulator"):
+                MODULE.require_english_simulator_language(value)
+
     def test_combined_requires_all_capabilities_and_exact_background_identifiers(self):
         info = {
             "CFBundleIdentifier": "com.jibunkit.app",

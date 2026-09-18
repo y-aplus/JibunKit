@@ -94,6 +94,13 @@ def check_localized_usage_descriptions(app, info):
     return keys
 
 
+def require_english_simulator_language(output):
+    """WidgetKit follows the Simulator OS language, not host launch arguments."""
+    languages = re.findall(r"[A-Za-z]+(?:[-_][A-Za-z]+)?", output)
+    if not languages or languages[0].lower().split("-")[0].split("_")[0] != "en":
+        raise ValueError(f"P2 OS UI requires an English disposable Simulator: {output!r}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--simulator-id", required=True)
@@ -208,6 +215,10 @@ def main():
                         "Tests/P2CombinedHost/HostNativeTests.swift"]]
                     if args.surface == "p2-combined" else []))
             if args.surface == "p2-combined":
+                locale = run(["xcrun", "simctl", "spawn", args.simulator_id, "defaults", "read",
+                              "NSGlobalDomain", "AppleLanguages"], root,
+                             "simulator-languages", limit=60)
+                require_english_simulator_language(locale)
                 # Reset only this app's camera decision. Do not erase unrelated
                 # privacy state, and let XCUITest observe the actual OS prompt.
                 run(["xcrun", "simctl", "privacy", args.simulator_id, "reset", "camera",

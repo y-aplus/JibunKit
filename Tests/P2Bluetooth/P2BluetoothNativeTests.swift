@@ -49,6 +49,84 @@ final class P2BluetoothNativeTests: XCTestCase {
         XCTAssertNil(P2BluetoothDiagnosticInput.data(hex: "GG"))
     }
 
+    func testPersistentDiagnosticRequiresRestorationChainAndBoundsSavedEpochs() throws {
+        let suite = "P2BluetoothPersistentDiagnostic.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let firstID = UUID(), secondID = UUID(), owner = MiniAppID("restored-observation")
+        let restoredGeneration = UUID(), otherGeneration = UUID()
+        let first = P2BluetoothDiagnosticLog(defaults: defaults, processID: firstID, systemPID: 101,
+            now: { Date(timeIntervalSince1970: 1) })
+        first.record(.hostLaunch, owner: owner, message: "onHostLaunch admitted=true")
+        first.record(.ownerOnRestore, owner: owner, message: "manual hook alone is not restoration")
+        XCTAssertEqual(first.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+
+        let second = P2BluetoothDiagnosticLog(defaults: defaults, processID: secondID, systemPID: 202,
+            now: { Date(timeIntervalSince1970: 2) })
+        XCTAssertEqual(second.previousProcessID, firstID)
+        second.record(.ownerOnRestore, owner: owner, message: "owner onRestore invoked")
+        second.record(.consumerConnectBegin, owner: owner, message: "consumer-connect begin")
+        second.record(.consumerConnectFailed, owner: owner, message: "consumer-connect failed")
+        second.record(.restoredConnected, owner: owner, generation: restoredGeneration,
+            message: "restored-connected delivered peripheral=11223344 generation=AABBCCDD")
+        XCTAssertEqual(second.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+        second.appendNative(owner: MiniAppID("different-owner"),
+            message: "willRestoreState callback restoredCount=1")
+        XCTAssertEqual(second.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+        second.appendNative(owner: owner,
+            message: "willRestoreState callback restoredCount=1")
+        XCTAssertEqual(second.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+        second.record(.consumerConnectCompleted, owner: owner, message: "consumer-connect completed")
+        XCTAssertEqual(second.coldRestoreStatus, "新processでOS復元callbackからconnectedを確認（OSの起動契機は未判定）")
+        second.record(.restoredNotification, owner: owner, generation: otherGeneration,
+            message: "first restored notification generation=DEADBEEF characteristic=2A37 bytes=2")
+        XCTAssertEqual(second.coldRestoreStatus, "新processでOS復元callbackからconnectedを確認（OSの起動契機は未判定）")
+        second.record(.restoredNotification, owner: owner, generation: restoredGeneration,
+            message: "first restored notification generation=AABBCCDD characteristic=2A37 bytes=2")
+        XCTAssertEqual(second.coldRestoreStatus, "新processでOS復元callbackと同一世代の初回通知を確認（OSの起動契機は未判定）")
+        XCTAssertTrue(second.text.contains(secondID.uuidString))
+        XCTAssertTrue(second.text.contains("generation=AABBCCDD"))
+
+        for index in 0..<150 { second.record(.hostLaunch, owner: owner, message: "bounded-event-\(index)") }
+        XCTAssertEqual(second.lines.count, 120)
+        XCTAssertFalse(second.text.contains("bounded-event-0\n"))
+        XCTAssertTrue(second.text.contains("bounded-event-149"))
+        for index in 0..<100 { second.appendNative(owner: owner, message: "volatile-event-\(index)") }
+        XCTAssertEqual(second.lines.count, 200)
+        XCTAssertFalse(second.text.contains("volatile-event-0\n"))
+        XCTAssertTrue(second.text.contains("volatile-event-99"))
+        let reloaded = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 303,
+            now: { Date(timeIntervalSince1970: 3) })
+        XCTAssertEqual(reloaded.previousProcessID, secondID)
+        XCTAssertEqual(reloaded.lines.count, 120)
+        XCTAssertFalse(reloaded.text.contains("volatile-event-99"))
+
+        let manualSuite = "P2BluetoothManualNewProcess.\(UUID().uuidString)"
+        let manualDefaults = try XCTUnwrap(UserDefaults(suiteName: manualSuite))
+        defer { manualDefaults.removePersistentDomain(forName: manualSuite) }
+        _ = P2BluetoothDiagnosticLog(defaults: manualDefaults, processID: UUID(), systemPID: 1)
+        let manual = P2BluetoothDiagnosticLog(defaults: manualDefaults, processID: UUID(), systemPID: 2)
+        manual.record(.hostLaunch, owner: owner, message: "manual new process")
+        manual.record(.consumerConnectCompleted, owner: owner, message: "consumer-connect completed")
+        manual.record(.restoredConnected, owner: owner, generation: UUID(), message: "manual connected")
+        XCTAssertEqual(manual.coldRestoreStatus, "このprocessではOS復元callback由来のconnectedを確認していません")
+
+        let importedSuite = "P2BluetoothImportedDiagnostic.\(UUID().uuidString)"
+        let importedDefaults = try XCTUnwrap(UserDefaults(suiteName: importedSuite))
+        defer { importedDefaults.removePersistentDomain(forName: importedSuite) }
+        let oversized = (0..<130).map { index in
+            ["time": 0, "processID": UUID().uuidString, "owner": owner.rawValue,
+             "kind": "hostLaunch", "message": index == 129 ? String(repeating: "x", count: 700) : "load-event-\(index)"] as [String: Any]
+        }
+        importedDefaults.set(try JSONSerialization.data(withJSONObject: oversized), forKey: "entries.v2")
+        let imported = P2BluetoothDiagnosticLog(defaults: importedDefaults, processID: UUID(), systemPID: 3)
+        XCTAssertEqual(imported.lines.count, 120)
+        XCTAssertFalse(imported.text.contains("load-event-10\n"))
+        XCTAssertTrue(imported.text.contains("load-event-11"))
+        XCTAssertTrue(imported.text.contains(String(repeating: "x", count: 512)))
+        XCTAssertFalse(imported.text.contains(String(repeating: "x", count: 513)))
+    }
+
     func testDiagnosticStateShowsDiscoveryReadWriteAndNotifyCallbacks() async throws {
         let suite = "P2BluetoothDiagnostic.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -92,8 +170,11 @@ final class P2BluetoothNativeTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         let store = MiniAppConsentStore(defaults: defaults), pool = P2BluetoothNativeFakePool()
+        let diagnostics = P2BluetoothDiagnosticLog(defaults: defaults, processID: UUID(), systemPID: 404,
+            now: { Date(timeIntervalSince1970: 4) })
         let feature = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-restored-ui"), title: "Restored",
-            coordinator: MiniAppBluetoothCoordinator(factory: pool.make), consents: store)
+            coordinator: MiniAppBluetoothCoordinator(factory: pool.make), consents: store,
+            diagnostics: diagnostics)
         store.setConsent(.allowed, for: feature.id, permissionID: "bluetooth")
         try feature.definition.onHostLaunch?()
         let native = try XCTUnwrap(pool.centrals.first)
@@ -104,6 +185,15 @@ final class P2BluetoothNativeTests: XCTestCase {
         XCTAssertEqual(connection.peripheral, peripheral)
         XCTAssertEqual(connection.generation, generation)
         XCTAssertEqual(feature.status, "復元接続済み（診断操作可能）")
+        let key = MiniAppBluetoothCharacteristic(service: "180D", characteristic: "2A37")
+        native.emit(.value(peripheral: peripheral, generation: generation, characteristic: key,
+                           data: Data([0x11, 0x12]), notifying: true))
+        native.emit(.value(peripheral: peripheral, generation: generation, characteristic: key,
+                           data: Data([0xFE]), notifying: true))
+        XCTAssertEqual(diagnostics.text.components(separatedBy: "first restored notification generation=").count - 1, 1)
+        XCTAssertTrue(diagnostics.text.contains("generation=\(generation.uuidString.suffix(8))"))
+        XCTAssertTrue(diagnostics.text.contains("characteristic=2A37 bytes=2"))
+        XCTAssertFalse(diagnostics.text.contains("11 12"))
         await feature.lifetime.stop(); await feature.service.unregisterAllOwned()
     }
 

@@ -206,8 +206,9 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     }
     public func centralManager(_ central: CBCentralManager, willRestoreState dict: [String: Any]) {
         let restored = dict[CBCentralManagerRestoredStatePeripheralsKey] as? [CBPeripheral] ?? []
+        diagnostics?("willRestoreState callback restoredCount=\(restored.count)")
         for peripheral in restored {
-            trace("restore before delegate assignment", peripheral)
+            trace("willRestoreState peripheral before delegate assignment", peripheral)
             peripherals[peripheral.identifier] = peripheral; peripheral.delegate = self
             guard peripheral.state == .connected || peripheral.state == .connecting else { continue }
             let generation = UUID(); generations[peripheral.identifier] = generation

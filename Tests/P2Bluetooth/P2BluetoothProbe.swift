@@ -4,22 +4,102 @@ import JibunKitCore
 
 @MainActor
 enum P2BluetoothProbe {
-    static let diagnostics = P2BluetoothDiagnosticLog()
+    static let diagnostics = P2BluetoothDiagnosticLog(defaults: UserDefaults(suiteName: "com.jibunkit.p2-bluetooth-diagnostics") ?? .standard)
     static let coordinator = MiniAppBluetoothCoordinator { owner, restorationIdentifier in
         MiniAppCoreBluetoothCentral(owner: owner, restorationIdentifier: restorationIdentifier,
-            diagnostics: { message in diagnostics.append(owner: owner, message: message) })
+            diagnostics: { message in diagnostics.appendNative(owner: owner, message: message) })
     }
-    static let sensor = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-sensor"), title: "BLE Sensor", coordinator: coordinator)
-    static let accessory = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-accessory"), title: "BLE Accessory", coordinator: coordinator)
+    static let sensor = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-sensor"), title: "BLE Sensor",
+        coordinator: coordinator, diagnostics: diagnostics)
+    static let accessory = P2BluetoothFeature(id: MiniAppID("p2-bluetooth-accessory"), title: "BLE Accessory",
+        coordinator: coordinator, diagnostics: diagnostics)
     static var definitions: [MiniAppDefinition] { [sensor.definition, accessory.definition] }
 }
 
 @MainActor
 final class P2BluetoothDiagnosticLog: ObservableObject {
+    // consumerConnect is retained only so v2 persisted entries remain decodable; it never qualifies success.
+    enum Kind: String, Codable { case processStart, native, hostLaunch, ownerOnRestore, consumerConnect,
+        consumerConnectBegin, consumerConnectCompleted, consumerConnectFailed, restoredConnected, restoredNotification }
+    private struct Entry: Codable {
+        let time: Date, processID: UUID, owner: String?, kind: Kind, message: String, generation: UUID?
+    }
+    private static let entriesKey = "entries.v2", processKey = "latest-process.v2", maximumEntries = 120
+    let processID: UUID
+    let previousProcessID: UUID?
     @Published private(set) var lines: [String] = []
-    func append(owner: MiniAppID, message: String) {
-        lines.append("\(Date.now.ISO8601Format()) [\(owner.rawValue)] \(message)")
-        if lines.count > 80 { lines.removeFirst(lines.count - 80) }
+    @Published private(set) var coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
+    private let defaults: UserDefaults, now: @MainActor () -> Date
+    private var entries: [Entry]
+    private var volatileLines: [String] = []
+
+    init(defaults: UserDefaults = .standard, processID: UUID = UUID(), systemPID: Int32 = ProcessInfo.processInfo.processIdentifier,
+         now: @escaping @MainActor () -> Date = { Date.now }) {
+        self.defaults = defaults; self.processID = processID; self.now = now
+        previousProcessID = defaults.string(forKey: Self.processKey).flatMap(UUID.init(uuidString:))
+        let decoded = (defaults.data(forKey: Self.entriesKey)).flatMap { try? JSONDecoder().decode([Entry].self, from: $0) } ?? []
+        entries = decoded.suffix(Self.maximumEntries).map {
+            Entry(time: $0.time, processID: $0.processID, owner: $0.owner, kind: $0.kind,
+                  message: String($0.message.prefix(512)), generation: $0.generation)
+        }
+        defaults.set(processID.uuidString, forKey: Self.processKey)
+        append(kind: .processStart, owner: nil,
+               message: "process-start systemPID=\(systemPID) previous=\(previousProcessID?.uuidString ?? "none")")
+    }
+
+    func appendNative(owner: MiniAppID, message: String) {
+        if message.hasPrefix("willRestoreState ") {
+            append(kind: .native, owner: owner, message: message)
+        } else {
+            volatileLines.append(format(time: now(), processID: processID, owner: owner.rawValue,
+                                        kind: .native, message: String(message.prefix(512))))
+            if volatileLines.count > 80 { volatileLines.removeFirst(volatileLines.count - 80) }
+            rebuildPresentation()
+        }
+    }
+    func record(_ kind: Kind, owner: MiniAppID, generation: UUID? = nil, message: String) {
+        append(kind: kind, owner: owner, generation: generation, message: message)
+    }
+    private func append(kind: Kind, owner: MiniAppID?, generation: UUID? = nil, message: String) {
+        let bounded = String(message.prefix(512))
+        entries.append(.init(time: now(), processID: processID, owner: owner?.rawValue, kind: kind,
+                             message: bounded, generation: generation))
+        if entries.count > Self.maximumEntries { entries.removeFirst(entries.count - Self.maximumEntries) }
+        if let data = try? JSONEncoder().encode(entries) { defaults.set(data, forKey: Self.entriesKey) }
+        rebuildPresentation()
+    }
+    private func rebuildPresentation() {
+        lines = entries.map { format(time: $0.time, processID: $0.processID, owner: $0.owner,
+                                     kind: $0.kind, message: $0.message) } + volatileLines
+        let current = entries.filter { $0.processID == processID }
+        guard let previousProcessID, previousProcessID != processID else {
+            coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
+            return
+        }
+        let restored = current.filter { connected in
+            guard connected.kind == .restoredConnected, let owner = connected.owner,
+                  connected.generation != nil else { return false }
+            return current.contains { $0.kind == .native && $0.owner == owner && $0.message.hasPrefix("willRestoreState ") }
+                && current.contains { $0.kind == .ownerOnRestore && $0.owner == owner }
+                && current.contains { $0.kind == .consumerConnectCompleted && $0.owner == owner }
+        }
+        guard !restored.isEmpty else {
+            coldRestoreStatus = "このprocessではOS復元callback由来のconnectedを確認していません"
+            return
+        }
+        let qualification = "新processでOS復元callbackからconnectedを確認（OSの起動契機は未判定）"
+        if restored.contains(where: { connected in current.contains(where: {
+            $0.kind == .restoredNotification && $0.owner == connected.owner
+                && $0.generation == connected.generation
+        }) }) {
+            coldRestoreStatus = "新processでOS復元callbackと同一世代の初回通知を確認（OSの起動契機は未判定）"
+        } else {
+            coldRestoreStatus = qualification
+        }
+    }
+    private func format(time: Date, processID: UUID, owner: String?, kind: Kind, message: String) -> String {
+        let owner = owner.map { " [\($0)]" } ?? ""
+        return "\(time.ISO8601Format()) [process=\(processID.uuidString)]\(owner) [\(kind.rawValue)] \(message)"
     }
     var text: String { lines.joined(separator: "\n") }
 }
@@ -28,6 +108,7 @@ private struct P2BluetoothDiagnosticLogView: View {
     @ObservedObject var log: P2BluetoothDiagnosticLog
     var body: some View {
         Section("BLE接続記録（両Feature）") {
+            Text(log.coldRestoreStatus).accessibilityIdentifier("p2.bluetooth.cold-restore-status")
             ShareLink("診断記録を共有", item: log.text)
             Text(log.text.isEmpty ? "記録なし" : log.text)
                 .font(.caption.monospaced()).textSelection(.enabled)
@@ -83,17 +164,22 @@ final class P2BluetoothFeature: ObservableObject {
     @Published private(set) var writeResult = "未送信"
     @Published private(set) var notifyResult = "未設定"
     private var awaitingRead = false
+    private let diagnostics: P2BluetoothDiagnosticLog?
+    private var restoredGenerations: Set<UUID> = [], notifiedRestoredGenerations: Set<UUID> = []
 
     init(id: MiniAppID, title: String, coordinator: MiniAppBluetoothCoordinator = .shared,
-         consents: MiniAppConsentStore = MiniAppConsentStore(defaults: .standard)) {
-        self.id = id; self.title = title; self.consents = consents
+         consents: MiniAppConsentStore = MiniAppConsentStore(defaults: .standard),
+         diagnostics: P2BluetoothDiagnosticLog? = nil) {
+        self.id = id; self.title = title; self.consents = consents; self.diagnostics = diagnostics
         let service = MiniAppBluetoothService(owner: id, coordinator: coordinator)
         self.service = service
-        lifetime = MiniAppFeatureLifetime(id: id) { [service, consents, id] runtime in
+        lifetime = MiniAppFeatureLifetime(id: id) { [service, consents, id, diagnostics] runtime in
             guard consents.consent(for: id, permissionID: "bluetooth") == .allowed else {
                 throw MiniAppBluetoothFailure.permissionDenied(.notDetermined)
             }
+            diagnostics?.record(.consumerConnectBegin, owner: id, message: "consumer-connect begin")
             try await service.connect(to: runtime)
+            diagnostics?.record(.consumerConnectCompleted, owner: id, message: "consumer-connect completed")
         }
         service.receive = { [weak self] event in self?.receive(event) }
     }
@@ -112,9 +198,14 @@ final class P2BluetoothFeature: ObservableObject {
             onHostLaunch: { [weak self] in
                 guard let self else { return }
                 let admitted = self.lifetime.isStartAllowed && self.consents.consent(for: self.id, permissionID: "bluetooth") == .allowed
+                self.diagnostics?.record(.hostLaunch, owner: self.id, message: "onHostLaunch admitted=\(admitted)")
                 self.service.prepareRestoration(admitted: admitted) { [weak self] in
                     guard let self else { return }
-                    Task { try? await self.lifetime.start() }
+                    self.diagnostics?.record(.ownerOnRestore, owner: self.id, message: "owner onRestore invoked")
+                    Task {
+                        do { try await self.lifetime.start() }
+                        catch { self.diagnostics?.record(.consumerConnectFailed, owner: self.id, message: "consumer-connect failed type=\(String(reflecting: type(of: error)))") }
+                    }
                 }
             }
         ) { [self] _ in P2BluetoothView(feature: self) }
@@ -166,8 +257,11 @@ final class P2BluetoothFeature: ObservableObject {
         case .discovered(let peripheral):
             if let index = peripherals.firstIndex(where: { $0.id == peripheral.id }) { peripherals[index] = peripheral }
             else { peripherals.append(peripheral) }
-        case .connected(let peripheral, _, let restored):
+        case .connected(let peripheral, let generation, let restored):
             if restored {
+                restoredGenerations.insert(generation)
+                diagnostics?.record(.restoredConnected, owner: id, generation: generation,
+                    message: "restored-connected delivered peripheral=\(peripheral.uuidString.suffix(8)) generation=\(generation.uuidString.suffix(8))")
                 do {
                     if let restoredConnection = try service.currentConnection(peripheral: peripheral) {
                         connection = restoredConnection; status = "復元接続済み（診断操作可能）"
@@ -176,16 +270,24 @@ final class P2BluetoothFeature: ObservableObject {
                     }
                 } catch { status = "復元connection取得失敗: \(error)" }
             } else { status = "接続済み" }
-        case .disconnected: status = "切断済み"; connection = nil; awaitingRead = false
+        case .disconnected(_, let generation, _):
+            restoredGenerations.remove(generation); notifiedRestoredGenerations.remove(generation)
+            status = "切断済み"; connection = nil; awaitingRead = false
         case .powerChanged(let power, _): status = "電源: \(power.rawValue)"
         case .services(_, _, let identifiers):
             discoveredServices = Array(Set(identifiers)).sorted(); status = "Service候補 \(identifiers.count)件"
         case .characteristics(_, _, let service, let identifiers):
             discoveredCharacteristics = Array(Set(identifiers)).sorted(); status = "\(service) のCharacteristic候補 \(identifiers.count)件"
-        case .value(_, _, let characteristic, let data, let notifying):
+        case .value(_, let generation, let characteristic, let data, let notifying):
             let value = P2BluetoothDiagnosticInput.hex(data)
             if awaitingRead { lastReadHex = "\(characteristic.characteristic): \(value)"; awaitingRead = false }
-            if notifying { lastNotifyHex = "\(characteristic.characteristic): \(value)" }
+            if notifying {
+                lastNotifyHex = "\(characteristic.characteristic): \(value)"
+                if restoredGenerations.contains(generation), notifiedRestoredGenerations.insert(generation).inserted {
+                    diagnostics?.record(.restoredNotification, owner: id, generation: generation,
+                        message: "first restored notification generation=\(generation.uuidString.suffix(8)) characteristic=\(characteristic.characteristic) bytes=\(data.count)")
+                }
+            }
             status = "値受信 \(data.count) bytes"
         case .writeCompleted(_, _, let characteristic):
             writeResult = "成功: \(characteristic.characteristic)"; status = "Write応答成功"

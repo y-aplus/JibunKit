@@ -123,18 +123,15 @@ jobs:
           xcrun simctl boot "$sim_id"
           xcrun simctl bootstatus "$sim_id" -b
 
-      - name: Verify selected native surface
-        env:
-          SURFACE: ${{ matrix.surface }}
+      - name: Test BLE and scene shared logic
+        if: matrix.surface == 'ble-scenes'
+        timeout-minutes: 10
         shell: bash
         run: |
           set -euo pipefail
-          case "$SURFACE" in
-            ble-scenes)
-              python3 -m unittest discover -s Tools/tests -p 'test_ble_scenes*.py'
-              mkdir -p "$RUNNER_TEMP/BluetoothScenes"
-              swift test --filter 'MiniAppBluetoothCoordinatorTests|MiniAppWindowSceneRegistryTests' 2>&1 | tee "$RUNNER_TEMP/BluetoothScenes/shared-tests.log"
-              python3 - <<'PY'
+          mkdir -p "$RUNNER_TEMP/BluetoothScenes"
+          swift test --filter 'MiniAppBluetoothCoordinatorTests|MiniAppWindowSceneRegistryTests' 2>&1 | tee "$RUNNER_TEMP/BluetoothScenes/shared-tests.log"
+          python3 - <<'PY'
           import os, re
           from pathlib import Path
           log = (Path(os.environ['RUNNER_TEMP']) / 'BluetoothScenes/shared-tests.log').read_text()
@@ -148,6 +145,16 @@ jobs:
                   if len(re.findall(pattern, log)) != 1:
                       raise SystemExit(f'Missing or duplicate passing test: {name}.{method}')
           PY
+
+      - name: Verify selected native surface
+        env:
+          SURFACE: ${{ matrix.surface }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SURFACE" in
+            ble-scenes)
+              python3 -m unittest discover -s Tools/tests -p 'test_ble_scenes*.py'
               python3 Tools/verify-media.py --surface ble-scenes --simulator-id "$SIMULATOR_ID"
               ;;
             identity-push)

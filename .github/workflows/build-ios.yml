@@ -474,6 +474,7 @@ jobs:
           "$RUNNER_TEMP/tuist/tuist" version
 
       - name: Test shared feature logic
+        timeout-minutes: 10
         if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
         shell: bash
         run: python3 Tests/Fixtures/network_server.py --run-tests

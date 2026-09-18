@@ -121,10 +121,20 @@ final class MiniAppWindowSceneRegistryTests: XCTestCase, @unchecked Sendable {
         let middle = try XCTUnwrap(registry.snapshot(for: sessionID)?.connection)
         var middleReleased = false
         XCTAssertTrue(registry.onDisconnect(owner: b, connection: middle) { middleReleased = true })
-        let newest = await registry.connect(sessionID: sessionID, phase: .active, selectedID: b) { _ in }
-        XCTAssertTrue(middleReleased)
+        let middleCleanup = expectation(description: "middle cleanup finished")
+        XCTAssertTrue(registry.onDisconnect(owner: b, connection: middle) { middleCleanup.fulfill() })
+        var newestCompleted = false
+        let connectingNewest = Task { @MainActor in
+            let value = await registry.connect(sessionID: sessionID, phase: .active, selectedID: b) { _ in }
+            newestCompleted = true
+            return value
+        }
+        await fulfillment(of: [middleCleanup], timeout: 1)
+        XCTAssertFalse(newestCompleted, "New connection must join the old session cleanup")
 
         await gate.release()
+        let newest = await connectingNewest.value
+        XCTAssertTrue(middleReleased)
         let returnedMiddle = await reconnecting.value
         XCTAssertEqual(returnedMiddle, middle)
         XCTAssertEqual(registry.snapshot(for: sessionID)?.connection, newest)

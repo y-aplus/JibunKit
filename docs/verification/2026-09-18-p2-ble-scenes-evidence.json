@@ -9,13 +9,13 @@
     "failure_cases": "Owner stop/reconnect overlap, stale callbacks and lease cleanup, closed runtime rollback, BLE power/permission/backpressure, duplicate service identity; window reconnect/disconnect and detached cleanup, failed restore stop/recovery, other owner retained.",
     "normal_entrypoints": "Actual WindowGroup/UIView scene connection, normal launcher/management/backup. BLE Feature uses runtime and persisted consent/host launch. Simulator fake proves owner lifecycle, not radio or native restoration.",
     "invalidation": "Close owner admission before native cancellation/join; hold through data maintenance. Reject stale window generations and Bluetooth leases. Scene disconnect never stops another window global runtime.",
-    "review": "Parent host45515ce and BLE final227ab3b reviewed. Stop barrier is published before await; new admission waits without owning the stop lock. Delayed fake covers reconnect/stop/new lease overlap. Native lifecycle tests inject fake manager; diagnostic real adapter is compiled but no radio claim. Explicit Feature lifetime initialization and inline async error assertions avoid prior Swift6 failures. Local host/verifier19 plus delivery19 tests passed; Swift/Xcode execution pending."
+    "review": "Parent host45515ce and BLE final227ab3b reviewed. Stop barrier is published before await; new admission waits without owning the stop lock. Delayed fake covers reconnect/stop/new lease overlap. Native lifecycle tests inject fake manager; diagnostic real adapter is compiled but no radio claim. Explicit Feature lifetime initialization and inline async error assertions avoid prior Swift6 failures. Local host/verifier19 plus delivery19 tests passed; Swift/Xcode execution pending. Cancellation diagnosis: newest scene connect correctly joins inherited cleanup; test self-deadlocked by releasing gate only after its awaited completion. Fixed test ordering with explicit pending assertion; review of remaining held cleanup tests found release before task join. Shared stage now capped10m."
   },
   "dependencies": {
     "P2-I": "Inherited afb8f50. Normal/shared35249566535 and native35253192466 passed. Actual signed CloudKit/APNs communication remains open and is not accepted by this wave."
   },
-  "planned_ci_runs": 3,
-  "budget_exception": "",
+  "planned_ci_runs": 5,
+  "budget_exception": "Initial budget3 exceeded because shared scene fixture deadlocked, exhausting normal45m and companion scoped30m runs. One diagnosis before retry: exact last started test and source reveal gate release placed after awaiting its join. Move newest connect into Task, observe intermediate cleanup, release gate, then await both results. Other held-cleanup tests reviewed. Product cleanup contract unchanged. Add10m shared-step timeout in normal and native workflows to fail before whole-job budget. Repeat normal(shared/IPA/selected restore UI) and combined native plus scoped shared at one fixed source; no per-worker/per-case CI.",
   "jobs": [
     {
       "id": "normal-shared",
@@ -73,7 +73,7 @@
       "id": "35292105440",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35292105440",
       "source": "c35afe778fa9068721fb4235c4769c3aad551296",
-      "conclusion": "dispatched; completion evidence pending, not passed"
+      "conclusion": "cancelled at45m job limit: shared XCTest hung at testReconnectWhileOldCleanupIsHeldCannotOverwriteNewerGenerationOrLoseCleanup. BLE12 and scene7 preceding cases passed, but no full shared summary, normal IPA or UI execution. Test awaited newest connect (which joins inherited cleanup) before releasing the gate it joins. Repair test ordering, preserve product join."
     },
     {
       "id": "35292107259",
@@ -85,7 +85,7 @@
       "id": "35293163823",
       "url": "https://github.com/y-aplus/JibunKit/actions/runs/35293163823",
       "source": "4577853a1e738f63d8171d64945bb8076aca9a0c",
-      "conclusion": "dispatched: targeted shared BLE/scene tests plus complete native fixture and diagnostic IPA; completion evidence pending"
+      "conclusion": "cancelled before inspection/cancel request; includes same known deadlocking scene test. No native follow-up/IPA success inferred. No further cancellation applied."
     }
   ],
   "evidence": [
@@ -357,6 +357,18 @@
       "inputs_and_filters": "native-surface.yml surface=ble-scenes ios_major=26; adds swift test --filter MiniAppBluetoothCoordinatorTests|MiniAppWindowSceneRegistryTests before all native tests and diagnostic IPA",
       "expected_elapsed_minutes": 24,
       "estimate_basis": "Measured first native run11m16; reserve up to12m for shared Swift compilation/tests and diagnostic UI follow-up. No duplicate normal IPA/UI run because new product changes are confined to BLE Core plus probe; first normal validation remains pending."
+    },
+    {
+      "id": "normal-repair",
+      "inputs_and_filters": "build-ios.yml simulator_tests=true ui_test_filter=MigrationUITests/MigrationUITests/testBackupRoundTripRestoresOnlySelectedCounter",
+      "expected_elapsed_minutes": 25,
+      "estimate_basis": "Previous P2-I normal18m12 and P2-S native11m16. Fix deterministic test self-wait rather than increasing timeout; shared step capped10m, expected compilation/tests under5m. Full normal host still needs verification because cancelled run never reached build."
+    },
+    {
+      "id": "native-repair",
+      "inputs_and_filters": "native-surface.yml surface=ble-scenes ios_major=26; shared BLE/scene plus native diagnostics",
+      "expected_elapsed_minutes": 24,
+      "estimate_basis": "Previous P2-I normal18m12 and P2-S native11m16. Fix deterministic test self-wait rather than increasing timeout; shared step capped10m, expected compilation/tests under5m. Full normal host still needs verification because cancelled run never reached build."
     }
   ],
   "planned_device_checks": [

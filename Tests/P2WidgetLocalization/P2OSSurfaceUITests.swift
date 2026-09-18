@@ -202,7 +202,8 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         tap(app.buttons["許可"], in: app)
         tap(app.buttons["閉じる"], in: app)
 
-        let outside = CLLocation(latitude: 37.3300, longitude: -122.0090)
+        // Both points are well beyond the boundary's uncertainty cushion.
+        let outside = CLLocation(latitude: 37.3280, longitude: -122.0090)
         let inside = CLLocation(latitude: 37.3349, longitude: -122.0090)
         XCUIDevice.shared.location = XCUILocation(location: outside)
         defer { XCUIDevice.shared.location = nil }
@@ -214,13 +215,13 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         let sample = app.staticTexts["p2.location.p2-location-regions.sample"]
         let outsideDeadline = Date().addingTimeInterval(15)
         while (events.label == beforeEvents
-                || !sample.label.contains("37.33")
+                || !sample.label.contains("37.328")
                 || !sample.label.contains("-122.009"))
                 && Date() < outsideDeadline {
             RunLoop.current.run(until: Date().addingTimeInterval(0.25))
         }
         XCTAssertNotEqual(events.label, beforeEvents, app.debugDescription)
-        XCTAssertTrue(sample.label.contains("37.33") && sample.label.contains("-122.009"),
+        XCTAssertTrue(sample.label.contains("37.328") && sample.label.contains("-122.009"),
                       "The initial outside location was not delivered: \(app.debugDescription)")
         tap(app.buttons["p2.location.regions.stop"], in: app)
 

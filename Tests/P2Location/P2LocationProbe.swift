@@ -113,7 +113,7 @@ final class P2LocationFeature {
             }
             let registration = try service.register(
                 localID: Self.diagnosticGeofenceID,
-                region: .geofence(latitude: 37.3349, longitude: -122.0090, radius: 150,
+                region: .geofence(latitude: 37.3349, longitude: -122.0090, radius: 300,
                                    notifyOnEntry: true, notifyOnExit: true))
             state.status = "geofence登録 \(registration.localID)"; refreshRegistrations()
             observations.record(state.status)

@@ -214,6 +214,43 @@ def main():
                         "Tests/P2BluetoothScenesHost/HostNativeTests.swift",
                         "Tests/P2CombinedHost/HostNativeTests.swift"]]
                     if args.surface == "p2-combined" else []))
+            run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
+                 "-configuration", "Release", "-destination", "generic/platform=iOS",
+                 "CODE_SIGNING_ALLOWED=NO"], root, "release-build")
+            app = derived / "Build/Products/Release-iphoneos/JibunKit_App.app"
+            info = plistlib.loads((app / "Info.plist").read_bytes())
+            check_requirements(info, args.surface)
+            result["localized_usage_descriptions"] = check_localized_usage_descriptions(app, info)
+            shutil.copyfile(app / "Info.plist", evidence / "app-Info.plist")
+
+            def entitlement(name):
+                matches = list((root / "Derived").rglob(name))
+                if len(matches) != 1:
+                    raise ValueError(f"Expected one entitlement file: {name}: {matches}")
+                return matches[0]
+
+            run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",
+                 "--entitlements", entitlement("JibunKitWidget-Extension.entitlements"),
+                 app / "PlugIns/JibunKitWidget_Extension.appex"], root, "sign-widget")
+            run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
+                 "--entitlements-root", root / "Derived"], root, "sign-share")
+            if args.surface in {"ar-action", "p2-combined"}:
+                run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
+                     "--kind", "Action", "--entitlements-root", root / "Derived"], root, "sign-action")
+            run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",
+                 "--entitlements", entitlement("JibunKit-App.entitlements"), app], root, "sign-app")
+            run(["codesign", "--verify", "--deep", "--strict", app], root, "verify-signatures")
+            payload = root / "Package/Payload"
+            payload.mkdir(parents=True)
+            run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
+            ipa = evidence / {"media": "JibunKit-P2-C-check.ipa", "background-location": "JibunKit-P2-B-check.ipa",
+                              "identity-push": "JibunKit-P2-I-check.ipa", "ble-scenes": "JibunKit-P2-S-check.ipa", "ar-action": "JibunKit-P2-AR-Action-check.ipa", "p2-combined": "JibunKit-P2-combined-check.ipa"}[args.surface]
+            run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
+            run(["unzip", "-t", ipa], root, "ipa-crc")
+            run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")
+            # Preserve a verified diagnostic IPA even if a later OS UI experiment
+            # fails. Overall success still requires every named test to pass.
+            result["ipa_packaged"] = True
             if args.surface == "p2-combined":
                 locale = run(["xcrun", "simctl", "spawn", args.simulator_id, "defaults", "read",
                               "NSGlobalDomain", "AppleLanguages"], root,
@@ -255,40 +292,6 @@ def main():
                     "location": "background standard update plus foreground geofence enter/exit callbacks",
                     "physical_device": "not exercised",
                 }
-            run(["xcodebuild", "build", *common, "-scheme", "JibunKit-App",
-                 "-configuration", "Release", "-destination", "generic/platform=iOS",
-                 "CODE_SIGNING_ALLOWED=NO"], root, "release-build")
-            app = derived / "Build/Products/Release-iphoneos/JibunKit_App.app"
-            info = plistlib.loads((app / "Info.plist").read_bytes())
-            check_requirements(info, args.surface)
-            result["localized_usage_descriptions"] = check_localized_usage_descriptions(app, info)
-            shutil.copyfile(app / "Info.plist", evidence / "app-Info.plist")
-
-            def entitlement(name):
-                matches = list((root / "Derived").rglob(name))
-                if len(matches) != 1:
-                    raise ValueError(f"Expected one entitlement file: {name}: {matches}")
-                return matches[0]
-
-            run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",
-                 "--entitlements", entitlement("JibunKitWidget-Extension.entitlements"),
-                 app / "PlugIns/JibunKitWidget_Extension.appex"], root, "sign-widget")
-            run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
-                 "--entitlements-root", root / "Derived"], root, "sign-share")
-            if args.surface in {"ar-action", "p2-combined"}:
-                run(["python3", root / "Tools/verify-share-extension.py", "--app", app,
-                     "--kind", "Action", "--entitlements-root", root / "Derived"], root, "sign-action")
-            run(["codesign", "--force", "--sign", "-", "--timestamp=none", "--generate-entitlement-der",
-                 "--entitlements", entitlement("JibunKit-App.entitlements"), app], root, "sign-app")
-            run(["codesign", "--verify", "--deep", "--strict", app], root, "verify-signatures")
-            payload = root / "Package/Payload"
-            payload.mkdir(parents=True)
-            run(["ditto", app, payload / "JibunKit.app"], root, "copy-payload")
-            ipa = evidence / {"media": "JibunKit-P2-C-check.ipa", "background-location": "JibunKit-P2-B-check.ipa",
-                              "identity-push": "JibunKit-P2-I-check.ipa", "ble-scenes": "JibunKit-P2-S-check.ipa", "ar-action": "JibunKit-P2-AR-Action-check.ipa", "p2-combined": "JibunKit-P2-combined-check.ipa"}[args.surface]
-            run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", "Payload", ipa], payload.parent, "package")
-            run(["unzip", "-t", ipa], root, "ipa-crc")
-            run(["shasum", "--algorithm", "256", ipa], root, "ipa-sha256")
             result["passed"] = True
     except Exception as error:
         result["error"] = str(error)

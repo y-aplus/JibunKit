@@ -1,0 +1,23 @@
+# 0.8.5後のOS配送検証準備
+
+公開0.8.5の後続作業。変更は診断fixture/試験/runnerに限定し、通常製品を変更しない。ユーザーは「次に実機確認が発生したところでしばらく停止」と予告済み。今回の位置/HTTP差分を一括レビュー・CI・IPA取得まで進め、実機手順を提示した時点で全スレッドを停止し、再開指示を待つ。
+
+## 位置: 前景geofenceの実OS callback
+
+worker1519d0cを統合。XCUILocationによる外側→内側→外側の移動で、regions ownerの実enter/exit delegateと新規永続記録を確認する。単なる登録やrequestStateは成功条件ではない。開始時に同localIDを置換し、別owner・旧ログ・保存失敗は通知成功にしない。
+
+親レビューで初期座標のsubstring `37.33` が内側37.3349も許容する不足を修正。外側を37.3280、中心37.3349/-122.0090、半径300mにし、双方の地点を境界から十分離す。enter/exit各35秒で打ち切り、配送時刻の製品保証ではない。Appleの[地域監視の説明](https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html)では境界のcushionを超える必要があり、登録だけではenterは発生しない。現行Simulatorでの成立は未検証。実電波iBeaconやcold起動の成功と混同しない。
+
+## HTTP: 診断専用のprocess終了と相関
+
+background URLSessionのSimulator上の自動再起動を製品の合否ゲートにしない。Apple DTSの[背景実行のテスト説明](https://developer.apple.com/forums/thread/685525)とbackground session資料は、ユーザーforce quitと診断用exitを区別している。通常IPAへ終了ボタンを入れない。
+
+既存HTTP診断へ論理run ID、起点process/task、保存成功とcompletion実呼出しの相関を補い、普通の同process・再要求・混在を新process復元として扱わない変更をworkerへ依頼済み。通信URLやpayload自体を記録しない。通信先や外部サービスを新規追加せず既存URL入力を使う。サーバのrequest回数1はOS再試行まで排除するため必須条件にしない。
+
+既存の実機転送先はhttpbingoのdrip（10秒/10bytes）で、同processの背景callbackから保存/completionが確認済み。この過去結果をprocess終了後の成功と読み替えない。新診断の具体的な実機手順は統合・ビルド後に提示する。継続処理code1の追究は再開しない。
+
+## 一括CIの準備
+
+native合格後、Release/署名/IPA CRCを先に検証し、最後にOS UIを実行する順へ変更。OS UI失敗時も検査済み診断IPAをartifactに残すが、result.passed=false/CI失敗を維持する。単にIPAを得るためだけの再ビルドを避ける。新しい位置試験はOS UI計6件に含まれ、名前ごとの成功/skipなし判定は維持する。
+
+位置/runnerのローカル13試験・py_compile・diff検査成功。HTTP差分提出後にnative件数・全差分・CI時間上限を確認して一回にまとめる。現在の追加実機操作なし。

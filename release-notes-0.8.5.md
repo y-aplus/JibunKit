@@ -1,6 +1,6 @@
 # JibunKit 0.8.5 — scene選択の復元
 
-出荷候補VERSIONは0.8.5/build15、最新正式版PREVIOUSは0.8.4/build14。確認用pre-releaseのみ公開、正式版は未公開です。1.0.0の完成判定ではありません。
+公開VERSIONは0.8.5/build15、PREVIOUSは0.8.4/build14。2026-09-19公開。1.0.0の完成判定ではありません。
 
 ## 変更
 
@@ -12,7 +12,7 @@ BLEは新processでのOS state restorationと同一世代へのNotify配送を�
 
 - 99632e3 / CI35355170934: native82件・OS UI5件成功。二windowの異なる所有者・値・元session IDの復元と片側破棄後の他方保持、無効保存先の消去、Simulator背景位置callback、英語Widget・代表camera許可文言を確認。
 - 59f7081の実機BLEログ: 新processのOS復元callbackから同一owner/generationのNotify2bytesまで確認。OSがprocessを起動した契機は未判定で、自動起動時刻や遅延を保証しません。
-- feab170 / CI35357260854: 0.8.5通常版build/IPA、共有443件（既存skip2）・Module11件と保存先復元/cold URL優先の限定UIが成功。今回の通常IPAの実機結果は未受領です。
+- feab170 / CI35357260854: 0.8.5通常版build/IPA、共有443件（既存skip2）・Module11件と保存先復元/cold URL優先の限定UIが成功。2026-09-19に通常IPA上書き後のCounter/Reminder保持とCounterの前景復帰後の表示・操作を実機確認。cold復元の実機再試験ではありません。
 
 物理iPad、実境界/iBeacon電波、CloudKit/APNs実通信、ARの実OS interruption復帰などは未確認です。継続処理code1の追加追究は停止しています。Files自動UIの失敗は独立したUIKit/SwiftUIでも再現しており、同じ操作の反復はしません。過去の実機成功と今回候補の証拠を区別します。
 

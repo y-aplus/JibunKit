@@ -1,9 +1,9 @@
 # 公開・release手順
 
 
-更新日: 2026-09-18。公開VERSIONは0.8.4/build14、PREVIOUSは0.8.3/build13。[出荷照合](verification/2026-09-18-0.8.4-release.md)。最新公開版はGitHub Releasesを正本とする。
+更新日: 2026-09-19。公開VERSIONは0.8.5/build15、PREVIOUSは0.8.4/build14。[出荷照合](verification/2026-09-18-0.8.5-release.md)。最新公開版はGitHub Releasesを正本とする。
 
-現在の開発branchは0.8.5/build15候補を準備中。候補に対するPREVIOUSは0.8.4/build14で、上記公開版の履歴と区別する。[候補説明](../release-notes-0.8.5.md)。
+0.8.5はCIと代表実機確認を終えた通常IPAを公開するpatch。[変更と検証範囲](../release-notes-0.8.5.md)。
 
 ## 版ごとの出荷判断
 

@@ -1,18 +1,18 @@
 # 公開版・main・出荷候補の現在状態
 
-更新日: 2026-09-18。公開版/mainは0.8.4/build14（前版0.8.3/build13）。出荷source0878ede、CI35333186866成功、通常候補でデータ保持/JSON読込を実機確認し、main統合と正式IPA公開・再取得照合まで完了。[出荷記録](verification/2026-09-18-0.8.4-release.md)。1.0は未完。Files自動UIの不安定、OS cold配送、実位置/電波、署名条件付き通信等の残件は維持する。iPad実機はユーザーが見送り、待機対象ではない。
+更新日: 2026-09-19。公開版/mainは0.8.5/build15（前版0.8.4/build14）。通常IPAのbuild sourceはfeab170、CI35357260854成功。上書き後のCounter/Reminder保持と前景復帰後の表示・操作を実機確認。[出荷記録](verification/2026-09-18-0.8.5-release.md)。1.0は未完。実位置/電波、署名条件付き通信、AR実OS中断等の残件を維持する。iPad実機はユーザーが見送り、待機対象ではない。
 
 ## 0.8.4後の検証
 
-AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。BLEは新processでOS復元と同一世代Notifyを実機確認済み。現在はscene別選択復元の追加検証と通常版への影響確認を進めている。0.8.4後の変更は公開IPAへ未反映。
+AR診断ddb0f83はCI35336219498のnative17件と実機のcamera競合一周が成功。[AR記録](verification/2026-09-18-ar-followup.md)。OS interruptionは別の未観測項目。FilesのCI失敗はJibunKit非依存のUIKit/SwiftUI双方でも同じFileProvider参照解決エラーが再現し、今回の反復を終了した。[独立比較](verification/2026-09-18-files-independent-comparison.md)。BLEは新processでOS復元と同一世代Notifyを実機確認済み。scene別選択復元はSimulatorと通常版の限定回帰を確認し、0.8.5へ反映した。
 
 保存専用Action（P2-13）は5a97857/CI35343811711と既存source別実機/共通入力証拠を照合して採用範囲を完了。[判定記録](verification/2026-09-18-ar-followup.md)。P2-6もCI35347692100のOS言語表示確認を含め採用範囲を完了。
 
-P2-9（BLE）は実機の通常通信・両owner/管理・新processの同一復元世代NotifyとCI35352655988のnative回帰を照合し、採用通常範囲を完了。OS自動起動の契機は未判定であり、起動時刻の保証はしない。P2-3はSimulator背景位置callbackを確認したが実電波等の残件を維持する。P2-11は99632e3/CI35355170934で保存した元の二session・owner・値の再接続と片側破棄/他方保持が成功。物理iPadは未確認で操作待ちではない。現在は0.8.5/build15候補の通常版検証を準備中で、公開版は0.8.4のまま。
+P2-9（BLE）は実機の通常通信・両owner/管理・新processの同一復元世代NotifyとCI35352655988のnative回帰を照合し、採用通常範囲を完了。OS自動起動の契機は未判定であり、起動時刻の保証はしない。P2-3はSimulator背景位置callbackを確認したが実電波等の残件を維持する。P2-11は99632e3/CI35355170934で保存した元の二session・owner・値の再接続と片側破棄/他方保持が成功。物理iPadは未確認で操作待ちではない。通常版のcold URL優先もCI35357260854で成功。
 
 ## 現在の外部条件
 
-0.8.5候補feab170の通常CI35357260854は成功。共有443件（既存skip2）・Module11件・選択復元/cold URL優先UIと通常IPAを確認し、[確認用IPA](https://github.com/y-aplus/JibunKit/releases/download/v0.8.5-check-20260918/JibunKit.ipa)をpre-releaseで配布した。公開URL再取得SHAも一致。次はユーザーによる通常版上書き後の代表確認。正式版/mainは0.8.4のまま。[候補記録](verification/2026-09-18-0.8.5-release.md)。
+0.8.5の通常CI35357260854と実機代表1–2は成功。共有443件（既存skip2）・Module11件・選択復元/cold URL優先UIと通常IPAを確認した。次は実境界通過とbackground URLSessionのprocess境界を、自動試験で追加観測できるかを独立に検討する。現在の追加実機操作はない。
 
 2026-09-18、ユーザーからCloudKit/APNsの実通信検証用の有料署名・サービス環境は現在用意できないと回答を受領。P2-8/P2-10は署名/サービス環境不足による実通信未検証を維持する。加入や購入は依頼していない。この回答を1.0完成基準の除外承認や実通信合格とは扱わない。環境から独立したFiles比較・AR/BLE残件の検証準備を進める。
 

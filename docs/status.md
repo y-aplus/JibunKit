@@ -12,6 +12,8 @@ P2-9（BLE）は実機の通常通信・両owner/管理・新processの同一復
 
 ## 現在の外部条件
 
+0.8.5候補feab170の通常CI35357260854は成功。共有443件（既存skip2）・Module11件・選択復元/cold URL優先UIと通常IPAを確認し、[確認用IPA](https://github.com/y-aplus/JibunKit/releases/download/v0.8.5-check-20260918/JibunKit.ipa)をpre-releaseで配布した。公開URL再取得SHAも一致。次はユーザーによる通常版上書き後の代表確認。正式版/mainは0.8.4のまま。[候補記録](verification/2026-09-18-0.8.5-release.md)。
+
 2026-09-18、ユーザーからCloudKit/APNsの実通信検証用の有料署名・サービス環境は現在用意できないと回答を受領。P2-8/P2-10は署名/サービス環境不足による実通信未検証を維持する。加入や購入は依頼していない。この回答を1.0完成基準の除外承認や実通信合格とは扱わない。環境から独立したFiles比較・AR/BLE残件の検証準備を進める。
 
 ## 0.8.4へ至るsource別履歴

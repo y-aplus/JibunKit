@@ -84,7 +84,12 @@ final class MigrationUITests: XCTestCase {
             tap(list)
             XCTAssertTrue(file.waitForExistence(timeout: 15), app.debugDescription)
             capture("backup-files-list")
-            // Probe the leading document icon; prior label-region taps left the picker unchanged.
+            // Diagnostic hypothesis: the cell/filename hit points used in the
+            // previous runs may not invoke the document picker's primary action.
+            // Record selectability separately, then try the visible icon region.
+            print("Backup file candidate enabled=\(file.isEnabled) hittable=\(file.isHittable) frame=\(file.frame)")
+            XCTAssertTrue(file.isEnabled, "Backup JSON is present but disabled: \(app.debugDescription)")
+            XCTAssertTrue(file.isHittable, "Backup JSON is present but not hittable: \(app.debugDescription)")
             file.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.5)).tap()
             capture("backup-after-file-selection")
             XCTAssertTrue(app.buttons["backup.restore"].waitForExistence(timeout: 20), app.debugDescription)

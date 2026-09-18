@@ -189,6 +189,11 @@ public final class MiniAppBluetoothCoordinator {
         let native = try active(lease).native; try requireAvailable(native); native.scan(serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates)
     }
     public func stopScan(_ lease: MiniAppBluetoothOwnerLease) throws { try active(lease).native.stopScan() }
+    public func currentConnection(peripheral: UUID, lease: MiniAppBluetoothOwnerLease) throws -> MiniAppBluetoothConnection? {
+        let state = try active(lease)
+        guard let generation = state.connections[peripheral] else { return nil }
+        return .init(owner: lease.owner, peripheral: peripheral, generation: generation)
+    }
     public func connect(_ lease: MiniAppBluetoothOwnerLease, peripheral: UUID) async throws -> MiniAppBluetoothConnection {
         await acquireOwner(lease.owner); defer { releaseOwner(lease.owner) }
         let key = PeripheralKey(owner: lease.owner, peripheral: peripheral)
@@ -320,7 +325,8 @@ public final class MiniAppBluetoothService {
         coordinator.prepareRestoration(owner: owner, admitted: admitted, onRestore: onRestore)
     }
     public func connect(to runtime: MiniAppRuntime) async throws {
-        let lease = await coordinator.connect(owner: owner) { [weak self] in self?.receive?($0) }
+        let admission = MiniAppBluetoothEventAdmission()
+        let lease = await coordinator.connect(owner: owner) { admission.receive($0) }
         let coordinator = coordinator
         do {
             try runtime.onShutdownAsync { [weak self] in
@@ -332,6 +338,10 @@ public final class MiniAppBluetoothService {
             throw error
         }
         self.lease = lease; self.runtime = runtime
+        admission.open { [weak self] event in
+            guard let self, self.lease == lease, self.runtime?.isClosed == false else { return }
+            self.receive?(event)
+        }
     }
     public func unregisterAllOwned() async { guard let lease else { return }; await coordinator.unregister(lease); if self.lease == lease { self.lease = nil; runtime = nil } }
     private func activeLease() throws -> MiniAppBluetoothOwnerLease {
@@ -341,6 +351,11 @@ public final class MiniAppBluetoothService {
     public var authorization: MiniAppBluetoothAuthorization { guard let lease else { return .notDetermined }; return (try? coordinator.authorization(lease)) ?? .notDetermined }
     public func scan(serviceUUIDs: [String]? = nil, allowDuplicates: Bool = false) throws { try coordinator.scan(activeLease(), serviceUUIDs: serviceUUIDs, allowDuplicates: allowDuplicates) }
     public func stopScan() throws { try coordinator.stopScan(activeLease()) }
+    /// Returns this lifetime's current ticket, including an OS-restored ticket.
+    /// Connection readiness is still established by the connected event.
+    public func currentConnection(peripheral: UUID) throws -> MiniAppBluetoothConnection? {
+        try coordinator.currentConnection(peripheral: peripheral, lease: activeLease())
+    }
     public func connect(peripheral: UUID) async throws -> MiniAppBluetoothConnection { try await coordinator.connect(activeLease(), peripheral: peripheral) }
     public func disconnect(_ c: MiniAppBluetoothConnection) async throws { try await coordinator.disconnect(c, lease: activeLease()) }
     public func discoverServices(_ ids: [String]? = nil, on c: MiniAppBluetoothConnection) throws { try coordinator.discoverServices(ids, on: c, lease: activeLease()) }
@@ -348,4 +363,24 @@ public final class MiniAppBluetoothService {
     public func read(_ key: MiniAppBluetoothCharacteristic, on c: MiniAppBluetoothConnection) throws { try coordinator.read(key, on: c, lease: activeLease()) }
     public func write(_ data: Data, to key: MiniAppBluetoothCharacteristic, type: MiniAppBluetoothWriteType, on c: MiniAppBluetoothConnection) throws { try coordinator.write(data, to: key, type: type, on: c, lease: activeLease()) }
     public func setNotify(_ enabled: Bool, for key: MiniAppBluetoothCharacteristic, on c: MiniAppBluetoothConnection) throws { try coordinator.setNotify(enabled, for: key, on: c, lease: activeLease()) }
+}
+
+/// Restoration may be delivered while the coordinator is attaching its consumer.
+/// Expose it only after the service has installed its runtime and lease, so the
+/// Feature can immediately use the restored connection inside its callback.
+@MainActor
+private final class MiniAppBluetoothEventAdmission {
+    private var pending: [MiniAppBluetoothEvent] = []
+    private var delivery: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
+
+    func receive(_ event: MiniAppBluetoothEvent) {
+        if let delivery { delivery(event) } else { pending.append(event) }
+    }
+
+    func open(_ delivery: @escaping @MainActor @Sendable (MiniAppBluetoothEvent) -> Void) {
+        self.delivery = delivery
+        let snapshot = pending
+        pending.removeAll()
+        snapshot.forEach(delivery)
+    }
 }

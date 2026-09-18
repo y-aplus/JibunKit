@@ -121,6 +121,50 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
         XCTAssertTrue(pool.created.isEmpty)
     }
 
+    func testRestoredConnectionIsUsableInsideTheFirstConsumerCallback() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-restored-ticket")
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        let runtime = MiniAppRuntime(), peripheral = UUID(), generation = UUID()
+        service.prepareRestoration(admitted: true, onRestore: {})
+        pool[owner].emit(.connected(peripheral: peripheral, generation: generation, restored: true))
+        let events = EventBox()
+        service.receive = { event in
+            events.values.append(event)
+            do {
+                let connection = try XCTUnwrap(service.currentConnection(peripheral: peripheral))
+                XCTAssertEqual(connection.owner, owner)
+                XCTAssertEqual(connection.generation, generation)
+                try service.discoverServices(on: connection)
+            } catch { XCTFail("Restored callback preceded usable runtime: \(error)") }
+        }
+        try await service.connect(to: runtime)
+        XCTAssertEqual(events.values.count, 1)
+        let connection = try XCTUnwrap(service.currentConnection(peripheral: peripheral))
+        try await service.disconnect(connection)
+        XCTAssertNil(try service.currentConnection(peripheral: peripheral))
+        await runtime.shutdown()
+        XCTAssertThrowsError(try service.currentConnection(peripheral: peripheral))
+        service.receive = nil
+    }
+
+    func testRejectedRuntimeDoesNotDeliverBufferedRestoration() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-restored-rollback")
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        service.prepareRestoration(admitted: true, onRestore: {})
+        pool[owner].emit(.connected(peripheral: UUID(), generation: UUID(), restored: true))
+        let events = EventBox()
+        service.receive = { events.values.append($0) }
+        let runtime = MiniAppRuntime()
+        await runtime.shutdown()
+        do {
+            try await service.connect(to: runtime)
+            XCTFail("Closed runtime should reject connection")
+        } catch {}
+        XCTAssertTrue(events.values.isEmpty)
+    }
+
     func testOldServiceCannotUnregisterReplacementLease() async throws {
         let pool = FakePool(), owner = MiniAppID("ble-lease"), coordinator = MiniAppBluetoothCoordinator(factory: pool.make)
         let old = MiniAppBluetoothService(owner: owner, coordinator: coordinator), replacement = MiniAppBluetoothService(owner: owner, coordinator: coordinator)

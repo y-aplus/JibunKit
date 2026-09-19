@@ -17,11 +17,12 @@ CloudKit and APNs integrations are optional and depend on paid signing and Apple
 
 The standard path is:
 
-1. Create or adapt a source-based Swift package that exposes a feature view and business APIs.
-2. Run the feature independently while developing it.
-3. Add a thin `MiniAppDefinition` integration and register it with the host.
-4. Generate and build the workspace with Tuist and Xcode, locally or through GitHub Actions.
-5. Sign and install the resulting app with a method appropriate for your Apple account and device.
+1. Create a private derived repository that keeps JibunKit as `upstream` and your private host as `origin`.
+2. Create or adapt a source-based Swift package that exposes a feature view and business APIs.
+3. Run the feature independently while developing it.
+4. Add a thin `MiniAppDefinition` integration and register it with the host.
+5. Generate and build the workspace with Tuist and Xcode, locally or through GitHub Actions.
+6. Sign and install the resulting app with a method appropriate for your Apple account and device.
 
 Start with [Adding a feature](docs/mini-apps.md). The template command is:
 
@@ -30,6 +31,8 @@ tuist scaffold feature --name Notes
 ```
 
 The generated package includes an example app, so feature UI and business logic can be developed without first embedding it in JibunKit. The host integration remains explicit: add the package product, create one definition, and register that definition.
+
+For a first feature, prefer an independent package under `Modules/`: it is easier to test in isolation, reuse in a standalone app, and validate from Windows/WSL than code added to the root package. See the feature and build guides for the exact platform limits.
 
 ## Build and install
 

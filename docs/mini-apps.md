@@ -4,6 +4,8 @@ A JibunKit feature is source code compiled into the host at build time. The pref
 
 JibunKit does not load arbitrary IPAs or runtime plug-ins. It also does not automatically convert an existing app target: separate reusable feature code from the app shell first.
 
+Prefer a separate package under `Modules/<Name>` for a new personal feature. It gives the feature an isolated test command, a standalone example, and a clearer reuse boundary; a portable package can also run its own tests on Linux/WSL even though the repository's root package cannot. Adding sources to the root package can be reasonable for code inseparable from the host, but it couples validation to the macOS/Xcode path and increases shared CI work.
+
 ## 1. Create a standalone feature
 
 On macOS with Tuist 4.207.0:
@@ -14,6 +16,8 @@ tuist generate --path Modules/Notes --no-open
 ```
 
 Use a valid Swift type name beginning with an uppercase letter. The template creates a Swift package, root view, tests, a small example app, and UI-test scaffolding under `Modules/Notes`. It refuses to overwrite an existing directory.
+
+The repository's scaffold and project-generation commands are macOS paths. In the reported Tuist 4.207.0 Linux experiment, the installed binary did not provide the local `scaffold` and Xcode-project `generate` commands used here; this is not a claim about every Tuist version. On Windows/WSL, create the package files manually or prepare them on macOS, then use the package-specific checks described in [Build, sign, and install](build.md).
 
 Develop and test `NotesExample` independently. Keep domain models, persistence rules, validation, and feature-specific native behavior in this package. The feature package does not need to depend on JibunKitCore unless it directly uses its APIs.
 
@@ -95,10 +99,12 @@ This keeps the same feature usable independently and inside JibunKit.
 Run the smallest checks that prove each boundary:
 
 ```bash
-swift test
+swift test --package-path Modules/Notes
 tuist generate --no-open
 tuist build JibunKit-App
 ```
+
+The Tuist commands require macOS. The package-specific test may run on Linux/WSL only if that feature's dependencies are portable; the repository-root `swift test` currently does not. A WSL installation that already has a compatible Darwin Swift SDK may additionally perform an iOS compile-only check, but that is not an IPA build or a generally installed prerequisite; see the build guide.
 
 Also verify:
 

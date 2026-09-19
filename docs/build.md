@@ -13,6 +13,28 @@ The verified build configuration uses Swift 6, Tuist 4.207.0, Xcode 26.6, and an
 
 Read [Adding a feature](mini-apps.md) before changing package products or host registration.
 
+## Create a private derived host
+
+Keep personal features in a private repository with two explicit remotes: `upstream` for public JibunKit and `origin` for your private host. One initial setup is:
+
+```bash
+git clone https://github.com/y-aplus/JibunKit.git PRIVATE_HOST
+cd PRIVATE_HOST
+git remote rename origin upstream
+git remote add origin git@github.com:OWNER/PRIVATE_HOST.git
+git push -u origin main
+gh repo set-default OWNER/PRIVATE_HOST
+```
+
+Create `OWNER/PRIVATE_HOST` as a private repository before the push. Replace the example branch if your derived host uses another default branch. Do not use a public fork when the repository will contain private features or configuration.
+
+Before the first install, choose the identity strategy deliberately:
+
+- To update an existing JibunKit installation in place and retain its shared data, preserve its bundle IDs and App Group and use the same compatible signing account.
+- To install an independent app alongside it, assign new bundle IDs and a new App Group consistently to the app and every extension. It will not share the existing app's container.
+
+Changing these values later is a compatibility and data-migration decision, not cosmetic renaming.
+
 ## Local macOS build
 
 Select the verified Xcode version and install the pinned Tuist version, then run:
@@ -38,12 +60,17 @@ From any machine with Git and GitHub CLI access, push a branch and run:
 
 ```bash
 gh workflow run build-ios.yml \
+  --repo OWNER/PRIVATE_HOST \
   --ref YOUR_BRANCH \
   -f simulator_tests=true \
   -f feature_validation=true
 ```
 
+Always pass `--repo OWNER/PRIVATE_HOST` (or first set that repository with `gh repo set-default`). With both `origin` and `upstream`, an implicit selection can target the public upstream repository.
+
 The workflow installs the pinned Tuist binary, runs the selected Swift and Simulator checks, builds the app and extensions with Xcode, validates metadata and identifiers, and packages an ad-hoc IPA. Download the `JibunKit-ad-hoc` artifact from that run.
+
+In one derived-host experiment, the default workflow inputs completed as run `35237198657` (`Xcode 26.6 (combined)`), including IPA packaging and inspection. That run used no repository secrets and only `permissions: contents: read`. It did **not** run the additional `simulator_tests`, `feature_validation`, or native-comparison inputs, so it is not evidence for those paths or for every derived repository.
 
 The flags select additional work; they are not universal proof of every surface:
 
@@ -52,6 +79,17 @@ The flags select additional work; they are not universal proof of every surface:
 - Focused and native-surface workflows are diagnostics for named boundaries. Their success does not imply that the full release suite ran.
 
 Use the workflow inputs, completed steps, test summaries, and artifacts as the exact record of what was verified. The CI policy and evidence grouping are documented in [CI boundaries](ci-boundaries.md).
+
+## What can run locally
+
+| Environment | Supported local work | Important limit |
+| --- | --- | --- |
+| macOS with Xcode and Tuist 4.207.0 | Root tests, feature tests, scaffold, project generation, Xcode build, Simulator, and local signing/install | Capabilities still depend on the signing account, profiles, device, and services. |
+| Windows | Source editing and Git/GitHub CLI operations | Use macOS or Actions for project generation, Xcode builds, and IPA packaging. |
+| Linux/WSL with Swift | Tests for a portable independent package, for example `swift test --package-path Modules/Notes` | The root package does not currently build on Linux/WSL. |
+| Linux/WSL with the tested Tuist 4.207.0 binary | Installation and `tuist version` worked in the reported experiment | In that experiment, its command set did not provide the local `tuist scaffold` or Xcode-project `tuist generate` path used by this repository. Do not generalize this result to other Tuist versions. |
+
+An additional, environment-specific compile-only path was measured on WSL where a Darwin Swift SDK was already installed: `swift build --package-path Modules/Zaiko --swift-sdk arm64-apple-ios` compiled the feature's iOS-gated code. This can catch type errors, but it neither generates an Xcode project nor creates an IPA. JibunKit does not bundle or install that SDK, and this observation does not imply that a standard WSL Swift installation has it. Check `swift sdk list` first and treat SDK setup as outside the supported first-use path.
 
 ## Sign and install
 

@@ -24,11 +24,13 @@ The focused contracts under [docs/guides](docs/guides/) and the [coexistence led
 
 ## Build and test
 
-Foundation code can be tested anywhere Swift is available:
+Run the root package tests on macOS. The root `JibunKitCore` package currently uses Apple-specific APIs and does not build on Linux/WSL, so merely having Swift installed there is not sufficient:
 
 ```bash
 swift test
 ```
+
+An independent package under `Modules/` may support local Linux/WSL tests when its own dependencies are portable. Test it explicitly with `swift test --package-path Modules/NAME`; do not infer root-package support from that result.
 
 iOS builds and Apple-framework tests require macOS and Xcode, or the repository's GitHub Actions workflows:
 

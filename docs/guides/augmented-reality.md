@@ -6,7 +6,13 @@ One feature owns one foreground `ARSession` through its coordinator. Start only 
 
 AR shares the camera with capture and scanning surfaces, so acquisition must use the common camera ownership boundary and fail predictably when another owner is active. The fixtures verify integration structure; tracking quality, interruption recovery, permissions, and camera contention still require real-device testing.
 
-## Detailed contract and evidence (Japanese reference)
+The feature owns `ARSession`, concrete `ARConfiguration`, run options, frames, anchors, delegate, and renderer. `MiniAppARSessionAdapter` converts none of them; it connects start/pause and three forwarded events (`interruptionBegan`, `interruptionEnded`, `runtimeFailed`). Keep the feature delegate and forward a run-scoped `MiniAppARSessionEventForwarder`. A stale forwarder is discarded after stop/new run, and native session/frame/anchor objects never cross an actor hop.
+
+The stop closure strongly retains the exact session, bridge, and generation until pause, event-stream termination, and camera release finish. Connect `MiniAppCaptureOwner` to lifetime, declare camera consent, forward scene activity, and pass the injected `miniAppSceneActivityID` used to start. Nonselection, inactive/background, disconnect, runtime stop, or explicit camera switching pauses; returning foreground never restarts implicitly.
+
+Interruption marks the owner suspended without discarding the session. On end, rerun with the feature's configuration and restart options. A failed restart or nonrestartable runtime failure follows normal pause/release and fails the operation; the feature chooses reset policy and `canRestart`. All camera surfaces use `MiniAppCaptureCoordinator.shared`. Hosts inject the scene connection ID, include the camera usage description, and should not add `UIRequiredDeviceCapabilities=arkit` when supporting non-AR devices—reject via `isSupported` instead.
+
+## Japanese source notes and historical evidence
 
 ## 採用範囲
 

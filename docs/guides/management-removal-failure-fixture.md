@@ -6,7 +6,11 @@ This diagnostic fixture demonstrates a partial feature-removal failure. The firs
 
 The fixture is test support, not a production error simulator or evidence that every external revocation path has been exercised.
 
-## Detailed fixture notes (Japanese reference)
+`P0BManagementFailureProbe` is copied only into a signed diagnostic host. It registers ordinary lifetime, removal, and `onUnregister` hooks and has no bypass deletion button. Its private `CounterStore` fails the first process-local deregistration attempt before removal runs, preserves the saved value and incomplete management state, and succeeds on the management screen's second retry. The retry deletes only the diagnostic owner and re-registers at zero while the normal Counter remains unchanged.
+
+The UI test saves a comparison Counter value, edits the diagnostic feature, confirms its name and data description, observes the first-stage error and retained value, retries removal, and verifies owner isolation. It uses bounded scrolling to materialize rows in a lazy list. Failure injection stays inside the fixture and must not add branches to production deregistration or storage.
+
+## Japanese source notes and historical evidence
 
 `P0BManagementFailureProbe`は、通常IPAには含めず、署名済み診断hostへだけコピーする管理画面fixtureである。通常の`MiniAppDefinition`にlifetime、removal、onUnregisterを登録し、管理共通層を迂回する専用削除ボタンは持たない。
 

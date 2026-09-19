@@ -6,7 +6,11 @@ Express feature appearance as scoped SwiftUI environment or UIKit presentation c
 
 Screen-awake behavior is a separate lease owned by the selected active scene. Aggregate requests centrally, apply the effective value to the host, and release it on deselection, scene deactivation, runtime stop, and failure.
 
-## Detailed contract and evidence (Japanese reference)
+Use `environment(\.colorScheme, ...)` only for a SwiftUI subtree. `preferredColorScheme` propagates upward to its hosting presentation and can affect sheets, so conflicting preferences inside one presentation are not an isolation boundary. For UIKit, set `overrideUserInterfaceStyle` on a feature-owned container or root controller; do not change `UIAppearance`, the application window, or a process-global third-party theme setter. A global SDK requires a feature-specific adapter plus explicit simultaneous A/B and restoration tests.
+
+The fixture separately observes SwiftUI environment values, real hosting-controller and sibling-window traits, UIKit controller overrides, navigation and sheet behavior, and removal of a prior preference. Its `requested` value is feature intent; `effective` means the selected active scene owns the lease. Generated hosts copy `P2AppearanceProbe.swift` into app sources and register its definitions, while `P2AppearanceNativeTests.swift` belongs only in the native test target. Do not compile the probe twice or ship it in the product registry.
+
+## Japanese source notes and historical evidence
 
 Featureの外観は、独立アプリで使えたアプリ全体の設定をそのままhost全体へ適用しない。通常の接続ではSwiftUI環境、presentation preference、UIKit controller traitを区別する。
 

@@ -4,9 +4,17 @@
 
 A feature owns its typed location requirement and business interpretation; the shared location coordinator owns authorization requests, native manager lifetime, capacity, and callback routing. Bind every request and monitoring registration to an owner and generation, and reject callbacks after stop or removal.
 
-Register required host-launch restoration before UI appears. Background updates, geofences, and iBeacon monitoring also require host capabilities and usage descriptions. Simulator/build checks are structural evidence only; authorization transitions, background relaunch, region events, accuracy, and power behavior require real-device verification.
+Register required host-launch restoration before UI appears. Background updates, geofences, and iBeacon monitoring also require host capabilities and usage descriptions. Run 35371803883 observed real OS background callbacks plus cold geofence enter/exit delivery. That evidence is distinct from still-unverified physical movement, radio, accuracy, authorization-transition, reboot, and power-behavior conditions.
 
-## Detailed contract and evidence (Japanese reference)
+Declare the stable `location` permission, construct `MiniAppLocationService` with the feature owner, and have its consent closure read that owner's consent. Connect it from `MiniAppFeatureLifetime`, expose `service.externalAccess`, and call `reconnectPersistedMonitoring()` synchronously from `onHostLaunch` for region-owning features. Management must call `unregisterAllOwned()` on removal. Wire `onConsentChange` to `featureConsentDidChange()`; denial persists even if cleanup fails and revokes only that owner's updates and regions. Feature consent is checked before any OS prompt or native registration and remains distinct from app-wide OS authorization.
+
+`startUpdates(_:)` creates a generation-scoped manager using the feature's requested accuracy, distance filter, activity type, auto-pause, and background indicator. Stop with the returned generation and drop late callbacks. Enable `UIBackgroundModes = location` before setting background updates. When In Use can continue an already-running session while the app runs; relaunch for region/significant-change events requires Always authorization. Native `CLLocation` delivery is available through `receiveCoreLocations` after the same owner/generation checks.
+
+`register(localID:region:)` persists an owner-qualified identifier before monitoring. Reject excessive radii with the requested and maximum values, test geofence and beacon availability separately, and reject a beacon minor without a major. Count JibunKit reservations plus unknown host `monitoredRegions` against the app-wide limit of 20; return `capacityExceeded` without evicting anything. Release a reservation on registration failure. Cancellation also works before `didStartMonitoringFor`; a late success after cancellation is stopped immediately.
+
+On relaunch, validate persisted metadata and re-register only missing regions after management, consent, authorization, and capacity checks. Corruption, duplicate owner/local IDs, or invalid coordinates fail closed and prevent destructive writes for that process. Never restart continuous updates automatically. Unknown identifiers are not delivered across owners; only manager-wide errors without an identifier may be broadcast. Restore closes ordinary and cold delivery for that owner, and a concurrent management disable prevents resume from reopening it.
+
+## Japanese source notes and historical evidence
 
 JibunKitの位置APIは、Featureごとの同意・owner・世代をCore Locationのapp共有状態に重ねる。Featureは用途に応じた`desiredAccuracy`、`distanceFilter`、`activityType`、自動pause、背景表示を選び、JibunKitは一律の精度へ書き換えない。
 

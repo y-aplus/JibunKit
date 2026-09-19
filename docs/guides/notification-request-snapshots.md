@@ -6,7 +6,11 @@ Expose immutable snapshots of pending and delivered notification requests rather
 
 A snapshot is point-in-time evidence, not a transactional lock. Revalidate before destructive follow-up work, reject identifiers owned by another feature, and tolerate requests disappearing between observation and action.
 
-## Detailed contract and evidence (Japanese reference)
+`onNotificationAction` and `notificationPresentation` receive an optional `requestSnapshot`. The host archives the incoming `UNNotificationRequest` in memory with Apple's secure coding and routes it only to the payload owner. Calling `request()` creates a fresh native request, preserving native content, user info, category, thread, and trigger without declaring native classes `Sendable` or sharing mutable dictionaries.
+
+Attachments remain references with their original OS lifetime; snapshots do not copy files, record delivery time, replace `targetScene`, or define a durable backup format. Keep text input in `userText`. Snapshot creation failure must not suppress ordinary delivery or completion: record the error and pass `nil`; feature code handles both `nil` and decode failure. Unknown owners or missing handlers are never rerouted to another feature.
+
+## Japanese source notes and historical evidence
 
 `onNotificationAction`と`notificationPresentation`のイベントには任意の`requestSnapshot`がある。host delegateは受信した`UNNotificationRequest`をApple標準のsecure codingでメモリ内のDataへ保存し、所有Featureだけへ渡す。単独アプリならdelegateから読めた独自userInfoやcontent、triggerを、統合で失わないための接続である。
 

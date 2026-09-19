@@ -6,7 +6,15 @@ Each feature declares only the build inputs it actually needs. The host composes
 
 Signing and provisioning are host responsibilities. CloudKit and APNs are optional capabilities and require host credentials plus real-service verification; fixture builds and metadata checks do not prove communication. Generic HTTP support remains mandatory and must not depend on either optional capability.
 
-## Detailed contract and evidence (Japanese reference)
+Register each target's declarations in `EnabledFeatureBuildRequirements.swift` and call `FeatureBuildConfiguration.compose`; keep app and widget configurations separate. Identical scalar values are shared. String-array keys such as background modes, task identifiers, query schemes, user activities, App Groups, Keychain groups, and Associated Domains are deduplicated and sorted. Any other differing value fails with its key and owners until the integrator supplies an explicit plist/entitlement resolution; do not concatenate usage text or use last-writer-wins.
+
+For `CFBundleURLTypes`, preserve each dictionary and deduplicate only exact matches. A shared URL name with different dictionaries requires an explicit complete resolution; the same scheme under different names is allowed and runtime routing resolves ownership. Other structured arrays likewise require an explicit composed result. Reject empty/duplicate owners, wrong types for set-like keys, and resolutions for unrequested keys. Bundle ID and executable stay target settings.
+
+Use the generated entitlements for Xcode and CI signing, but distinguish inclusion in a signed IPA, acceptance after third-party re-signing, and successful OS service use. Capability acquisition, provisioning, scheduler registration, permission prompting, and feature consent remain outside composition.
+
+For localized usage text, declare `localizedInfoPlist[locale][key]`; identical values merge and conflicts require `localizedInfoPlistResolutions`. Write to a generated-only directory with `writeLocalizedInfoPlistStrings` and include it as target resources. Regeneration removes only generated `InfoPlist.strings`, not unrelated resources. App and widget use separate outputs, host values participate in the same rules, and diagnostic-only permissions must not leak into production. Bundle inspection proves packaging, not the language shown by an OS prompt.
+
+## Japanese source notes and historical evidence
 
 統合したFeatureのInfo.plist/entitlementsは、一つのnative targetの設定になる。各Featureの要求を`Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift`へ登録する。Tuist標準のProjectDescriptionHelpersとPlist.Valueを使い、追加の設定形式や製品用generatorを設けない。
 

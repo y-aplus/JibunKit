@@ -6,7 +6,13 @@ Keep external account identity separate from the local feature owner and runtime
 
 Persist enough source and account identity to reject stale callbacks and cross-account data, but do not infer ownership from an external identifier alone. Route all external reads and writes through the feature-owned coordinator so shutdown, removal, and account changes can close admission before state is mutated.
 
-## Detailed contract and evidence (Japanese reference)
+Model identity as feature owner + backend/account identity + local ID + operation generation. Check the account before each request and again before publishing its result. Cancellation stops new mutation and local publication but cannot promise rollback of a write already accepted by a remote service. Account state can change immediately after a check, so surface that race and make operations/retries idempotent.
+
+The generic backend protocol is the required integration and is exercised without service entitlements. A CloudKit adapter is an optional example: use an owner-specific custom zone and subscription IDs from `CloudKitExternalIdentityNames`, inject a host-created `CKContainer`, and keep feature schema/record/asset/reference operations in the feature. Build requirements add the iCloud container identifier and `CloudKit` service only to the adopting app. Merely enumerating the feature must not construct `CKContainer()` or crash an unsigned host.
+
+Real CloudKit round trips live only in the signed test target and require `JIBUNKIT_CLOUDKIT_CONTAINER`; not running them is neither success nor a skipped generic native test. Verify save/fetch/delete separately through the injected container. Management, restore, and shutdown tests use a fake backend without skipping. Deleting one owner with a reused local ID must not affect the other.
+
+## Japanese source notes and historical evidence
 
 ## 所有契約
 

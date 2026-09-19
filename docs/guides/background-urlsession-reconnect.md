@@ -6,7 +6,11 @@ Background URLSession work outlives both the visible screen and `MiniAppRuntime`
 
 The delegate must call the supplied completion exactly once after `urlSessionDidFinishEvents`, while the coordinator owns admission, duplicate reconnect rejection, and shutdown ordering. Treat identifiers and callbacks from another owner or generation as invalid. Build and fixture evidence confirms composition; real background relaunch behavior remains a device-level verification item.
 
-## Detailed contract and evidence (Japanese reference)
+Use a stable nonempty profile such as an account ID. `registerAtHostLaunch` rejects duplicate feature/profile factories instead of overwriting them. The application delegate forwards `handleEventsForBackgroundURLSession` to the registry, which builds the feature delegate without a screen and gives it a `MiniAppBackgroundURLSessionEvents` token owning the host completion.
+
+When callbacks overlap, retain every host completion and wait for the delegate's `finish()` before invoking any of them. Cancellation does not complete early; it keeps the token until the delegate finishes. Because `finish()` invokes the host synchronously and may reenter with a warm callback, first set the delegate's property to `nil`, then call `finish()` on the extracted old token. Reversing this order lets an old callback erase the newly connected token.
+
+## Japanese source notes and historical evidence
 
 background URLSessionは通常画面や`MiniAppRuntime`の寿命とは別にOSから再接続を
 要求されます。Featureは安定したprofile名を決め、host起動時にfactoryを登録して

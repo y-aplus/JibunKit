@@ -1,6 +1,6 @@
 # 大きなCI単位の準備・検証
 
-更新日: 2026-09-19。対象は[版ごとのCI境界](implementation-priorities.md)。P0/P1/P2の採用範囲は1.0基準を満たし、1.0.0候補は最終公開承認待ちである。以下は今後も使うCI境界の運用と、完了したwaveの履歴例を含む。計画の正本は[plan.json](delivery/plan.json)、現在の公開状態は[status](status.md)。
+更新日: 2026-09-19。対象は[版ごとのCI境界](implementation-priorities.md)。P0/P1/P2の採用範囲は1.0基準を満たし、1.0.0候補は最終公開承認済み・出荷照合中である。以下は今後も使うCI境界の運用と、完了したwaveの履歴例を含む。計画の正本は[plan.json](delivery/plan.json)、現在の公開状態は[status](status.md)。
 この手順は小変更ごとのCI・親子レビューを置き換える。試験を一つの巨大な直列jobへ詰め込む指示ではない。
 
 ## 境界を開始する前

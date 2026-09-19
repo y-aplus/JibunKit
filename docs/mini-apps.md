@@ -33,19 +33,20 @@ The package must expose a library product. Do not add the generated example app'
 
 ## 3. Define one integration
 
-Create a thin integration next to the feature or in a dedicated integration target:
+For this example, create `Sources/JibunKit/NotesMiniApp.swift`, which is already in the host source set. If you keep integration beside the package instead, explicitly include that integration source in the host target:
 
 ```swift
 import JibunKitCore
 import NotesFeature
 
+@MainActor
 enum NotesMiniApp {
     static let definition = MiniAppDefinition(
         id: MiniAppID("notes"),
         title: "Notes",
         systemImage: "note.text"
-    ) { context in
-        NotesRootView(context: context)
+    ) { _ in
+        NotesRootView()
     }
 }
 ```
@@ -88,7 +89,7 @@ The standalone example app owns its own app shell:
 
 ```swift
 NavigationStack {
-    NotesRootView(context: exampleContext)
+    NotesRootView()
 }
 ```
 
@@ -128,3 +129,16 @@ Before publishing an update, review [Compatibility and stable identities](compat
 - backup schema versions and payload meaning.
 
 The Records module is a larger reference for files, navigation, notifications, and backup integration. See [Records](../Modules/Records/README.md). Focused system-surface details belong in the individual guides rather than in this entry document.
+
+## Troubleshoot package connections
+
+On macOS, run `python3 Tools/check-feature-connection.py --package Modules/Notes --product NotesFeature`. It evaluates the trusted checkout's Swift and Tuist manifests to check the path, library product, target membership and direct host dependency; `--host` selects a different target such as the widget. It does not prove compilation, transitive integration dependencies or runtime registry contents.
+
+Check the first failing boundary in order:
+
+1. Package not found: correct `Project.swift`'s package path and confirm `Modules/Notes/Package.swift` exists.
+2. Product not found: match the package's library product and target names; run `swift package --package-path Modules/Notes describe`, package tests and generation.
+3. `No such module`: add the product dependency to the exact app or extension target importing it, include integration sources, then regenerate and build.
+4. No list entry or URL destination: add the definition once to `MiniAppRegistry.all`; inspect the actual registry IDs with `MiniAppValidator.validate(ids:expectedIDs:)` and exercise `jibunkit://mini-app/notes`.
+
+The expected ID set is a test assertion, not another production registry. Source-text searches alone cannot prove these four connections.

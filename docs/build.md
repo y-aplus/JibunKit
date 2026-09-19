@@ -74,7 +74,7 @@ In one derived-host experiment, the default workflow inputs completed as run `35
 
 The flags select additional work; they are not universal proof of every surface:
 
-- `feature_validation=true` checks the generated template, its standalone app, host composition, and the Records reference feature.
+- `feature_validation=true` checks the generated template, its standalone app, host composition, and, when `records_validation=true`, the Records reference feature.
 - `simulator_tests=true` enables the configured Simulator UI checks.
 - Focused and native-surface workflows are diagnostics for named boundaries. Their success does not imply that the full release suite ran.
 

@@ -51,7 +51,7 @@ Then verify that both definitions remain in the generated registry. On an upgrad
 
 ### Recover from a broken FeatureA update
 
-Do not distribute when package tests, generation, host compilation, old-data decoding, or resource comparison fails. For path/product/target/registry errors, use the [feature-addition diagnostics](mini-apps.md#package接続に失敗したとき). When the A update is one commit and has not shipped, use `git revert <commit>` to preserve history, then rerun both package tests and host generation. Do not broadly restore a dirty tree before preserving unrelated work.
+Do not distribute when package tests, generation, host compilation, old-data decoding, or resource comparison fails. For path/product/target/registry errors, use the [feature-addition diagnostics](mini-apps.md#troubleshoot-package-connections). When the A update is one commit and has not shipped, use `git revert <commit>` to preserve history, then rerun both package tests and host generation. Do not broadly restore a dirty tree before preserving unrelated work.
 
 If a device has already begun A's schema migration, do not assume old code can read the new schema. Preserve A data and prefer a forward fix that reads both versions. If a verified backup must be restored, obtain user confirmation and restore only A's provider, then verify A and B. Never guess-delete a package, App Group, or complete defaults suite.
 

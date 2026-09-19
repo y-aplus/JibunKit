@@ -1,6 +1,6 @@
-# JibunKit 1.0.0 — unpublished candidate
+# JibunKit 1.0.0
 
-Final publication approval is pending. The current stable release is 0.8.5.
+Release approved on 2026-09-19; previous stable release: 0.8.5.
 
 JibunKit hosts independently developed Swift/SwiftUI Features in one iOS app. It supplies ownership, coordination and lifecycle boundaries that would otherwise be lost when separate apps share a process. It is a source integration framework, not a loader for arbitrary IPA files or a security sandbox between Features.
 
@@ -23,4 +23,4 @@ Feature namespaces are cooperative isolation, not security boundaries. OS schedu
 
 Configure your Features, build with Tuist/Xcode, then sign and install using a method appropriate to your environment. SideStore is one tested installation example, not a JibunKit dependency. Back up data before replacing an installation; keep bundle IDs, Feature IDs and storage identities stable.
 
-Candidate: 1.0.0/build16. Build source `82553cfe2c81cd83111cd2a247c90f87bd1015ac`, CI35409750733 succeeded. IPA SHA-256: `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f` (4,747,918 bytes). The [release verification record](../verification/2026-09-19-1.0-release.md) records source-specific tests and the pending document audit. No release asset is published yet.
+Version: 1.0.0/build16. Build source `82553cfe2c81cd83111cd2a247c90f87bd1015ac`, CI35409750733 succeeded. IPA SHA-256: `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f` (4,747,918 bytes). The [release verification record](../verification/2026-09-19-1.0-release.md) records source-specific tests, the document audit and publication verification.

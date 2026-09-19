@@ -4,7 +4,7 @@
 
 ## [1.0.0] — Unreleased candidate
 
-- The owner accepted the v1 coexistence criteria on 2026-09-19. Publication still requires final approval.
+- The owner accepted the v1 coexistence criteria on 2026-09-19. Final publication was approved on 2026-09-19; publication checks are in progress.
 - Consolidates the verified P0/P1/P2 ownership and lifecycle APIs delivered in 0.x. Normal product code is unchanged from 0.8.5 apart from version/build metadata.
 - Adds evidence for cross-process background HTTP restoration on device and terminated-process Region entry/exit on Simulator.
 - Explicitly retains unobserved OS/device conditions and optional, unverified signed CloudKit/APNs integrations. See [candidate notes](docs/releases/release-notes-1.0.0.md).

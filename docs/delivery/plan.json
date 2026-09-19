@@ -1006,7 +1006,7 @@
       ],
       "scope_decision": {
         "status": "adopted",
-        "reason": "Issue #6 current recommendation and source inspection: existing CaptureCoordinator/Owner, permission, scene activity and lifetime provide arbitration/stop/join; limited AR adapter and explicit originating-scene binding are sufficient without a second resource framework. See docs/delivery/P2-ar-contract.md. Implementation/OS verification pending.",
+        "reason": "Issue #6 current recommendation and source inspection: existing CaptureCoordinator/Owner, permission, scene activity and lifetime provide arbitration/stop/join; limited AR adapter and explicit originating-scene binding are sufficient without a second resource framework. See docs/delivery/P2-ar-contract.md. Adopted implementation and representative verification are complete; actual OS interruption remains explicitly unobserved under the owner acceptance.",
         "adopted_scope": "Single foreground ARSession; native configuration/run options/delegate/frame freedom; start/explicit stop/interruption recovery; originating-scene stop and camera arbitration with other Features. Advanced world-map persistence/relocalization/background AR and simultaneous camera sessions remain outside this adopted scope."
       }
     },
@@ -1445,7 +1445,7 @@
   "scope_issue": "https://github.com/y-aplus/JibunKit/issues/6",
   "v1_acceptance": {
     "date": "2026-09-19",
-    "status": "criteria-satisfied-publication-not-approved",
+    "status": "criteria-satisfied-publication-approved",
     "reference": "docs/verification/2026-09-19-final-observation-boundary.md",
     "unobserved_units": [
       "P2-3",
@@ -1453,6 +1453,7 @@
       "P2-11",
       "P2-12"
     ],
-    "publication_requires_final_user_approval": true
+    "publication_requires_final_user_approval": false,
+    "publication_approval_date": "2026-09-19"
   }
 }

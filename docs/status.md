@@ -1,13 +1,13 @@
 # Release and development status
 
-Updated2026-09-19. **Stable: 0.8.5/build15. Candidate: 1.0.0/build16, unpublished.** The owner accepted the adopted P0/P1/P2 criteria and authorized release preparation. Final publication approval has not been given.
+Updated2026-09-19. **Stable: 0.8.5/build15. Candidate: 1.0.0/build16, unpublished.** The owner accepted the adopted P0/P1/P2 criteria and authorized release preparation. Final publication approval was given on 2026-09-19.
 
 - Candidate build source: `82553cfe2c81cd83111cd2a247c90f87bd1015ac`; CI35409750733 passed shared443 tests (2 existing skips), Module11, normal IPA checks and the selected cold/warm URL regression.
 - Normal IPA:4,747,918 bytes, SHA-256 `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f`. App, Widget and Share report1.0.0/build16. It has not been published.
 - Normal product code matches the physically checked0.8.5 source apart from version metadata. Later diagnostic results include device cross-process HTTP restoration and Simulator terminated-process Region enter/exit.
 - CloudKit/APNs remain optional, signing/service-dependent and live-communication-unverified. Generic HTTP ownership remains in the normal scope.
 - Accepted unobserved conditions remain explicitly unverified: physical location/iBeacon conditions, BackgroundTasks OS launch/expiration, physical iPad windows and AR OS-interruption recovery. See the [acceptance record](verification/2026-09-19-final-observation-boundary.md).
-- Remaining preparation: finish Issue #7 documentation/branch review, complete the current-document audit and final evidence report, then request publication approval. No new device test is currently requested.
+- Remaining preparation: finish Issue #7 documentation/branch review, complete the current-document audit and final evidence report, then publish the approved release. No new device test is currently requested.
 
 See [release preparation](verification/2026-09-19-1.0-release.md), [scope plan](delivery/plan.json), [compatibility](compatibility.md) and [published0.8.5 evidence](verification/2026-09-18-0.8.5-release.md). The broader D ledger includes future generalization and must not be interpreted as a list of all v1 release blockers.
 

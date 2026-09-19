@@ -1,5 +1,7 @@
 # P2-4 background delivery proposal
 
+> Historical note: this is the pre-implementation proposal and does not represent current completion status. Use [plan.json](plan.json) and [status](../status.md) for the current adopted scope and remaining observation limits.
+
 Date: 2026-09-17
 Baseline: `57542e66981373d2de3d112aca91ea1aa56c07cf`
 

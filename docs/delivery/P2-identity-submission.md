@@ -1,5 +1,7 @@
 # P2-I external identity 提出
 
+> Historical note: this is the implementation submission at its original verification boundary. Current policy keeps generic HTTP mandatory and CloudKit optional with real communication unverified; use [the current contract](P2-identity-push-contract.md), [plan.json](plan.json), and [status](../status.md).
+
 - 基点: `7347b483936e7f8bfe45d36984c32390cdcae2b3`
 - 初回実装 commit: `a5bf420f52f29efda3a8b804f9bb58efd3e96e8a`
 - lifecycle/管理/native修正 commit: `092fa5a9186c39e6fe3035df6050a545ef6e3844`

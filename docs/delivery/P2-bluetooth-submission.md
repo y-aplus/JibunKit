@@ -1,5 +1,7 @@
 # P2 Bluetooth submission
 
+> Historical note: this submission records the delivered change at that point in time. It is not the current completion ledger; use [plan.json](plan.json), [status](../status.md), and the current Bluetooth guide.
+
 ## Delivered boundary
 
 - `MiniAppBluetoothCoordinator` and `MiniAppBluetoothService`: tokenized owner admission, scan/connect/disconnect, service/characteristic discovery, backpressured read/write/subscribe, generation filtering, joined shutdown, lease-safe unregister, and cold restoration handoff into the same lifetime.

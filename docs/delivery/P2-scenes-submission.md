@@ -1,5 +1,7 @@
 # P2 scene submission
 
+> Historical note: this submission records the delivered scene boundary at that point. Current adopted-scope status and remaining physical iPad conditions are tracked in [plan.json](plan.json) and [status](../status.md).
+
 ## Delivered
 
 - A process registry separating stable OS session identity from ephemeral connection generation.

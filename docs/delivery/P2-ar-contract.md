@@ -1,5 +1,7 @@
 # P2-F内の通常AR実装契約
 
+> 履歴注記: 本文は着手時の採用・実装契約である。後段のCI/実機結果を含む現在状態は[plan.json](plan.json)と[status](../status.md)、現行接続は[ARガイド](../guides/augmented-reality.md)を優先する。
+
 2026-09-18。P2-12/D23。通常ARの採否は[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の現本文166–172行相当と既存Capture実装を照合した。単一前景ARSessionの開始・停止・中断復帰を採用する。高度world map保存/共有・長期relocalization・background AR・複数ARSession/カメラの同時使用は今回の採用範囲に含めない。ARSession/ARConfiguration、run options、frame/anchor、描画方式を独自の狭い型へ閉じ込めない。
 
 ## 採用根拠と費用

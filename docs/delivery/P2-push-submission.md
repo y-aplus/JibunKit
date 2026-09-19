@@ -1,5 +1,7 @@
 # P2-I Push submission
 
+> Historical note: this records the submitted implementation boundary. APNs remains optional and real registration/delivery is unverified; use [the current contract](P2-identity-push-contract.md), [plan.json](plan.json), and [status](../status.md) for current status.
+
 ## Contract delivered
 
 - App-level APNs token is held once by `MiniAppRemotePushCoordinator`; Feature/server identity remains owner-scoped.

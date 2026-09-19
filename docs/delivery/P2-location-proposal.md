@@ -1,5 +1,7 @@
 # P2-3 位置レーン提出
 
+> 履歴注記: 本文は位置レーンの提出時点を保持する。後段で確認したOS background callback/geofence証拠と残る物理条件は[status](../status.md)と[plan.json](plan.json)を優先する。
+
 基準commitは`57542e66981373d2de3d112aca91ea1aa56c07cf`。Featureが位置用途、精度、成果、業務判断を所有し、JibunKitはFeature同意、owner別登録、共有監視枠、世代配送、停止／再接続の境界を実装した。大量Regionの仮想化や予測入替、独自scheduler、常時beacon rangingは対象外である。
 
 ## 実装判断

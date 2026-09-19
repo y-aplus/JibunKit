@@ -26,27 +26,11 @@
       "criteria": [
         "P0-1.lifetime",
         "P0-3.failure",
-        "P0-4.diagnostics",
         "P0-5.ownership",
         "P0-6.diagnostics",
-        "P0-6.local",
-        "P1-1.metadata",
         "P1-3.routing",
         "P1-4.ownership",
-        "P1-5.http",
-        "P2-1.ownership",
-        "P2-2.ownership",
-        "P2-3.ownership",
-        "P2-4.ownership",
-        "P2-5.ownership",
-        "P2-6.ownership",
-        "P2-7.ownership",
-        "P2-8.ownership",
-        "P2-9.ownership",
-        "P2-10.ownership",
-        "P2-11.ownership",
-        "P2-12.ownership",
-        "P2-13.ownership"
+        "P1-5.http"
       ]
     }
   ],
@@ -140,7 +124,7 @@
       "criterion": "P0-4.diagnostics",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -161,7 +145,7 @@
       "criterion": "P0-4.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -215,7 +199,7 @@
       "criterion": "P0-6.local",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -236,7 +220,7 @@
       "criterion": "P1-1.metadata",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -392,7 +376,7 @@
       "criterion": "P2-1.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -438,7 +422,7 @@
       "criterion": "P2-2.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -469,7 +453,7 @@
       "criterion": "P2-3.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -500,7 +484,7 @@
       "criterion": "P2-4.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -542,7 +526,7 @@
       "criterion": "P2-5.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -552,7 +536,7 @@
       "criterion": "P2-6.scope",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -592,7 +576,7 @@
       "criterion": "P2-6.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -635,7 +619,7 @@
       "criterion": "P2-7.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -678,7 +662,7 @@
       "criterion": "P2-8.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -719,7 +703,7 @@
       "criterion": "P2-9.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -762,7 +746,7 @@
       "criterion": "P2-10.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -793,7 +777,7 @@
       "criterion": "P2-11.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -803,7 +787,7 @@
       "criterion": "P2-12.scope",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -833,7 +817,7 @@
       "criterion": "P2-12.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -843,7 +827,7 @@
       "criterion": "P2-13.scope",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -883,7 +867,7 @@
       "criterion": "P2-13.docs",
       "kind": "inspection",
       "result": "passed",
-      "source": "a3c5b226810510fce0ec5bdb897fe1562acb65c7",
+      "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
       "reference": "docs/guides/; docs/compatibility.md; docs/delivery/plan.json; docs/verification/2026-09-19-1.0-release.md",
       "observation": "Current API/ownership/recovery documentation and adopted scope reviewed; actual evidence and unobserved conditions separate. See complete document inventory.",
       "review": "Reviewed source-specific record against adopted criterion; actual observation limits remain separate.",
@@ -929,11 +913,384 @@
       "reason": "Owner accepted v1 criteria on 2026-09-19 with these observation limits disclosed. This is not a device pass or final publication approval. See docs/verification/2026-09-19-final-observation-boundary.md."
     }
   ],
-  "documents": [],
+  "documents": [
+    {
+      "path": "CHANGELOG.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "Modules/Records/README.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "README.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "SECURITY.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/background-refresh-coordination.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/build.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/ci-boundaries.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/coexistence-boundaries.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/coexistence-ledger.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/compatibility.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P0-A-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P0-B-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P0-C-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P1-A-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P1-B-contract.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/delivery/P2-adoption-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-alarm-design.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-ar-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-background-location-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-background-proposal.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-ble-scenes-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-bluetooth-submission.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-continuing-surfaces-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-continuing-surfaces-review.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-identity-push-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-identity-submission.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-live-activity-design.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-location-proposal.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-media-audio-proposal.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-media-capture-proposal.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-media-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-push-submission.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-scenes-submission.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/delivery/P2-widget-control-contract.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/action-extension.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/alarms.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/audio.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/augmented-reality.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/background-continued-processing.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/background-execution-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/background-urlsession-reconnect.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/bluetooth-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/capture.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/database-files.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/external-data-identity.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-app-shortcuts.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-appearance.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-build-requirements.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-consent.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-data-removal.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-http.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-incoming.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-lifetime.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-management.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-owned-presentations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/feature-privacy-manifests.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/feature-url-routing.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/interactive-widgets.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/keychain-access-control.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/live-activities.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/location.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/management-removal-failure-fixture.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/notification-attachments.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/notification-request-snapshots.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/owned-notification-observations.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/package-app-intents.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/package-sdk-module-aliases.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/package-static-widgets.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/remote-push.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/runtime-shutdown-progress.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/scene-feature-activity.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/scene-idle-timer.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/spotlight-ownership.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/store-access-coordination.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/guides/web-authentication-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/web-storage-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/widget-localization.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/guides/window-scene-ownership.md",
+      "outcome": "reviewed-unchanged"
+    },
+    {
+      "path": "docs/implementation-priorities.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/mini-apps.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/network-integration.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/parallel-implementation.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/releases/release-notes-1.0.0.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/releasing.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/runtime-restore-integration.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/scene-navigation.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/sidestore.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/status.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
+      "outcome": "updated"
+    },
+    {
+      "path": "docs/updating.md",
+      "outcome": "updated"
+    }
+  ],
   "document_review": {
-    "source": "",
-    "summary": "",
-    "unresolved": []
+    "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
+    "summary": "Full current inventory read by assigned document workers and parent; entry sample corrected against template, package diagnostic restored, current accepted scope/publication approval synchronized, paths checked. Detailed grouped responsibilities/reasons in2026-09-19-1.0-release.md.",
+    "unresolved": [
+      "Six explicitly approved unverified OS/device/signed-service scopes remain in approved_unverified; not passes.",
+      "Japanese historical and supplementary maintainer/reference prose retained; English current user/API entry is primary.",
+      "Six remote heads with unique ancestry and28 attached-worktree heads retained; no destructive patch-equivalence inference."
+    ]
   },
   "release": {
     "candidate_ipa": "35409750733/82553cfe2c81cd83111cd2a247c90f87bd1015ac;1.0.0/build16;4747918bytes;sha2566d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f;44 entries CRC pass.",

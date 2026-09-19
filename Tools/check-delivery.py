@@ -15,6 +15,8 @@ CONDITIONAL_UNITS = {"P2-6", "P2-12", "P2-13"}
 CONDITIONAL_VERIFICATION_CRITERIA = {
     "P2-8.signed-service",
     "P2-10.signed-service",
+    # Explicit owner acceptance on 2026-09-19; never represented as device passes.
+    "P2-3.device", "P2-4.device", "P2-11.device", "P2-12.device",
 }
 
 
@@ -134,7 +136,7 @@ def active_criteria(unit):
 
 
 def approved_unverified_criteria(unit):
-    """Explicitly approved signed-service checks stay unverified and are never passed evidence."""
+    """Explicitly approved observation limits stay unverified and are never passed evidence."""
     return [c for c in unit["criteria"]
             if c.get("conditional_verification", {}).get("status") == "approved-unverified"]
 

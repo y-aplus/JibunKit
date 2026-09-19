@@ -517,7 +517,12 @@
           "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
           "kinds": [
             "device"
-          ]
+          ],
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "Physical iBeacon radio, background boundary movement and reboot/unlock delivery; existing foreground device and Simulator OS evidence are retained.",
+            "reason": "Owner accepted v1 criteria on 2026-09-19 with these observation limits disclosed. This is not a device pass or final publication approval. See docs/verification/2026-09-19-final-observation-boundary.md."
+          }
         },
         {
           "id": "P2-3.docs",
@@ -563,7 +568,12 @@
           "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
           "kinds": [
             "device"
-          ]
+          ],
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "Actual BackgroundTasks OS launch/expiration and continued-processing start; verified device background HTTP restoration remains separate.",
+            "reason": "Owner accepted v1 criteria on 2026-09-19 with these observation limits disclosed. This is not a device pass or final publication approval. See docs/verification/2026-09-19-final-observation-boundary.md."
+          }
         },
         {
           "id": "P2-4.docs",
@@ -919,7 +929,12 @@
           "description": "宣言した署名/OS/機器構成で通常入口・必要な背景/中断/復帰・上書き/Refresh・片側管理とB保持をまとめて実機確認",
           "kinds": [
             "device"
-          ]
+          ],
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "Physical iPad multiwindow operation; actual Simulator session creation/restoration/isolation evidence is retained.",
+            "reason": "Owner accepted v1 criteria on 2026-09-19 with these observation limits disclosed. This is not a device pass or final publication approval. See docs/verification/2026-09-19-final-observation-boundary.md."
+          }
         },
         {
           "id": "P2-11.docs",
@@ -973,7 +988,12 @@
           "kinds": [
             "device"
           ],
-          "adopted_only": true
+          "adopted_only": true,
+          "conditional_verification": {
+            "status": "approved-unverified",
+            "scope": "Actual OS AR interruption began/ended and same-run frame recovery; device frames, explicit lifecycle and camera contention remain verified.",
+            "reason": "Owner accepted v1 criteria on 2026-09-19 with these observation limits disclosed. This is not a device pass or final publication approval. See docs/verification/2026-09-19-final-observation-boundary.md."
+          }
         },
         {
           "id": "P2-12.docs",

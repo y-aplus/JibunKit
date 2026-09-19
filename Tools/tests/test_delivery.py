@@ -42,6 +42,20 @@ class DeliveryTests(unittest.TestCase):
                 for i in range(result["planned_ci_runs"])]
         return result
 
+    def test_owner_accepted_observations_are_not_device_passes(self):
+        units, _ = delivery.validate_plan(self.plan)
+        for uid in ("P2-3", "P2-4", "P2-11", "P2-12"):
+            excluded = delivery.approved_unverified_criteria(units[uid])
+            self.assertEqual([c["id"] for c in excluded], [uid + ".device"])
+            active = {c["id"] for c in delivery.active_criteria(units[uid])}
+            self.assertTrue({uid + ".ownership", uid + ".integration", uid + ".docs"} <= active)
+        unit = units["P2-9"]
+        criterion = next(c for c in unit["criteria"] if c["id"] == "P2-9.device")
+        criterion["conditional_verification"] = {
+            "status": "approved-unverified", "scope": "unapproved BLE omission", "reason": "not accepted"}
+        with self.assertRaisesRegex(ValueError, "conditional verification is not permitted"):
+            delivery.validate_plan(self.plan)
+
     def test_real_plan_and_incomplete_template(self):
         delivery.validate_plan(self.plan)
         with self.assertRaisesRegex(ValueError, "contract/review"):

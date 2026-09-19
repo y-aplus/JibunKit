@@ -1,10 +1,24 @@
-# 公開版・main・出荷候補の現在状態
+# Release and development status
 
-2026-09-19: ユーザーが1.0.0基準充足を判断し公開準備を承認。公開の最終承認は未取得。公開安定版は0.8.5/build15、1.0.0は未公開候補。P0/P1/P2の採用範囲は完了とし、[未観測条件と判断](verification/2026-09-19-final-observation-boundary.md)を保持する。以下の1.0未完等はこの判断前の経緯であり、現在は文書監査・Issue #7整理・候補成果物準備中。
+Updated2026-09-19. **Stable: 0.8.5/build15. Candidate: 1.0.0/build16, unpublished.** The owner accepted the adopted P0/P1/P2 criteria and authorized release preparation. Final publication approval has not been given.
 
-## 0.8.5からの検証経緯
+- Candidate build source: `82553cfe2c81cd83111cd2a247c90f87bd1015ac`; CI35409750733 passed shared443 tests (2 existing skips), Module11, normal IPA checks and the selected cold/warm URL regression.
+- Normal IPA:4,747,918 bytes, SHA-256 `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f`. App, Widget and Share report1.0.0/build16. It has not been published.
+- Normal product code matches the physically checked0.8.5 source apart from version metadata. Later diagnostic results include device cross-process HTTP restoration and Simulator terminated-process Region enter/exit.
+- CloudKit/APNs remain optional, signing/service-dependent and live-communication-unverified. Generic HTTP ownership remains in the normal scope.
+- Accepted unobserved conditions remain explicitly unverified: physical location/iBeacon conditions, BackgroundTasks OS launch/expiration, physical iPad windows and AR OS-interruption recovery. See the [acceptance record](verification/2026-09-19-final-observation-boundary.md).
+- Remaining preparation: finish Issue #7 documentation/branch review, complete the current-document audit and final evidence report, then request publication approval. No new device test is currently requested.
 
-更新日: 2026-09-19。公開版/mainは0.8.5/build15（前版0.8.4/build14）。通常IPAのbuild sourceはfeab170、CI35357260854成功。上書き後のCounter/Reminder保持と前景復帰後の表示・操作を実機確認。[出荷記録](verification/2026-09-18-0.8.5-release.md)。1.0は未完。実位置/電波、署名条件付き通信、AR実OS中断等の残件を維持する。iPad実機はユーザーが見送り、待機対象ではない。
+See [release preparation](verification/2026-09-19-1.0-release.md), [scope plan](delivery/plan.json), [compatibility](compatibility.md) and [published0.8.5 evidence](verification/2026-09-18-0.8.5-release.md). The broader D ledger includes future generalization and must not be interpreted as a list of all v1 release blockers.
+
+<details>
+<summary>Historical development observations before v1 acceptance (Japanese)</summary>
+
+The following preserves dated/source-specific history. Its pending-state statements describe those earlier checkpoints, not current release status.
+
+
+
+更新日: 2026-09-19。公開版/mainは0.8.5/build15（前版0.8.4/build14）。通常IPAのbuild sourceはfeab170、CI35357260854成功。上書き後のCounter/Reminder保持と前景復帰後の表示・操作を実機確認。[出荷記録](verification/2026-09-18-0.8.5-release.md)。当時は1.0未完。実位置/電波、署名条件付き通信、AR実OS中断等の残件を維持する。iPad実機はユーザーが見送り、待機対象ではない。
 
 ## 0.8.4後の検証
 
@@ -92,3 +106,5 @@ Live Activities/AlarmKitの共通所有・寿命・照合、通常管理/復元�
 ## 0.8.4後の進行中検証
 
 BLEは59f7081診断版で、新processにおけるOS復元callback経由connectedと受信値2324を実機確認した。追加の永続ログで12:56:16Zの同一復元世代Notify2バイトも確認。OS自動起動の契機は未判定。詳細は[追跡記録](verification/2026-09-18-ar-followup.md)。P2-6の実OS英語Widget/代表camera許可文言はCI35347692100で2件成功、native80件成功。採用範囲はcomplete。P2-5も実機と既存4Feature保持回帰の合成でcomplete。BLEは過去processの成功が最新表示で隠れる診断を改善し、P2-11は実OS二window復元の追加自動試験を進める。追加実機操作は要求していない。
+
+</details>

@@ -6,8 +6,8 @@ let sharedEntitlements: [String: Plist.Value] = [
     "com.apple.security.application-groups": ["group.com.jibunkit.shared"],
 ]
 let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
-    "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.8.5",
-    "CFBundleVersion": "15", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": "16", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
     "JibunKitOriginalBundleIdentifier": "com.jibunkit.app",
     "LSSupportsOpeningDocumentsInPlace": true,
@@ -28,7 +28,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     "ja": ["CFBundleDisplayName": "JibunKit"],
 ])
 let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: [
-    "CFBundleShortVersionString": "0.8.5", "CFBundleVersion": "15",
+    "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "16",
     "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
@@ -47,8 +47,8 @@ try appBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Ap
 try widgetBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/Widget")
 
 let actionBuild = try EnabledFeatureBuildRequirements.action?.compose(infoPlist: [
-    "CFBundleDisplayName": "JibunKitへ保存", "CFBundleShortVersionString": "0.8.5",
-    "CFBundleVersion": "15", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "CFBundleDisplayName": "JibunKitへ保存", "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": "16", "JibunKitAppGroup": "group.com.jibunkit.shared",
     "NSExtension": [
         "NSExtensionPointIdentifier": "com.apple.ui-services",
         "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).ActionViewController",
@@ -127,7 +127,7 @@ let project = Project(
             name: "JibunKitShare-Extension", destinations: .iOS, product: .appExtension,
             bundleId: "com.jibunkit.app.Share", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: [
-                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "0.8.5", "CFBundleVersion": "15",
+                "CFBundleDisplayName": "JibunKit", "CFBundleShortVersionString": "1.0.0", "CFBundleVersion": "16",
                 "JibunKitAppGroup": "group.com.jibunkit.shared",
                 "NSExtension": [
                     "NSExtensionPointIdentifier": "com.apple.share-services",

@@ -1,9 +1,13 @@
 # 基盤を更新する
 
 
-公開VERSIONは0.8.4/build14、PREVIOUSは0.8.3/build13。対象別実機・出荷CI・公開IPA検査を完了。[証拠と未解決事項](verification/2026-09-18-0.8.4-release.md)。
-更新日: 2026-09-18。公開版0.8.4/build14とmainは[現在状態](status.md)を参照。
-0.8.0のP0/P1証拠と公開物は[出荷記録](verification/2026-09-15-0.8-release.md)を参照。P0の0.7.0当時の証拠もsourceを分けて保持する。
+Stable release: 0.8.5/build15. Candidate: 1.0.0/build16, unpublished and awaiting final publication approval. See [status](status.md).
+
+## Keep downstream notes separate
+
+Use `docs-local/` in your personal host repository for migration notes, local decisions and private development procedures. Upstream owns `docs/`; keeping downstream notes elsewhere reduces merge conflicts. Do not submit `docs-local/` in upstream pull requests. The directory name does not make files private: repository visibility controls access. Never commit credentials, signing material or personal application data there. For notes that should remain only on your machine, add the directory to `.git/info/exclude` rather than assuming it is ignored automatically.
+
+Keep your own Features in independent `Modules/<Name>` packages when standalone reuse or Linux/WSL tests of portable logic are useful. The root package is not generally Linux-buildable; test portability depends on the package's actual dependencies. See [Feature setup](mini-apps.md) and [build capabilities](build.md).
 
 この文書は、JibunKit基盤を更新しながら個人用ミニアプリを維持するための境界を示す。現在の構成は動的プラグイン機構を持たず、ミニアプリをSwift Packageへビルド時に組み込む。
 

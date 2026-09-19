@@ -143,7 +143,7 @@ def current_docs(root, version):
     """Dynamic inventory: current prose, not archived research or historical release notes."""
     fixed = {"README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md",
              "THIRD_PARTY_NOTICES.md", "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
-             f"release-notes-{version}.md"}
+             f"docs/releases/release-notes-{version}.md"}
     for pattern in ("docs/*.md", "docs/guides/**/*.md", "docs/delivery/**/*.md", "Modules/**/README.md"):
         fixed.update(p.relative_to(root).as_posix() for p in root.glob(pattern))
     return sorted(fixed)

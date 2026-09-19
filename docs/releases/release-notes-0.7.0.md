@@ -31,4 +31,4 @@ P1の通常OS入口の仕上げ、P2の用途拡張、P3の高度な共存は残
 
 [Issue #6](https://github.com/y-aplus/JibunKit/issues/6)の需要推定を受領しました。1.0の正式境界はユーザー判断により0.8.0完了時に確定するで、0.7.0公開を1.0完成と扱いません。
 
-[出荷記録](docs/verification/2026-09-13-0.7-release.md) / [実機結果](docs/verification/2026-09-13-0.7-device-check.md) / [責任と制約](docs/compatibility.md)
+[出荷記録](../verification/2026-09-13-0.7-release.md) / [実機結果](../verification/2026-09-13-0.7-device-check.md) / [責任と制約](../compatibility.md)

@@ -19,7 +19,7 @@ SideStoreで使う、自作ミニアプリを1本のnative iOS appへまとめ�
 
 JibunKit識別子で初回導入、build 2への上書き、SideStore署名更新まで確認済みです。
 
-導入と署名更新は[SideStore導入・更新手順](docs/sidestore.md)、buildの再現方法は[build手順](docs/build.md)を参照してください。
+導入と署名更新は[SideStore導入・更新手順](../sidestore.md)、buildの再現方法は[build手順](../build.md)を参照してください。
 
 ## 既知の制限
 
@@ -29,4 +29,4 @@ JibunKit識別子で初回導入、build 2への上書き、SideStore署名更�
 - 既存IPAの変換、mini-app store、remote backendは含みません。
 - Actions artifactはad-hoc署名です。利用者の端末でSideStoreが最終署名します。
 
-変更の全体は[CHANGELOG.md](CHANGELOG.md)、検証結果は[docs/verification/0.1.md](docs/verification/0.1.md)を参照してください。
+変更の全体は[CHANGELOG.md](../../CHANGELOG.md)、検証結果は[docs/verification/0.1.md](../verification/0.1.md)を参照してください。

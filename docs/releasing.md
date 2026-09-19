@@ -3,7 +3,7 @@
 
 更新日: 2026-09-19。公開VERSIONは0.8.5/build15、PREVIOUSは0.8.4/build14。[出荷照合](verification/2026-09-18-0.8.5-release.md)。最新公開版はGitHub Releasesを正本とする。
 
-0.8.5はCIと代表実機確認を終えた通常IPAを公開するpatch。[変更と検証範囲](../release-notes-0.8.5.md)。
+0.8.5はCIと代表実機確認を終えた通常IPAを公開するpatch。[変更と検証範囲](releases/release-notes-0.8.5.md)。
 
 ## 版ごとの出荷判断
 

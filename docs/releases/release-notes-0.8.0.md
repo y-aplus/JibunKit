@@ -20,7 +20,7 @@ IPAは2,243,242 bytes、SHA-256は`50626937264c8cb4cef7193f1c3035e06e1dc1cc1a5d6
 
 実機は6beb877の通知/HTTP/Web・通常Shortcutsと、4e6a3f4（0.7.1/build9）の共有/Files・Shortcuts取消/失敗・Widget・更新/Refresh・通常版復帰を確認しました。4e6a3f4から製品の版のみを変更したため、旧sourceを保持して実機証拠を再利用しています。新0.8.0 IPAそのものを再度実機確認したという意味ではありません。
 
-通常UI13件/Files JSON復元、生成host、独立Packageのmetadata/Widget、対象native試験はsource別の既存証拠を差分照合しました。本runで全Simulator試験を再実行したとは扱いません。[全条件・文書監査・公開確認](docs/verification/2026-09-15-0.8-release.md)を参照してください。
+通常UI13件/Files JSON復元、生成host、独立Packageのmetadata/Widget、対象native試験はsource別の既存証拠を差分照合しました。本runで全Simulator試験を再実行したとは扱いません。[全条件・文書監査・公開確認](../verification/2026-09-15-0.8-release.md)を参照してください。
 
 ## 残る制約
 
@@ -30,4 +30,4 @@ Featureは自身の保存・寿命・管理への接続を所有します。同�
 
 Spotlight解除の過去のSimulator遅延原因は未確定です。実機の初回無効化は体感ほぼ即時で成功しました。集中モード下の通知配信、Siri音声呼出しは確認済み範囲へ含めません。
 
-P2/P3の残件は[台帳](docs/coexistence-ledger.md)へ維持し、[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を踏まえた1.0正式境界を0.8.0完了時に決定します。
+P2/P3の残件は[台帳](../coexistence-ledger.md)へ維持し、[Issue #6](https://github.com/y-aplus/JibunKit/issues/6)を踏まえた1.0正式境界を0.8.0完了時に決定します。

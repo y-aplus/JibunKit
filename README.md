@@ -1,4 +1,4 @@
-> [0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5)を公開しました。scene別の選択復元と、BLE・複数window等の追加検証を含む中間版です。1.0は未完。[検証範囲と未確認](release-notes-0.8.5.md)。
+> [0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5)を公開しました。scene別の選択復元と、BLE・複数window等の追加検証を含む中間版です。1.0は未完。[検証範囲と未確認](docs/releases/release-notes-0.8.5.md)。
 
 # JibunKit
 
@@ -8,7 +8,7 @@ SideStoreで使う、**自作ミニアプリを束ねるスーパーアプリ**�
 
 ## 現在の状態
 
-公開版は[0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.5の変更と検証範囲](release-notes-0.8.5.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
+公開版は[0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5)。公開版とmainの差分・開発状態は[現在状態](docs/status.md)にまとめています。[0.8.5の変更と検証範囲](docs/releases/release-notes-0.8.5.md)を参照してください。現在のビルドはTuist／Swift PackageとGitHub ActionsのmacOS／Xcode経路を使います。App IntentsメタデータとWidgetを含むIPAを生成します。
 
 独立Featureの雛形・単独実行・ホスト共存、選択バックアップ、添付を含む復旧を実装しています。参照Featureの[Records](Modules/Records/README.md)では、添付の取込み・プレビュー・再起動後保持・削除を2026-09-09の中間実機確認で確認しました。今回の出荷検証は[0.8.5公開記録](docs/verification/2026-09-18-0.8.5-release.md)を参照してください。P0は0.7.0、P1は0.8.0で完了しました。[優先実装と版の到達条件](docs/implementation-priorities.md)、[統合差分台帳](docs/coexistence-ledger.md)に残る条件をまとめています。
 

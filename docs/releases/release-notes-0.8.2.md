@@ -11,6 +11,6 @@ Live Bが上書き前に期待230ではなく200と表示された観測が一�
 
 通常IPAはCounter/Reminder/Shareを含み、診断Featureは含みません。既存の保存ID・App Group・Widget・Shortcutを維持します。AlarmKitは対応OSとアプリ単位の許可が必要です。Focus/silent条件の個別検証、Live表示の永続保証は今回の確認範囲に含めません。
 
-[出荷記録](docs/verification/2026-09-16-0.8.2-release.md) ／ [実機結果](docs/verification/2026-09-16-p2-continuing-surfaces-device.md) ／ [Live Activities接続](docs/guides/live-activities.md) ／ [AlarmKit接続](docs/guides/alarms.md)
+[出荷記録](../verification/2026-09-16-0.8.2-release.md) ／ [実機結果](../verification/2026-09-16-p2-continuing-surfaces-device.md) ／ [Live Activities接続](../guides/live-activities.md) ／ [AlarmKit接続](../guides/alarms.md)
 
 IPA source: `31478f2da9f4262e36e84b6ec4e4c9c1b1685c78`。CI35075825942成功。IPA SHA-256: `da0f273226f765297be94f6fa282da42a672e392e47a11fa06f037a503c55de9`。実機は版更新前の診断5678a41/通常b1d379bで確認し、実行コードに差分がないことを照合して再利用しました。追加の実Feature状態保持試験も成功しましたが、単発の値差分の原因特定とは扱いません。

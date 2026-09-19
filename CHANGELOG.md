@@ -2,6 +2,14 @@
 
 このプロジェクトの利用者に影響する変更を記録します。
 
+## [1.0.0] — Unreleased candidate
+
+- The owner accepted the v1 coexistence criteria on 2026-09-19. Publication still requires final approval.
+- Consolidates the verified P0/P1/P2 ownership and lifecycle APIs delivered in 0.x. Normal product code is unchanged from 0.8.5 apart from version/build metadata.
+- Adds evidence for cross-process background HTTP restoration on device and terminated-process Region entry/exit on Simulator.
+- Explicitly retains unobserved OS/device conditions and optional, unverified signed CloudKit/APNs integrations. See [candidate notes](docs/releases/release-notes-1.0.0.md).
+- Reorganizes developer-facing documentation and release history for the public repository.
+
 ## [0.8.5] - 2026-09-19
 
 - windowごとに最後に選んだFeatureを保存し、OS sessionの再接続時に復元する。無効・未登録の保存先は消去し、再導入時の意図しない再表示を防ぐ。任意の画面階層全体を自動保存する機構ではない。

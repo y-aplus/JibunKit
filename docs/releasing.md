@@ -1,9 +1,9 @@
 # 公開・release手順
 
 
-更新日: 2026-09-19。公開VERSIONは0.8.5/build15、PREVIOUSは0.8.4/build14。[出荷照合](verification/2026-09-18-0.8.5-release.md)。最新公開版はGitHub Releasesを正本とする。
+更新日: 2026-09-19。未公開候補VERSIONは1.0.0/build16、最新公開版PREVIOUSは0.8.5/build15。1.0の基準充足はユーザー判断済みだが最終公開承認は未取得。公開・tag pushは承認後に限定する。[出荷照合](verification/2026-09-18-0.8.5-release.md)。最新公開版はGitHub Releasesを正本とする。
 
-0.8.5はCIと代表実機確認を終えた通常IPAを公開するpatch。[変更と検証範囲](releases/release-notes-0.8.5.md)。
+0.8.5はCIと代表実機確認を終えて公開済みのpatch。[変更と検証範囲](releases/release-notes-0.8.5.md)。
 
 ## 版ごとの出荷判断
 
@@ -54,6 +54,10 @@ PATH_TO_REVIEWED_REPORTには今回の0.8.0出荷reportを指定する。toolの
 6. run.headShaを確認して通常構成のIPAを取得する。全ZIP entryの展開/CRC、bundle ID、版番号、App Group/署名構造、CI fixtureの混入がないことを確認する。source・run・SHA-256を検証記録とrelease notesへ残す。
 
 publication boundaryは追跡ファイルの鍵・証明書・provisioning・pairing材料、SDK archive、IPA等を検査する。ignoredの個人Featureや実データを出荷物へ含めない。通常IPAはCounter/Reminder、Recordsは参照ソース。CI専用Featureを含む確認用構成と区別する。
+
+## Release notesの責務
+
+GitHub Releasesは公開asset/公開済みnotesの正本、CHANGELOGは利用者向け変更の要約、`docs/releases/`は版別notesの入力原稿を保持する。未公開候補は表題に明記する。過去tag/Releaseは変更しない。旧1.0原稿は日付付きverificationへ保存し現在候補と区別する。
 
 ## 公開と確認
 

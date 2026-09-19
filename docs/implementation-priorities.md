@@ -1,7 +1,9 @@
 # 優先実装と版の到達条件
 
-更新: 2026-09-15（Issue #6の正式採用）。[Issue #5](https://github.com/y-aplus/JibunKit/issues/5)と本スレッドの追加指示を反映。
+更新: 2026-09-19（1.0基準充足のユーザー判断、公開準備中）。[Issue #5](https://github.com/y-aplus/JibunKit/issues/5)と本スレッドの追加指示を反映。
 機械可読の単位/合格条件/CI境界は[plan.json](delivery/plan.json)。実装状態の親Dは[統合差分台帳](coexistence-ledger.md)で維持する。
+
+2026-09-19にユーザーが採用P0/P1/P2の1.0基準充足を判断した。CloudKit/APNsの条件付き任意化と、位置・背景処理・物理iPad・ARの未観測条件を[判断記録](verification/2026-09-19-final-observation-boundary.md)に保持する。最終公開承認は未取得。公開安定版は0.8.5、候補は1.0.0/build16。以下の工程・予算は履歴を含み、未観測を試験成功へ変更しない。
 
 ## 版番号とv1.0の扱い
 

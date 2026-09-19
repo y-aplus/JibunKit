@@ -1,4 +1,12 @@
-# 選択中のFeatureだけ画面を点灯し続ける
+# Keeping the screen awake for the selected feature
+
+## Current integration contract
+
+A feature requests a scene-scoped screen-awake lease; it does not write `UIApplication.isIdleTimerDisabled` directly. The host computes the effective process value from currently active, selected scenes and applies it centrally.
+
+Release the lease on deselection, scene deactivation, runtime stop, failure, and owner removal. Preserve other valid leases so one feature cannot turn off a request still needed elsewhere.
+
+## Detailed contract and evidence (Japanese reference)
 
 独立アプリの画面を表示している間だけ必要だった自動ロック防止を、統合後の別Featureへ持ち越さないための任意接続。`MiniAppSceneIdleTimer`は要求そのものと実際のleaseを分ける。要求中でも、そのFeatureを選択したactiveなsceneが一つもなければleaseを解除する。再選択/復帰すると要求を再適用する。
 

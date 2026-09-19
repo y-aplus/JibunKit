@@ -1,4 +1,12 @@
-# 操作Widget／ControlとFeatureの共有状態
+# Interactive widgets, controls, and feature state
+
+## Current integration contract
+
+Widgets and controls run in a separate process and must not reach into a live `MiniAppRuntime`. They read a small, versioned snapshot and submit intent through an App Intent or durable command boundary. The main application remains the authority for business state, ownership checks, migration, and conflict resolution.
+
+Use an App Group only when the host has configured and signed it. Serialize writes, make commands idempotent, and refresh timelines after committed changes. Removing or disabling a feature must also remove or reject its outstanding widget commands. Build and metadata evidence does not replace device verification.
+
+## Detailed contract and evidence (Japanese reference)
 
 0.8.1以降向け（2026-09-16更新）。0.8.0以前には未収録。共有状態9件・管理接続8件・macOS別process probeと通常版回帰は成功済み。e984d44の独立/統合native build・metadata比較・直接Intent4件・通常管理UI1件も成功。e984d44の一括実機でOS Widget/Control操作・設定保持・再起動/上書き/Refresh・管理/復元とB保持・通常復帰も確認済み。0.8.1の版変更後CI/公開IPA取得も完了。[検証記録](../verification/2026-09-15-p2-widget-control.md)を合否の正本とする。
 

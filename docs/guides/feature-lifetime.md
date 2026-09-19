@@ -1,4 +1,12 @@
-# Featureの起動・終了と復元
+# Feature startup, shutdown, and restoration
+
+## Current integration contract
+
+Treat screen visibility, runtime lifetime, and durable state as separate concerns. `start` opens admission for one runtime generation; `stop` closes admission, cancels producers, drains accepted work, persists required state, and then releases resources. Late callbacks from an older generation must not mutate the restarted feature.
+
+Restoration and migration run before normal work is admitted. Reset and removal are explicit maintenance operations, not side effects of stopping. Use the coordinated stopped-operation path for exclusive maintenance, and reopen only after it succeeds or reaches a recoverable state.
+
+## Detailed contract and evidence (Japanese reference)
 
 P0-Aの通常・生成CIで非実機条件を確認済み。対象sourceと試験範囲は[P0-A検証記録](../verification/2026-09-12-p0-a.md)を参照する。0.7.0候補の実機確認も2026-09-13に完了（[結果](../verification/2026-09-13-0.7-device-check.md)）。
 

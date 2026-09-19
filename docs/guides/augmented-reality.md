@@ -1,4 +1,12 @@
-# 通常ARの所有と接続
+# Augmented reality ownership and integration
+
+## Current integration contract
+
+One feature owns one foreground `ARSession` through its coordinator. Start only after runtime admission and camera consent, bind callbacks to the active owner and generation, and invalidate late frames or interruption events after stop. Pause and drain the session before releasing the runtime.
+
+AR shares the camera with capture and scanning surfaces, so acquisition must use the common camera ownership boundary and fail predictably when another owner is active. The fixtures verify integration structure; tracking quality, interruption recovery, permissions, and camera contention still require real-device testing.
+
+## Detailed contract and evidence (Japanese reference)
 
 ## 採用範囲
 

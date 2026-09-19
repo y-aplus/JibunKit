@@ -1,4 +1,12 @@
-# 外部データ identity / CloudKit 接続
+# External data identity and CloudKit integration
+
+## Current integration contract
+
+Keep external account identity separate from the local feature owner and runtime identity. A feature must remain usable through the mandatory generic HTTP integration even when CloudKit is not configured. CloudKit is an optional, host-signed capability: its container identifiers, entitlements, provisioning, and real-device communication must be supplied and verified by the adopting host. The repository fixtures validate composition and diagnostics only; they do not claim verified CloudKit communication.
+
+Persist enough source and account identity to reject stale callbacks and cross-account data, but do not infer ownership from an external identifier alone. Route all external reads and writes through the feature-owned coordinator so shutdown, removal, and account changes can close admission before state is mutated.
+
+## Detailed contract and evidence (Japanese reference)
 
 ## 所有契約
 

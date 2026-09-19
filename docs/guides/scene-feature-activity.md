@@ -1,4 +1,12 @@
-# Featureの選択状態とsceneの活動状態
+# Feature selection and scene activity
+
+## Current integration contract
+
+Feature selection answers which feature a scene intends to show; scene activity answers whether that scene may currently perform foreground work. Keep them separate. Activate presentation, observations, and scene-scoped leases only when both conditions permit them, and release those resources when the scene resigns activity even if selection remains.
+
+Multi-scene hosts must scope state by scene identifier and must not let one scene's selection or full-screen presentation extend another scene's runtime generation.
+
+## Detailed contract and evidence (Japanese reference)
 
 独立アプリでは自分のsceneの活動を観測できる。統合後はhostがactiveでも自分のFeatureが選択されているとは限らない。`MiniAppDefinition.onSceneActivityChange`で両者を区別してIntegrationへ渡す。既存の`onHostPhaseChange`は全sceneの集約通知のまま維持する。
 

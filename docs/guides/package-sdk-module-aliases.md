@@ -1,4 +1,12 @@
-# 同名の純Swift SDK moduleを接続する
+# Integrating same-named pure Swift SDK modules
+
+## Current integration contract
+
+Use Swift package module aliases to resolve source-module name collisions while keeping product and target ownership explicit. Apply aliases consistently to every dependency edge that imports the renamed module, and verify both standalone and integrated builds.
+
+A module alias does not resolve duplicate product names, Objective-C runtime names, resource bundle identifiers, generated metadata, or linker symbols. Those conflicts require distinct products/targets or upstream naming changes; do not present aliasing as a universal namespace mechanism.
+
+## Detailed contract and evidence (Japanese reference)
 
 別々のPackageが同じmodule名をexportしている場合、SwiftPM標準の`moduleAliases`で
 消費側の名前を分けられる。JibunKit独自の型名書換えやruntimeを追加する必要はない。

@@ -1,4 +1,12 @@
-# FeatureのURLから画面を開く
+# Opening feature screens from URLs
+
+## Current integration contract
+
+Keep URL resolution pure: parse and validate a URL into an explicit feature route before changing selection, scene state, or storage. Reject ambiguous, malformed, unsupported, or cross-owner routes instead of guessing. Execution then passes through normal runtime admission and presentation ownership.
+
+The host composes URL schemes and universal-link metadata and must detect conflicts. Build-time declarations do not prove association-file deployment, system routing, cold launch, or multi-scene behavior; verify those in the adopting application.
+
+## Detailed contract and evidence (Japanese reference)
 
 独立アプリのURL entry pointを単一hostへ統合すると、受信先Featureの選択が必要になる。`MiniAppDefinition.resolveIncomingURL`は元のFoundation `URL`を受け取り、受理する場合だけ`.root`または`.detail(String)`を返す。hostは全Featureの一致を調べ、一つだけならSwiftUIが配送したsceneの既存navigationへ接続する。
 

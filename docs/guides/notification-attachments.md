@@ -1,4 +1,12 @@
-# 通知添付の原本と一時コピー
+# Notification attachment sources and temporary copies
+
+## Current integration contract
+
+Keep the feature-owned original in its storage namespace and create a bounded temporary copy for the notification request. The notification coordinator owns staging, request submission, cleanup, and recovery. Do not delete the original merely because a request completed, and do not retain temporary copies indefinitely.
+
+Validate ownership, file type, size, and lifetime before submission. Cancellation, replacement, shutdown, and feature removal must clean up only their own staged files. Fixture success does not prove device delivery or attachment rendering.
+
+## Detailed contract and evidence (Japanese reference)
 
 0.8.0で公開したP1-B接続。0.7.0には含まれない。Foundation試験と通常hostのnative通知/添付/foreground UI試験に加え、2026-09-15の6beb877実機確認で通知カードの添付、記録、文字入力返信、owner別解除と通常前景方針を確認済み。集中モード下の配信は通常状態の成功へ含めない。
 

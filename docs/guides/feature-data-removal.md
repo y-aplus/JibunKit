@@ -1,4 +1,12 @@
-# Feature所有データを削除する
+# Removing feature-owned data
+
+## Current integration contract
+
+The feature declares what it owns and implements idempotent removal. The host orchestrates the removal lifecycle: close new admission, stop and drain runtime work, revoke or cancel external registrations where possible, delete feature storage, and report partial failures without claiming success.
+
+Removal must not touch another owner or silently broaden from one profile/account to all data. Keep enough failure detail for an explicit retry, and distinguish user data removal from merely disabling or hiding a feature.
+
+## Detailed contract and evidence (Japanese reference)
 
 `MiniAppRemovalProvider`は、Featureが所有する保存データと利用者向け説明を宣言する。削除確認、Featureの停止、通知・検索等の登録解除、owner予約、管理設定の永続化はhost管理層の責任であり、providerはデータ削除だけを行う。
 

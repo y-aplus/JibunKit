@@ -1,5 +1,13 @@
 # Feature privacy manifests
 
+## Current integration contract
+
+Ship a feature's privacy manifest as a package resource owned by that feature. The host build must preserve and validate every included manifest, while removal of the feature product must also remove its manifest contribution. Do not merge declarations by hand in a way that hides their source or leaves stale entries behind.
+
+Manifest presence and archive inspection are build evidence only. The adopting application remains responsible for accurate declarations that match its actual APIs, SDKs, data collection, and distribution configuration.
+
+## Detailed contract and evidence (Japanese reference)
+
 Featureまたは依存SDK自身のtargetに`PrivacyInfo.xcprivacy`を置き、Swift packageでは明示resourceとして登録する。
 
 ```swift

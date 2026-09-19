@@ -1,4 +1,12 @@
-# Featureの外観と画面点灯要求
+# Feature appearance and screen-awake requests
+
+## Current integration contract
+
+Express feature appearance as scoped SwiftUI environment or UIKit presentation configuration. Do not mutate process-global appearance as an incidental consequence of showing a feature. Restore host presentation state when the feature disappears.
+
+Screen-awake behavior is a separate lease owned by the selected active scene. Aggregate requests centrally, apply the effective value to the host, and release it on deselection, scene deactivation, runtime stop, and failure.
+
+## Detailed contract and evidence (Japanese reference)
 
 Featureの外観は、独立アプリで使えたアプリ全体の設定をそのままhost全体へ適用しない。通常の接続ではSwiftUI環境、presentation preference、UIKit controller traitを区別する。
 

@@ -1,4 +1,12 @@
-# Swift PackageにApp Intentsを置く
+# Defining App Intents in a Swift package
+
+## Current integration contract
+
+Keep App Intents, App Entities, queries, and stable identifiers in the feature package, then link the package product into every target that must expose them. The host composes metadata and lifecycle wiring; it must not copy the declarations into application code.
+
+Intent execution is a separate process/lifetime boundary. Resolve durable identifiers, open only the required feature operation, and use normal admission, storage, consent, and error handling. Compare standalone and integrated metadata and verify that removing the product removes its contribution.
+
+## Detailed contract and evidence (Japanese reference)
 
 FeatureのIntent実装はapp targetへ移動せず、Swift Packageの公開型として置ける。標準`AppIntentsPackage`をpackage側とhost側で宣言して接続する。JibunKit独自のメタデータ生成やIntent wrapperは不要。
 

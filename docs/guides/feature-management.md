@@ -1,4 +1,12 @@
-# Feature管理への接続
+# Feature management integration
+
+## Current integration contract
+
+Management actions operate through the same feature coordinator as normal runtime work. Enable, disable, restore, reset, and remove must be serialized with startup and shutdown, close admission before destructive maintenance, and surface partial failure for retry.
+
+The host may present management UI, but feature code owns its data model, consent declarations, external registrations, and removal implementation. Management must not infer success from a hidden screen or a stopped runtime, and must not affect another owner.
+
+## Detailed contract and evidence (Japanese reference)
 
 0.8.1以降の別process writerは、optionalのDefinition.externalAccessを使う。[操作Widget/Controlのガイド](interactive-widgets.md)に起動・停止・削除・復元との契約を記す。0.8.0以前には未収録で、新接続のnative/通常管理UIは35027469173で成功。実OS Widget/Controlからの更新拒否・片側削除/再登録・復元・B保持もe984d44で実機確認済み。版更新後CIと0.8.1公開IPA取得も完了した。
 

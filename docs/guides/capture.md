@@ -1,4 +1,12 @@
-# Feature所有の撮影・文書／コードscan
+# Feature-owned capture, document scanning, and code scanning
+
+## Current integration contract
+
+Camera-backed operations are feature-owned but acquire the shared camera resource through the host coordinator. Admit an operation only while its runtime generation is active, present consent or system UI through the feature-owned presentation boundary, and reject late callbacks after cancellation or stop.
+
+Video with audio also requires the audio ownership and microphone-consent contracts. Copy results into feature-owned storage before dismissing temporary system resources. Build fixtures validate wiring; camera availability, permissions, interruptions, scanning accuracy, and capture quality require real-device verification.
+
+## Detailed contract and evidence (Japanese reference)
 
 対象はiOS 26以上。JibunKitはcameraのowner別受付と寿命を管理し、撮影構成、native object、成果物、保存形式はFeatureが所有する。cameraとmicrophoneは別資源で、camera-only操作はAudio調停を要求しない。
 

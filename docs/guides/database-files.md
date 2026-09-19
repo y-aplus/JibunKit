@@ -1,4 +1,12 @@
-# DBの保存先とエンジンの責任
+# Database file placement and engine responsibilities
+
+## Current integration contract
+
+Place database files under the feature's `MiniAppFiles` namespace. The database engine owns its auxiliary files, locking, and recovery; callers must not copy or delete a live database as if it were a single ordinary file. Coordinate open, maintenance, snapshot, reset, and removal through the shared store-access boundary.
+
+For SQLite, a consistent snapshot must account for WAL and shared-memory state by using the engine's backup/snapshot facilities after admission is closed and active operations are drained. A runtime stop does not imply that every durable database should be deleted.
+
+## Detailed contract and evidence (Japanese reference)
 
 JibunKitへ統合してもDBエンジンを置き換える必要はない。`MiniAppFiles`でFeature専用URLを作り、SQLite・GRDB・Core Data等、そのエンジンの接続設定へ渡す。同じローカルDB名でもFeatureごとのディレクトリへ分かれる。
 

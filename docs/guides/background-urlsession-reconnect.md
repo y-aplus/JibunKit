@@ -1,4 +1,12 @@
-# Background URLSession再接続
+# Background URLSession reconnection
+
+## Current integration contract
+
+Background URLSession work outlives both the visible screen and `MiniAppRuntime`. Give each feature a stable profile identifier, register its factory from `MiniAppDefinition.onHostLaunch`, and retain the process-level connection until the system finishes reconnecting events. Never register from `onAppear`.
+
+The delegate must call the supplied completion exactly once after `urlSessionDidFinishEvents`, while the coordinator owns admission, duplicate reconnect rejection, and shutdown ordering. Treat identifiers and callbacks from another owner or generation as invalid. Build and fixture evidence confirms composition; real background relaunch behavior remains a device-level verification item.
+
+## Detailed contract and evidence (Japanese reference)
 
 background URLSessionは通常画面や`MiniAppRuntime`の寿命とは別にOSから再接続を
 要求されます。Featureは安定したprofile名を決め、host起動時にfactoryを登録して

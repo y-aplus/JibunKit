@@ -1,4 +1,12 @@
-# Featureが所有するApp Shortcut定義
+# Feature-owned App Shortcut definitions
+
+## Current integration contract
+
+Define each feature's App Intents, entities, queries, phrases, and shortcut provider in the feature package. The host composes the package products and metadata but does not duplicate feature definitions. Keep persistent entity identifiers stable and route execution through the feature's normal admission and storage boundaries.
+
+Verify both standalone and integrated metadata, including removal of a feature contribution. Metadata discovery is a build/runtime contract; invocation phrasing, system indexing, and device behavior require OS-level verification.
+
+## Detailed contract and evidence (Japanese reference)
 
 状態: 単独/統合のnative metadata比較と寄与削除をCI 34550748042で検証済み。通常Counterの定義元をFeature側へ移す接続は[互換性検証](../verification/2026-09-11-host-shortcut-composition.md)をCI 34553604092で完了した。
 

@@ -1,4 +1,12 @@
-# 管理画面の削除失敗・再試行fixture
+# Management removal failure and retry fixture
+
+## Current integration contract
+
+This diagnostic fixture demonstrates a partial feature-removal failure. The first removal attempt must remain visibly failed with its original stage and error, keep enough state for retry, and avoid reporting the feature as fully removed. A later retry resumes the removal contract idempotently and leaves unrelated features intact.
+
+The fixture is test support, not a production error simulator or evidence that every external revocation path has been exercised.
+
+## Detailed fixture notes (Japanese reference)
 
 `P0BManagementFailureProbe`は、通常IPAには含めず、署名済み診断hostへだけコピーする管理画面fixtureである。通常の`MiniAppDefinition`にlifetime、removal、onUnregisterを登録し、管理共通層を迂回する専用削除ボタンは持たない。
 

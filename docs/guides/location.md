@@ -1,4 +1,12 @@
-# Featureから位置情報を使う
+# Using location from a feature
+
+## Current integration contract
+
+A feature owns its typed location requirement and business interpretation; the shared location coordinator owns authorization requests, native manager lifetime, capacity, and callback routing. Bind every request and monitoring registration to an owner and generation, and reject callbacks after stop or removal.
+
+Register required host-launch restoration before UI appears. Background updates, geofences, and iBeacon monitoring also require host capabilities and usage descriptions. Simulator/build checks are structural evidence only; authorization transitions, background relaunch, region events, accuracy, and power behavior require real-device verification.
+
+## Detailed contract and evidence (Japanese reference)
 
 JibunKitの位置APIは、Featureごとの同意・owner・世代をCore Locationのapp共有状態に重ねる。Featureは用途に応じた`desiredAccuracy`、`distanceFilter`、`activityType`、自動pause、背景表示を選び、JibunKitは一律の精度へ書き換えない。
 

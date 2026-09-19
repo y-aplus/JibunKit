@@ -1,4 +1,12 @@
-# Core SpotlightのFeature所有権
+# Core Spotlight feature ownership
+
+## Current integration contract
+
+Namespace every searchable item with explicit feature and profile ownership, and retain stable domain/item identifiers for replacement and deletion. Indexing is feature-owned work admitted through its coordinator; the host provides composition and routes selected results back through the pure URL/route boundary.
+
+Disable, reset, and removal must delete only the owner's searchable items and report partial failure for retry. Metadata and simulator checks do not prove system indexing latency, ranking, or cold-launch routing.
+
+## Detailed contract and evidence (Japanese reference)
 
 更新日: 2026-09-15。公開版0.8.0の通常host接続と、0.7.0当時の実績を区別して記載する。
 

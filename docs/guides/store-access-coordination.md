@@ -1,4 +1,12 @@
-# 通常の保存操作と復元を調停する
+# Coordinating normal store access and restoration
+
+## Current integration contract
+
+All normal reads and writes acquire a store-access reservation tied to the active owner and runtime generation. Maintenance operations such as migration, restore, reset, snapshot, and removal close admission and wait for accepted work to drain before obtaining exclusive access.
+
+Do not treat actor serialization alone as a lifecycle guarantee: an operation may suspend while stop or maintenance begins. Validate its reservation before committing, reject stale generations, and reopen admission only after the durable store is in a coherent state.
+
+## Detailed contract and evidence (Japanese reference)
 
 Featureの通常の読書きは、`MiniAppRestoreCoordinator.withStoreAccess(for:operation:)`で同じ保存先の復元・snapshotと調停できる。DBを変更したり通常の読書きを一つずつ直列化したりする必要はない。
 

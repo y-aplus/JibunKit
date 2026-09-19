@@ -1,5 +1,13 @@
 # AudioSession / Now Playing integration
 
+## Current integration contract
+
+Use one process-level audio coordinator and native driver. Each feature submits a typed playback/recording requirement; the coordinator computes a compatible effective session rather than allowing features to mutate `AVAudioSession` directly. Reject incompatible combinations, serialize activation changes, and close new admission before draining work during shutdown.
+
+The active owner supplies Now Playing metadata and remote-command handlers. Clear both when ownership ends, and reject stale callbacks by owner and generation. Microphone access requires the feature's consent declaration and host-composed usage description. Route interruptions and media-service resets through the coordinator, then reapply only still-valid requirements. Build fixtures do not replace real route, interruption, Bluetooth, lock-screen, or background testing.
+
+## Detailed contract and evidence (Japanese reference)
+
 `MiniAppAudioSessionCoordinator` は一つのhost processで一個を共有する。productionでは一個の`MiniAppNativeAudioSessionDriver`を作り、coordinatorへ注入して`connect(to:)`する。テストは独立driverを注入する。Featureはplayer/recorder、録音物、再生位置、再開判断を所有し、coordinatorは`AVAudioSession`構成だけを所有する。
 
 ```swift

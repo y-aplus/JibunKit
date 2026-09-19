@@ -1,4 +1,12 @@
-# Featureのビルド設定を合成する
+# Composing feature build requirements
+
+## Current integration contract
+
+Each feature declares only the build inputs it actually needs. The host composes plist fragments, entitlements, privacy resources, background modes, URL schemes, and localized usage descriptions, and must fail on incompatible duplicate declarations instead of choosing one silently. Package resources and extension metadata remain owned by their defining feature.
+
+Signing and provisioning are host responsibilities. CloudKit and APNs are optional capabilities and require host credentials plus real-service verification; fixture builds and metadata checks do not prove communication. Generic HTTP support remains mandatory and must not depend on either optional capability.
+
+## Detailed contract and evidence (Japanese reference)
 
 統合したFeatureのInfo.plist/entitlementsは、一つのnative targetの設定になる。各Featureの要求を`Tuist/ProjectDescriptionHelpers/EnabledFeatureBuildRequirements.swift`へ登録する。Tuist標準のProjectDescriptionHelpersとPlist.Valueを使い、追加の設定形式や製品用generatorを設けない。
 

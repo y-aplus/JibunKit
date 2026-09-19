@@ -1,4 +1,12 @@
-# AlarmKit 接続ガイド
+# AlarmKit integration
+
+## Current integration contract
+
+`MiniAppAlarmCoordinator` owns AlarmKit registration identity, durable journal state, operation serialization, reconciliation, and lifecycle participation. Feature code retains typed alarm metadata, presentation, schedule, and business state. Do not flatten those values into a generic timer payload.
+
+Persist intent before native registration, reuse the same identity when retrying ambiguous starts, verify native state after operations, and preserve partial replacement state for recovery. Cold reconciliation must not guess ownership, recreate expired alarms, or delete another feature's alarms. AlarmKit is optional and requires iOS/Xcode support plus real-device validation; the documented 0.8.2 evidence does not cover every Focus or silent-mode condition.
+
+## Detailed contract and evidence (Japanese reference)
 
 状態: **0.8.2で公開済み・採用通常範囲完了**。b1d379bでXcode26.6の独立/統合build・metadata・native2件が成功。5678a41診断版で許可、固定/繰返し/countdown、pause/resume、OS標準stop callback、cold復帰、片側管理/復元とB保持、上書き/Refresh/端末再起動、通常版復帰を確認。Focus/silent条件は独立に試していない。Live Bの単発差分は別途未解決として保持し、実機証拠と31478f2/CI35075825942の実4Feature保持回帰を合わせP2-5採用通常範囲はcomplete。[証拠](../verification/2026-09-16-p2-continuing-surfaces.md)。
 

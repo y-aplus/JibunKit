@@ -1284,7 +1284,7 @@
     }
   ],
   "document_review": {
-    "source": "1d13e55a05ecff9054944970ba2a6a9efc3f69f2",
+    "source": "6c14e55f0be7f43551df47a78f63c4ef56e65c5a",
     "summary": "Full current inventory read by assigned document workers and parent; entry sample corrected against template, package diagnostic restored, current accepted scope/publication approval synchronized, paths checked. Detailed grouped responsibilities/reasons in2026-09-19-1.0-release.md.",
     "unresolved": [
       "Six explicitly approved unverified OS/device/signed-service scopes remain in approved_unverified; not passes.",

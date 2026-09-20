@@ -2,12 +2,12 @@
 
 このプロジェクトの利用者に影響する変更を記録します。
 
-## [1.0.0] — Unreleased candidate
+## [1.0.0] — 2026-09-19
 
-- The owner accepted the v1 coexistence criteria on 2026-09-19. Final publication was approved on 2026-09-19; publication checks are in progress.
+- The owner accepted the v1 coexistence criteria and publication on 2026-09-19 after the final document and artifact audit.
 - Consolidates the verified P0/P1/P2 ownership and lifecycle APIs delivered in 0.x. Normal product code is unchanged from 0.8.5 apart from version/build metadata.
 - Adds evidence for cross-process background HTTP restoration on device and terminated-process Region entry/exit on Simulator.
-- Explicitly retains unobserved OS/device conditions and optional, unverified signed CloudKit/APNs integrations. See [candidate notes](docs/releases/release-notes-1.0.0.md).
+- Explicitly retains unobserved OS/device conditions and optional, unverified signed CloudKit/APNs integrations. See [release notes](docs/releases/release-notes-1.0.0.md).
 - Reorganizes developer-facing documentation and release history for the public repository.
 
 ## [0.8.5] - 2026-09-19

@@ -1,6 +1,6 @@
 # Compatibility and Feature responsibilities
 
-Stable release: **0.8.5/build15**. **1.0.0/build16 is an unpublished candidate**; the owner accepted its functional criteria on 2026-09-19, but final publication was approved on 2026-09-19. See [current status](status.md), [candidate verification](verification/2026-09-19-1.0-release.md), and [explicitly unobserved conditions](verification/2026-09-19-final-observation-boundary.md).
+Stable release: **1.0.0/build16**. The 1.0.0 artifact was published after the owner accepted its functional criteria and the final audit completed. See [current status](status.md), [release verification](verification/2026-09-19-1.0-release.md), and [explicitly unobserved conditions](verification/2026-09-19-final-observation-boundary.md).
 
 ## Coexistence contract
 

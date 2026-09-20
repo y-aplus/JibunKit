@@ -66,6 +66,6 @@ Include:
 - any unverified device, OS, signing, radio, account, or service condition;
 - user-facing documentation when behavior changes.
 
-Do not report an unpublished candidate as a release. The current stable version is 0.8.5; 1.0.0 remains unpublished until the approved publication procedure completes.
+The current stable version is 1.0.0. Keep release claims tied to the published tag and its source-specific verification; historical candidate records remain dated evidence.
 
 Maintainers review design fit, compatibility, isolation between owners, automated evidence, and any necessary device evidence separately. A successful build proves compilation; it does not by itself prove installation, migration, background delivery, radio behavior, or a live Apple service.

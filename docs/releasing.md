@@ -1,7 +1,7 @@
 # 公開・release手順
 
 
-更新日: 2026-09-19。未公開候補VERSIONは1.0.0/build16、最新公開版PREVIOUSは0.8.5/build15。1.0の基準充足と最終公開は2026-09-19にユーザー承認済み。以下の照合後に公開する。[今回の出荷照合](verification/2026-09-19-1.0-release.md)。最新公開版はGitHub Releasesを正本とする。
+更新日: 2026-09-20。公開VERSIONは1.0.0/build16、PREVIOUSは0.8.5/build15。1.0の基準充足と最終公開は2026-09-19にユーザー承認済み、出荷照合を完了した。[今回の出荷照合](verification/2026-09-19-1.0-release.md)。最新公開版はGitHub Releasesを正本とする。
 
 0.8.5はCIと代表実機確認を終えて公開済みのpatch。[変更と検証範囲](releases/release-notes-0.8.5.md)。
 

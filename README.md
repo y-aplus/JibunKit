@@ -8,8 +8,8 @@ English is the primary language for current user and contributor documentation. 
 
 ## Release status
 
-- **Stable:** [0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5), build 15. See the [0.8.5 release notes](docs/releases/release-notes-0.8.5.md) and [release verification](docs/verification/2026-09-18-0.8.5-release.md).
-- **Candidate:** 1.0.0 build 16 meets the adopted scope, but is not published. Its [candidate notes](docs/releases/release-notes-1.0.0.md) are not evidence of a release. See [current status](docs/status.md) and the [remaining observation boundary](docs/verification/2026-09-19-final-observation-boundary.md).
+- **Stable:** [1.0.0](https://github.com/y-aplus/JibunKit/releases/tag/1.0.0), build 16. See the [1.0.0 release notes](docs/releases/release-notes-1.0.0.md) and [release verification](docs/verification/2026-09-19-1.0-release.md).
+- Previous stable release: [0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5), build 15. Historical records retain the earlier release boundary.
 
 CloudKit and APNs integrations are optional and depend on paid signing and Apple services. Their live service paths have not been verified. Other unobserved device or radio conditions remain listed in the status and verification documents; absence of a measurement is not reported as success.
 
@@ -54,7 +54,7 @@ These are cooperative APIs, not a security sandbox for arbitrary Swift code. A f
 
 - [Adding a feature](docs/mini-apps.md) — package, definition, registration, ownership, and validation.
 - [Build, sign, and install](docs/build.md) — local Xcode/Tuist and GitHub Actions paths.
-- [Current status](docs/status.md) — stable release, unpublished candidate, verified and unobserved boundaries.
+- [Current status](docs/status.md) — stable release, verified boundaries and explicitly unobserved conditions.
 - [Feature guides](docs/guides/) — focused integration contracts for Apple system surfaces.
 - [Compatibility](docs/compatibility.md) — public API and persisted identity rules.
 - [Updating a customized checkout](docs/updating.md) — keeping personal features separate from upstream changes.

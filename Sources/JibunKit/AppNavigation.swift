@@ -66,6 +66,7 @@ final class AppNavigation {
     private func commitSelection(_ owner: MiniAppID?) {
         if let old = activeID, !MiniAppRegistry.management.isEnabled(old) { paths.removeValue(forKey: old) }
         activeID = owner.flatMap { MiniAppRegistry.management.isEnabled($0) ? $0 : nil }
+        if let activeID { MiniAppRegistry.recordUse(activeID) }
         stackID = UUID()
         presentQueuedHostSheet()
     }
@@ -105,6 +106,16 @@ final class AppNavigation {
         default:
             searchContinuation = SearchContinuation(query: query, routes: routes)
             requestHostSheet(.search)
+        }
+    }
+
+    /// A continued activity reaches only the Feature that declared its type.
+    func continueUserActivity(_ activity: NSUserActivity) {
+        let registrations = MiniAppRegistry.userActivityRegistrations(
+            MiniAppRegistry.enabled.filter { MiniAppRegistry.launchState.errors[$0.id] == nil })
+        if let route = MiniAppUserActivityRouter.route(for: activity, registrations: registrations,
+                                                       registeredIDs: MiniAppRegistry.registeredIDs) {
+            open(route)
         }
     }
 

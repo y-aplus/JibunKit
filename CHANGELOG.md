@@ -8,6 +8,11 @@
 - Incoming handoff rejects unaccepted input types before copying files into staging.
 - Adds Spotlight "Search in App" support. Features opt in with `MiniAppDefinition.searchDestination`; one accepting Feature opens directly and several are offered as a choice.
 - Adds `MiniAppExternalURL` for opening another app from a Feature. It validates the URL and waits for the app to become active, so a request made right after a Spotlight or notification launch is not dropped.
+- Adds Home Screen quick actions for recently opened Features. Features may declare their own items with `quickActions`; otherwise one item opens the Feature.
+- Adds per-Feature icon badge counts (`MiniAppContext.setBadgeCount`). The icon shows the sum over enabled Features.
+- Routes a Feature's own continued `NSUserActivity` types (such as Handoff) to that Feature with `MiniAppDefinition.userActivity`.
+- The host now configures TipKit once at launch; Features must not call `Tips.configure()`.
+- Adds owner dispatch for optional Notification Service and Content extensions. Neither extension is built unless enabled.
 - Documents publishing a custom build's IPA to a prerelease in a derived host, because Actions artifacts are always ZIP-wrapped.
 
 ## [1.0.0] — 2026-09-19

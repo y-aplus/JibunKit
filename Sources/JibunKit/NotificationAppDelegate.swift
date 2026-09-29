@@ -1,6 +1,7 @@
 #if os(iOS)
 import JibunKitCore
 import OSLog
+import TipKit
 import UIKit
 import UserNotifications
 
@@ -29,13 +30,33 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
             Logger(subsystem: "com.jibunkit.app", category: "Launch")
                 .error("Notification registration failed: \(String(describing: error))")
         }
+        // TipKit allows one configuration per process. The host owns it so
+        // Features only declare tips; a Feature must never call configure.
+        do { try Tips.configure() } catch {
+            Logger(subsystem: "com.jibunkit.app", category: "Launch")
+                .error("TipKit configuration failed: \(String(describing: error))")
+        }
         MiniAppRegistry.reconcileContinuingSurfaces()
+        MiniAppRegistry.refreshQuickActions()
+        MiniAppRegistry.refreshBadge()
         // Explicit build-time opt-in. It does not replace a valid aps-environment
         // entitlement/profile. Registration failures still reach the coordinator.
         if Bundle.main.object(forInfoDictionaryKey: "JibunKitRemotePushEnabled") as? Bool == true {
             application.registerForRemoteNotifications()
         }
         return true
+    }
+
+    /// A cold launch from a quick action carries the item here; a running app
+    /// receives it through the scene delegate. Both use the scene router.
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        if let item = options.shortcutItem { MiniAppRegistry.performQuickAction(item) }
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        if connectingSceneSession.role == .windowApplication {
+            configuration.delegateClass = MiniAppWindowSceneDelegate.self
+        }
+        return configuration
     }
 
     func application(_ application: UIApplication,
@@ -144,6 +165,17 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
                 .error("Unable to snapshot native notification request: \(String(describing: error))")
             return nil
         }
+    }
+}
+
+/// SwiftUI keeps owning the window; this delegate only receives quick actions
+/// while the app is running.
+@MainActor
+final class MiniAppWindowSceneDelegate: NSObject, UIWindowSceneDelegate {
+    // The async form avoids depending on the SDK's completion-handler annotations,
+    // which would otherwise silently stop matching this optional requirement.
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem) async -> Bool {
+        MiniAppRegistry.performQuickAction(shortcutItem)
     }
 }
 #endif

@@ -2,6 +2,11 @@
 
 このプロジェクトの利用者に影響する変更を記録します。
 
+## [Unreleased]
+
+- Backup import rejects archives with more than 100,000 entries or a declared size larger than the available disk capacity, and stops writing any entry that expands past its declared size.
+- Incoming handoff rejects unaccepted input types before copying files into staging.
+
 ## [1.0.0] — 2026-09-19
 
 - The owner accepted the v1 coexistence criteria and publication on 2026-09-19 after the final document and artifact audit.

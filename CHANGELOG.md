@@ -6,6 +6,9 @@
 
 - Backup import rejects archives with more than 100,000 entries or a declared size larger than the available disk capacity, and stops writing any entry that expands past its declared size.
 - Incoming handoff rejects unaccepted input types before copying files into staging.
+- Adds Spotlight "Search in App" support. Features opt in with `MiniAppDefinition.searchDestination`; one accepting Feature opens directly and several are offered as a choice.
+- Adds `MiniAppExternalURL` for opening another app from a Feature. It validates the URL and waits for the app to become active, so a request made right after a Spotlight or notification launch is not dropped.
+- Documents publishing a custom build's IPA to a prerelease in a derived host, because Actions artifacts are always ZIP-wrapped.
 
 ## [1.0.0] — 2026-09-19
 

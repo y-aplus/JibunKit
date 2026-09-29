@@ -58,6 +58,11 @@ private struct MiniAppSceneRoot: View {
                     navigation.open(route)
                 }
             }
+            .onContinueUserActivity(CSQueryContinuationActionType) { userActivity in
+                if let query = MiniAppSearchContinuation.query(from: userActivity) {
+                    navigation.continueSearch(query)
+                }
+            }
             .background(MiniAppSceneConnection(connect: {
                 activity.connect(phase: activityPhase, selectedID: navigation.activeID)
                 activityConnectionID = activity.connectionID

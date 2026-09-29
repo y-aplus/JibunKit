@@ -10,6 +10,16 @@ Follow the [official SideStore installation instructions](https://docs.sidestore
 
 For a published release, download the IPA linked by that release rather than an outer Actions ZIP. For a custom feature build, follow [the build guide](build.md) and obtain `JibunKit.ipa` from the successful `JibunKit-ad-hoc` artifact.
 
+GitHub always wraps an Actions artifact in a ZIP, so the artifact cannot be opened directly as an IPA on iPhone. To get a direct IPA link for a custom build, attach the IPA to a prerelease in your derived host (not in upstream JibunKit):
+
+```bash
+gh run download RUN_ID --repo OWNER/PRIVATE_HOST --name JibunKit-ad-hoc --dir ipa-RUN_ID
+gh release create feature-check-YYYYMMDD ipa-RUN_ID/JibunKit.ipa \
+  --repo OWNER/PRIVATE_HOST --prerelease --title "Feature check YYYYMMDD" --notes "Source: COMMIT, run RUN_ID"
+```
+
+Open the IPA asset link from the release page on the device and pass the file to SideStore. A release asset in a private repository requires signing in to GitHub in the browser. Do not add another ZIP around the IPA.
+
 Use the current Tuist/Xcode path so the IPA contains native App Intents metadata. The old xtool IPA path is retired. Do not upload an Apple Account password, 2FA code, certificate, or provisioning profile to Actions for this build.
 
 ## First installation

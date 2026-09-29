@@ -18,7 +18,8 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     ]],
     "UILaunchScreen": [:],
     "UIApplicationSceneManifest": ["UIApplicationSupportsMultipleScenes": true],
-    "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
+    "NSUserActivityTypes": [.string(CSSearchableItemActionType), .string(CSQueryContinuationActionType)],
+    "CoreSpotlightContinuation": true,
     "CFBundleURLTypes": [[
         "CFBundleURLName": "com.jibunkit.app.mini-app",
         "CFBundleURLSchemes": ["jibunkit"],

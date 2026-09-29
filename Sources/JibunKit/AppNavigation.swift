@@ -9,9 +9,12 @@ import UniformTypeIdentifiers
 @MainActor
 @Observable
 final class AppNavigation {
-    enum HostSheet: String, Identifiable { case backup, management, incoming; var id: String { rawValue } }
+    enum HostSheet: String, Identifiable { case backup, management, incoming, search; var id: String { rawValue } }
+    struct SearchContinuation { let query: String; let routes: [MiniAppRoute] }
     var hostSheet: HostSheet?
     private var queuedHostSheet: HostSheet?
+    private(set) var searchContinuation: SearchContinuation?
+    private var chosenSearchRoute: MiniAppRoute?
     var preparedIncoming: MiniAppPreparedIncoming?
     var incomingError: String?
     private(set) var isPreparingIncoming = false
@@ -79,7 +82,36 @@ final class AppNavigation {
     }
 
     func hostSheetDidDismiss() {
+        if let route = chosenSearchRoute {
+            chosenSearchRoute = nil
+            searchContinuation = nil
+            open(route)
+        }
         presentQueuedHostSheet()
+    }
+
+    /// Spotlight's "Search in App": one accepting Feature opens directly;
+    /// several are offered as a choice; none leaves the launcher visible.
+    func continueSearch(_ query: String) {
+        let registrations = MiniAppRegistry.enabled.compactMap { definition in
+            definition.searchDestination.map { MiniAppSearchContinuation.Registration(id: definition.id, destination: $0) }
+        }
+        let routes = MiniAppSearchContinuation.candidates(
+            for: query, registrations: registrations, registeredIDs: MiniAppRegistry.registeredIDs
+        ).filter { MiniAppRegistry.definition(for: $0.id)?.navigationPath(for: $0.destination ?? "") != nil }
+        switch routes.count {
+        case 0: showList()
+        case 1: open(routes[0])
+        default:
+            searchContinuation = SearchContinuation(query: query, routes: routes)
+            requestHostSheet(.search)
+        }
+    }
+
+    /// Opens after the sheet is actually dismissed, like other host sheets.
+    func chooseSearchRoute(_ route: MiniAppRoute) {
+        chosenSearchRoute = route
+        hostSheet = nil
     }
 
     private func presentQueuedHostSheet() {

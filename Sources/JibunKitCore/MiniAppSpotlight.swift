@@ -81,4 +81,41 @@ public enum MiniAppSpotlightRoute {
         return nil
     }
 }
+
+/// Resolves Spotlight's "Search in App" query into Feature-owned destinations.
+/// A Feature opts in by mapping the query to one of its own destination
+/// identifiers; the host never interprets the query or the destination.
+public enum MiniAppSearchContinuation {
+    public struct Registration {
+        public let id: MiniAppID
+        public let destination: @MainActor (String) -> String?
+
+        public init(id: MiniAppID, destination: @escaping @MainActor (String) -> String?) {
+            self.id = id
+            self.destination = destination
+        }
+    }
+
+    /// The trimmed query of a native continuation activity, or nil for any
+    /// other activity type, a missing or non-string value, or an empty query.
+    public static func query(from activity: NSUserActivity) -> String? {
+        guard activity.activityType == CSQueryContinuationActionType,
+              let raw = activity.userInfo?[CSSearchQueryString] as? String else { return nil }
+        let query = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return query.isEmpty ? nil : query
+    }
+
+    /// Routes for the registered Features that accept this query, in
+    /// registration order. A Feature declines by returning nil.
+    @MainActor
+    public static func candidates(for query: String, registrations: [Registration],
+                                  registeredIDs: Set<MiniAppID>) -> [MiniAppRoute] {
+        registrations.compactMap { registration in
+            guard registeredIDs.contains(registration.id),
+                  let destination = registration.destination(query),
+                  MiniAppLink.url(for: registration.id, destination: destination) != nil else { return nil }
+            return MiniAppRoute(id: registration.id, destination: destination)
+        }
+    }
+}
 #endif

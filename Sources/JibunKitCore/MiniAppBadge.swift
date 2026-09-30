@@ -24,7 +24,9 @@ public final class MiniAppBadgeCoordinator {
     }
 
     #if os(iOS)
-    public static let shared = MiniAppBadgeCoordinator(defaults: .standard) { try await MiniAppBadgeCoordinator.setIconBadge($0) }
+    // Explicit arguments: a default argument here mixes isolation domains.
+    public static let shared = MiniAppBadgeCoordinator(defaults: UserDefaults.standard, storageKey: defaultStorageKey,
+                                                       apply: { try await MiniAppBadgeCoordinator.setIconBadge($0) })
 
     // Nonisolated so the notification center is used off the main actor.
     private nonisolated static func setIconBadge(_ count: Int) async throws {

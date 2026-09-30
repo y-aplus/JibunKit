@@ -16,8 +16,7 @@ public final class MiniAppBadgeCoordinator {
     /// nil until the host reports admission; every stored owner counts meanwhile.
     private var enabledOwners: Set<MiniAppID>?
 
-    // Nonisolated so `shared` can be created from a static initializer.
-    public nonisolated init(defaults: UserDefaults, storageKey: String = MiniAppBadgeCoordinator.defaultStorageKey,
+    public init(defaults: UserDefaults, storageKey: String = MiniAppBadgeCoordinator.defaultStorageKey,
                 apply: @escaping @MainActor (Int) async throws -> Void) {
         self.defaults = defaults
         self.storageKey = storageKey
@@ -25,8 +24,16 @@ public final class MiniAppBadgeCoordinator {
     }
 
     #if os(iOS)
-    public static let shared = MiniAppBadgeCoordinator(defaults: UserDefaults.standard, storageKey: defaultStorageKey,
-                                                       apply: { try await MiniAppBadgeCoordinator.setIconBadge($0) })
+    private static var sharedInstance: MiniAppBadgeCoordinator?
+
+    /// Created on first use on the main actor. A static stored initializer
+    /// would run outside the main actor under Swift 6 isolation rules.
+    public static var shared: MiniAppBadgeCoordinator {
+        if let sharedInstance { return sharedInstance }
+        let created = MiniAppBadgeCoordinator(defaults: .standard, storageKey: defaultStorageKey) { try await MiniAppBadgeCoordinator.setIconBadge($0) }
+        sharedInstance = created
+        return created
+    }
 
     // Nonisolated so the notification center is used off the main actor.
     private nonisolated static func setIconBadge(_ count: Int) async throws {

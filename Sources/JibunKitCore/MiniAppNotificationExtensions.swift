@@ -66,7 +66,9 @@ open class MiniAppNotificationService: UNNotificationServiceExtension {
 }
 
 /// Subclass as the principal class of the host's Notification Content
-/// extension and return the owning Feature's view controller. List the Features'
+/// extension and return the owning Feature's view controller. Notification
+/// actions are not handled here: the system forwards them to the app, where
+/// `MiniAppDefinition.onNotificationAction` receives them. List the Features'
 /// category identifiers (`MiniAppContext.notificationCategoryIdentifier(for:)`)
 /// in the extension's `UNNotificationExtensionCategory`.
 open class MiniAppNotificationContentViewController: UIViewController, UNNotificationContentExtension {
@@ -93,17 +95,6 @@ open class MiniAppNotificationContentViewController: UIViewController, UNNotific
             child = controller
         }
         child?.didReceive(notification)
-    }
-
-    /// A Feature controller that does not handle responses forwards them to the app.
-    /// The system calls content extensions on the main thread.
-    nonisolated public func didReceive(_ response: UNNotificationResponse,
-                                       completionHandler completion: @escaping (UNNotificationContentExtensionResponseOption) -> Void) {
-        MainActor.assumeIsolated {
-            if child?.didReceive?(response, completionHandler: completion) == nil {
-                completion(.dismissAndForwardAction)
-            }
-        }
     }
 }
 #endif

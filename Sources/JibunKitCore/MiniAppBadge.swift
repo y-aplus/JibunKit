@@ -16,7 +16,8 @@ public final class MiniAppBadgeCoordinator {
     /// nil until the host reports admission; every stored owner counts meanwhile.
     private var enabledOwners: Set<MiniAppID>?
 
-    public init(defaults: UserDefaults, storageKey: String = MiniAppBadgeCoordinator.defaultStorageKey,
+    // Nonisolated so `shared` can be created from a static initializer.
+    public nonisolated init(defaults: UserDefaults, storageKey: String = MiniAppBadgeCoordinator.defaultStorageKey,
                 apply: @escaping @MainActor (Int) async throws -> Void) {
         self.defaults = defaults
         self.storageKey = storageKey
@@ -24,7 +25,6 @@ public final class MiniAppBadgeCoordinator {
     }
 
     #if os(iOS)
-    // Explicit arguments: a default argument here mixes isolation domains.
     public static let shared = MiniAppBadgeCoordinator(defaults: UserDefaults.standard, storageKey: defaultStorageKey,
                                                        apply: { try await MiniAppBadgeCoordinator.setIconBadge($0) })
 

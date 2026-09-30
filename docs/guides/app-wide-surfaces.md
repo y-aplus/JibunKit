@@ -62,4 +62,4 @@ An app has at most one of each. JibunKit does not build them by default, because
 
 The host chooses the owner from the payload's `JibunKitMiniAppID` when present, and never falls back to identifier matching if that owner has no handler. Otherwise the request or category identifier must match exactly one Feature's namespace. A notification without an owning handler is shown unchanged. A service handler follows `UNNotificationServiceExtension`'s contract: call the content handler exactly once and deliver the best content when time expires.
 
-The default CI does not build these optional targets. Build a host with them enabled before relying on them.
+The default CI does not build these optional targets. The **Build optional extensions** workflow compiles the host with both enabled (with empty handler lists) and checks that they are embedded; it does not exercise notification delivery.

@@ -34,7 +34,7 @@ import UserNotificationsUI
 /// The system may call it off the main thread.
 public protocol MiniAppNotificationServiceHandling: AnyObject {
     func didReceive(_ request: UNNotificationRequest,
-                    withContentHandler contentHandler: @escaping @Sendable (UNNotificationContent) -> Void)
+                    withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void)
     func serviceExtensionTimeWillExpire()
 }
 
@@ -47,7 +47,7 @@ open class MiniAppNotificationService: UNNotificationServiceExtension {
     open func makeHandlers() -> [MiniAppID: any MiniAppNotificationServiceHandling] { [:] }
 
     open override func didReceive(_ request: UNNotificationRequest,
-                                  withContentHandler contentHandler: @escaping @Sendable (UNNotificationContent) -> Void) {
+                                  withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         let handlers = makeHandlers()
         guard let owner = MiniAppNotificationOwner.resolve(
             requestIdentifier: request.identifier, categoryIdentifier: request.content.categoryIdentifier,
@@ -96,9 +96,14 @@ open class MiniAppNotificationContentViewController: UIViewController, UNNotific
     }
 
     /// A Feature controller that does not handle responses forwards them to the app.
-    public func didReceive(_ response: UNNotificationResponse) async -> UNNotificationContentExtensionResponseOption {
-        guard let child, let option = await child.didReceive?(response) else { return .dismissAndForwardAction }
-        return option
+    /// The system calls content extensions on the main thread.
+    nonisolated public func didReceive(_ response: UNNotificationResponse,
+                                       completionHandler completion: @escaping (UNNotificationContentExtensionResponseOption) -> Void) {
+        MainActor.assumeIsolated {
+            if child?.didReceive?(response, completionHandler: completion) == nil {
+                completion(.dismissAndForwardAction)
+            }
+        }
     }
 }
 #endif

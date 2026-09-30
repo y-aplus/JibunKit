@@ -8,7 +8,7 @@ import UserNotifications
 /// Feature can no longer overwrite another's badge.
 @MainActor
 public final class MiniAppBadgeCoordinator {
-    public static let defaultStorageKey = "jibunkit.badge-counts"
+    public nonisolated static let defaultStorageKey = "jibunkit.badge-counts"
 
     private let defaults: UserDefaults
     private let storageKey: String

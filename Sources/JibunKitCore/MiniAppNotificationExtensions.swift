@@ -77,7 +77,8 @@ open class MiniAppNotificationContentViewController: UIViewController, UNNotific
     /// Override. The owners whose categories this extension displays.
     open var owners: [MiniAppID] { [] }
 
-    /// Override. Return nil to show the system's default content.
+    /// Override. Return nil to collapse the custom area; the system still shows
+    /// the notification's default title and body below it.
     open func makeContentViewController(for owner: MiniAppID) -> (UIViewController & UNNotificationContentExtension)? { nil }
 
     public func didReceive(_ notification: UNNotification) {
@@ -94,7 +95,13 @@ open class MiniAppNotificationContentViewController: UIViewController, UNNotific
             preferredContentSize = controller.preferredContentSize
             child = controller
         }
-        child?.didReceive(notification)
+        guard let child else {
+            // No owning Feature view: without this the extension's empty root
+            // view keeps its initial size as a blank area above the text.
+            preferredContentSize = CGSize(width: view.bounds.width, height: 0)
+            return
+        }
+        child.didReceive(notification)
     }
 }
 #endif

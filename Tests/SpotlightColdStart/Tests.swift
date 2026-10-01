@@ -7,6 +7,13 @@ import XCTest
 /// fresh app on a freshly booted simulator to isolate the first native request.
 @MainActor
 final class SpotlightColdStartTests: XCTestCase {
+    /// The contract is that each native completion arrives; its latency is
+    /// recorded, not asserted. Simulator runs measured 22–39 seconds for one
+    /// call on 2026-10-01, so 30 seconds failed on unchanged code. 90 seconds
+    /// matches the Spotlight routing fixture's wait. A timed-out call is still
+    /// pending when the next one starts, which also distorts later timings.
+    private static let completionTimeout: TimeInterval = 90
+
     func testColdDeletionThenAsyncOverlayAndIndexing() async {
         let index = CSSearchableIndex.default()
         let domain = "cold-start." + UUID().uuidString
@@ -53,8 +60,9 @@ final class SpotlightColdStartTests: XCTestCase {
             XCTAssertNil(error, label)
             done.fulfill()
         }
-        let result = await XCTWaiter.fulfillment(of: [done], timeout: 30)
+        let result = await XCTWaiter.fulfillment(of: [done], timeout: Self.completionTimeout)
         print("SPOTLIGHT_BASELINE wait=\(label) result=\(result.rawValue)")
-        XCTAssertEqual(result, .completed, "\(label): native completion absent after 30 seconds")
+        XCTAssertEqual(result, .completed,
+                       "\(label): native completion absent after \(Int(Self.completionTimeout)) seconds")
     }
 }

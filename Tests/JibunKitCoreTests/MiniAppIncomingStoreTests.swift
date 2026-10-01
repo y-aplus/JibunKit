@@ -136,6 +136,17 @@ final class MiniAppIncomingStoreTests: XCTestCase {
         XCTAssertEqual(try store.pending(for: b).receipts, [saved])
     }
 
+    func testUnsupportedFileIsRejectedBeforeCopying() throws {
+        let (directory, store) = try fixture()
+        try store.setAdmission(.init(id: a, title: "A", typeIdentifiers: ["public.plain-text"]), enabled: true)
+        // A missing source proves no copy was attempted before the type check.
+        let missing = directory.appendingPathComponent("missing.mov")
+        XCTAssertThrowsError(try store.enqueue(for: a, inputs: [.file(missing, typeIdentifier: "public.movie", displayName: "Movie")])) {
+            XCTAssertEqual($0 as? MiniAppIncomingError, .unsupportedInputType)
+        }
+        XCTAssertTrue(try store.pending(for: a).receipts.isEmpty)
+    }
+
     func testContainerAliasSupportsFirstWriteReopenAndOwnerRecreation() throws {
         let (directory, store) = try fixture()
         let savedB = try store.enqueue(for: b, inputs: [.text("keep B")])

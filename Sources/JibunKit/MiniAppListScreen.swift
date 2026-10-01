@@ -66,6 +66,7 @@ struct MiniAppListScreen: View {
                                       lifecycleForDefinition: { MiniAppWindowOwnership.restoreLifecycle(for: $0) })
             case .management: MiniAppManagementScreen()
             case .incoming: MiniAppIncomingScreen(navigation: navigation)
+            case .search: MiniAppSearchContinuationScreen(navigation: navigation)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

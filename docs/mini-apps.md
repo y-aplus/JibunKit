@@ -77,6 +77,7 @@ Add only the contracts your feature needs:
 - [Owned presentations](guides/feature-owned-presentations.md) and [URL routing](guides/feature-url-routing.md).
 - [Database and files](guides/database-files.md), [HTTP](guides/feature-http.md), or [Web storage](guides/web-storage-ownership.md).
 - [App Intents](guides/package-app-intents.md), [widgets](guides/package-static-widgets.md), and [incoming files](guides/feature-incoming.md).
+- [Quick actions, icon badge, Handoff, TipKit and notification extensions](guides/app-wide-surfaces.md), which iOS gives the app only once.
 - Other Apple system surfaces under [docs/guides](guides/).
 
 A read-only screen does not need dummy lifecycle, backup, or removal providers. Add explicit ownership only for resources and data that exist.

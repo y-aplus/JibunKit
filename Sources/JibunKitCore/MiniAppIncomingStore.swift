@@ -150,6 +150,10 @@ public struct MiniAppIncomingStore: Sendable {
             }
             return destination
         }
+        // Reject before copying so an unaccepted large file is never staged.
+        guard inputs.allSatisfy({ $0.typeIdentifier.isEmpty || destination.accepts($0.typeIdentifier) }) else {
+            throw MiniAppIncomingError.unsupportedInputType
+        }
         return try coordinated(for: owner) {
             try Task.checkCancellation()
             let id = UUID()
@@ -175,9 +179,6 @@ public struct MiniAppIncomingStore: Sendable {
                     try FileManager.default.copyItem(at: source, to: staging.appendingPathComponent(filename))
                     items.append(.init(kind: .file, typeIdentifier: type, displayName: name, value: filename))
                 }
-            }
-            guard items.allSatisfy({ destination.accepts($0.typeIdentifier) }) else {
-                throw MiniAppIncomingError.unsupportedInputType
             }
             let receipt = MiniAppIncomingReceipt(id: id, owner: owner.rawValue, createdAt: .now, items: items)
             try JSONEncoder().encode(receipt).write(to: staging.appendingPathComponent("receipt.json"), options: .atomic)

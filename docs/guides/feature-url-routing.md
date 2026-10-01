@@ -10,6 +10,23 @@ Implement `MiniAppDefinition.resolveIncomingURL` as a side-effect-free parser th
 
 Custom schemes belong in the app target's `CFBundleURLTypes`; universal links require Associated Domains and the matching website association. Compose those through the feature build requirements, preserve the host declaration when resolving a conflict, and do not copy app-only schemes into widgets. This resolver handles address delivery only: web-auth completion, security-scoped files, generic action callbacks, `UIOpenURLContext` options, and OS multi-window selection use their dedicated boundaries.
 
+### Opening another app
+
+Open another app's URL with `MiniAppExternalURL.open(_:)` instead of calling `UIApplication.shared.open` directly:
+
+```swift
+Button("Open") {
+    Task {
+        do { try await MiniAppExternalURL.open(url) }
+        catch { openError = error.localizedDescription }
+    }
+}
+```
+
+It rejects file URLs, URLs without a scheme, and JibunKit's own `jibunkit://` routes. When the request arrives while the app is not yet active, such as right after a Spotlight result or a notification brought JibunKit forward, it waits until the app becomes active (5 seconds by default) instead of letting the system drop the request. It throws `inactive` if activation does not happen in time and `rejected` if the system does not open the URL, for example when no app handles the scheme. Show a retry action for those errors.
+
+Do not open another app from `appendDestination` or `resolveIncomingURL`; those stay side-effect free. Open it from the destination view or a user action. Declare schemes in `LSApplicationQueriesSchemes` through the feature build requirements only if the Feature also calls `canOpenURL`.
+
 ## Japanese source notes and historical evidence
 
 独立アプリのURL entry pointを単一hostへ統合すると、受信先Featureの選択が必要になる。`MiniAppDefinition.resolveIncomingURL`は元のFoundation `URL`を受け取り、受理する場合だけ`.root`または`.detail(String)`を返す。hostは全Featureの一致を調べ、一つだけならSwiftUIが配送したsceneの既存navigationへ接続する。

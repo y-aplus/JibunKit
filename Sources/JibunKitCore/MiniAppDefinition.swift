@@ -34,6 +34,15 @@ public struct MiniAppDefinition: Identifiable {
     public let notificationPresentation: (@MainActor (MiniAppForegroundNotification) -> UNNotificationPresentationOptions)?
     public let notificationCategories: [UNNotificationCategory]
     public let resolveIncomingURL: MiniAppURLRouter.Resolver?
+    /// Maps a Spotlight "Search in App" query to a destination accepted by
+    /// `appendDestination`, or nil to decline. Must not mutate Feature data.
+    public let searchDestination: (@MainActor (String) -> String?)?
+    /// Home Screen quick actions. Without any, the host offers one that opens
+    /// the Feature root when the Feature is among the recently used ones.
+    public let quickActions: [MiniAppQuickAction]
+    /// This Feature's own continued `NSUserActivity` types, such as Handoff.
+    /// Declare the same types in `NSUserActivityTypes` build requirements.
+    public let userActivity: MiniAppUserActivityHandler?
     private let rootView: @MainActor (MiniAppContext) -> AnyView
     private let appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)?
 
@@ -55,6 +64,9 @@ public struct MiniAppDefinition: Identifiable {
         onUnregister: (@MainActor @Sendable () async throws -> Void)? = nil,
         appendDestination: (@MainActor (String, inout NavigationPath) -> Bool)? = nil,
         resolveIncomingURL: MiniAppURLRouter.Resolver? = nil,
+        searchDestination: (@MainActor (String) -> String?)? = nil,
+        quickActions: [MiniAppQuickAction] = [],
+        userActivity: MiniAppUserActivityHandler? = nil,
         onHostLaunch: (@MainActor () throws -> Void)? = nil,
         onHostPhaseChange: (@MainActor (MiniAppHostPhase) -> Void)? = nil,
         onSceneActivityChange: MiniAppSceneActivityDispatcher.Handler? = nil,
@@ -96,6 +108,13 @@ public struct MiniAppDefinition: Identifiable {
         self.restoreLifecycle = restoreLifecycle
         self.appendDestination = appendDestination
         self.resolveIncomingURL = resolveIncomingURL
+        precondition(searchDestination == nil || appendDestination != nil,
+                     "Search continuation destinations require appendDestination.")
+        self.searchDestination = searchDestination
+        precondition(quickActions.allSatisfy { $0.destination == nil } || appendDestination != nil,
+                     "Quick action destinations require appendDestination.")
+        self.quickActions = quickActions
+        self.userActivity = userActivity
         self.onHostLaunch = onHostLaunch
         self.onHostPhaseChange = onHostPhaseChange
         self.onSceneActivityChange = onSceneActivityChange

@@ -2,6 +2,20 @@
 
 このプロジェクトの利用者に影響する変更を記録します。
 
+## [Unreleased]
+
+- Backup import rejects archives with more than 100,000 entries or a declared size larger than the available disk capacity, and stops writing any entry that expands past its declared size.
+- Incoming handoff rejects unaccepted input types before copying files into staging.
+- Adds Spotlight "Search in App" support. Features opt in with `MiniAppDefinition.searchDestination`; one accepting Feature opens directly and several are offered as a choice.
+- Adds `MiniAppExternalURL` for opening another app from a Feature. It validates the URL and waits for the app to become active, so a request made right after a Spotlight or notification launch is not dropped.
+- Adds Home Screen quick actions for recently opened Features. Features may declare their own items with `quickActions`; otherwise one item opens the Feature.
+- Adds per-Feature icon badge counts (`MiniAppContext.setBadgeCount`). The icon shows the sum over enabled Features.
+- Routes a Feature's own continued `NSUserActivity` types (such as Handoff) to that Feature with `MiniAppDefinition.userActivity`.
+- The host now configures TipKit once at launch; Features must not call `Tips.configure()`.
+- Adds owner dispatch for optional Notification Service and Content extensions. Neither extension is built unless enabled.
+- Adds two manual workflows: **Build optional extensions** (compile check with the notification extensions enabled) and **Publish IPA prerelease** (attaches a successful build's plain IPA to a prerelease).
+- Documents publishing a custom build's IPA to a prerelease in a derived host, because Actions artifacts are always ZIP-wrapped.
+
 ## [1.0.0] — 2026-09-19
 
 - The owner accepted the v1 coexistence criteria and publication on 2026-09-19 after the final document and artifact audit.

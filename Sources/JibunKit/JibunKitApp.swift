@@ -58,6 +58,14 @@ private struct MiniAppSceneRoot: View {
                     navigation.open(route)
                 }
             }
+            .onContinueUserActivity(CSQueryContinuationActionType) { userActivity in
+                if let query = MiniAppSearchContinuation.query(from: userActivity) {
+                    navigation.continueSearch(query)
+                }
+            }
+            .modifier(FeatureUserActivityRouting(
+                types: MiniAppUserActivityRouter.activityTypes(MiniAppRegistry.userActivityRegistrations(MiniAppRegistry.all))
+            ) { navigation.continueUserActivity($0) })
             .background(MiniAppSceneConnection(connect: {
                 activity.connect(phase: activityPhase, selectedID: navigation.activeID)
                 activityConnectionID = activity.connectionID
@@ -96,6 +104,18 @@ private struct MiniAppSceneRoot: View {
                 }
                 navigation.open(candidate)
             }
+    }
+}
+
+/// SwiftUI needs one handler per activity type; the types come from Features.
+private struct FeatureUserActivityRouting: ViewModifier {
+    let types: [String]
+    let handle: @MainActor (NSUserActivity) -> Void
+
+    func body(content: Content) -> some View {
+        types.reduce(AnyView(content)) { view, type in
+            AnyView(view.onContinueUserActivity(type) { handle($0) })
+        }
     }
 }
 #endif

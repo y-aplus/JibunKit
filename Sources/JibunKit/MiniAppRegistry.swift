@@ -3,6 +3,7 @@ import CounterIntegration
 import JibunKitCore
 import ReminderIntegration
 import Foundation
+import UIKit
 import CoreSpotlight
 import WidgetKit
 import OSLog
@@ -85,6 +86,7 @@ enum MiniAppRegistry {
                     #endif
                     let context = MiniAppContext(id: definition.id)
                     await context.removeAllOwnedNotifications()
+                    try await MiniAppBadgeCoordinator.shared.removeCount(for: definition.id)
                     try context.replaceNotificationCategories(with: [])
                     #if DEBUG
                     print("MINIAPP_UNREGISTER owner=\(definition.id.rawValue) notifications-complete spotlight-begin")
@@ -110,6 +112,8 @@ enum MiniAppRegistry {
             onStatusChange: { _, _ in
                 WidgetCenter.shared.reloadAllTimelines()
                 ControlCenter.shared.reloadAllControls()
+                refreshQuickActions()
+                refreshBadge()
             }
         )
         AppSceneRouting.windows.bootstrapSuspendedOwners(all.filter { !result.isEnabled($0.id) }.map(\.id))
@@ -162,6 +166,54 @@ enum MiniAppRegistry {
         return MiniAppSceneActivityDispatcher(handlers: handlers)
     }
 
+    static let recentUsage = MiniAppRecentUsage(defaults: .standard)
+
+    static func recordUse(_ id: MiniAppID) {
+        recentUsage.record(id)
+        refreshQuickActions()
+    }
+
+    /// Publishes Home Screen quick actions for enabled, launchable Features.
+    static func refreshQuickActions() {
+        let candidates = enabled.filter { launchState.errors[$0.id] == nil }.map {
+            MiniAppQuickActions.Candidate(id: $0.id, title: $0.title, systemImage: $0.systemImage, actions: $0.quickActions)
+        }
+        UIApplication.shared.shortcutItems = MiniAppQuickActions.entries(recent: recentUsage.ids, candidates: candidates).map { entry in
+            UIApplicationShortcutItem(
+                type: MiniAppQuickActions.shortcutType, localizedTitle: entry.action.title,
+                localizedSubtitle: entry.action.subtitle,
+                icon: UIApplicationShortcutIcon(systemImageName: entry.action.systemImage),
+                userInfo: MiniAppQuickActions.userInfo(for: entry).mapValues { $0 as NSString as any NSSecureCoding })
+        }
+    }
+
+    /// Disabled owners stop contributing to the icon badge.
+    static func refreshBadge() {
+        let owners = registeredIDs
+        Task {
+            do { try await MiniAppBadgeCoordinator.shared.setEnabledOwners(owners) }
+            catch {
+                Logger(subsystem: "com.jibunkit.app", category: "Badge")
+                    .error("Badge update failed: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    /// Returns whether the item belonged to JibunKit and addressed an enabled Feature.
+    @discardableResult
+    static func performQuickAction(_ item: UIApplicationShortcutItem) -> Bool {
+        guard let route = MiniAppQuickActions.route(type: item.type, userInfo: item.userInfo,
+                                                    registeredIDs: registeredIDs) else { return false }
+        AppSceneRouting.shared.open(route)
+        return true
+    }
+
+    static func userActivityRegistrations(_ definitions: [MiniAppDefinition]) -> [MiniAppUserActivityRouter.Registration] {
+        definitions.compactMap { definition in
+            definition.userActivity.map { MiniAppUserActivityRouter.Registration(id: definition.id, handler: $0) }
+        }
+    }
+
     static var enabled: [MiniAppDefinition] { all.filter { management.isEnabled($0.id) } }
     static var registeredIDs: Set<MiniAppID> { Set(enabled.map(\.id)) }
 
@@ -177,6 +229,12 @@ enum MiniAppRegistry {
             Set(miniApps.map(\.id)).count == miniApps.count,
             "Mini-app IDs must be unique."
         )
+        do {
+            try MiniAppUserActivityRouter.validate(userActivityRegistrations(miniApps),
+                reserved: [CSSearchableItemActionType, CSQueryContinuationActionType])
+        } catch {
+            preconditionFailure("Invalid Feature user activity types: \(error)")
+        }
         return miniApps
     }
 }

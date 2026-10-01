@@ -10,7 +10,27 @@ Use `MiniAppSpotlightNamespace` to derive owner-qualified `uniqueIdentifier` and
 
 The host automatically removes only the owner's domain in `CSSearchableIndex.default()`. A custom index is allowed but its cleanup belongs in `MiniAppDefinition.onUnregister`. Close admission and stop lifetime writers before deletion so an old callback cannot re-index. Await the native completion: a pending callback is still deregistering, while a returned error becomes an incomplete management state that can be retried and survives process restart.
 
-For result routing, accept `CSSearchableItemActionType` activities only when their namespace and local-item format match a registered feature, then pass the local identifier to `appendDestination`. Declare the native Spotlight activity type through build requirements. Additional custom activity types need their own handler; this does not automatically implement Handoff or query continuation.
+For result routing, accept `CSSearchableItemActionType` activities only when their namespace and local-item format match a registered feature, then pass the local identifier to `appendDestination`. Declare the native Spotlight activity type through build requirements. Additional custom activity types need their own handler; this does not automatically implement Handoff.
+
+### Search in App (query continuation)
+
+The host declares `CoreSpotlightContinuation` and `CSQueryContinuationActionType`, so Spotlight shows its "Search in App" action for JibunKit. The query is offered only to enabled Features that pass `searchDestination` to `MiniAppDefinition`:
+
+```swift
+MiniAppDefinition(
+    id: MiniAppID("spot-alias"), title: "SpotAlias", systemImage: "magnifyingglass",
+    appendDestination: { destination, path in
+        guard destination.hasPrefix("search:") else { return false }
+        path.append(AliasSearch(query: String(destination.dropFirst("search:".count))))
+        return true
+    },
+    searchDestination: { query in "search:" + query }
+) { _ in SpotAliasRootView() }
+```
+
+`searchDestination` maps the query to one of the Feature's own destinations, or returns nil to decline. It must not change Feature data; the Feature searches after its destination opens. The host validates the destination through `appendDestination` before offering it. One accepting Feature opens directly; several are listed for the user to choose; none leaves the launcher visible. `searchDestination` requires `appendDestination`.
+
+The query is untrusted user input. Search engines, ranking, and whether Spotlight shows the action at all remain system behavior.
 
 ## Japanese source notes and historical evidence
 

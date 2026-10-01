@@ -1,0 +1,66 @@
+name: Publish IPA prerelease
+
+# Attaches the plain JibunKit.ipa from a successful "Build JibunKit IPA" run to
+# a prerelease, so a device can download the IPA directly instead of the
+# ZIP-wrapped Actions artifact. Run it in your own (derived) repository.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: ID of a successful "Build JibunKit IPA" run in this repository
+        type: string
+        required: true
+      tag:
+        description: Prerelease tag to create (empty uses build-RUN_ID)
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ inputs.run_id }}
+      TAG_INPUT: ${{ inputs.tag }}
+    steps:
+      - name: Validate the source run
+        id: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "run_id must be numeric" >&2; exit 1; }
+          tag="${TAG_INPUT:-build-$RUN_ID}"
+          [[ "$tag" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$ ]] || { echo "Invalid tag: $tag" >&2; exit 1; }
+          read -r name conclusion sha < <(gh run view "$RUN_ID" --json workflowName,conclusion,headSha \
+            --jq '[.workflowName, .conclusion, .headSha] | @tsv')
+          test "$name" = "Build JibunKit IPA" || { echo "Run $RUN_ID is '$name', not Build JibunKit IPA" >&2; exit 1; }
+          test "$conclusion" = success || { echo "Run $RUN_ID concluded '$conclusion'" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Download and check the IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$RUN_ID" --name JibunKit-ad-hoc --dir ipa
+          test -f ipa/JibunKit.ipa
+          unzip -tq ipa/JibunKit.ipa
+          sha256sum ipa/JibunKit.ipa | tee ipa/JibunKit.ipa.sha256
+
+      - name: Create the prerelease
+        shell: bash
+        env:
+          TAG: ${{ steps.source.outputs.tag }}
+          SHA: ${{ steps.source.outputs.sha }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" ipa/JibunKit.ipa \
+            --prerelease --target "$SHA" --title "$TAG" \
+            --notes "Built from $SHA by run $RUN_ID. SHA-256: $(cut -d' ' -f1 ipa/JibunKit.ipa.sha256)"
+          echo "Direct IPA link: https://github.com/$GH_REPO/releases/download/$TAG/JibunKit.ipa" >> "$GITHUB_STEP_SUMMARY"

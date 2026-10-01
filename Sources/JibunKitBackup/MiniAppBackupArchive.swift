@@ -149,20 +149,63 @@ public enum MiniAppBackupArchive {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
         let archive = try Archive(url: url, accessMode: .read)
         var seen = Set<String>()
-        // Reject every unsafe path before any entry is extracted.
+        var declaredSize: UInt64 = 0
+        // Reject every unsafe path and oversized archive before any entry is extracted.
         for entry in archive {
-            guard entry.type != .symlink else { throw MiniAppBackupError.invalidEntry }
+            guard entry.type != .symlink, seen.count < maximumEntryCount else { throw MiniAppBackupError.invalidEntry }
             let path = try safePath(entry.path, directory: entry.type == .directory)
             guard seen.insert(path.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw MiniAppBackupError.invalidEntry }
+            let (total, overflow) = declaredSize.addingReportingOverflow(entry.uncompressedSize)
+            guard !overflow else { throw MiniAppBackupError.invalidEntry }
+            declaredSize = total
         }
+        try requireCapacity(declaredSize, at: root)
         for entry in archive {
             try Task.checkCancellation()
             let path = try safePath(entry.path, directory: entry.type == .directory)
-            let checksum = try archive.extract(entry, to: root.appendingPathComponent(path), bufferSize: 64 * 1024)
+            let checksum = try extract(entry, from: archive, to: root.appendingPathComponent(path))
             guard checksum == entry.checksum else { throw MiniAppBackupError.invalidEntry }
         }
         let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: root.appendingPathComponent("manifest.json")))
         return try ImportedMiniAppBackup(manifest: manifest, root: root, workspace: workspace)
+    }
+
+    /// Bounds the in-memory path set and file count of an untrusted archive.
+    static let maximumEntryCount = 100_000
+
+    private static func requireCapacity(_ bytes: UInt64, at url: URL) throws {
+        let values = try url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        guard let available = values.volumeAvailableCapacityForImportantUsage else { return }
+        guard available >= 0, bytes <= UInt64(available) else { throw CocoaError(.fileWriteOutOfSpace) }
+    }
+
+    /// Writes at most the size the archive declared, so a forged header cannot
+    /// expand past the capacity checked before extraction.
+    private static func extract(_ entry: Entry, from archive: Archive, to url: URL) throws -> CRC32 {
+        let fileManager = FileManager.default
+        if entry.type == .directory {
+            try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+            return try archive.extract(entry, bufferSize: 64 * 1024) { _ in }
+        }
+        try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        guard !fileManager.fileExists(atPath: url.path), fileManager.createFile(atPath: url.path, contents: nil) else {
+            throw MiniAppBackupError.invalidEntry
+        }
+        let handle = try FileHandle(forWritingTo: url)
+        do {
+            var written: UInt64 = 0
+            let checksum = try archive.extract(entry, bufferSize: 64 * 1024) { chunk in
+                written += UInt64(chunk.count)
+                guard written <= entry.uncompressedSize else { throw MiniAppBackupError.invalidEntry }
+                try handle.write(contentsOf: chunk)
+            }
+            try handle.close()
+            guard written == entry.uncompressedSize else { throw MiniAppBackupError.invalidEntry }
+            return checksum
+        } catch {
+            try? handle.close()
+            throw error
+        }
     }
 
     private static func safePath(_ raw: String, directory: Bool) throws -> String {

@@ -36,5 +36,39 @@ final class MiniAppSpotlightRouteTests: XCTestCase {
         activity.userInfo = [CSSearchableItemActivityIdentifier: namespace.domainIdentifier + ".?"]
         XCTAssertNil(MiniAppSpotlightRoute.resolve(activity, registeredIDs: [a]))
     }
+
+    func testSearchContinuationQueryIsReadOnlyFromItsActivityType() {
+        let query = NSUserActivity(activityType: CSQueryContinuationActionType)
+        query.userInfo = [CSSearchQueryString: "  sbux \n"]
+        XCTAssertEqual(MiniAppSearchContinuation.query(from: query), "sbux")
+        query.userInfo = [CSSearchQueryString: " \n"]
+        XCTAssertNil(MiniAppSearchContinuation.query(from: query))
+        query.userInfo = [CSSearchQueryString: 42]
+        XCTAssertNil(MiniAppSearchContinuation.query(from: query))
+        let selected = NSUserActivity(activityType: CSSearchableItemActionType)
+        selected.userInfo = [CSSearchQueryString: "sbux"]
+        XCTAssertNil(MiniAppSearchContinuation.query(from: selected))
+    }
+
+    @MainActor
+    func testSearchContinuationOffersOnlyRegisteredAcceptingOwnersInOrder() {
+        let a = MiniAppID("a")
+        let b = MiniAppID("b")
+        let c = MiniAppID("c")
+        let d = MiniAppID("d")
+        let registrations: [MiniAppSearchContinuation.Registration] = [
+            .init(id: a) { "search:" + $0 },
+            .init(id: b) { _ in nil },
+            .init(id: c) { "search:" + $0 },
+            .init(id: d) { _ in "bad\u{0}destination" },
+        ]
+        let routes = MiniAppSearchContinuation.candidates(for: "mac", registrations: registrations,
+                                                          registeredIDs: [a, b, d])
+        XCTAssertEqual(routes.map(\.id), [a])
+        XCTAssertEqual(routes.first?.destination, "search:mac")
+        let both = MiniAppSearchContinuation.candidates(for: "mac", registrations: registrations,
+                                                        registeredIDs: [a, c])
+        XCTAssertEqual(both.map(\.id), [a, c])
+    }
 }
 #endif

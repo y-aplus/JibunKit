@@ -18,7 +18,8 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
     ]],
     "UILaunchScreen": [:],
     "UIApplicationSceneManifest": ["UIApplicationSupportsMultipleScenes": true],
-    "NSUserActivityTypes": [.string(CSSearchableItemActionType)],
+    "NSUserActivityTypes": [.string(CSSearchableItemActionType), .string(CSQueryContinuationActionType)],
+    "CoreSpotlightContinuation": true,
     "CFBundleURLTypes": [[
         "CFBundleURLName": "com.jibunkit.app.mini-app",
         "CFBundleURLSchemes": ["jibunkit"],
@@ -78,6 +79,55 @@ if let actionBuild {
     actionTargets = []
 }
 
+// Each optional extension consumes another App ID when signing, so none is
+// included unless a Feature needs it.
+var notificationDependencies: [TargetDependency] = []
+var notificationTargets: [Target] = []
+if let serviceBuild = try EnabledFeatureBuildRequirements.notificationService?.compose(infoPlist: [
+    "CFBundleDisplayName": "JibunKit Notification Service", "CFBundleShortVersionString": "1.0.0",
+    "CFBundleVersion": "16", "JibunKitAppGroup": "group.com.jibunkit.shared",
+    "NSExtension": [
+        "NSExtensionPointIdentifier": "com.apple.usernotifications.service",
+        "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).NotificationService",
+    ],
+], entitlements: sharedEntitlements) {
+    notificationDependencies.append(.target(name: "JibunKitNotificationService-Extension"))
+    notificationTargets.append(.target(
+        name: "JibunKitNotificationService-Extension", destinations: .iOS, product: .appExtension,
+        bundleId: "com.jibunkit.app.NotificationService", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: serviceBuild.infoPlist),
+        sources: ["Sources/JibunKitNotificationService/**"],
+        entitlements: .dictionary(serviceBuild.entitlements),
+        dependencies: [.package(product: "JibunKitCore")],
+        settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
+    ))
+}
+if let content = EnabledFeatureBuildRequirements.notificationContent {
+    precondition(!content.categories.isEmpty, "A notification content extension needs at least one category.")
+    let contentBuild = try content.build.compose(infoPlist: [
+        "CFBundleDisplayName": "JibunKit Notification Content", "CFBundleShortVersionString": "1.0.0",
+        "CFBundleVersion": "16", "JibunKitAppGroup": "group.com.jibunkit.shared",
+        "NSExtension": [
+            "NSExtensionPointIdentifier": "com.apple.usernotifications.content-extension",
+            "NSExtensionPrincipalClass": "$(PRODUCT_MODULE_NAME).NotificationContentViewController",
+            "NSExtensionAttributes": [
+                "UNNotificationExtensionCategory": .array(content.categories.map { .string($0) }),
+                "UNNotificationExtensionInitialContentSizeRatio": 1,
+            ],
+        ],
+    ], entitlements: sharedEntitlements)
+    notificationDependencies.append(.target(name: "JibunKitNotificationContent-Extension"))
+    notificationTargets.append(.target(
+        name: "JibunKitNotificationContent-Extension", destinations: .iOS, product: .appExtension,
+        bundleId: "com.jibunkit.app.NotificationContent", deploymentTargets: .iOS("26.0"),
+        infoPlist: .extendingDefault(with: contentBuild.infoPlist),
+        sources: ["Sources/JibunKitNotificationContent/**"],
+        entitlements: .dictionary(contentBuild.entitlements),
+        dependencies: [.package(product: "JibunKitCore")],
+        settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
+    ))
+}
+
 let project = Project(
     name: "JibunKit",
     packages: [.package(path: ".")],
@@ -112,7 +162,7 @@ let project = Project(
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension"),
-                           .target(name: "JibunKitShare-Extension")] + actionDependencies
+                           .target(name: "JibunKitShare-Extension")] + actionDependencies + notificationDependencies
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
@@ -162,7 +212,7 @@ let project = Project(
             sources: ["Examples/Counter/**"],
             dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
         ),
-    ] + actionTargets,
+    ] + actionTargets + notificationTargets,
     schemes: [
         .scheme(name: "FilePickerComparisonUITests", shared: true,
                 buildAction: .buildAction(targets: ["FilePickerComparison"]),

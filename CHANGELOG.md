@@ -15,6 +15,7 @@
 - Adds owner dispatch for optional Notification Service and Content extensions. Neither extension is built unless enabled.
 - Adds two manual workflows: **Build optional extensions** (compile check with the notification extensions enabled) and **Publish IPA prerelease** (attaches a successful build's plain IPA to a prerelease).
 - Documents publishing a custom build's IPA to a prerelease in a derived host, because Actions artifacts are always ZIP-wrapped.
+- Documents moving an existing app into a Feature: where the app shell's responsibilities go, keeping Swift 5 mode per target, why Feature packages are also built for macOS in CI, keeping `appendDestination` free of side effects for model-state navigation, and a separate product for widget code.
 
 ## [1.0.0] — 2026-09-19
 

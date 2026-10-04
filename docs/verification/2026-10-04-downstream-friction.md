@@ -1,0 +1,21 @@
+# Downstream migration feedback: moving an existing app
+
+Source: [JibunKitHome friction log](https://github.com/y-aplus/JibunKitHome/blob/0866a6871e45db255a86610073c6b30448e17c08/docs-local/friction-log.md) F-015 to F-019, in a private repository, supplied by the owner on 2026-10-04. The experiment moved an existing standalone Xcode app (Swift 5, iOS 17, with a widget extension) into a `Modules/` feature of a derived host, using the published documentation. The downstream CI runs and device check are user-supplied evidence and were not reproduced here. No downstream files or settings were changed.
+
+| Item | Response |
+|---|---|
+| F-015 no steps for moving an existing Xcode app | [mini-apps.md](../mini-apps.md#moving-an-existing-app): table of app-shell responsibilities and where each goes; note that the old app's saved data is not reachable |
+| F-016 Swift 5 code in a Swift 6 host | Same section: per-target `.swiftLanguageMode(.v5)` to separate the move from the concurrency rewrite |
+| F-017 feature packages are built for macOS in CI | [mini-apps.md](../mini-apps.md#your-package-is-also-built-for-macos): why, `#if os(iOS)` versus `ci-test.sh`, and that the platform-condition option is unverified |
+| F-018 model-state navigation and `appendDestination` | [URL routing](../guides/feature-url-routing.md#features-that-navigate-by-model-state): keep it side-effect free and push a feature-owned route value |
+| F-019 widget code pulls the whole feature into the extension | [Static widgets](../guides/package-static-widgets.md): separate widget product; where to declare `Widget` when the feature does not depend on JibunKitCore |
+
+## Critical assessment
+
+- F-017 is supported by current source. `.github/workflows/build-ios.yml` runs root `swift test` and `Tools/test-module-packages.py Modules` on `macos-26`. The script runs `swift test` for each package that declares a test target, or `ci-test.sh` when present. The `ci-test.sh` contract dates from the [2026-09-08 CI structure](2026-09-08-ci-structure.md) and still has no published adopter. Records already uses `#if os(iOS)`. The `condition: .when(platforms: [.iOS])` option was not tested here and is documented as unverified.
+- F-018 is stronger than reported. `Sources/JibunKit/AppNavigation.swift` calls `navigationPath(for:)`, and therefore `appendDestination`, for every Spotlight "Search in App" candidate before choosing one, then again when opening. A side effect there can change state for a destination that is never opened. The guide already called `appendDestination` side-effect free; it now explains why and gives the alternative. JibunKit has no API for applying a destination to root-view state, and none was added.
+- F-019 is supported by `Project.swift`: `JibunKitWidget-Extension` does not set `APPLICATION_EXTENSION_API_ONLY`, unlike the share, action and notification extensions. This record does not change that setting. Enabling it needs a build that confirms `CounterFeature` and `JibunKitCore` are extension-safe.
+- F-016 relies on the downstream builds that compiled the moved code in Swift 5 mode inside the Swift 6 host. That shows the setting compiles in that host, not that every Swift 5 codebase moves without concurrency diagnostics at the integration boundary.
+- F-015 is an onboarding gap, not a request to convert apps automatically. The table points to existing contracts and adds no new API.
+
+The friction log's F-010 to F-014 are covered by the Unreleased Spotlight "Search in App", `MiniAppExternalURL` and IPA prerelease changes, or are records of iOS behavior. F-020 is a decision for the derived host's owner and is not upstream feedback. The log's later Feature ID rename entry is a migration mistake on the downstream side; [compatibility.md](../compatibility.md) and [mini-apps.md](../mini-apps.md) already forbid it.

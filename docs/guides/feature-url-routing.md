@@ -10,6 +10,22 @@ Implement `MiniAppDefinition.resolveIncomingURL` as a side-effect-free parser th
 
 Custom schemes belong in the app target's `CFBundleURLTypes`; universal links require Associated Domains and the matching website association. Compose those through the feature build requirements, preserve the host declaration when resolving a conflict, and do not copy app-only schemes into widgets. This resolver handles address delivery only: web-auth completion, security-scoped files, generic action callbacks, `UIOpenURLContext` options, and OS multi-window selection use their dedicated boundaries.
 
+### Features that navigate by model state
+
+Keep `appendDestination` free of side effects even when the feature's screens are chosen by model state, such as a selected day, rather than by a navigation path. The host may call it without opening the result: for Spotlight "Search in App" it calls `appendDestination` for every candidate to filter them, and calls it again for the one that is opened. Changing the model there can select a destination the user never chose.
+
+Instead, append a feature-owned route value and let the root view show it:
+
+```swift
+appendDestination: { identifier, path in
+    guard let route = TripRoute(identifier), store.contains(route) else { return false }
+    path.append(route)
+    return true
+}
+```
+
+`TripRoute` (a `Hashable` value) and `store` are the feature's own types. The root view registers `.navigationDestination(for: TripRoute.self)` and shows the same content that the in-root selection shows. JibunKit currently has no separate entry point that applies an incoming destination to the root view's own state without pushing a screen.
+
 ### Opening another app
 
 Open another app's URL with `MiniAppExternalURL.open(_:)` instead of calling `UIApplication.shared.open` directly:

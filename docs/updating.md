@@ -91,7 +91,7 @@ Treat an old unknown notification owner as unknown and return to the list; never
 
 Separate feature logic, iOS compilation, metadata extraction, re-signing, and device behavior when diagnosing a failure. A build does not prove persistence or system-surface behavior.
 
-The downstream friction log is [2026-09-19-downstream-friction.md](verification/2026-09-19-downstream-friction.md). Treat it as evidence from its recorded environment, not a guarantee for every host, shell, package layout, or signing setup.
+The downstream friction records are [2026-09-19-downstream-friction.md](verification/2026-09-19-downstream-friction.md) and, for moving an existing app, [2026-10-04-downstream-friction.md](verification/2026-10-04-downstream-friction.md). Treat it as evidence from its recorded environment, not a guarantee for every host, shell, package layout, or signing setup.
 
 ## Scope and migrations
 

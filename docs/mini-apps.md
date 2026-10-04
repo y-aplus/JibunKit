@@ -2,7 +2,7 @@
 
 A JibunKit feature is source code compiled into the host at build time. The preferred shape is a Swift package with business logic and a root view, plus a thin integration that creates one `MiniAppDefinition`.
 
-JibunKit does not load arbitrary IPAs or runtime plug-ins. It also does not automatically convert an existing app target: separate reusable feature code from the app shell first.
+JibunKit does not load arbitrary IPAs or runtime plug-ins. It also does not automatically convert an existing app target: separate reusable feature code from the app shell first. [Moving an existing app](#moving-an-existing-app) lists what the app shell did and where each responsibility goes.
 
 Prefer a separate package under `Modules/<Name>` for a new personal feature. It gives the feature an isolated test command, a standalone example, and a clearer reuse boundary; a portable package can also run its own tests on Linux/WSL even though the repository's root package cannot. Adding sources to the root package can be reasonable for code inseparable from the host, but it couples validation to the macOS/Xcode path and increases shared CI work.
 
@@ -118,6 +118,46 @@ Also verify:
 6. Any widget, App Intent, extension, entitlement, or background mode is present in the built product.
 
 Compilation, Simulator behavior, installation, physical-device behavior, and live service behavior are separate results. Record what was actually exercised. See [Build, sign, and install](build.md) and [current status](status.md).
+
+### Your package is also built for macOS
+
+CI runs on macOS. `Tools/test-module-packages.py` runs `swift test` for every `Modules/*` package that declares a test target, and the root `swift test` builds any package that a root `Package.swift` target depends on. `swift test` builds for the machine it runs on, so these builds target macOS even when `platforms` lists only iOS. Code that uses UIKit, MapKit's iOS-only API, or other iOS-only frameworks then fails to compile.
+
+Choose one of these per package:
+
+1. Wrap iOS-only files in `#if os(iOS)` and leave Foundation-only logic ungated, so `swift test` tests that logic on macOS. Add a `.macOS(...)` minimum to `platforms` if that logic needs newer API. This is the fastest option and is what [Records](../Modules/Records/README.md) does. Tests cover only the ungated code.
+2. Add `Modules/<Name>/ci-test.sh`. CI runs it with `bash` from the package directory instead of `swift test`, and it and must run all of the package's tests itself, for example with `xcodebuild test` on a Simulator. It can test iOS-only code but is slower, and no published feature uses it yet. A `ci-test.sh` is not a way to skip tests.
+
+Putting `condition: .when(platforms: [.iOS])` on a root `Package.swift` dependency is not used or verified in this repository, and it would not change how the package's own `swift test` builds.
+
+## Moving an existing app
+
+Moving an existing Xcode app into a feature means removing its app shell. Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:
+
+| In the standalone app | In JibunKit |
+| --- | --- |
+| `@main App` and its `WindowGroup` | The host. Expose a public root view and one `MiniAppDefinition` instead. |
+| Start-up work in the app's `init` or root `.task` | Synchronous native registration in `onHostLaunch`; work that outlives a screen through [Feature lifetime](guides/feature-lifetime.md). Do not start business work just because the host launched. |
+| Outer `NavigationStack` | Remove it. The host owns the stack ([section 5](#5-keep-navigation-and-app-shells-separate)). |
+| `onOpenURL` and URL types | `resolveIncomingURL` and `appendDestination`, plus URL types in the feature build requirements ([URL routing](guides/feature-url-routing.md)). |
+| `preferredColorScheme` | `environment(\.colorScheme, ...)` on the feature subtree ([appearance](guides/feature-appearance.md)). |
+| Info.plist keys such as usage descriptions and `LSApplicationQueriesSchemes` | [Feature build requirements](guides/feature-build-requirements.md). |
+| `UserDefaults.standard`, its own App Group and files | Owner-scoped keys from `MiniAppContext.storageKey(_:)`, `MiniAppStorage.sharedDefaults()` and the feature's file locations. |
+| Widget extension | The host widget extension ([static widgets](guides/package-static-widgets.md)). |
+| `ASWebAuthenticationSession` | A runtime-owned [web authentication](guides/web-authentication-ownership.md) connection. |
+| `UIApplication.shared.open` | `MiniAppExternalURL.open(_:)` ([URL routing](guides/feature-url-routing.md#opening-another-app)). |
+
+Choose the feature ID once and keep it. Renaming the app later changes the display name and type names, not the ID.
+
+Data that the standalone app saved stays in that app's own container. JibunKit cannot read it. Data the user wants to keep needs its own route, such as a server the feature syncs with or an export from the old app followed by an import in the feature.
+
+Code written for Swift 5 can be moved first and adapted to Swift 6 later. The host and the integration use Swift 6, but a package target can set its own language mode:
+
+```swift
+.target(name: "NotesFeature", swiftSettings: [.swiftLanguageMode(.v5)])
+```
+
+This separates the move from the concurrency rewrite. The Swift 6 integration code may still report concurrency errors where it passes the feature's types between actors. Keep the integration thin. If you use `@preconcurrency import` there, treat it as temporary.
 
 ## Compatibility checklist
 

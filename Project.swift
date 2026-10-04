@@ -171,7 +171,8 @@ let project = Project(
             sources: ["Sources/JibunKitWidget/**"],
             resources: ["GeneratedFeatureResources/Widget/**", "Sources/JibunKitWidget/Resources/**"],
             entitlements: .dictionary(widgetBuild.entitlements),
-            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")]
+            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")],
+            settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
         ),
         .target(
             name: "JibunKitShare-Extension", destinations: .iOS, product: .appExtension,

@@ -14,7 +14,13 @@ final class SpotlightRoutingUITests: XCTestCase {
             button.tap()
         }
         func switchTo(_ owner: String) {
-            tap("miniapp.switch.open")
+            // The switcher is on the Feature root; leave a detail first.
+            if !app.buttons["miniapp.back-to-list"].exists {
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+            }
+            let menu = app.buttons["miniapp.back-to-list"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+            menu.press(forDuration: 1.0)
             tap("miniapp.switch.\(owner)")
         }
         func status(_ value: String) {
@@ -59,18 +65,17 @@ final class SpotlightRoutingUITests: XCTestCase {
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 20), spotlight.debugDescription)
         }
 
-        tap("miniapp.spotlight-link-b")
+        tap("miniapp.spotlight-link-a")
+        tap("spotlight.route.index")
+        status("ready")
+        let aTitle = app.staticTexts["spotlight.route.title"].label
+        switchTo("spotlight-link-b")
         tap("spotlight.route.index")
         status("ready")
         let bTitle = app.staticTexts["spotlight.route.title"].label
         tap("spotlight.route.manual")
         destination("spotlight-link-b:manual")
-        switchTo("spotlight-link-a")
-        tap("spotlight.route.index")
-        status("ready")
-        let aTitle = app.staticTexts["spotlight.route.title"].label
-        switchTo("spotlight-link-b")
-        destination("spotlight-link-b:manual")
+        // B is left on a detail through Spotlight and resumes there.
         openSearchResult(aTitle)
         destination("spotlight-link-a:detail")
         switchTo("spotlight-link-b")

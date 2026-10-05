@@ -18,9 +18,11 @@ The router applies these rules:
 
 The selected feature view is the `NavigationStack` root and registers its destinations inside that stack. The path contains detail values only; an empty path means the feature root. `MiniAppDefinition.navigationPath(for:)` and `appendDestination` receive an initially empty path, so features do not append their `MiniAppID`.
 
-`AppNavigation` stores a separate value path for every feature in the scene. Switching from the bottom menu returns to the target feature's last value-based path; returning through the feature list also preserves it. Native Back pops normally and does not resurrect popped details. “This app's first screen” clears only the selected feature path.
+`AppNavigation` stores a separate value path for every feature in the scene. On a feature root, tapping the leading “ミニアプリ” button returns to the feature list, and a long press opens a menu for switching to another feature. Switching or reselecting from the list returns to the target feature's last value-based path. A feature is left on a detail only through a route (URL, notification, quick action, Spotlight, or a feature's own route), and resumes on that detail later. Native Back pops normally and does not resurrect popped details.
 
-A destination-free URL/notification explicitly opens the target root rather than resuming its switcher path. A destination-bearing event replaces that feature's path only after integration validation succeeds. Invalid or unsupported destinations preserve the current and stored paths, and never alter another feature. Keep the switcher outside the `NavigationStack` in a reserved safe-area region so it does not depend on feature toolbars or cover content.
+The switcher exists only on feature roots. Toolbar items on detail screens belong to the feature's own views, and the host does not add items to them, so switching from a detail without going back first is not offered. The host keeps the bottom edge free: an earlier switcher bar attached outside the `NavigationStack` did not pass its height into the stack's content, so feature content and bottom bars slid under it.
+
+A destination-free URL/notification explicitly opens the target root rather than resuming its stored path. A destination-bearing event replaces that feature's path only after integration validation succeeds. Invalid or unsupported destinations preserve the current and stored paths, and never alter another feature.
 
 Update the stack identity and binding generation when switching. This prevents two features using the same Swift navigation-value type from reusing destination registrations, and prevents a departed stack's late binding write from mutating the new path after returning.
 

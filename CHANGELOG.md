@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Removes the bottom “ミニアプリを切り替え” bar, which covered the bottom of every Feature because its height did not reach Feature content. On a Feature root, tap “ミニアプリ” to return to the list or long-press it to switch Features. Switching from a detail screen now requires going back first; paths left through URLs, notifications, quick actions or Spotlight still resume.
 - A presented document or code scanner now always reports `ended`, including when its capture owner stops it (for example in the background). Previously no callback arrived on that path, so code waiting for the scan never resumed.
 - Adds `MiniAppVisionCaptureAdapter.scanCode(owner:)`, which presents the code scanner and returns the payload, or nil when the scanner was closed or stopped.
 - Adds a default app icon. A derived host replaces `Sources/JibunKit/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` to use its own.

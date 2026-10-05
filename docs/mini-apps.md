@@ -96,6 +96,8 @@ NavigationStack {
 
 This keeps the same feature usable independently and inside JibunKit.
 
+The host adds only the leading “ミニアプリ” button on the feature root; a long press on it switches to another feature. It places nothing on the bottom edge, so a feature can use `safeAreaInset(edge: .bottom)`, a bottom toolbar, or content that scrolls to the bottom as it would in its standalone app.
+
 ## 6. Validate the integration
 
 Run the smallest checks that prove each boundary:

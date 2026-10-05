@@ -193,11 +193,6 @@ final class AppNavigation {
 
     func showList() { select(nil) }
 
-    func resetCurrentPath() {
-        guard let activeID else { return }
-        paths.removeValue(forKey: activeID)
-    }
-
     func openURL(_ url: URL) {
         if url.isFileURL { receiveExternalFile(url); return }
         if url.scheme?.lowercased() == "jibunkit" {

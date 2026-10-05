@@ -22,7 +22,13 @@ final class URLRoutingUITests: XCTestCase {
             XCTAssertTrue(app.wait(for: .runningForeground, timeout: 15))
         }
         func switchTo(_ owner: String) {
-            tap("miniapp.switch.open")
+            // The switcher is on the Feature root; leave a detail first.
+            if !app.buttons["miniapp.back-to-list"].exists {
+                app.navigationBars.buttons.element(boundBy: 0).tap()
+            }
+            let menu = app.buttons["miniapp.back-to-list"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+            menu.press(forDuration: 1.0)
             tap("miniapp.switch.\(owner)")
         }
 

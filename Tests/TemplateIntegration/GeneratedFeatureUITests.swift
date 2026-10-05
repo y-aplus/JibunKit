@@ -3,6 +3,16 @@ import XCTest
 /// Copied only into the temporary Notes-integrated host by CI.
 @MainActor
 final class GeneratedFeatureUITests: XCTestCase {
+    /// The switcher is the long-press menu of the Feature root's back button.
+    private func switchFeature(to owner: String, in app: XCUIApplication) {
+        let menu = app.buttons["miniapp.back-to-list"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10), app.debugDescription)
+        menu.press(forDuration: 1.0)
+        let item = app.buttons["miniapp.switch.\(owner)"]
+        XCTAssertTrue(item.waitForExistence(timeout: 10), app.debugDescription)
+        item.tap()
+    }
+
     private func revealLauncherRow(_ row: XCUIElement, in app: XCUIApplication) {
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
@@ -104,8 +114,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             expect("scene.idle.result", value)
         }
         func select(_ owner: String) {
-            tap("miniapp.switch.open")
-            tap("miniapp.switch.\(owner)")
+            switchFeature(to: owner, in: app)
         }
         tap("miniapp.lifecycle-a")
         tap("scene.idle.request")
@@ -157,8 +166,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("scene.activity.identity", "same scene")
         tap("scene.activity.start")
         expect("scene.activity.work", "running")
-        tap("miniapp.switch.open")
-        tap("miniapp.switch.lifecycle-b")
+        switchFeature(to: "lifecycle-b", in: app)
         expect("scene.activity.status", "A=active:0 B=active:1")
         expect("scene.activity.work", "running")
         XCUIDevice.shared.press(.home)
@@ -167,8 +175,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("scene.activity.background", "both background")
         expect("scene.activity.status", "A=active:0 B=active:1")
         expect("scene.activity.work", "running")
-        tap("miniapp.switch.open")
-        tap("miniapp.switch.list")
+        tap("miniapp.back-to-list")
         tap("miniapp.lifecycle-a")
         expect("scene.activity.status", "A=active:1 B=active:0")
         expect("scene.activity.work", "running")
@@ -234,9 +241,9 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTAssertTrue(text.waitForExistence(timeout: 10), app.debugDescription)
         }
         func select(_ id: String) {
-            tap("miniapp.switch.open")
-            tap("miniapp.switch." + id)
+            switchFeature(to: id, in: app)
         }
+        func back() { app.navigationBars.buttons.element(boundBy: 0).tap() }
         tap("miniapp.lifecycle-a")
         expect("lifecycle-a:0")
         tap("navigation.retention.check")
@@ -246,20 +253,15 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect("lifecycle-a:1")
         tap("navigation.retention.next")
         expect("lifecycle-a:2")
+        back()
+        expect("lifecycle-a:1")
+        back()
+        expect("lifecycle-a:0")
+        // The switcher is on the Feature root only; B's deeper path survives
+        // leaving B through a route and coming back through the switcher.
         select("lifecycle-b")
         expect("lifecycle-b:0")
         tap("navigation.retention.next")
-        expect("lifecycle-b:1")
-        select("lifecycle-a")
-        expect("lifecycle-a:2")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        expect("lifecycle-a:1")
-        select("list")
-        tap("miniapp.lifecycle-a")
-        expect("lifecycle-a:1")
-        select("reset")
-        expect("lifecycle-a:0")
-        select("lifecycle-b")
         expect("lifecycle-b:1")
         tap("navigation.retention.invalid")
         expect("lifecycle-b:1")

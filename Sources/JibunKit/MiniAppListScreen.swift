@@ -39,10 +39,26 @@ struct MiniAppListScreen: View {
                     .toolbar {
                         if navigation.path.isEmpty {
                             ToolbarItem(placement: .topBarLeading) {
-                                Button { navigation.showList() } label: {
+                                // Tap returns to the list; a long press switches
+                                // Features. The host keeps the bottom edge free.
+                                Menu {
+                                    Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
+                                        .accessibilityIdentifier("miniapp.switch.list")
+                                    Section("切り替え") {
+                                        ForEach(MiniAppRegistry.enabled.filter { $0.id != owner }) { other in
+                                            Button { navigation.open(other.id) } label: {
+                                                Label(other.title, systemImage: other.systemImage)
+                                            }
+                                            .accessibilityIdentifier("miniapp.switch.\(other.id.rawValue)")
+                                        }
+                                    }
+                                } label: {
                                     Label("ミニアプリ", systemImage: "chevron.left")
+                                } primaryAction: {
+                                    navigation.showList()
                                 }
                                 .accessibilityLabel("ミニアプリ")
+                                .accessibilityHint("長押しで別のミニアプリに切り替えます")
                                 .accessibilityIdentifier("miniapp.back-to-list")
                             }
                         }
@@ -67,34 +83,6 @@ struct MiniAppListScreen: View {
             case .management: MiniAppManagementScreen()
             case .incoming: MiniAppIncomingScreen(navigation: navigation)
             case .search: MiniAppSearchContinuationScreen(navigation: navigation)
-            }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if owner != nil {
-                HStack {
-                    Spacer()
-                    Menu {
-                        Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
-                            .accessibilityIdentifier("miniapp.switch.list")
-                        ForEach(MiniAppRegistry.enabled) { miniApp in
-                            Button { navigation.open(miniApp.id) } label: {
-                                Label(miniApp.title, systemImage: miniApp.systemImage)
-                            }
-                            .accessibilityIdentifier("miniapp.switch.\(miniApp.id.rawValue)")
-                        }
-                        Divider()
-                        Button("このアプリの最初の画面へ", systemImage: "arrow.uturn.backward") {
-                            navigation.resetCurrentPath()
-                        }
-                        .accessibilityIdentifier("miniapp.switch.reset")
-                    } label: {
-                        Label("ミニアプリを切り替え", systemImage: "square.grid.2x2")
-                    }
-                    .accessibilityIdentifier("miniapp.switch.open")
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(.bar)
             }
         }
     }

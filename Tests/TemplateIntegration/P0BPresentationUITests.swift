@@ -74,7 +74,9 @@ final class P0BPresentationUITests: XCTestCase {
     }
 
     private func switchTo(_ owner: String, in app: XCUIApplication) {
-        tap("miniapp.switch.open", in: app)
+        let menu = app.buttons["miniapp.back-to-list"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+        menu.press(forDuration: 1.0)
         tap("miniapp.switch.\(owner)", in: app)
         expectOwner(owner, in: app)
     }

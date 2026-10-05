@@ -78,7 +78,9 @@ final class WebStorageOwnershipUITests: XCTestCase {
             if listButton.waitForExistence(timeout: 2) {
                 listButton.tap()
             } else {
-                tap("miniapp.switch.open")
+                let menu = app.buttons["miniapp.back-to-list"]
+                XCTAssertTrue(menu.waitForExistence(timeout: 15), app.debugDescription)
+                menu.press(forDuration: 1.0)
                 tap("miniapp.switch.\(owner)")
             }
             let ready = app.staticTexts.matching(identifier: "web-storage.page")

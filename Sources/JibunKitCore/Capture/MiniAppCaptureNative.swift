@@ -355,6 +355,7 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         var handle: MiniAppPresentationOwner.Handle?
         var finishing = false
         var endingFromOwner = false
+        var endedDelivered = false
 
         init(controller: UIViewController,
              documentResult: (@MainActor @Sendable (Result<[Data], Error>) -> Void)? = nil,
@@ -480,6 +481,38 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         }
     }
 
+    /// Presents the code scanner through `owner`, waits until it ends, and
+    /// releases the camera. Returns the payload the user tapped, or nil when
+    /// the user closed the scanner or `owner` stopped it (for example in the
+    /// background). Throws when the scan cannot start or the scanner becomes
+    /// unavailable. Stop `owner` to end a scan early.
+    public func scanCode(
+        owner: MiniAppCaptureOwner,
+        symbologies: [VNBarcodeSymbology] = [.qr],
+        switching: MiniAppCaptureSwitch = .reject,
+        sceneScope: MiniAppCaptureSceneScope = .anyVisible
+    ) async throws -> String? {
+        let scan = CodeScanCompletion()
+        return try await withCheckedThrowingContinuation { continuation in
+            scan.continuation = continuation
+            let operation = codeOperation(symbologies: symbologies,
+                result: { scan.code = $0 },
+                failure: { scan.failure = $0 },
+                ended: {
+                    await owner.stop()
+                    scan.scannerEnded()
+                })
+            Task { @MainActor in
+                do {
+                    try await owner.start(operation, switching: switching, sceneScope: sceneScope)
+                    scan.startReturned()
+                } catch {
+                    scan.resume(.failure(error))
+                }
+            }
+        }
+    }
+
     private func begin(_ pending: Operation) async throws {
         guard operation == nil else { throw MiniAppCaptureFailure.unavailable("scanner already presented") }
         let controller = pending.controller
@@ -512,12 +545,23 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         await presentationOwner.end(handle)
         presentationOwner.didEnd(handle)
         if operation === pending { operation = nil }
+        // Background, scene, user and Feature stops end the scanner without a
+        // result. `ended` still marks the end, but runs after this stop returns:
+        // it commonly calls `owner.stop()`, which joins the stop in progress.
+        deliverEnded(pending)
     }
 
     private func finish(_ pending: Operation, action: () -> Void) {
         guard operation === pending, !pending.finishing else { return }
         pending.finishing = true
         action()
+        deliverEnded(pending)
+    }
+
+    /// Every presented scanner reports `ended` exactly once, however it ends.
+    private func deliverEnded(_ pending: Operation) {
+        guard !pending.endedDelivered else { return }
+        pending.endedDelivered = true
         let ended = pending.ended
         Task { @MainActor in await ended() }
     }
@@ -536,6 +580,8 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         pending.documentResult?(.failure(failure))
         pending.failure?(failure)
         operation = nil
+        guard !pending.endedDelivered else { return }
+        pending.endedDelivered = true
         await pending.ended()
     }
 
@@ -584,6 +630,42 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
             await self?.presentationDidEnd(controller: pending.controller,
                                            generation: pending.generation,
                                            failure: .presentationEnded)
+        }
+    }
+}
+
+/// Resumes `scanCode` once. A scanner can end before `owner.start` returns, and
+/// a start failure after presentation still ends the scanner; the start result
+/// decides in both cases.
+@MainActor
+private final class CodeScanCompletion {
+    var continuation: CheckedContinuation<String?, Error>?
+    var code: String?
+    var failure: MiniAppCaptureFailure?
+    private var started = false
+    private var ended = false
+
+    func startReturned() {
+        started = true
+        if ended { complete() }
+    }
+
+    func scannerEnded() {
+        ended = true
+        if started { complete() }
+    }
+
+    func resume(_ result: Result<String?, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        continuation.resume(with: result)
+    }
+
+    private func complete() {
+        if let code { return resume(.success(code)) }
+        switch failure {
+        case nil, .presentationEnded?: resume(.success(nil))
+        case let failure?: resume(.failure(failure))
         }
     }
 }

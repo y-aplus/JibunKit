@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- A presented document or code scanner now always reports `ended`, including when its capture owner stops it (for example in the background). Previously no callback arrived on that path, so code waiting for the scan never resumed.
+- Adds `MiniAppVisionCaptureAdapter.scanCode(owner:)`, which presents the code scanner and returns the payload, or nil when the scanner was closed or stopped.
 - Adds a default app icon. A derived host replaces `Sources/JibunKit/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` to use its own.
 - Fixes **Publish IPA prerelease** rejecting every successful build run: the workflow name was split on spaces when the run was checked.
 - Backup import rejects archives with more than 100,000 entries or a declared size larger than the available disk capacity, and stops writing any entry that expands past its declared size.

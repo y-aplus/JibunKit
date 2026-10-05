@@ -329,6 +329,72 @@ final class MediaCaptureNativeTests: XCTestCase {
         await runtime.shutdown()
     }
 
+    func testOwnerStopStillReportsScannerEndedOnce() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let id = MiniAppID("owner-stop-ended")
+        let owner = MiniAppCaptureOwner(id: id, coordinator: coordinator,
+                                        permissions: NativePermission(), consent: { _ in true })
+        let runtime = MiniAppRuntime()
+        let presentations = MiniAppPresentationOwner(id: id)
+        try presentations.connect(to: runtime)
+        try owner.connect(to: runtime)
+        activate(id) { owner.receive($0) }
+        let harness = PresentationHarness()
+        let adapter = MiniAppVisionCaptureAdapter(
+            presentationOwner: presentations,
+            present: { harness.presented = $0 },
+            dismiss: { controller in harness.dismissed.append(controller); harness.presented = nil }
+        )
+        var results = 0
+        var ended = 0
+        try await owner.start(adapter.documentOperationForTesting(controller: UIViewController(),
+            result: { _ in results += 1 }, ended: { ended += 1; await owner.stop() }))
+        await owner.suspend(.background)
+        await eventually { ended == 1 }
+        XCTAssertEqual(results, 0)
+        XCTAssertEqual(harness.dismissed.count, 1)
+        XCTAssertNil(coordinator.currentCameraOwner)
+        await Task.yield()
+        XCTAssertEqual(ended, 1)
+        await runtime.shutdown()
+    }
+
+    func testScanCodeReturnsNilWhenOwnerStopsAndThrowsWhenStartFails() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let id = MiniAppID("scan-code-async")
+        let owner = MiniAppCaptureOwner(id: id, coordinator: coordinator,
+                                        permissions: NativePermission(), consent: { _ in true })
+        let runtime = MiniAppRuntime()
+        let presentations = MiniAppPresentationOwner(id: id)
+        try presentations.connect(to: runtime)
+        try owner.connect(to: runtime)
+        activate(id) { owner.receive($0) }
+        let harness = PresentationHarness()
+        var failStart = false
+        let adapter = MiniAppVisionCaptureAdapter(
+            presentationOwner: presentations,
+            present: { harness.presented = $0 },
+            dismiss: { controller in harness.dismissed.append(controller); harness.presented = nil },
+            dataScannerSupported: { true }, dataScannerAvailable: { true },
+            startDataScanner: { _ in if failStart { throw MiniAppCaptureFailure.native("injected start failure") } }
+        )
+
+        let scan = Task { try await adapter.scanCode(owner: owner) }
+        await eventually { harness.presented != nil && owner.state == .running([.camera]) }
+        await owner.suspend(.background)
+        let stopped = try await scan.value
+        XCTAssertNil(stopped)
+        XCTAssertNil(coordinator.currentCameraOwner)
+
+        failStart = true
+        await XCTAssertThrowsErrorAsync(try await adapter.scanCode(owner: owner)) { error in
+            XCTAssertTrue(String(describing: error).contains("injected start failure"))
+        }
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(presentations.activePresentationCount, 0)
+        await runtime.shutdown()
+    }
+
     func testCameraAndMicrophoneDeclarationsRemainDistinct() {
         let photo = MediaCaptureProbe.definitions[0]
         XCTAssertEqual(Set(photo.permissions.map(\.id)), ["camera", "microphone"])

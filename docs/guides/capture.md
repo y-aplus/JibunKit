@@ -10,6 +10,20 @@ Inject `MiniAppCaptureCoordinator.shared` into feature factories (an isolated in
 
 Feature code owns the concrete camera/session/controller, configuration, output types, UI, and business result. The common layer does not wrap every native option. System-presented document/code scanners go through feature-owned presentation and are dismissed on scene/lifetime stop. Copy security-scoped or controller-temporary results into the feature namespace before returning success. Cancellation and partial copy failures remove only operation staging and never publish an incomplete result.
 
+For a code scan, prefer the async entry point, which ends on every path and releases the camera before it returns:
+
+```swift
+do {
+    if let code = try await adapter.scanCode(owner: capture, symbologies: [.ean13]) {
+        record(code)
+    } // nil: the user closed the scanner, or the owner stopped it
+} catch {
+    show(error) // could not start, or the scanner became unavailable
+}
+```
+
+With the callback operations, `result` (or `failure`) is delivered at most once, and `ended` exactly once for every scanner that was presented, however it ends. When the owner stops the scan itself, for example in the background, neither `result` nor `failure` is delivered, but `ended` still is, after that stop has finished; calling `owner.stop()` from `ended` is safe.
+
 Audio capture first acquires the compatible audio profile and microphone consent, then camera ownership; unwind in reverse order. Revalidate both generations after awaited permission or presentation. Compose camera/microphone usage descriptions and required background modes through build requirements. Unsupported hardware or unavailable scanners return an explicit unsupported result, not a simulated success.
 
 ## Japanese source notes and historical evidence

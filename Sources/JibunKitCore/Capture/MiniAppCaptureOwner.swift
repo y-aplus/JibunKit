@@ -47,6 +47,16 @@ public final class MiniAppCaptureOwner {
         self.consent = consent
     }
 
+    /// Checks each resource against the Feature consent the host stores under
+    /// the resource's raw value, such as `camera`.
+    public convenience init(id: MiniAppID, coordinator: MiniAppCaptureCoordinator = .shared,
+                            permissions: any MiniAppCapturePermissionClient,
+                            consent source: MiniAppConsentSource) {
+        precondition(source.featureID == id, "The consent source must belong to the same Feature.")
+        self.init(id: id, coordinator: coordinator, permissions: permissions,
+                  consent: { source.isAllowed($0.rawValue) })
+    }
+
     public func connect(to runtime: MiniAppRuntime) throws {
         guard runtimeGeneration == nil else { throw MiniAppCaptureFailure.native("already connected") }
         guard !runtime.isClosed else { throw MiniAppCaptureFailure.stopped }

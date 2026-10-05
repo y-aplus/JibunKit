@@ -10,6 +10,24 @@ Inject `MiniAppCaptureCoordinator.shared` into feature factories (an isolated in
 
 Feature code owns the concrete camera/session/controller, configuration, output types, UI, and business result. The common layer does not wrap every native option. System-presented document/code scanners go through feature-owned presentation and are dismissed on scene/lifetime stop. Copy security-scoped or controller-temporary results into the feature namespace before returning success. Cancellation and partial copy failures remove only operation staging and never publish an incomplete result.
 
+The capture owner and the scanner adapter are created with the definition, before any view exists, while the host's consent store and the scene to present from belong to the Feature's view. `MiniAppConsentSource` and `MiniAppPresentationAnchor` connect them:
+
+```swift
+let id = MiniAppID("receipt")
+let consent = MiniAppConsentSource(featureID: id)
+let anchor = MiniAppPresentationAnchor()
+let presentations = MiniAppPresentationOwner(id: id)
+let capture = MiniAppCaptureOwner(id: id, permissions: MiniAppAVCapturePermissionClient(), consent: consent)
+let adapter = MiniAppVisionCaptureAdapter(presentationOwner: presentations, anchor: anchor)
+
+// In the Feature's root view:
+ReceiptView(adapter: adapter, capture: capture)
+    .miniAppPresentationAnchor(anchor)
+    .miniAppConsentSource(consent)
+```
+
+The owner checks each resource against the consent stored under its raw value (`camera`, `microphone`), so declare permissions with those IDs. Before the view appears, and in a standalone app with no consent store, nothing is allowed. The anchor presents from the scene that shows the view it is attached to and fails with `.unavailable` while that view is not in a window.
+
 For a code scan, prefer the async entry point, which ends on every path and releases the camera before it returns:
 
 ```swift

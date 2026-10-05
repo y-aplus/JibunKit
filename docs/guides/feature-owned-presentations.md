@@ -46,6 +46,11 @@ presentations.didEnd(handle)
 sheetState.finishDismissal()
 ```
 
+To present a UIKit view controller (`.uiViewController`) from code that has no
+view of its own, attach a `MiniAppPresentationAnchor` to the Feature's view with
+`miniAppPresentationAnchor(_:)`. Its async `present(_:)` and `dismiss(_:)` return
+after UIKit's completion, so they can serve directly as the dismissal callback.
+
 Runtime shutdown closes that owner's presentation admission, then awaits its
 active surfaces in reverse presentation order. It never dismisses another
 Feature's surfaces. A newly created runtime generation can reconnect the same

@@ -106,7 +106,45 @@ public final class MiniAppConsentStore {
     }
 }
 
+/// Gives code created outside a view, such as a capture owner built with the
+/// Feature's definition, the host's consent store once the Feature's view is
+/// shown. Attach it with `miniAppConsentSource(_:)`. Until then, and in a
+/// standalone app without a store, nothing is allowed.
+@MainActor
+public final class MiniAppConsentSource {
+    public let featureID: MiniAppID
+    public var store: MiniAppConsentStore?
+
+    public init(featureID: MiniAppID, store: MiniAppConsentStore? = nil) {
+        self.featureID = featureID
+        self.store = store
+    }
+
+    /// True only for an explicit `.allowed` decision.
+    public func isAllowed(_ permissionID: String) -> Bool {
+        store?.consent(for: featureID, permissionID: permissionID) == .allowed
+    }
+}
+
 #if os(iOS)
+public extension View {
+    /// Hands this view's `miniAppConsentStore` to `source`.
+    func miniAppConsentSource(_ source: MiniAppConsentSource) -> some View {
+        modifier(MiniAppConsentSourceModifier(source: source))
+    }
+}
+
+private struct MiniAppConsentSourceModifier: ViewModifier {
+    @Environment(\.miniAppConsentStore) private var store
+    let source: MiniAppConsentSource
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { source.store = store }
+            .onChange(of: store.map(ObjectIdentifier.init)) { _, _ in source.store = store }
+    }
+}
+
 private struct MiniAppConsentStoreKey: EnvironmentKey {
     static let defaultValue: MiniAppConsentStore? = nil
 }

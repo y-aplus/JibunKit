@@ -25,19 +25,6 @@ enum MediaCaptureFixtures {
 }
 
 @MainActor
-final class MediaCaptureConsentGate {
-    let owner: MiniAppID
-    var store: MiniAppConsentStore?
-    init(owner: MiniAppID, store: MiniAppConsentStore? = nil) {
-        self.owner = owner
-        self.store = store
-    }
-    func allows(_ resource: MiniAppCaptureResource) -> Bool {
-        store?.consent(for: owner, permissionID: resource.rawValue) == .allowed
-    }
-}
-
-@MainActor
 final class MediaCaptureFixtureState: ObservableObject {
     @Published var status = "準備前"
     @Published var resultCount = 0
@@ -56,7 +43,7 @@ final class PhotoFixture {
     let id = MiniAppID("media-photo")
     let state = MediaCaptureFixtureState()
     let owner: MiniAppCaptureOwner
-    let consentGate: MediaCaptureConsentGate
+    let consent: MiniAppConsentSource
     private var movieProducer: MiniAppAVCaptureSessionProducer?
     var hasActiveMovieProducer: Bool { movieProducer != nil }
     private let photoCaptureOverride: PhotoCaptureOverride?
@@ -72,12 +59,11 @@ final class PhotoFixture {
          consentStore: MiniAppConsentStore? = nil,
          photoCapture: PhotoCaptureOverride? = nil) {
         let featureID = MiniAppID("media-photo")
-        let gate = MediaCaptureConsentGate(owner: featureID, store: consentStore)
-        consentGate = gate
+        let consent = MiniAppConsentSource(featureID: featureID, store: consentStore)
+        self.consent = consent
         photoCaptureOverride = photoCapture
         owner = MiniAppCaptureOwner(id: featureID, coordinator: coordinator,
-                                    permissions: permissions,
-                                    consent: { [gate] in gate.allows($0) })
+                                    permissions: permissions, consent: consent)
         let fixtureState = state
         owner.stateChanged = { [weak fixtureState] captureState in
             switch captureState {
@@ -217,8 +203,8 @@ final class ScannerFixture {
     let state = MediaCaptureFixtureState()
     let owner: MiniAppCaptureOwner
     let presentations: MiniAppPresentationOwner
-    let consentGate: MediaCaptureConsentGate
-    let presentationAnchor = MediaCapturePresentationAnchor()
+    let consent: MiniAppConsentSource
+    let presentationAnchor = MiniAppPresentationAnchor()
     private var adapter: MiniAppVisionCaptureAdapter?
     typealias DocumentOperationFactory = @MainActor (
         @escaping @MainActor @Sendable (Result<[Data], Error>) -> Void,
@@ -231,16 +217,8 @@ final class ScannerFixture {
         // adapter dismissal run before the presentation owner's final sweep.
         try self.presentations.connect(to: runtime)
         try self.owner.connect(to: runtime)
-        self.adapter = MiniAppVisionCaptureAdapter(
-            presentationOwner: self.presentations,
-            present: { [weak self] controller in
-                guard let self else { throw MiniAppCaptureFailure.stopped }
-                try await self.presentationAnchor.present(controller)
-            },
-            dismiss: { [weak self] controller in
-                await self?.presentationAnchor.dismiss(controller)
-            }
-        )
+        self.adapter = MiniAppVisionCaptureAdapter(presentationOwner: self.presentations,
+                                                   anchor: self.presentationAnchor)
         self.state.generation += 1
         self.state.status = "scan: 利用可能"
     }
@@ -250,12 +228,11 @@ final class ScannerFixture {
          consentStore: MiniAppConsentStore? = nil,
          documentOperation: DocumentOperationFactory? = nil) {
         let featureID = MiniAppID("media-scanner")
-        let gate = MediaCaptureConsentGate(owner: featureID, store: consentStore)
-        consentGate = gate
+        let consent = MiniAppConsentSource(featureID: featureID, store: consentStore)
+        self.consent = consent
         documentOperationOverride = documentOperation
         owner = MiniAppCaptureOwner(id: featureID, coordinator: coordinator,
-                                    permissions: permissions,
-                                    consent: { [gate] in gate.allows($0) })
+                                    permissions: permissions, consent: consent)
         presentations = MiniAppPresentationOwner(id: featureID)
         let fixtureState = state
         owner.stateChanged = { [weak fixtureState] captureState in
@@ -321,7 +298,6 @@ final class ScannerFixture {
 }
 
 private struct PhotoProbeView: View {
-    @Environment(\.miniAppConsentStore) private var consentStore
     @ObservedObject var state: MediaCaptureFixtureState
     let fixture: PhotoFixture
     init(fixture: PhotoFixture) { self.fixture = fixture; state = fixture.state }
@@ -343,12 +319,11 @@ private struct PhotoProbeView: View {
             }
             if let outcome = state.movieOutcome { Text(outcome) }
         }
-        .onAppear { fixture.consentGate.store = consentStore }
+        .miniAppConsentSource(fixture.consent)
     }
 }
 
 private struct ScannerProbeView: View {
-    @Environment(\.miniAppConsentStore) private var consentStore
     @ObservedObject var state: MediaCaptureFixtureState
     let fixture: ScannerFixture
     init(fixture: ScannerFixture) { self.fixture = fixture; state = fixture.state }
@@ -365,55 +340,7 @@ private struct ScannerProbeView: View {
             }
             if let code = state.code { Text(code).textSelection(.enabled) }
         }
-        .background(MediaCapturePresentationAnchorView(anchor: fixture.presentationAnchor))
-        .onAppear { fixture.consentGate.store = consentStore }
-    }
-}
-
-@MainActor
-final class MediaCapturePresentationAnchor {
-    weak var controller: UIViewController?
-
-    func present(_ presented: UIViewController) async throws {
-        guard let source = controller, source.viewIfLoaded?.window != nil else {
-            throw MiniAppCaptureFailure.unavailable("feature scene presenter")
-        }
-        var presenter = source
-        while let next = presenter.presentedViewController { presenter = next }
-        await withCheckedContinuation { continuation in
-            presenter.present(presented, animated: true) { continuation.resume() }
-        }
-    }
-
-    func dismiss(_ presented: UIViewController) async {
-        guard let presenter = presented.presentingViewController,
-              presenter.presentedViewController === presented else { return }
-        await withCheckedContinuation { continuation in
-            presenter.dismiss(animated: true) { continuation.resume() }
-        }
-    }
-}
-
-struct MediaCapturePresentationAnchorView: UIViewControllerRepresentable {
-    let anchor: MediaCapturePresentationAnchor
-    func makeUIViewController(context: Context) -> AnchorController {
-        AnchorController(anchor: anchor)
-    }
-    func updateUIViewController(_ controller: AnchorController, context: Context) {
-        anchor.controller = controller
-    }
-
-    static func dismantleUIViewController(_ controller: AnchorController, coordinator: ()) {
-        if controller.anchor.controller === controller { controller.anchor.controller = nil }
-    }
-
-    final class AnchorController: UIViewController {
-        let anchor: MediaCapturePresentationAnchor
-        init(anchor: MediaCapturePresentationAnchor) { self.anchor = anchor; super.init(nibName: nil, bundle: nil) }
-        @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
-        override func viewDidAppear(_ animated: Bool) {
-            super.viewDidAppear(animated)
-            anchor.controller = self
-        }
+        .miniAppPresentationAnchor(fixture.presentationAnchor)
+        .miniAppConsentSource(fixture.consent)
     }
 }

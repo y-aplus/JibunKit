@@ -407,6 +407,17 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         self.startDataScanner = startDataScanner
     }
 
+    /// Presents scanners from the scene of the view that `anchor` is attached to.
+    public convenience init(presentationOwner: MiniAppPresentationOwner, anchor: MiniAppPresentationAnchor) {
+        self.init(presentationOwner: presentationOwner,
+                  present: { [weak anchor] controller in
+                      guard let anchor else { throw MiniAppCaptureFailure.stopped }
+                      do { try await anchor.present(controller) }
+                      catch { throw MiniAppCaptureFailure.unavailable("feature scene presenter") }
+                  },
+                  dismiss: { [weak anchor] controller in await anchor?.dismiss(controller) })
+    }
+
     public func documentOperation(
         result: @escaping @MainActor @Sendable (Result<[Data], Error>) -> Void,
         ended: @escaping @MainActor @Sendable () async -> Void

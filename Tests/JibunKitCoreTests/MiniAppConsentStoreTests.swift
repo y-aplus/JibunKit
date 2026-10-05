@@ -18,6 +18,29 @@ final class MiniAppConsentStoreTests: XCTestCase, @unchecked Sendable {
     }
 
     @MainActor
+    func testConsentSourceAllowsOnlyExplicitDecisionsOfItsFeatureOnceAStoreArrives() throws {
+        let fixture = try ConsentDefaultsFixture()
+        defer { fixture.remove() }
+        let store = MiniAppConsentStore(defaults: fixture.defaults)
+        let featureA = MiniAppID("feature-a")
+        store.setConsent(.allowed, for: featureA, permissionID: "camera")
+        store.setConsent(.denied, for: featureA, permissionID: "microphone")
+        store.setConsent(.allowed, for: MiniAppID("feature-b"), permissionID: "location")
+
+        let source = MiniAppConsentSource(featureID: featureA)
+        XCTAssertFalse(source.isAllowed("camera"), "Nothing is allowed before the view hands over a store")
+        source.store = store
+        XCTAssertTrue(source.isAllowed("camera"))
+        XCTAssertFalse(source.isAllowed("microphone"))
+        XCTAssertFalse(source.isAllowed("location"), "Another Feature's decision must not apply")
+        XCTAssertFalse(source.isAllowed("unknown"))
+
+        let capture = MiniAppCaptureOwner(id: featureA, coordinator: MiniAppCaptureCoordinator(),
+                                          permissions: AllowingCapturePermissions(), consent: source)
+        XCTAssertEqual(capture.id, featureA)
+    }
+
+    @MainActor
     func testDecisionsAreIndependentByFeatureAndPermissionAndSurviveRestart() throws {
         let fixture = try ConsentDefaultsFixture()
         defer { fixture.remove() }
@@ -98,4 +121,9 @@ private final class ConsentDefaultsFixture {
     func remove() {
         defaults.removePersistentDomain(forName: suiteName)
     }
+}
+
+@MainActor
+private final class AllowingCapturePermissions: MiniAppCapturePermissionClient {
+    func request(_ resource: MiniAppCaptureResource) async -> Bool { true }
 }

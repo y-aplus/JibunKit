@@ -19,7 +19,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         let presentations = MiniAppPresentationOwner(id: ownerID)
         try presentations.connect(to: runtime)
         try owner.connect(to: runtime)
-        let anchor = MediaCapturePresentationAnchor()
+        let anchor = MiniAppPresentationAnchor()
         let events = NativeEvents()
         let dispatcher = MiniAppSceneActivityDispatcher(handlers: [.init(id: ownerID) {
             events.values.append($0.isConnected ? "connected" : "disconnected")
@@ -27,7 +27,7 @@ final class MediaCaptureNativeTests: XCTestCase {
         }])
         let mounted = expectation(description: "scene mounted")
         let root = Color.clear
-            .background(MediaCapturePresentationAnchorView(anchor: anchor))
+            .miniAppPresentationAnchor(anchor)
             .background(MiniAppSceneConnection(connect: {
                 dispatcher.connect(phase: .active, selectedID: ownerID)
                 mounted.fulfill()
@@ -42,9 +42,8 @@ final class MediaCaptureNativeTests: XCTestCase {
             originalKeyWindow?.makeKey()
         }
         await fulfillment(of: [mounted], timeout: 5)
-        XCTAssertNotNil(anchor.controller)
-        let adapter = MiniAppVisionCaptureAdapter(presentationOwner: presentations,
-            present: { try await anchor.present($0) }, dismiss: { await anchor.dismiss($0) })
+        XCTAssertTrue(anchor.isAvailable)
+        let adapter = MiniAppVisionCaptureAdapter(presentationOwner: presentations, anchor: anchor)
 
         // The actual UIKit fullScreen transition hides/removes the host's view.
         // onDisappear must not revoke the scanner's selected scene or reservation.
@@ -56,7 +55,8 @@ final class MediaCaptureNativeTests: XCTestCase {
             XCTAssertEqual(owner.state, .running([.camera]))
             XCTAssertEqual(coordinator.currentCameraOwner, ownerID)
             XCTAssertTrue(hosting.presentedViewController === controller)
-            XCTAssertNotNil(anchor.controller)
+            // The full-screen cover may take the anchored view out of its window;
+            // presenting again on the next iteration proves the anchor survived.
             await owner.stop()
             XCTAssertNil(hosting.presentedViewController)
             XCTAssertNil(coordinator.currentCameraOwner)

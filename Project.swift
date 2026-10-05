@@ -157,12 +157,13 @@ let project = Project(
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: appBuild.infoPlist),
             sources: ["Sources/JibunKit/**", "GeneratedFeatureSources/**"],
-            resources: ["GeneratedFeatureResources/App/**"],
+            resources: ["GeneratedFeatureResources/App/**", "Sources/JibunKit/Resources/**"],
             entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension"),
-                           .target(name: "JibunKitShare-Extension")] + actionDependencies + notificationDependencies
+                           .target(name: "JibunKitShare-Extension")] + actionDependencies + notificationDependencies,
+            settings: .settings(base: ["ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"])
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,

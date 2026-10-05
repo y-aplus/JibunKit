@@ -35,6 +35,8 @@ Before the first install, choose the identity strategy deliberately:
 
 Changing these values later is a compatibility and data-migration decision, not cosmetic renaming.
 
+The app icon is `Sources/JibunKit/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png`, one opaque 1024×1024 PNG. To use your own icon, replace that file in the derived host and keep the file name. A different icon also tells an independently identified app apart from an existing JibunKit installation. JibunKit rarely changes its icon; if a merge conflicts on it, keep your own file.
+
 ## Local macOS build
 
 Select the verified Xcode version and install the pinned Tuist version, then run:

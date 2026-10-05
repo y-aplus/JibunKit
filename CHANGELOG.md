@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Adds a default app icon. A derived host replaces `Sources/JibunKit/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` to use its own.
+- Fixes **Publish IPA prerelease** rejecting every successful build run: the workflow name was split on spaces when the run was checked.
 - Backup import rejects archives with more than 100,000 entries or a declared size larger than the available disk capacity, and stops writing any entry that expands past its declared size.
 - Incoming handoff rejects unaccepted input types before copying files into staging.
 - Adds Spotlight "Search in App" support. Features opt in with `MiniAppDefinition.searchDestination`; one accepting Feature opens directly and several are offered as a choice.

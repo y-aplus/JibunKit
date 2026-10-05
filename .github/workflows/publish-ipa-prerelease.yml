@@ -37,7 +37,8 @@ jobs:
           [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo "run_id must be numeric" >&2; exit 1; }
           tag="${TAG_INPUT:-build-$RUN_ID}"
           [[ "$tag" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$ ]] || { echo "Invalid tag: $tag" >&2; exit 1; }
-          read -r name conclusion sha < <(gh run view "$RUN_ID" --json workflowName,conclusion,headSha \
+          # The workflow name contains spaces; split only on the tabs that @tsv emits.
+          IFS=$'\t' read -r name conclusion sha < <(gh run view "$RUN_ID" --json workflowName,conclusion,headSha \
             --jq '[.workflowName, .conclusion, .headSha] | @tsv')
           test "$name" = "Build JibunKit IPA" || { echo "Run $RUN_ID is '$name', not Build JibunKit IPA" >&2; exit 1; }
           test "$conclusion" = success || { echo "Run $RUN_ID concluded '$conclusion'" >&2; exit 1; }

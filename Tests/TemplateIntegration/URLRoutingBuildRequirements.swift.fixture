@@ -13,4 +13,8 @@ public enum EnabledFeatureBuildRequirements {
             "NSAppTransportSecurity": ["NSAllowsLocalNetworking": true],
         ])])
     public static let widget = FeatureBuildConfiguration()
+    // Keep every member of the normal file; Project.swift reads all of them.
+    public static let action: FeatureBuildConfiguration? = nil
+    public static let notificationService: FeatureBuildConfiguration? = nil
+    public static let notificationContent: (build: FeatureBuildConfiguration, categories: [String])? = nil
 }

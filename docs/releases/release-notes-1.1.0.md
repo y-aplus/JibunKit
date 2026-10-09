@@ -1,4 +1,4 @@
-# JibunKit 1.1.0 (candidate, not published)
+# JibunKit 1.1.0
 
 Previous stable release: 1.0.0. This release adds app-wide system surfaces that iOS gives the app only once, Feature parts that camera and app-launching Features previously had to copy, and fixes found while moving existing apps into a derived host.
 
@@ -46,4 +46,4 @@ Icon badges, Spotlight "Search in App", `NSUserActivity` routing, `MiniAppExtern
 
 Configure your Features, build with Tuist/Xcode, then sign and install using a method appropriate to your environment. SideStore is one tested installation example. Back up data before replacing an installation; keep bundle IDs, Feature IDs and storage identities stable.
 
-Version: 1.1.0/build17.
+Version: 1.1.0/build17. Build source `0a6c4602690c233f69ed3d4b148f0a430db181ec`, run 37959506516 succeeded. IPA SHA-256: `c1e0ac8c599db9fba4d1a0c61870db73a36202a50a03f7e21ef09d69ca41998e` (5,258,091 bytes).

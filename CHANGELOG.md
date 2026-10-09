@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-10-10
+
 - Documents using Apple's on-device language model (FoundationModels) from a Feature: checking availability before each request, keeping sessions in the Feature, tying generation to a screen or the Feature lifetime, and how the error types depend on the Xcode version. JibunKit adds no API for it. The system rate limit may be shared by all Features if it counts the app; this is recorded as unverified.
 - Adds `MiniAppPresentationAnchor` (`miniAppPresentationAnchor(_:)`) for presenting UIKit view controllers from a Feature's scene, and `MiniAppConsentSource` (`miniAppConsentSource(_:)`) for reading the host's consent store from objects created with the definition. `MiniAppCaptureOwner(id:permissions:consent:)` and `MiniAppVisionCaptureAdapter(presentationOwner:anchor:)` accept them, so camera Features no longer copy these parts from the diagnostic probe.
 - Removes the bottom “ミニアプリを切り替え” bar, which covered the bottom of every Feature because its height did not reach Feature content. On a Feature root, tap “ミニアプリ” to return to the list or long-press it to switch Features. Switching from a detail screen now requires going back first; paths left through URLs, notifications, quick actions or Spotlight still resume.
@@ -225,7 +227,8 @@
 
 - App Shortcutからの加算が整数範囲を超える場合、processを停止せず保存値を維持してerrorを返すようにした。
 
-[Unreleased]: https://github.com/y-aplus/JibunKit/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/y-aplus/JibunKit/compare/1.1.0...HEAD
+[1.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/1.1.0
 [0.3.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.3.0
 [0.2.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.2.0
 [0.1.0]: https://github.com/y-aplus/JibunKit/releases/tag/0.1.0

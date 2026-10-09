@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Documents state the current release only in `docs/status.md` and the changelog; the others link there. `python3 Tools/check-doc-links.py` checks that relative links in the current documents point to existing files and headings, and CI runs it.
+
 - Features under `Modules/` connect to the host through their own `JibunKitFeature.json`: package products, integration sources, definitions, widgets, build requirements and App Shortcuts. `python3 Tools/jibunkit-feature.py sync` writes `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, and `Project.swift` adds the rest, so adding a feature no longer edits `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle. Hand-registered features keep working.
 - `python3 Tools/jibunkit-feature.py new --name Notes` creates a feature package on Windows, Linux or macOS. It creates the same files as `tuist scaffold feature`, which now also creates the integration and `JibunKitFeature.json`.
 - Adds the manual **Compile check** workflow: it checks the module feature connections and compiles the app and extensions for iOS without tests, signing or an IPA, and reports compiler errors as annotations that `gh run view` shows. It gives feedback without a Mac or local Darwin SDK.

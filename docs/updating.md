@@ -1,6 +1,6 @@
 # Updating the JibunKit foundation
 
-Stable release: 1.1.0/build17 (previous: 1.0.0/build16). See [status](status.md).
+The current release is stated in [status](status.md).
 
 ## Keep downstream notes separate
 

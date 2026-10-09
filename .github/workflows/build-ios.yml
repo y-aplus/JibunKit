@@ -473,13 +473,15 @@ jobs:
           echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/tuist/tuist" version
 
-      - name: Check module Feature connections
+      - name: Check Feature connections and document links
         shell: bash
         run: |
           set -euo pipefail
           python3 -m unittest discover -s Tools/tests -p test_jibunkit_feature.py
           python3 Tools/jibunkit-feature.py sync --check
           python3 Tools/jibunkit-feature.py check
+          python3 -m unittest discover -s Tools/tests -p test_doc_links.py
+          python3 Tools/check-doc-links.py
 
       - name: Test shared feature logic
         timeout-minutes: 10

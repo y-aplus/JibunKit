@@ -1,7 +1,7 @@
 # 公開・release手順
 
 
-更新日: 2026-10-10。公開VERSIONは1.1.0/build17、PREVIOUSは1.0.0/build16。[1.1.0の出荷照合](verification/2026-10-10-1.1-release.md)。以下の1.0の記述は当時の状態として保持する。1.0の基準充足と最終公開は2026-09-19にユーザー承認済み、出荷照合を完了した。[今回の出荷照合](verification/2026-09-19-1.0-release.md)。最新公開版はGitHub Releasesを正本とする。
+更新日: 2026-10-10。現在の公開版は[状態一覧](status.md)だけに記載し、他の文書へ版番号を書き写さない。以下の1.0の記述は当時の状態として保持する。1.0の基準充足と最終公開は2026-09-19にユーザー承認済み、出荷照合を完了した。[今回の出荷照合](verification/2026-09-19-1.0-release.md)。最新公開版はGitHub Releasesを正本とする。
 
 0.8.5はCIと代表実機確認を終えて公開済みのpatch。[変更と検証範囲](releases/release-notes-0.8.5.md)。
 
@@ -20,14 +20,14 @@ P0の6単位完了が0.7.0、P0を維持したP1の6単位完了が0.8.0。途�
 
 実装や検証の結果が変わった時点で、関係する正本・利用手順・Unreleasedを同期する。minor時の全件確認は追加の出荷gateであり、その時まで古い記述を放置してよいという意味ではない。各文書の役割は[文書管理](ci-boundaries.md#文書の正本と履歴)に従う。
 
-全minorで[文書・出荷gate](ci-boundaries.md#マイナー版の文書・出荷gate)を行う。
+全minorで[文書・出荷gate](ci-boundaries.md#マイナー版の文書出荷gate)を行う。
 README、CHANGELOG、互換性、追加/更新/復旧手順、状態一覧、台帳、優先実装と現在の計画、全guides等の現在文章を読み直す。
 実装済みを未実装と書いた説明、過去のCI待機、現在版と一致しない手順・制限・公開範囲を残さない。
 日付変更だけでは不足。各pathの確認結果は一覧に残し、更新・非更新の理由は文書群でまとめて記録できる。確認したGit commit、全件の確認一覧、修正内容と未解決事項を候補の検証記録へ残す。文書ごとの理由・SHA-256の重複記録は必須としない。
 
-候補固定前には「公開候補VERSION」「その時点の最新公開版PREVIOUS」を明確に区別して全文章を同期する。
+候補固定前には「公開候補VERSION」「その時点の最新公開版PREVIOUS」を状態一覧で明確に区別する。他の文書は状態一覧へリンクし、版番号を持たない。
 出荷tagに入る文書が古い版を無条件に「現在」と呼ぶ状態を残さない。履歴はsource/時点付きで保持する。
-公開後はmainのREADME/状態一覧/CHANGELOG/検証記録を公開済みへ更新し、公開状態に関係する文章を再確認する。
+公開後はmainの状態一覧・CHANGELOG・検証記録を公開済みへ更新し、`python3 Tools/check-doc-links.py`でリンクを確認する。
 既存tagや過去release notesを書き換えず、公開後の確認commitを明示する。
 
 以下はmilestone minorの0.8.0時の例。0.8.1 patchではP2-Wのci条件と個別出荷記録を照合し、全minorレビュー実施とは記載しない。
@@ -69,6 +69,6 @@ git push origin VERSION
 gh release create VERSION PATH_TO_IPA --repo y-aplus/JibunKit --verify-tag --title "JibunKit VERSION" --notes-file PATH_TO_NOTES
 ```
 
-公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。README・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。以後のユーザー向け配布はIPAを標準とし、IPAを包む追加ZIPは必要な場合だけ作る。既存公開ZIPは保持する。IPA自体のZIP構造・CRC検査とActions内部のartifact梱包は継続する。
+公開前にVERSION/VERIFIED_COMMIT/各PATHを具体値へ置き換える。既存tagを移動せず、既存assetを差し替えない。公開後はtagのcommit、公開assetのdigest、releaseページ/IPA取得を確認する。状態一覧・CHANGELOG・検証記録の公開状態を更新する。ユーザーにはIPAの直接リンクも示し、外側のActions artifact ZIPを必須にしない。以後のユーザー向け配布はIPAを標準とし、IPAを包む追加ZIPは必要な場合だけ作る。既存公開ZIPは保持する。IPA自体のZIP構造・CRC検査とActions内部のartifact梱包は継続する。
 
 0.7.0の公開物・参照証拠は[公開記録](verification/2026-09-13-0.7-release.md)で管理する。過去の[0.3.0公開記録](verification/2026-09-10-0.3-release.md)も保持する。

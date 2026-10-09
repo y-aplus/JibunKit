@@ -1,6 +1,6 @@
 # Compatibility and Feature responsibilities
 
-Stable release: **1.1.0/build17** (previous: 1.0.0/build16). 1.1.0 adds opt-in Feature APIs and app-wide surfaces without changing stable identities or saved data; Features must no longer call `Tips.configure()`. See [current status](status.md), [1.1.0 verification](verification/2026-10-10-1.1-release.md), [1.0.0 verification](verification/2026-09-19-1.0-release.md), and [explicitly unobserved conditions](verification/2026-09-19-final-observation-boundary.md).
+The current release is stated in [current status](status.md); changes that affect Features, such as 1.1.0's rule that Features must not call `Tips.configure()`, are in the [changelog](../CHANGELOG.md). See also the [1.0.0 verification](verification/2026-09-19-1.0-release.md) and [explicitly unobserved conditions](verification/2026-09-19-final-observation-boundary.md).
 
 ## Coexistence contract
 

@@ -116,4 +116,4 @@ Keep these results separate:
 5. Physical-device behavior.
 6. Live radio, account, or Apple-service behavior.
 
-The current stable release is 1.0.0/build16. Consult [current status](status.md), the [remaining observation boundary](verification/2026-09-19-final-observation-boundary.md), and the relevant dated verification record before making a release claim.
+The current stable release is 1.1.0/build17. Consult [current status](status.md), its [release verification](verification/2026-10-10-1.1-release.md), the [remaining observation boundary](verification/2026-09-19-final-observation-boundary.md), and the relevant dated verification record before making a release claim.

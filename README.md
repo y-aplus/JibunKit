@@ -8,8 +8,8 @@ English is the primary language for current user and contributor documentation. 
 
 ## Release status
 
-- **Stable:** [1.0.0](https://github.com/y-aplus/JibunKit/releases/tag/1.0.0), build 16. See the [1.0.0 release notes](docs/releases/release-notes-1.0.0.md) and [release verification](docs/verification/2026-09-19-1.0-release.md).
-- Previous stable release: [0.8.5](https://github.com/y-aplus/JibunKit/releases/tag/0.8.5), build 15. Historical records retain the earlier release boundary.
+- **Stable:** [1.1.0](https://github.com/y-aplus/JibunKit/releases/tag/1.1.0), build 17. See the [1.1.0 release notes](docs/releases/release-notes-1.1.0.md) and [release verification](docs/verification/2026-10-10-1.1-release.md).
+- Previous stable release: [1.0.0](https://github.com/y-aplus/JibunKit/releases/tag/1.0.0), build 16, which completed the adopted 1.0 scope ([verification](docs/verification/2026-09-19-1.0-release.md)).
 
 CloudKit and APNs integrations are optional and depend on paid signing and Apple services. Their live service paths have not been verified. Other unobserved device or radio conditions remain listed in the status and verification documents; absence of a measurement is not reported as success.
 

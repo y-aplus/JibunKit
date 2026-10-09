@@ -38,7 +38,9 @@ Moving an existing app into a Feature, Swift 5 language mode per target, Feature
 
 ## Verification and limits
 
-<!-- Filled in after the candidate CI, IPA inspection and device check. -->
+Shared, Module, native media, optional-extension, normal-host UI and generated-host UI tests ran on the candidate source. Five generated-host UI tests (two notification tests, the Records reminder, the idle timer and Web data clearing) fail; they failed in the same way before this release and are not counted as passes. On an iPhone, the owner confirmed the new icon, kept Counter and Reminder data after an overwrite install, the root “ミニアプリ” button and long-press switching, and quick actions from a running and a closed app.
+
+Icon badges, Spotlight "Search in App", `NSUserActivity` routing, `MiniAppExternalURL`, `scanCode` and the notification extensions are not used by the Features in the normal IPA. They are covered by automated tests and builds, not by a device check of this release. The [verification record](../verification/2026-10-10-1.1-release.md) lists the runs and results.
 
 ## Build and installation
 

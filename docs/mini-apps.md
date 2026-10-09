@@ -8,32 +8,55 @@ Prefer a separate package under `Modules/<Name>` for a new personal feature. It 
 
 ## 1. Create a standalone feature
 
-On macOS with Tuist 4.207.0:
+On Windows, Linux or macOS, with Python 3:
 
 ```bash
-tuist scaffold feature --name Notes
-tuist generate --path Modules/Notes --no-open
+python3 Tools/jibunkit-feature.py new --name Notes
 ```
 
-Use a valid Swift type name beginning with an uppercase letter. The template creates a Swift package, root view, tests, a small example app, and UI-test scaffolding under `Modules/Notes`. It refuses to overwrite an existing directory.
+On macOS, `tuist scaffold feature --name Notes` creates the same files; then run `python3 Tools/jibunkit-feature.py sync` (see [section 2](#2-connect-it-to-the-host)). CI checks that both create identical files.
 
-The repository's scaffold and project-generation commands are macOS paths. In the reported Tuist 4.207.0 Linux experiment, the installed binary did not provide the local `scaffold` and Xcode-project `generate` commands used here; this is not a claim about every Tuist version. On Windows/WSL, create the package files manually or prepare them on macOS, then use the package-specific checks described in [Build, sign, and install](build.md).
+Use a valid Swift type name beginning with an uppercase letter. The command creates, under `Modules/Notes`, a Swift package with a root view, a small example app with UI-test scaffolding, an `Integration` directory and `JibunKitFeature.json`. It refuses to overwrite an existing directory. The example app needs Tuist on macOS: `tuist generate --path Modules/Notes --no-open`.
 
 Develop and test `NotesExample` independently. Keep domain models, persistence rules, validation, and feature-specific native behavior in this package. The feature package does not need to depend on JibunKitCore unless it directly uses its APIs.
 
-## 2. Add the package to the host
+## 2. Connect it to the host
 
-In the root `Project.swift`:
+`Modules/Notes/JibunKitFeature.json` declares how the host connects the feature:
 
-1. Add `.package(path: "Modules/Notes")` to `packages`.
-2. Add `.package(product: "NotesFeature")` to the `JibunKit-App` target dependencies.
-3. Add the dependency separately to a widget or other extension only when that target imports the product.
+```json
+{
+  "schema": 1,
+  "id": "notes",
+  "products": ["NotesFeature"],
+  "sources": ["Integration/**"],
+  "definitions": ["NotesMiniApp.definition"]
+}
+```
 
-The package must expose a library product. Do not add the generated example app's `@main` target to the host.
+| Key | Meaning |
+| --- | --- |
+| `id` | The feature ID. It also owns the build requirements and App Shortcuts below. |
+| `products` | Library products of this package that the app target depends on. |
+| `sources` | Globs inside this directory that the app target compiles, normally the integration. |
+| `definitions` | Expressions that each produce one `MiniAppDefinition`. They are added after the hand-registered features in `MiniAppRegistry`. |
+| `app` | Optional `infoPlist`, `entitlements` and `localizedInfoPlist` for the app target ([build requirements](guides/feature-build-requirements.md)). |
+| `widget` | Optional `products`, `sources` and `widgets` (expressions such as `"NotesWidget()"`) for the widget extension, plus its own `infoPlist`, `entitlements` and `localizedInfoPlist` ([static widgets](guides/package-static-widgets.md)). |
+| `appShortcuts` | Optional `{"source": "Integration/AppShortcuts.swift.fragment", "imports": [...]}` ([App Intents](guides/package-app-intents.md)). |
 
-## 3. Define one integration
+After adding or changing a `JibunKitFeature.json`, run:
 
-For this example, create `Sources/JibunKit/NotesMiniApp.swift`, which is already in the host source set. If you keep integration beside the package instead, explicitly include that integration source in the host target:
+```bash
+python3 Tools/jibunkit-feature.py sync
+```
+
+It checks the files and rewrites `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, which `Project.swift` reads. Commit that file with the feature. `tuist generate` then adds the package, its products, the integration sources, the registry entry, the widgets, the build requirements and the App Shortcuts. You do not edit `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle, so updates from upstream do not conflict with your features there. CI fails when `sync --check` finds the helper out of date. `sync` reads the files only; it does not prove that the code compiles.
+
+Features registered by hand, as Counter and Reminder are, keep working. Do not register the same definition both ways.
+
+## 3. Write the integration
+
+The integration is the thin layer that creates the definition. The generated `Integration/NotesMiniApp.swift` is compiled into the host app, not into the package:
 
 ```swift
 import JibunKitCore
@@ -44,16 +67,16 @@ enum NotesMiniApp {
     static let definition = MiniAppDefinition(
         id: MiniAppID("notes"),
         title: "Notes",
-        systemImage: "note.text"
+        systemImage: "square.grid.2x2"
     ) { _ in
         NotesRootView()
     }
 }
 ```
 
-Add `NotesMiniApp.definition` once to `Sources/JibunKit/MiniAppRegistry.swift`.
+Because it is part of the app target, it can use JibunKitCore even when the feature package does not depend on it. Give its types names that start with the feature name; they share the app module with every other integration. It is not covered by the package's `swift test`, so keep it thin.
 
-The ID must begin with a lowercase ASCII letter and contain only lowercase letters, digits, `.`, `-`, and `_`. It becomes part of storage, notification, routing, backup, and system-registration identities. Treat a shipped ID as persistent data: do not rename it without a migration.
+The ID must begin with a lowercase ASCII letter and contain only lowercase letters, digits, `.`, `-`, and `_`. It becomes part of storage, notification, routing, backup, and system-registration identities. Treat a shipped ID as persistent data: do not rename it without a migration. Keep `id` in `JibunKitFeature.json` the same as `MiniAppID` in the definition.
 
 Keep the title, symbol, destination factory, lifecycle hooks, permissions, backup provider, and optional system integrations together in the definition or its integration layer. Do not add feature-specific switches to the host's list or navigation code.
 
@@ -105,6 +128,7 @@ Run the smallest checks that prove each boundary:
 
 ```bash
 swift test --package-path Modules/Notes
+python3 Tools/jibunkit-feature.py sync --check
 tuist generate --no-open
 tuist build JibunKit-App
 ```
@@ -150,6 +174,14 @@ Moving an existing Xcode app into a feature means removing its app shell. Move t
 | `ASWebAuthenticationSession` | A runtime-owned [web authentication](guides/web-authentication-ownership.md) connection. |
 | `UIApplication.shared.open` | `MiniAppExternalURL.open(_:)` ([URL routing](guides/feature-url-routing.md#opening-another-app)). |
 
+To find code that still assumes it is the only app, run:
+
+```bash
+python3 Tools/jibunkit-feature.py check Modules/Notes
+```
+
+It reports, with the line and the guide to follow, the standalone-app uses in the table above and a few more that change other features' state: `@main`, `UserDefaults.standard` and `@AppStorage` without a store, hard-coded App Groups, app-wide directories, `UIApplication.shared.open`, `.onOpenURL`, `.preferredColorScheme`, `NavigationStack`, `Tips.configure`, badge counts, `shortcutItems`, the notification delegate, `isIdleTimerDisabled`, `AVAudioSession` changes, `deleteAllSearchableItems`, `ASWebAuthenticationSession` and `BGTaskScheduler` registration. It skips `Example`, `UITests` and `Tests`. It matches text, so it can miss uses and can report an intended one, such as a `NavigationStack` inside the feature's own sheet; mark such a line with `// jibunkit: allow navigation-stack`. Without a path it checks every feature that has a `JibunKitFeature.json`, and CI runs it that way.
+
 Choose the feature ID once and keep it. Renaming the app later changes the display name and type names, not the ID.
 
 Data that the standalone app saved stays in that app's own container. JibunKit cannot read it. Data the user wants to keep needs its own route, such as a server the feature syncs with or an export from the old app followed by an import in the feature.
@@ -180,9 +212,9 @@ On macOS, run `python3 Tools/check-feature-connection.py --package Modules/Notes
 
 Check the first failing boundary in order:
 
-1. Package not found: correct `Project.swift`'s package path and confirm `Modules/Notes/Package.swift` exists.
+1. Package not found: run `python3 Tools/jibunkit-feature.py sync` and confirm `Modules/Notes/Package.swift` and `JibunKitFeature.json` exist. For a hand-registered package, correct `Project.swift`'s package path.
 2. Product not found: match the package's library product and target names; run `swift package --package-path Modules/Notes describe`, package tests and generation.
-3. `No such module`: add the product dependency to the exact app or extension target importing it, include integration sources, then regenerate and build.
-4. No list entry or URL destination: add the definition once to `MiniAppRegistry.all`; inspect the actual registry IDs with `MiniAppValidator.validate(ids:expectedIDs:)` and exercise `jibunkit://mini-app/notes`.
+3. `No such module`: list the product under `products` (app) or `widget.products` (widget extension) and the integration under `sources`, or for a hand-registered package add the dependency and sources to the exact target; then sync, regenerate and build.
+4. No list entry or URL destination: list the definition under `definitions`, or add it once to `MiniAppRegistry.all` for a hand-registered feature; inspect the actual registry IDs with `MiniAppValidator.validate(ids:expectedIDs:)` and exercise `jibunkit://mini-app/notes`.
 
 The expected ID set is a test assertion, not another production registry. Source-text searches alone cannot prove these four connections.

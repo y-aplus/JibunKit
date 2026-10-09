@@ -12,7 +12,9 @@ JibunKit has no dynamic plug-in mechanism. Features are Swift packages linked in
 
 ## Keep ownership boundaries narrow
 
-Place feature logic, storage format, root view, and feature-specific notification scheduling in its package, for example `Modules/<Name>/Sources/<Name>Feature`. Do not add feature screens or notification logic to `Sources/JibunKit`. Normal integration should touch only:
+Place feature logic, storage format, root view, and feature-specific notification scheduling in its package, for example `Modules/<Name>/Sources/<Name>Feature`. Do not add feature screens or notification logic to `Sources/JibunKit`. A feature under `Modules/<Name>` with a `JibunKitFeature.json` touches no host file except the generated `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift` ([adding a feature](mini-apps.md#2-connect-it-to-the-host)). Its integration, build requirements and widgets stay in its own directory, so upstream changes to `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` and the widget bundle do not conflict with it.
+
+A hand-registered feature touches:
 
 | Integration point | Feature change |
 | --- | --- |
@@ -20,6 +22,8 @@ Place feature logic, storage format, root view, and feature-specific notificatio
 | `Package.swift` | If the feature belongs in the root package, add its target/product and test dependencies |
 | Integration target or a thin host adapter | Define `MiniAppDefinition` plus storage, backup, and notification wiring |
 | `Sources/JibunKit/MiniAppRegistry.swift` | Add one definition to `all` |
+
+To move a hand-registered feature under `Modules/` to the new form, put its integration source in `Modules/<Name>/Integration`, write `JibunKitFeature.json` with the same feature ID, move its build requirements and widget there, remove the hand-written entries from the host files, and run `python3 Tools/jibunkit-feature.py sync`. The feature ID and storage do not change, so saved data stays.
 
 Do not add another `NotificationAppDelegate`; route the common payload through the same destination mapping. Add widget/extension products, App Shortcuts, [plist/entitlement requirements](guides/feature-build-requirements.md), and matching verification only for OS surfaces the feature uses. Register background/native startup work through `MiniAppDefinition.onHostLaunch`. See [adding a feature](mini-apps.md).
 
@@ -77,7 +81,7 @@ Adapt remote names and merge/rebase policy to the actual repository. Do not crea
 
 ## Resolve conflicts deliberately
 
-`Package.swift` and `MiniAppRegistry.swift` commonly conflict. Do not choose all of “ours” or “theirs.” Preserve foundation targets/dependencies, personal targets/dependencies, old and new definitions, and unique IDs/namespaces/notification IDs. Keep display names, icons, destinations, bundle ID, App Group, and storage keys unless a separate migration explicitly changes them.
+For hand-registered features, `Package.swift` and `MiniAppRegistry.swift` commonly conflict. Do not choose all of “ours” or “theirs.” Preserve foundation targets/dependencies, personal targets/dependencies, old and new definitions, and unique IDs/namespaces/notification IDs. Keep display names, icons, destinations, bundle ID, App Group, and storage keys unless a separate migration explicitly changes them.
 
 Treat an old unknown notification owner as unknown and return to the list; never guess another feature. Preserve or explicitly migrate old storage even during 0.x development.
 

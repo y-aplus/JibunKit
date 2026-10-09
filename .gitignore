@@ -37,6 +37,7 @@ __pycache__/
 /Package.resolved
 /GeneratedFeatureResources/
 /GeneratedFeatureSources/
+/GeneratedWidgetSources/
 
 # Local-only migration experiment
 /Sources/ZaikoFeature/

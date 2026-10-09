@@ -87,11 +87,21 @@ Use the workflow inputs, completed steps, test summaries, and artifacts as the e
 | Environment | Supported local work | Important limit |
 | --- | --- | --- |
 | macOS with Xcode and Tuist 4.207.0 | Root tests, feature tests, scaffold, project generation, Xcode build, Simulator, and local signing/install | Capabilities still depend on the signing account, profiles, device, and services. |
-| Windows | Source editing and Git/GitHub CLI operations | Use macOS or Actions for project generation, Xcode builds, and IPA packaging. |
+| Windows | Source editing, Git/GitHub CLI operations, and `python3 Tools/jibunkit-feature.py` (create, connect and check features) | Use macOS or Actions for project generation, Xcode builds, and IPA packaging. |
 | Linux/WSL with Swift | Tests for a portable independent package, for example `swift test --package-path Modules/Notes` | The root package does not currently build on Linux/WSL. |
 | Linux/WSL with the tested Tuist 4.207.0 binary | Installation and `tuist version` worked in the reported experiment | In that experiment, its command set did not provide the local `tuist scaffold` or Xcode-project `tuist generate` path used by this repository. Do not generalize this result to other Tuist versions. |
 
 An additional, environment-specific compile-only path was measured on WSL where a Darwin Swift SDK was already installed: `swift build --package-path Modules/Zaiko --swift-sdk arm64-apple-ios` compiled the feature's iOS-gated code. This can catch type errors, but it neither generates an Xcode project nor creates an IPA. JibunKit does not bundle or install that SDK, and this observation does not imply that a standard WSL Swift installation has it. Check `swift sdk list` first and treat SDK setup as outside the supported first-use path.
+
+### Compile check in Actions
+
+Without a Mac, run the **Compile check** workflow on your branch to find compiler errors quickly:
+
+```bash
+gh workflow run compile-check.yml --ref <branch>
+```
+
+It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors are listed in the run summary (`gh run view <id>`). Use the full **Build JibunKit IPA** workflow for tests and an installable IPA.
 
 ## Sign and install
 

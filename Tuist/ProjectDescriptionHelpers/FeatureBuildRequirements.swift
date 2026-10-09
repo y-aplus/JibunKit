@@ -64,7 +64,17 @@ public struct FeatureBuildConfiguration: Sendable {
 
     public func compose(infoPlist: [String: Plist.Value],
                         entitlements: [String: Plist.Value],
+                        modules: [FeatureBuildRequirement] = [],
                         localizedInfoPlist: [String: [String: String]] = [:]) throws -> ComposedFeatureBuild {
+        // Module Features (ModuleFeatures.swift) join the hand-registered ones
+        // under the same owner, conflict and resolution rules.
+        if !modules.isEmpty {
+            return try FeatureBuildConfiguration(
+                features: features + modules, infoPlistResolutions: infoPlistResolutions,
+                entitlementResolutions: entitlementResolutions,
+                localizedInfoPlistResolutions: localizedInfoPlistResolutions
+            ).compose(infoPlist: infoPlist, entitlements: entitlements, localizedInfoPlist: localizedInfoPlist)
+        }
         var owners: Set<String> = ["host"]
         for feature in features {
             guard !feature.owner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

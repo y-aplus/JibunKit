@@ -20,17 +20,17 @@ The standard path is:
 1. Create a private derived repository that keeps JibunKit as `upstream` and your private host as `origin`.
 2. Create or adapt a source-based Swift package that exposes a feature view and business APIs.
 3. Run the feature independently while developing it.
-4. Add a thin `MiniAppDefinition` integration and register it with the host.
+4. Declare the host connection in the package's `JibunKitFeature.json`, with a thin `MiniAppDefinition` integration.
 5. Generate and build the workspace with Tuist and Xcode, locally or through GitHub Actions.
 6. Sign and install the resulting app with a method appropriate for your Apple account and device.
 
-Start with [Adding a feature](docs/mini-apps.md). The template command is:
+Start with [Adding a feature](docs/mini-apps.md). The template command works on Windows, Linux and macOS:
 
 ```bash
-tuist scaffold feature --name Notes
+python3 Tools/jibunkit-feature.py new --name Notes
 ```
 
-The generated package includes an example app, so feature UI and business logic can be developed without first embedding it in JibunKit. The host integration remains explicit: add the package product, create one definition, and register that definition.
+The generated package includes an example app, so feature UI and business logic can be developed without first embedding it in JibunKit. The host integration remains explicit: `JibunKitFeature.json` names the package product, the integration source and the definition, and `python3 Tools/jibunkit-feature.py sync` connects them without editing host files.
 
 For a first feature, prefer an independent package under `Modules/`: it is easier to test in isolation, reuse in a standalone app, and validate from Windows/WSL than code added to the root package. See the feature and build guides for the exact platform limits.
 

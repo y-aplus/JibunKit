@@ -106,7 +106,7 @@ private struct RecordEditor: View {
     @State private var error: String?
 
     var body: some View {
-        NavigationStack {
+        NavigationStack { // jibunkit: allow navigation-stack (editor sheet)
             Form {
                 TextField("タイトル", text: $record.title).accessibilityIdentifier("records.title")
                 TextEditor(text: $record.body).frame(minHeight: 160).accessibilityIdentifier("records.editor.body")

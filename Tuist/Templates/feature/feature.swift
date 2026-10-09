@@ -2,7 +2,7 @@ import ProjectDescription
 
 let name: Template.Attribute = .required("name")
 let template = Template(
-    description: "Independent Swift Package Feature with a standalone app shell",
+    description: "Independent Swift Package Feature with a standalone app shell and its host connection",
     attributes: [name],
     items: [
         .file(path: "Modules/\(name)/Package.swift", templatePath: "Package.stencil"),
@@ -10,5 +10,7 @@ let template = Template(
         .file(path: "Modules/\(name)/Sources/\(name)Feature/\(name)RootView.swift", templatePath: "View.stencil"),
         .file(path: "Modules/\(name)/Example/App.swift", templatePath: "App.stencil"),
         .file(path: "Modules/\(name)/UITests/LaunchTests.swift", templatePath: "UITests.stencil"),
+        .file(path: "Modules/\(name)/Integration/\(name)MiniApp.swift", templatePath: "Integration.stencil"),
+        .file(path: "Modules/\(name)/JibunKitFeature.json", templatePath: "Feature.stencil"),
     ]
 )

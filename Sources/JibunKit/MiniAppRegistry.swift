@@ -222,7 +222,15 @@ enum MiniAppRegistry {
         return all.first { $0.id == id }
     }
 
+    /// Features under Modules/ that declare JibunKitFeature.json follow the
+    /// hand-registered ones; see Tools/jibunkit-feature.py.
     private static func makeRegistry(
+        _ registered: [MiniAppDefinition]
+    ) -> [MiniAppDefinition] {
+        validated(registered + ModuleFeatureRegistry.definitions)
+    }
+
+    private static func validated(
         _ miniApps: [MiniAppDefinition]
     ) -> [MiniAppDefinition] {
         precondition(

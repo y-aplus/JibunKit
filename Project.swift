@@ -24,7 +24,7 @@ let appBuild = try EnabledFeatureBuildRequirements.app.compose(infoPlist: [
         "CFBundleURLName": "com.jibunkit.app.mini-app",
         "CFBundleURLSchemes": ["jibunkit"],
     ]],
-], entitlements: sharedEntitlements, localizedInfoPlist: [
+], entitlements: sharedEntitlements, modules: ModuleFeatures.appRequirements, localizedInfoPlist: [
     "en": ["CFBundleDisplayName": "JibunKit"],
     "ja": ["CFBundleDisplayName": "JibunKit"],
 ])
@@ -33,7 +33,7 @@ let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: 
     "JibunKitAppGroup": "group.com.jibunkit.shared",
     "CFBundleAllowMixedLocalizations": true,
     "NSExtension": ["NSExtensionPointIdentifier": "com.apple.widgetkit-extension"],
-], entitlements: sharedEntitlements, localizedInfoPlist: [
+], entitlements: sharedEntitlements, modules: ModuleFeatures.widgetRequirements, localizedInfoPlist: [
     "en": ["CFBundleDisplayName": "JibunKit Widget"],
     "ja": ["CFBundleDisplayName": "JibunKitウィジェット"],
 ])
@@ -41,7 +41,9 @@ let widgetBuild = try EnabledFeatureBuildRequirements.widget.compose(infoPlist: 
 try FeatureAppShortcuts.writeProvider([
     FeatureAppShortcuts(owner: "counter", imports: [],
         sourceFile: "Sources/CounterIntegration/AppShortcuts.swift.fragment"),
-], to: "GeneratedFeatureSources/JibunKitShortcuts.swift")
+] + ModuleFeatures.appShortcuts, to: "GeneratedFeatureSources/JibunKitShortcuts.swift")
+try ModuleFeatures.writeSources(registry: "GeneratedFeatureSources/ModuleFeatureRegistry.swift",
+                                widgets: "GeneratedWidgetSources/ModuleWidgets.swift")
 
 let generatedFeatureResources = "GeneratedFeatureResources"
 try appBuild.writeLocalizedInfoPlistStrings(to: "\(generatedFeatureResources)/App")
@@ -130,7 +132,7 @@ if let content = EnabledFeatureBuildRequirements.notificationContent {
 
 let project = Project(
     name: "JibunKit",
-    packages: [.package(path: ".")],
+    packages: [.package(path: ".")] + ModuleFeatures.packages,
     settings: .settings(base: ["SWIFT_VERSION": "6.0"]),
     targets: [
         .target(
@@ -156,23 +158,24 @@ let project = Project(
             name: "JibunKit-App", destinations: .iOS, product: .app,
             bundleId: "com.jibunkit.app", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: appBuild.infoPlist),
-            sources: ["Sources/JibunKit/**", "GeneratedFeatureSources/**"],
+            sources: .sourceFilesList(globs: ["Sources/JibunKit/**", "GeneratedFeatureSources/**"] + ModuleFeatures.appSources),
             resources: ["GeneratedFeatureResources/App/**", "Sources/JibunKit/Resources/**"],
             entitlements: .dictionary(appBuild.entitlements),
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"),
                            .package(product: "ReminderFeature"), .package(product: "CounterIntegration"),
                            .package(product: "ReminderIntegration"), .target(name: "JibunKitWidget-Extension"),
-                           .target(name: "JibunKitShare-Extension")] + actionDependencies + notificationDependencies,
+                           .target(name: "JibunKitShare-Extension")] + actionDependencies + notificationDependencies
+                + ModuleFeatures.appDependencies,
             settings: .settings(base: ["ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"])
         ),
         .target(
             name: "JibunKitWidget-Extension", destinations: .iOS, product: .appExtension,
             bundleId: "com.jibunkit.app.Widget", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: widgetBuild.infoPlist),
-            sources: ["Sources/JibunKitWidget/**"],
+            sources: .sourceFilesList(globs: ["Sources/JibunKitWidget/**", "GeneratedWidgetSources/**"] + ModuleFeatures.widgetSources),
             resources: ["GeneratedFeatureResources/Widget/**", "Sources/JibunKitWidget/Resources/**"],
             entitlements: .dictionary(widgetBuild.entitlements),
-            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")],
+            dependencies: [.package(product: "CounterFeature"), .package(product: "JibunKitCore")] + ModuleFeatures.widgetDependencies,
             settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
         ),
         .target(

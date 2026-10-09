@@ -9,6 +9,8 @@ import WidgetKit
 struct JibunKitWidgetBundle: WidgetBundle {
     var body: some Widget {
         CounterWidget()
+        // Widgets declared by Features under Modules/ (JibunKitFeature.json).
+        ModuleWidgets.all
     }
 }
 

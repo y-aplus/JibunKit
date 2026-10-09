@@ -1,0 +1,17 @@
+#if os(iOS)
+import JibunKitCore
+import {{ name }}Feature
+
+/// Connects {{ name }} to the JibunKit host. JibunKitFeature.json lists this
+/// directory, so the host app compiles it; the package itself does not.
+@MainActor
+enum {{ name }}MiniApp {
+    static let definition = MiniAppDefinition(
+        id: MiniAppID("{{ name | lowercase }}"),
+        title: "{{ name }}",
+        systemImage: "square.grid.2x2"
+    ) { _ in
+        {{ name }}RootView()
+    }
+}
+#endif

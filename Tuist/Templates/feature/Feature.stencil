@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "{{ name | lowercase }}",
+  "products": ["{{ name }}Feature"],
+  "sources": ["Integration/**"],
+  "definitions": ["{{ name }}MiniApp.definition"]
+}

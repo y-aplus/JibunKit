@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+- Features under `Modules/` connect to the host through their own `JibunKitFeature.json`: package products, integration sources, definitions, widgets, build requirements and App Shortcuts. `python3 Tools/jibunkit-feature.py sync` writes `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, and `Project.swift` adds the rest, so adding a feature no longer edits `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle. Hand-registered features keep working.
+- `python3 Tools/jibunkit-feature.py new --name Notes` creates a feature package on Windows, Linux or macOS. It creates the same files as `tuist scaffold feature`, which now also creates the integration and `JibunKitFeature.json`.
+- Adds the manual **Compile check** workflow: it checks the module feature connections and compiles the app and extensions for iOS without tests, signing or an IPA, and lists compiler errors in the run summary. It gives feedback without a Mac or local Darwin SDK.
+- `python3 Tools/jibunkit-feature.py check` reports standalone-app code that changes other Features' state inside JibunKit, such as `UserDefaults.standard`, `UIApplication.shared.open` or `preferredColorScheme`, with the guide to follow. CI runs it for Features that have a `JibunKitFeature.json`.
+
 ## [1.1.0] — 2026-10-10
 
 - Documents using Apple's on-device language model (FoundationModels) from a Feature: checking availability before each request, keeping sessions in the Feature, tying generation to a screen or the Feature lifetime, and how the error types depend on the Xcode version. JibunKit adds no API for it. The system rate limit may be shared by all Features if it counts the app; this is recorded as unverified.

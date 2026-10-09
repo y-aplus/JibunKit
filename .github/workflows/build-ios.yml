@@ -473,6 +473,14 @@ jobs:
           echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/tuist/tuist" version
 
+      - name: Check module Feature connections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s Tools/tests -p test_jibunkit_feature.py
+          python3 Tools/jibunkit-feature.py sync --check
+          python3 Tools/jibunkit-feature.py check
+
       - name: Test shared feature logic
         timeout-minutes: 10
         if: ${{ matrix.lane != 'generated' && (!inputs.focused_ui_validation) }}
@@ -541,6 +549,14 @@ jobs:
           git archive HEAD | tar -x -C "$smoke"
           cd "$smoke"
           tuist scaffold feature --name Notes
+          # The Python scaffold must create exactly what the Tuist template creates.
+          mkdir -p "$RUNNER_TEMP/python-scaffold/Tuist"
+          cp -R Tuist/Templates "$RUNNER_TEMP/python-scaffold/Tuist/"
+          python3 Tools/jibunkit-feature.py --root "$RUNNER_TEMP/python-scaffold" new --name Notes --no-sync
+          diff -r Modules/Notes "$RUNNER_TEMP/python-scaffold/Modules/Notes"
+          # Connect Notes through its JibunKitFeature.json, not by editing host files.
+          python3 Tests/TemplateIntegration/extend-module-feature.py Modules/Notes
+          python3 Tools/jibunkit-feature.py sync
           python3 Tools/test-module-packages.py Modules
           tuist generate --path Modules/Notes --no-open
           xcodebuild build -workspace Modules/Notes/NotesExample.xcworkspace -scheme NotesExample \
@@ -637,7 +653,7 @@ jobs:
               shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostProbe.swift', 'Sources/JibunKit/PackageResourceHostProbe.swift')
               shutil.copyfile('Tests/TemplateIntegration/PackageResourceHostUITests.swift', 'UITests/PackageResourceHostUITests.swift')
           p = Path('Project.swift')
-          s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Notes"), .package(path: "Modules/Records")]')
+          s = p.read_text().replace('packages: [.package(path: ".")]', 'packages: [.package(path: "."), .package(path: "Modules/Records")]')
           if include_package_resources:
               s = s.replace('.package(path: "Modules/Records")]', f'.package(path: "Modules/Records"), .package(path: "{resource_packages}/FeatureA"), .package(path: "{resource_packages}/FeatureB")]')
           app_marker = 'name: "JibunKit-App", destinations:'
@@ -645,7 +661,7 @@ jobs:
           before_app, marker, app_and_rest = s.partition(app_marker)
           dependency_marker = 'dependencies: [.package(product: "JibunKitCore")'
           assert dependency_marker in app_and_rest, 'Expected host Core dependency'
-          injected_dependencies = ['.package(product: "RecordsFeature")', '.package(product: "NotesFeature")']
+          injected_dependencies = ['.package(product: "RecordsFeature")']
           if include_package_resources:
               injected_dependencies += ['.package(product: "ResourceFeatureA")', '.package(product: "ResourceFeatureB")']
           app_and_rest = app_and_rest.replace(
@@ -656,7 +672,6 @@ jobs:
           s = before_app + marker + app_and_rest
           p.write_text(s)
           p = Path('Sources/JibunKit/MiniAppRegistry.swift')
-          p.write_text(p.read_text().replace('import JibunKitCore', 'import JibunKitCore\nimport NotesFeature').replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        MiniAppDefinition(id: MiniAppID("notes"), title: "Notes", systemImage: "book") { _ in NotesRootView() },'))
           p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        RecordsMiniApp.definition,'))
           if include_compatible_update:
               p.write_text(p.read_text().replace('static let all = makeRegistry([', 'static let all = makeRegistry([\n        P0CCompatibleUpdateProbe.definition,'))
@@ -735,6 +750,8 @@ jobs:
           fi
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_app/Info.plist")" = true
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleAllowMixedLocalizations' "$host_widget/Info.plist")" = true
+          test "$(/usr/libexec/PlistBuddy -c 'Print :JibunKitModuleFixture' "$host_app/Info.plist")" = notes-app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :JibunKitModuleFixture' "$host_widget/Info.plist")" = notes-widget
 
       - name: Generate Xcode workspace
         if: matrix.lane != 'generated'

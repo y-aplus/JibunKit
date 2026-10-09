@@ -2,7 +2,7 @@
 
 SideStore is an optional, verified installation example for JibunKit. It is not the only supported distribution concept, and this document does not claim that untested signing/install tools preserve the same identifiers, entitlements, data, or extensions.
 
-The currently documented stable release is 0.8.5/build15; candidate 1.0.0/build16 is unpublished and requires final publication approval. Release status is tracked in [status.md](status.md). Historical device observations below belong to their exact source and environment and must not be generalized.
+The current stable release is 1.0.0/build16; candidate 1.1.0/build17 is unpublished. Release status is tracked in [status.md](status.md). Historical device observations below belong to their exact source and environment and must not be generalized.
 
 Follow the [official SideStore installation instructions](https://docs.sidestore.io/docs/installation/install) to install SideStore and prepare its pairing file. Connect LocalDevVPN when installing, updating, or refreshing JibunKit.
 

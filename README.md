@@ -45,7 +45,7 @@ The general delivery path is **source configuration → Tuist/Xcode build → si
 - Stable feature IDs and owner-scoped storage, files, notifications, routes, and system registrations.
 - Feature lifecycle and shutdown boundaries for tasks and shared native resources.
 - Per-feature management, consent, removal, backup, and restore integration.
-- Host composition for navigation, widgets, App Intents, incoming files, background work, media, location, Bluetooth, multiple windows, and other adopted system surfaces.
+- Host composition for navigation, widgets, App Intents, Spotlight, quick actions, icon badges, incoming files, background work, media, location, Bluetooth, multiple windows, and other adopted system surfaces.
 - Tests and diagnostic fixtures that keep simulated, native, physical-device, and service-backed evidence distinct.
 
 These are cooperative APIs, not a security sandbox for arbitrary Swift code. A feature remains responsible for its domain validation, data schema, migrations, and correct use of native APIs. Read [Compatibility and stable identities](docs/compatibility.md) before changing IDs, bundle identifiers, App Groups, storage keys, routes, or backup schemas.

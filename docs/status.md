@@ -1,6 +1,8 @@
 # Release and development status
 
-Updated 2026-09-20. **Stable: 1.0.0/build16.** The adopted P0/P1/P2 criteria were published after the final document and artifact audit. The explicit unobserved conditions remain disclosed below.
+Updated 2026-10-09. **Candidate: 1.1.0/build17, unpublished.** It adds the app-wide surfaces, Feature parts and fixes listed in the [candidate notes](releases/release-notes-1.1.0.md); its CI, IPA inspection and device check are in progress. The 1.0.0 statements below remain the published state until it is released.
+
+**Stable: 1.0.0/build16.** The adopted P0/P1/P2 criteria were published after the final document and artifact audit. The explicit unobserved conditions remain disclosed below.
 
 - Build source: `82553cfe2c81cd83111cd2a247c90f87bd1015ac`; CI35409750733 passed shared443 tests (2 existing skips), Module11, normal IPA checks and the selected cold/warm URL regression.
 - Normal IPA: 4,747,918 bytes, SHA-256 `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f`. App, Widget and Share report 1.0.0/build16. It is published at the 1.0.0 release.

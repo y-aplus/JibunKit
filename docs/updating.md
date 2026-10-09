@@ -1,6 +1,6 @@
 # Updating the JibunKit foundation
 
-Stable release: 0.8.5/build15. Candidate: 1.0.0/build16, unpublished and awaiting final publication approval. See [status](status.md).
+Stable release: 1.0.0/build16. Candidate: 1.1.0/build17, unpublished. See [status](status.md).
 
 ## Keep downstream notes separate
 

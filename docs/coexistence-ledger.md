@@ -81,6 +81,7 @@ P0は0.7.0、P1は0.8.0で公開済み。2026-09-19にユーザーがP0/P1/P2の
 | D38 | host画面のローカライズ | 未対応 | 一覧・管理・バックアップ・受信等のhost UI文言が日本語固定で、String Catalogを経由しない。他者利用に向けて別枠で対応予定。 |
 | D39 | 集中モードフィルタ | 未調査 | `SetFocusFilterIntent`はアプリ単位。Feature別の表示制御をhostが集約する設計が必要。未実装。 |
 | D40 | iPadハードウェアキーボード・メニューバー | 未調査 | Feature切替のキーボードショートカットとiPadOSメニューバー項目がない。iPad実機の検証自体が不足しており、設計前に実機での現状確認が必要。 |
+| D41 | 端末内の基盤モデル（FoundationModels）の利用枠 | 未調査 | 2026-10-09、Issue #16で評価。session/設定はFeatureが所有し他Featureへ波及しないため共通APIは足さず、[指針](guides/foundation-models.md)を置いた。`rateLimited`の制限単位をAppleは公開しておらず、アプリ単位ならFeature間で枠を共有し、独立アプリより各Featureの枠が減りうる。hostは枠を増やせない。 |
 
 ## 更新規則
 
@@ -108,5 +109,6 @@ P0は0.7.0、P1は0.8.0で公開済み。2026-09-19にユーザーがP0/P1/P2の
 | D29 | 比較実験・設計検証 | 別identityの純Swift SDKの版/設定分離とproduct名変更後のiOS接続は検証済み。同一identityの複数version、C/ObjC/binary、OS/global状態、その他resource形式を次の比較対象として残す。 |
 | D30 | 比較実験 | 汎用backend/HTTPのidentity分離は採用通常範囲で検証済み。任意CloudKit adapterの実round-trip、container/account変更、署名条件は未観測として残す。 |
 | D32 | 仕様確認・比較実験 | 局所的な計算・値変換等は、global状態・登録・外部資源を持たない条件を確認して個別に補完不要を判定する。領域全体を一括免除しない。 |
+| D41 | 仕様確認・比較実験 | rate limitの単位（app/端末/処理種別）。アプリ単位と確認でき、一方のFeatureの利用で他方が拒否される事例が出た時点で、調停の要否を設計検証する。 |
 
 `未対応`の項目にも未確認部分は残る。たとえばD03のhelper extensionの補完範囲、D04のOS上の複数window、D25の監視枠と代替方式は個別の比較実験・設計検証が必要。実装順にこの具体欄と各領域のガイドを更新し、完了した実験を未調査のまま放置しない。

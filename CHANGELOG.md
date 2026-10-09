@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Documents using Apple's on-device language model (FoundationModels) from a Feature: checking availability before each request, keeping sessions in the Feature, tying generation to a screen or the Feature lifetime, and how the error types depend on the Xcode version. JibunKit adds no API for it. The system rate limit may be shared by all Features if it counts the app; this is recorded as unverified.
 - Adds `MiniAppPresentationAnchor` (`miniAppPresentationAnchor(_:)`) for presenting UIKit view controllers from a Feature's scene, and `MiniAppConsentSource` (`miniAppConsentSource(_:)`) for reading the host's consent store from objects created with the definition. `MiniAppCaptureOwner(id:permissions:consent:)` and `MiniAppVisionCaptureAdapter(presentationOwner:anchor:)` accept them, so camera Features no longer copy these parts from the diagnostic probe.
 - Removes the bottom “ミニアプリを切り替え” bar, which covered the bottom of every Feature because its height did not reach Feature content. On a Feature root, tap “ミニアプリ” to return to the list or long-press it to switch Features. Switching from a detail screen now requires going back first; paths left through URLs, notifications, quick actions or Spotlight still resume.
 - A presented document or code scanner now always reports `ended`, including when its capture owner stops it (for example in the background). Previously no callback arrived on that path, so code waiting for the scan never resumed.

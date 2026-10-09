@@ -68,4 +68,6 @@ Include:
 
 The current stable version is 1.0.0. Keep release claims tied to the published tag and its source-specific verification; historical candidate records remain dated evidence.
 
+When a branch's work is merged or abandoned, delete the remote branch. First confirm that its changes are in `main` (including squashed or cherry-picked equivalents), that no open pull request, active worktree, or tracked document link depends on it, and delete the exact reviewed commit with `--force-with-lease`. If a branch holds history that should stay but will not be merged, keep it as a tag and record why. Automatic deletion on merge stays off because some work does not go through pull requests.
+
 Maintainers review design fit, compatibility, isolation between owners, automated evidence, and any necessary device evidence separately. A successful build proves compilation; it does not by itself prove installation, migration, background delivery, radio behavior, or a live Apple service.

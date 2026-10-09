@@ -4,7 +4,7 @@ JibunKit is a native iOS host for combining your own Swift and SwiftUI features 
 
 It is intended for people who own the source of the features they add. JibunKit is not a runtime plug-in loader, an IPA store, or an automatic converter for existing apps.
 
-English is the primary language for current user and contributor documentation. Historical evidence and issue discussions may remain in Japanese when translating them would obscure their original context.
+English is the primary language for current user and contributor documentation. Historical evidence and issue discussions may remain in Japanese when translating them would obscure their original context. Some maintainer process documents, such as the release procedure, CI boundaries, and coexistence ledger, are also kept in Japanese.
 
 ## Release status
 

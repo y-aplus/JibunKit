@@ -4,7 +4,7 @@
 
 Zaikoの試験移植を除き、Feature所有の定義・Root View・保存と通知のContext、共通保存排他、ホストのNavigationStackと通知delegateを統合する。共通基盤の先行実装は許容し、個別アプリの完成を前提にしない。Feature固有の入力検証や通知条件はFeature側が担当する。
 
-Zaikoのソースと専用テストはローカルのignore対象として保持し、PackageとRegistryには登録しない。移植の履歴と実機確認記録は`codex/simplify-mini-app-integration`に保存する。
+Zaikoのソースと専用テストはローカルのignore対象として保持し、PackageとRegistryには登録しない。移植の履歴と実機確認記録は`codex/simplify-mini-app-integration`に保存する。2026-10-09、このbranchと`codex/core-without-zaiko`はtag `zaiko-port-history-20260907`と`core-without-zaiko-20260907`へ置き換えて削除した。同じcommitを指す。
 
 ## 検証
 

@@ -101,7 +101,7 @@ Without a Mac, run the **Compile check** workflow on your branch to find compile
 gh workflow run compile-check.yml --ref <branch>
 ```
 
-It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors are listed in the run summary (`gh run view <id>`). Use the full **Build JibunKit IPA** workflow for tests and an installable IPA.
+It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors appear as annotations in `gh run view <id>` and in `gh run view <id> --log-failed`, so they can be read without a browser. Use the full **Build JibunKit IPA** workflow for tests and an installable IPA.
 
 ## Sign and install
 

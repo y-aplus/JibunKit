@@ -4,7 +4,8 @@ name: Compile check
 # compile the app and its extensions for iOS. No tests run, no IPA is made and
 # nothing is signed, so a pass proves only that the code compiles.
 # Run it from any branch:  gh workflow run compile-check.yml --ref <branch>
-# Compiler errors are listed in the run summary (gh run view <id>).
+# Compiler errors appear as annotations in `gh run view <id>` and in the
+# failed log (`gh run view <id> --log-failed`).
 on:
   workflow_dispatch:
 
@@ -74,5 +75,11 @@ jobs:
             if [[ -n "$errors" ]]; then echo "$errors" | head -100; else tail -60 "$RUNNER_TEMP/build.log"; fi
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-          if [[ -n "$errors" ]]; then echo "$errors" | head -100; else tail -60 "$RUNNER_TEMP/build.log"; fi
+          if [[ -n "$errors" ]]; then
+            echo "$errors" | head -100
+            # Annotations are listed by `gh run view` without opening the log.
+            echo "$errors" | head -10 | sed -E 's/^([^:]+):([0-9]+):([0-9]+): error: (.*)$/::error file=\1,line=\2,col=\3::\4/'
+          else
+            tail -60 "$RUNNER_TEMP/build.log"
+          fi
           exit "$status"

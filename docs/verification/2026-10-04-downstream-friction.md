@@ -7,7 +7,7 @@ Source: [JibunKitHome friction log](https://github.com/y-aplus/JibunKitHome/blob
 | F-015 no steps for moving an existing Xcode app | [mini-apps.md](../mini-apps.md#moving-an-existing-app): table of app-shell responsibilities and where each goes; note that the old app's saved data is not reachable |
 | F-016 Swift 5 code in a Swift 6 host | Same section: per-target `.swiftLanguageMode(.v5)` to separate the move from the concurrency rewrite |
 | F-017 feature packages are built for macOS in CI | [mini-apps.md](../mini-apps.md#your-package-is-also-built-for-macos): why, `#if os(iOS)` versus `ci-test.sh`, and that the platform-condition option is unverified |
-| F-018 model-state navigation and `appendDestination` | [URL routing](../guides/feature-url-routing.md#features-that-navigate-by-model-state): keep it side-effect free and push a feature-owned route value |
+| F-018 model-state navigation and `appendDestination` | [URL routing](../guides/feature-url-routing.md#features-that-navigate-by-model-state): keep it side-effect free and push a feature-owned route value; [return `.root`](../guides/feature-url-routing.md#other-urls-of-your-own-scheme) for the other URLs of the feature's own scheme to open like a standalone app (added for issue #14) |
 | F-019 widget code pulls the whole feature into the extension | [Static widgets](../guides/package-static-widgets.md): separate widget product; where to declare `Widget` when the feature does not depend on JibunKitCore |
 
 ## Critical assessment

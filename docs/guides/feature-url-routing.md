@@ -8,6 +8,22 @@ The host composes URL schemes and universal-link metadata and must detect confli
 
 Implement `MiniAppDefinition.resolveIncomingURL` as a side-effect-free parser that receives the original Foundation `URL` and returns `.root`, `.detail(String)`, or `nil`. The host asks every feature and routes only a single match into the navigation path of the scene that received the URL. The feature validates identifier syntax and existence in `appendDestination`. A rejected or ambiguous URL leaves the current screen unchanged; never prefer registration order. Reserved `jibunkit://` URLs use only the host's strict resolver and are not reinterpreted by features.
 
+### Other URLs of your own scheme
+
+A standalone app opens for any URL of its scheme. In JibunKit, a URL for which every feature returns `nil` opens nothing, and the current screen, often the feature list, stays. To keep the standalone behavior, return `.root` for the URLs of your scheme that are not routes, such as `mynotes://` alone or a path an older version used:
+
+```swift
+resolveIncomingURL: { url in
+    guard url.scheme?.lowercased() == "mynotes" else { return nil }
+    if url.host == "note", let identifier = url.pathComponents.dropFirst().first {
+        return .detail(identifier)
+    }
+    return .root
+}
+```
+
+Do this only when no other feature accepts URLs of the same scheme. Otherwise both features match and the host rejects the URL as ambiguous.
+
 Custom schemes belong in the app target's `CFBundleURLTypes`; universal links require Associated Domains and the matching website association. Compose those through the feature build requirements, preserve the host declaration when resolving a conflict, and do not copy app-only schemes into widgets. This resolver handles address delivery only: web-auth completion, security-scoped files, generic action callbacks, `UIOpenURLContext` options, and OS multi-window selection use their dedicated boundaries.
 
 ### Features that navigate by model state
@@ -65,7 +81,7 @@ MiniAppDefinition(
 ) { context in NotesRootView(context: context) }
 ```
 
-例のstore/NoteDestination/NotesRootViewはFeature自身の型。識別子の形式と存在確認はFeatureが行う。resolverは解析・検証だけを行い、保存変更、認証完了、削除、画面遷移等の副作用を起こさない。複数候補を調べるため、受理しないFeatureにもURLは渡る。これは協調するFeature間の配送契約であり、同一process内の機密境界ではない。
+例のstore/NoteDestination/NotesRootViewはFeature自身の型。識別子の形式と存在確認はFeatureが行う。resolverは解析・検証だけを行い、保存変更、認証完了、削除、画面遷移等の副作用を起こさない。複数候補を調べるため、受理しないFeatureにもURLは渡る。これは協調するFeature間の配送契約であり、同一process内の機密境界ではない。この例は`mynotes://`単体などにnilを返すため、hostは画面を変えない。scheme全体で単独アプリと同じく開く場合は、上の「Other URLs of your own scheme」に従う。
 
 同じscheme/domainを複数Featureが共有し、pathなどで区別してよい。複数Featureが同じURLを受理すると`ambiguousOwners`で拒否し、登録順で優先しない。未知URL、曖昧URL、Featureが受理できないdetailは現在の画面を維持する。他Featureの経路は上書きしない。host予約の`jibunkit://`は既存の厳密な解決だけを使い、不正な予約URLをFeatureに再解釈させない。
 

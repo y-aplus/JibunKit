@@ -124,16 +124,30 @@ The host adds only the leading “ミニアプリ” button on the feature root;
 
 ## 6. Validate the integration
 
-Run the smallest checks that prove each boundary:
+Run the smallest checks that prove each boundary. These work on any platform with Python 3:
+
+```bash
+python3 Tools/jibunkit-feature.py sync --check
+python3 Tools/jibunkit-feature.py check Modules/Notes
+```
+
+The first confirms that the connection files are current; the second reports code that would change other features' state ([details](#moving-an-existing-app)).
+
+To compile without a Mac, push the branch and run the **Compile check** workflow; compiler errors appear in `gh run view <id>` ([build guide](build.md#compile-check-in-actions)):
+
+```bash
+gh workflow run compile-check.yml --ref <branch>
+```
+
+On macOS:
 
 ```bash
 swift test --package-path Modules/Notes
-python3 Tools/jibunkit-feature.py sync --check
 tuist generate --no-open
 tuist build JibunKit-App
 ```
 
-The Tuist commands require macOS. The package-specific test may run on Linux/WSL only if that feature's dependencies are portable; the repository-root `swift test` currently does not. A WSL installation that already has a compatible Darwin Swift SDK may additionally perform an iOS compile-only check, but that is not an IPA build or a generally installed prerequisite; see the build guide.
+The package-specific test may run on Linux/WSL only if that feature's dependencies are portable; the repository-root `swift test` currently does not. A WSL installation that already has a compatible Darwin Swift SDK may additionally perform an iOS compile-only check, but that is not an IPA build or a generally installed prerequisite; see the build guide. A compile check does not run tests or produce an IPA; use the **Build JibunKit IPA** workflow for those.
 
 Also verify:
 

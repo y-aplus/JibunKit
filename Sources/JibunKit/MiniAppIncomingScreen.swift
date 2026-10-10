@@ -29,39 +29,39 @@ struct MiniAppIncomingScreen: View {
         NavigationStack {
             List {
                 if navigation.isPreparingIncoming {
-                    ProgressView("ファイルを読み込んでいます")
-                    Button("読み込みをキャンセル") { navigation.discardPreparedIncoming() }
+                    ProgressView("Loading the file")
+                    Button("Cancel Loading") { navigation.discardPreparedIncoming() }
                 }
                 if let error = navigation.incomingError { Text(error).foregroundStyle(.red) }
                 if let message { Text(message).accessibilityIdentifier("incoming.message") }
                 if let prepared = navigation.preparedIncoming {
-                    Section("受信先を選択（\(prepared.inputs.count)件）") {
-                        if destinations.isEmpty { Text("この入力を受け取れる有効なミニアプリがありません。") }
+                    Section("Choose a Destination (\(prepared.inputs.count))") {
+                        if destinations.isEmpty { Text("No enabled mini app can receive this input.") }
                         ForEach(destinations) { definition in
                             Button(definition.title) { savePrepared(for: definition.id) }
                                 .accessibilityIdentifier("incoming.destination.\(definition.id.rawValue)")
                                 .disabled(operation != nil)
                         }
-                        Button("この受信をキャンセル", role: .cancel) { navigation.discardPreparedIncoming() }
+                        Button("Cancel Receiving", role: .cancel) { navigation.discardPreparedIncoming() }
                             .disabled(operation != nil)
                     }
                 }
-                Section("未取込み") {
-                    if rows.isEmpty { Text("未取込みの共有データはありません。") }
+                Section("Not Imported") {
+                    if rows.isEmpty { Text("No shared data is waiting to be imported.") }
                     ForEach(rows) { row in
                         VStack(alignment: .leading, spacing: 8) {
                             Text(MiniAppRegistry.all.first(where: { $0.id == row.owner })?.title ?? row.owner.rawValue)
                                 .font(.headline)
                             if let receipt = row.receipt {
-                                Text(receipt.items.map(\.displayName).joined(separator: "、"))
+                                Text(receipt.items.map(\.displayName).formatted(.list(type: .and)))
                                 Text(receipt.createdAt, style: .date).font(.caption)
                                 if MiniAppRegistry.management.isEnabled(row.owner),
                                    MiniAppRegistry.definition(for: row.owner)?.incoming != nil {
-                                    Button("取り込む / 再試行") { deliver(row) }
+                                    Button("Import / Retry") { deliver(row) }
                                         .accessibilityIdentifier("incoming.apply.\(row.owner.rawValue)")
-                                } else { Text("受信先が無効、またはこの版に登録されていません。データは保持されています。") }
-                            } else { Text("受信データを読み取れません。破損した項目を破棄することはできます。") }
-                            Button("破棄", role: .destructive) { discardTarget = row }
+                                } else { Text("The destination is disabled or not registered in this version. The data is kept.") }
+                            } else { Text("Can’t read the received data. You can discard the damaged item.") }
+                            Button("Discard", role: .destructive) { discardTarget = row }
                                 .accessibilityIdentifier("incoming.discard.\(row.owner.rawValue)")
                         }
                         // Each action belongs to its own control. List's automatic
@@ -71,23 +71,23 @@ struct MiniAppIncomingScreen: View {
                     }
                 }
             }
-            .navigationTitle("受信")
+            .navigationTitle("Inbox")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("閉じる") { dismiss() }.disabled(operation != nil || navigation.preparedIncoming != nil || navigation.isPreparingIncoming)
+                    Button("Close") { dismiss() }.disabled(operation != nil || navigation.preparedIncoming != nil || navigation.isPreparingIncoming)
                 }
                 if operation != nil {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("処理をキャンセル") { operation?.cancel() }
+                        Button("Cancel Operation") { operation?.cancel() }
                     }
                 }
             }
-            .alert("この未取込みデータを破棄しますか？", isPresented: Binding(
+            .alert("Discard this unimported data?", isPresented: Binding(
                 get: { discardTarget != nil }, set: { if !$0 { discardTarget = nil } }
             ), presenting: discardTarget) { target in
-                Button("破棄する", role: .destructive) { discard(target) }
-                Button("キャンセル", role: .cancel) { discardTarget = nil }
-            } message: { _ in Text("取り込まれたミニアプリのデータや、他の受信は変更しません。") }
+                Button("Discard Data", role: .destructive) { discard(target) }
+                Button("Cancel", role: .cancel) { discardTarget = nil }
+            } message: { _ in Text("Imported mini app data and other received items aren’t changed.") }
             .task { await reload() }
             .refreshable { await reload() }
             .onChange(of: scenePhase) { _, phase in if phase == .active { Task { await reload() } } }
@@ -111,8 +111,11 @@ struct MiniAppIncomingScreen: View {
                 listing.receipts.map { Row(id: $0.id, owner: owner, receipt: $0) }
                     + listing.unreadableIDs.map { Row(id: $0, owner: owner, receipt: nil) }
             }
-            if let error = MiniAppRegistry.incomingCatalogError { message = "受信先の更新に失敗しました: \(error)" }
-            if !failures.isEmpty { message = "一部の受信先を読み取れません: " + failures.joined(separator: "、") }
+            if let error = MiniAppRegistry.incomingCatalogError { message = String(localized: "Updating the destinations failed: \(error)") }
+            if !failures.isEmpty {
+                let list = failures.formatted(.list(type: .and))
+                message = String(localized: "Some destinations can’t be read: \(list)")
+            }
         } catch { message = error.localizedDescription }
     }
 
@@ -126,9 +129,9 @@ struct MiniAppIncomingScreen: View {
                 let task = Task.detached { try inbox.enqueue(for: owner, inputs: prepared.inputs) }
                 _ = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
                 navigation.discardPreparedIncoming()
-                message = "受信を保存しました。対象の「取り込む / 再試行」から取り込めます。"
+                message = String(localized: "Saved. Import it with “Import / Retry” on its item.")
                 await reload()
-            } catch is CancellationError { message = "キャンセルしました。受信先は変更していません。" }
+            } catch is CancellationError { message = String(localized: "Canceled. The destination wasn’t changed.") }
             catch { message = error.localizedDescription }
         }
     }
@@ -141,9 +144,12 @@ struct MiniAppIncomingScreen: View {
                 guard MiniAppRegistry.management.isEnabled(row.owner) else { throw MiniAppIncomingError.unavailableOwner(row.owner.rawValue) }
                 try await MiniAppIncomingDelivery.shared.deliver(id: row.id, provider: provider,
                     lifetime: definition.lifetime, inbox: MiniAppRegistry.incomingStore.get())
-                message = "取り込みました。"
-            } catch is CancellationError { message = "キャンセルしました。未完了の受信は保持しています。" }
-            catch { message = "取り込みに失敗しました。受信を保持しています: \(error.localizedDescription)" }
+                message = String(localized: "Imported.")
+            } catch is CancellationError { message = String(localized: "Canceled. The unfinished item is kept.") }
+            catch {
+                let reason = error.localizedDescription
+                message = String(localized: "Import failed. The item is kept: \(reason)")
+            }
             await reload()
         }
     }
@@ -155,7 +161,7 @@ struct MiniAppIncomingScreen: View {
             do {
                 let inbox = try MiniAppRegistry.incomingStore.get()
                 try await MiniAppIncomingDelivery.shared.discard(id: row.id, owner: row.owner, inbox: inbox)
-                message = "未取込みデータを破棄しました。"
+                message = String(localized: "Discarded the unimported data.")
             } catch { message = error.localizedDescription }
             await reload()
         }

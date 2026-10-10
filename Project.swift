@@ -72,7 +72,7 @@ if let actionBuild {
         bundleId: "com.jibunkit.app.Action", deploymentTargets: .iOS("26.0"),
         infoPlist: .extendingDefault(with: actionBuild.infoPlist),
         sources: ["Sources/JibunKitAction/**", "Sources/JibunKitIncomingExtensionUI/**"],
-        resources: ["GeneratedFeatureResources/Action/**"],
+        resources: ["GeneratedFeatureResources/Action/**", "Sources/JibunKitIncomingExtensionUI/Resources/**"],
         entitlements: .dictionary(actionBuild.entitlements),
         dependencies: [.package(product: "JibunKitCore")],
         settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
@@ -152,6 +152,7 @@ let project = Project(
             bundleId: "com.jibunkit.backup-harness", deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: ["UILaunchScreen": [:]]),
             sources: ["Tests/BackupHarness/**", "Sources/JibunKit/BackupScreen.swift", "Sources/JibunKit/BackupDocument.swift"],
+            resources: ["Sources/JibunKit/Resources/*.lproj/**"],
             dependencies: [.package(product: "JibunKitCore"), .package(product: "JibunKitBackup"), .package(product: "CounterFeature"), .package(product: "ReminderFeature")]
         ),
         .target(
@@ -193,6 +194,7 @@ let project = Project(
                 ],
             ]),
             sources: ["Sources/JibunKitShare/**", "Sources/JibunKitIncomingExtensionUI/**"],
+            resources: ["Sources/JibunKitIncomingExtensionUI/Resources/**"],
             entitlements: .dictionary(sharedEntitlements),
             dependencies: [.package(product: "JibunKitCore")],
             settings: .settings(base: ["APPLICATION_EXTENSION_API_ONLY": "YES"])
@@ -228,5 +230,8 @@ let project = Project(
         .scheme(name: "MigrationUITests", shared: true,
                 buildAction: .buildAction(targets: ["JibunKit-App"]),
                 testAction: .targets(["MigrationUITests"], configuration: .debug)),
-    ]
+    ],
+    // Code reads strings and assets through SwiftUI and String(localized:).
+    // Generated accessors would also turn English keys into Swift names.
+    resourceSynthesizers: []
 )

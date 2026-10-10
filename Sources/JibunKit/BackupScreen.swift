@@ -39,14 +39,14 @@ struct BackupScreen: View {
                 exportSection
                 restoreSection
 
-                if busy { ProgressView("処理中…") }
+                if busy { ProgressView("Working…") }
                 if let status { Section { Text(status).accessibilityIdentifier("backup.status") } }
             }
             .disabled(busy)
-            .navigationTitle("バックアップと復元")
+            .navigationTitle("Backup and Restore")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("閉じる") { dismiss() }.disabled(busy)
+                    Button("Close") { dismiss() }.disabled(busy)
                 }
             }
             .interactiveDismissDisabled(busy)
@@ -64,7 +64,7 @@ struct BackupScreen: View {
                     #if DEBUG
                     Self.importLogger.error("completion failure type=\(String(reflecting: type(of: error)), privacy: .public)")
                     #endif
-                    status = "ファイルを読み込めませんでした。保存データは変更していません。"
+                    status = String(localized: "Couldn’t read the file. Saved data was not changed.")
                 }
             }
             .onChange(of: importing) { _, presented in
@@ -84,12 +84,11 @@ struct BackupScreen: View {
                           defaultFilename: exportFilename, onCompletion: exportCompleted,
                           onCancellation: { archive = nil })
             }
-            .alert("現在のデータを置き換えますか？", isPresented: $confirming) {
-                Button("キャンセル", role: .cancel) { pending = nil }
-                Button("置き換えて復元", role: .destructive) { restore() }
+            .alert("Replace the current data?", isPresented: $confirming) {
+                Button("Cancel", role: .cancel) { pending = nil }
+                Button("Replace and Restore", role: .destructive) { restore() }
             } message: {
-                Text((pending?.ids.map(title).joined(separator: "、") ?? "") +
-                     "をバックアップの内容に戻します。実行中に失敗すると、一部だけ復元される場合があります。")
+                Text("\(names(pending?.ids ?? [])) will be returned to the backup’s contents. If restoring fails partway, only part of the data may be restored.")
             }
         }
     }
@@ -101,19 +100,19 @@ struct BackupScreen: View {
                     Toggle(definition.title, isOn: selection(definition.id, in: $exportIDs))
                         .accessibilityIdentifier("backup.export.\(definition.id.rawValue)")
                 } else {
-                    LabeledContent(definition.title, value: "バックアップ未対応")
+                    LabeledContent(definition.title, value: String(localized: "Backup not supported"))
                 }
             }
-            Button("選択したアプリを書き出す") { exportSelected() }
+            Button("Export Selected Apps") { exportSelected() }
                 .disabled(exportIDs.isEmpty)
                 .accessibilityIdentifier("backup.export")
-        } header: { Text("バックアップ") }
-        footer: { Text("選んだアプリのデータをファイルに保存します。ファイルは暗号化されません。") }
+        } header: { Text("Backup") }
+        footer: { Text("Saves the selected apps’ data to a file. The file isn’t encrypted.") }
     }
 
     private var restoreSection: some View {
         Section {
-            Button("バックアップを読み込む") {
+            Button("Load Backup") {
                 imported = nil
                 restoreIDs = []
                 pending = nil
@@ -125,16 +124,16 @@ struct BackupScreen: View {
             }
             .accessibilityIdentifier("backup.import")
             if let imported {
-                LabeledContent("作成日時", value: imported.createdAt.formatted(date: .abbreviated, time: .shortened))
+                LabeledContent("Created", value: imported.createdAt.formatted(date: .abbreviated, time: .shortened))
                 ForEach(imported.entries, id: \.id) { entry in
                     restoreRow(entry)
                 }
-                Button("選択したアプリを復元") { prepareRestore(imported) }
+                Button("Restore Selected Apps") { prepareRestore(imported) }
                     .disabled(restoreIDs.isEmpty)
                     .accessibilityIdentifier("backup.restore")
             }
-        } header: { Text("復元") }
-        footer: { Text("選んだアプリの現在のデータを置き換えます。選ばなかったアプリは変更しません。") }
+        } header: { Text("Restore") }
+        footer: { Text("Replaces the current data of the selected apps. Apps you don’t select aren’t changed.") }
     }
 
     @ViewBuilder
@@ -143,7 +142,7 @@ struct BackupScreen: View {
             Toggle(definition.title, isOn: selection(entry.id, in: $restoreIDs))
                 .accessibilityIdentifier("backup.restore.\(entry.id.rawValue)")
         } else {
-            LabeledContent(title(entry.id), value: "この構成では復元できません")
+            LabeledContent(title(entry.id), value: String(localized: "Can’t be restored in this configuration"))
         }
     }
 
@@ -157,9 +156,9 @@ struct BackupScreen: View {
 
     private func exportCompleted(_ result: Result<URL, Error>) {
         switch result {
-        case .success: status = "バックアップを書き出しました。"
+        case .success: status = String(localized: "Backup exported.")
         case .failure(let error):
-            if (error as NSError).code != NSUserCancelledError { status = "書き出せませんでした。" }
+            if (error as NSError).code != NSUserCancelledError { status = String(localized: "Couldn’t export.") }
         }
         document = nil
         archive = nil
@@ -167,6 +166,10 @@ struct BackupScreen: View {
 
     private func title(_ id: MiniAppID) -> String {
         definitions.first { $0.id == id }?.title ?? id.rawValue
+    }
+
+    private func names(_ ids: some Sequence<MiniAppID>) -> String {
+        ids.map(title).formatted(.list(type: .and))
     }
 
     private func selection(_ id: MiniAppID, in values: Binding<Set<MiniAppID>>) -> Binding<Bool> {
@@ -208,8 +211,8 @@ struct BackupScreen: View {
                     exportingArchive = true
                 }
             } catch is MiniAppRestoreCoordinator.Conflict {
-                status = "選択したアプリはデータを使用中です。処理が完了してからもう一度お試しください。ファイルは書き出していません。"
-            } catch { status = "バックアップを作成できませんでした。ファイルは書き出していません。" }
+                status = String(localized: "The selected apps are using their data. Try again when they finish. No file was exported.")
+            } catch { status = String(localized: "Couldn’t create the backup. No file was exported.") }
         }
     }
 
@@ -229,12 +232,12 @@ struct BackupScreen: View {
                 #if DEBUG
                 Self.importLogger.info("load success entries=\(imported?.entries.count ?? 0, privacy: .public)")
                 #endif
-                status = "復元するアプリを選んでください。まだ保存データは変更していません。"
+                status = String(localized: "Choose the apps to restore. Saved data hasn’t been changed yet.")
             } catch {
                 #if DEBUG
                 Self.importLogger.error("load failure type=\(String(reflecting: type(of: error)), privacy: .public)")
                 #endif
-                status = "対応するバックアップを読み込めませんでした。保存データは変更していません。"
+                status = String(localized: "Couldn’t read a supported backup. Saved data was not changed.")
             }
         }
     }
@@ -256,7 +259,7 @@ struct BackupScreen: View {
                     try backup.prepareRestore(selected: selected, providers: available, fileProviders: availableFiles)
                 }.value
                 confirming = true
-            } catch { status = "選んだデータを復元できません。内容や対応する版を確認してください。保存データは変更していません。" }
+            } catch { status = String(localized: "Can’t restore the selected data. Check its contents and version. Saved data was not changed.") }
         }
     }
 
@@ -271,33 +274,34 @@ struct BackupScreen: View {
                     lifecycleForDefinition(definition).map { (definition.id, $0) }
                 })
                 try await plan.apply(lifecycles: lifecycles)
-                status = plan.ids.map(title).joined(separator: "、") + "を復元しました。"
+                status = String(localized: "Restored \(names(plan.ids)).")
                 imported = nil
                 restoreIDs = []
             } catch is CancellationError {
-                status = "復元の開始前に中止しました。保存データは変更していません。"
+                status = String(localized: "Stopped before restoring began. Saved data was not changed.")
             } catch let error as MiniAppRestoreCoordinator.Conflict {
-                let names = error.owners.sorted { $0.rawValue < $1.rawValue }.map(title).joined(separator: "、")
-                status = "\(names)はデータを使用中です。処理が完了してからもう一度選択してください。今回の復元では保存データを変更していません。"
+                let busy = names(error.owners.sorted { $0.rawValue < $1.rawValue })
+                status = String(localized: "\(busy) are using their data. Choose again when they finish. This restore didn’t change saved data.")
             } catch let error as MiniAppRestoreFailure {
-                let completed = error.completed.map(title).joined(separator: "、")
+                let completed = error.completed.isEmpty ? String(localized: "None") : names(error.completed)
                 let detail: String
                 switch error.stage {
                 case .cancelledBeforeStart:
-                    detail = "このアプリの復元を始める前に中止しました。このアプリの保存データは変更していません。"
+                    detail = String(localized: "Stopped before restoring this app. Its saved data was not changed.")
                 case .stop:
-                    detail = "実行中の処理を停止できなかったため、このアプリの保存データは復元していません。"
+                    detail = String(localized: "Its running work couldn’t be stopped, so its saved data was not restored.")
                 case .stopAndRecovery:
-                    detail = "保存データは復元していません。このアプリの停止に失敗し、利用できる状態へ戻すこともできませんでした。"
+                    detail = String(localized: "Saved data was not restored. Stopping this app failed, and it couldn’t be returned to a usable state.")
                 case .apply:
-                    detail = "保存データの復元に失敗しました。一部が変更されている可能性があります。"
+                    detail = String(localized: "Restoring saved data failed. Some of it may have changed.")
                 case .resume:
-                    detail = "保存データは復元しましたが、このアプリの再開に失敗しました。"
+                    detail = String(localized: "Saved data was restored, but resuming this app failed.")
                 case .applyAndResume:
-                    detail = "保存データの復元と、このアプリの再開に失敗しました。一部のデータが変更されている可能性があります。"
+                    detail = String(localized: "Restoring saved data and resuming this app both failed. Some data may have changed.")
                 }
-                status = "復元を中断しました。完了済み: \(completed.isEmpty ? "なし" : completed)。\(title(error.failed)): \(detail) このアプリの状態を確認してください。後続のアプリは変更していません。"
-            } catch { status = "復元に失敗しました。アプリの状態を確認してください。" }
+                let failed = title(error.failed)
+                status = String(localized: "Restore stopped. Completed: \(completed). \(failed): \(detail) Check this app’s state. Later apps were not changed.")
+            } catch { status = String(localized: "Restore failed. Check the apps’ state.") }
         }
     }
 }

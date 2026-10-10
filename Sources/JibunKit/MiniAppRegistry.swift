@@ -134,7 +134,7 @@ enum MiniAppRegistry {
         let owner = definition.id
         let original = definition.removal
         return MiniAppRemovalProvider(id: owner,
-            dataDescription: [original?.dataDescription, "未取込みの共有データ"].compactMap { $0 }.joined(separator: "、")) {
+            dataDescription: [original?.dataDescription, String(localized: "Unimported shared data")].compactMap { $0 }.formatted(.list(type: .and))) {
                 try await original?.removeData()
                 let inbox = try store.get()
                 try await Task.detached { try inbox.removeOwnedData(for: owner) }.value

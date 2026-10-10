@@ -9,7 +9,7 @@ public final class MiniAppExternalIdentityFeature {
     public let lifetime: MiniAppFeatureLifetime
     public lazy var removal = MiniAppRemovalProvider(
         id: id,
-        dataDescription: "このFeatureが所有する外部account data",
+        dataDescription: String(localized: "External account data owned by this Feature", bundle: .module),
         removeData: { [coordinator] in try await coordinator.removeOwnedData() }
     )
     public lazy var externalAccess = MiniAppExternalAccess(

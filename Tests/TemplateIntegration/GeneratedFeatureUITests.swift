@@ -415,7 +415,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             for owner in ["lifecycle-b", "lifecycle-a"] {
                 tap("miniapp.\(owner)")
                 tap("lifecycle.task.start")
-                if owner == "lifecycle-b" { app.navigationBars.buttons["ミニアプリ"].tap() }
+                if owner == "lifecycle-b" { app.buttons["miniapp.back-to-list"].tap() }
             }
             tap("runtime.restore.open")
             let selection = app.switches["backup.restore.lifecycle-a"]
@@ -435,7 +435,7 @@ final class GeneratedFeatureUITests: XCTestCase {
                 XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label, "running")
                 tap("lifecycle.task.complete")
             }
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
             tap("miniapp.lifecycle-b")
             XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
             XCTAssertEqual(app.staticTexts["lifecycle.task.status"].label, "running")
@@ -474,7 +474,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             tap("miniapp.\(owner)")
             tap("store.access.start")
             status("running")
-            if owner == "lifecycle-b" { app.navigationBars.buttons["ミニアプリ"].tap() }
+            if owner == "lifecycle-b" { app.buttons["miniapp.back-to-list"].tap() }
         }
         restore()
         let conflict = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "lifecycle-aはデータを使用中です。")).firstMatch
@@ -494,7 +494,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         status("running")
         tap("store.access.finish")
         status("completed")
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-b")
         status("running")
         XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
@@ -524,7 +524,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             tap("miniapp.\(owner)")
             tap("lifecycle.task.start")
             status("running")
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
         }
         tap("miniapp.lifecycle-a")
         tap("runtime.restore.open")
@@ -541,7 +541,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         status("running")
         tap("lifecycle.task.complete")
         status("completed")
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-b")
         status("running")
         XCTAssertEqual(app.staticTexts["runtime.restored.value"].label, "original")
@@ -572,7 +572,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         }
         func backToList() {
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
         }
         for owner in ["lifecycle-a", "lifecycle-b"] {
             open(owner)
@@ -713,7 +713,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         let allow = springboard.buttons.matching(NSPredicate(format: "label IN %@", ["許可", "Allow"])).firstMatch
         if allow.waitForExistence(timeout: 3) { allow.tap() }
         XCTAssertTrue(app.staticTexts["scheduled"].waitForExistence(timeout: 5))
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-b")
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(app.wait(for: .runningBackground, timeout: 10))
@@ -751,7 +751,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.activate()
         XCTAssertTrue(app.navigationBars["lifecycle-b"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertEqual(app.staticTexts["notification.action.result"].label, "none")
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-a")
         let result = app.staticTexts.matching(identifier: "notification.action.result")
             .matching(NSPredicate(format: "label == %@", "same-action")).firstMatch
@@ -786,7 +786,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             // Do not leave B's list notification to group with the later action probe.
             tap("notification.clear")
             XCTAssertTrue(app.staticTexts["cleared"].waitForExistence(timeout: 5))
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
         }
         tap("miniapp.lifecycle-a")
         count("1")
@@ -817,7 +817,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         expect([a, b])
         tap("notification.replace")
         expect([updated, b])
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-b")
         tap("notification.read")
         expect([updated, b])
@@ -851,12 +851,12 @@ final class GeneratedFeatureUITests: XCTestCase {
             tap("miniapp.\(id)")
             tap("lifecycle.task.start")
             status("running")
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
         }
         tap("miniapp.lifecycle-a")
         tap("lifecycle.task.cancel")
         status("cancelled")
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         tap("miniapp.lifecycle-b")
         status("running")
         tap("lifecycle.task.complete")
@@ -885,7 +885,7 @@ final class GeneratedFeatureUITests: XCTestCase {
             XCTAssertTrue(phases.contains("background"))
             XCTAssertGreaterThanOrEqual(phases.filter { $0 == "active" }.count, 2)
             observed.append(events.label)
-            app.navigationBars.buttons["ミニアプリ"].tap()
+            app.buttons["miniapp.back-to-list"].tap()
         }
         XCTAssertEqual(observed.first, observed.last)
     }
@@ -932,7 +932,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         tap(app.buttons["miniapp.counter"], launcherRow: true)
         XCTAssertTrue(app.staticTexts["counter.value"].waitForExistence(timeout: 10), app.debugDescription)
         let counterValue = app.staticTexts["counter.value"].label
-        tap(app.navigationBars.buttons["ミニアプリ"])
+        tap(app.buttons["miniapp.back-to-list"])
         tap(app.buttons["miniapp.records"], launcherRow: true)
         tap(app.buttons["records.add"])
         let title = "Hosted-" + UUID().uuidString.prefix(8)
@@ -952,7 +952,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["records.body"].waitForExistence(timeout: 10))
         XCTAssertEqual(app.staticTexts["records.body"].label, "Host record")
         tap(app.navigationBars.buttons["記録"])
-        tap(app.navigationBars.buttons["ミニアプリ"])
+        tap(app.buttons["miniapp.back-to-list"])
         let counterRow = app.buttons["miniapp.counter"]
         revealLauncherRow(counterRow, in: app)
         // The blank trailing part of a launcher row is also a selection target.
@@ -983,7 +983,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         revealLauncherRow(notes, in: app)
         notes.tap()
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 5))
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         let counter = app.buttons["miniapp.counter"]
         revealLauncherRow(counter, in: app)
         XCTAssertTrue(counter.exists, app.debugDescription)
@@ -992,7 +992,7 @@ final class GeneratedFeatureUITests: XCTestCase {
         XCUIDevice.shared.system.open(try XCTUnwrap(URL(string: "jibunkit://mini-app/notes")))
         XCTAssertTrue(app.staticTexts["Notes"].firstMatch.waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["counter.value"].exists)
-        app.navigationBars.buttons["ミニアプリ"].tap()
+        app.buttons["miniapp.back-to-list"].tap()
         revealLauncherRow(notes, in: app)
         XCTAssertTrue(notes.exists, app.debugDescription)
     }

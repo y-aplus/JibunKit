@@ -133,7 +133,7 @@ final class AppNavigation {
 
     func receiveExternalFile(_ url: URL) {
         guard incomingTask == nil, preparedIncoming == nil else {
-            incomingError = "先に現在の受信を保存またはキャンセルしてから、もう一度ファイルを開いてください。"
+            incomingError = String(localized: "Save or cancel the current item first, then open the file again.")
             requestHostSheet(.incoming)
             return
         }

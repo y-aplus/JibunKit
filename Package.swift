@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "JibunKit",
+    defaultLocalization: "en",
     platforms: [
         .iOS("26.0"),
         // Foundation-only tests run on the macOS CI host (Date.now: macOS 12).
@@ -44,7 +45,8 @@ let package = Package(
                 exclude: ["AppShortcuts.swift.fragment"]),
         .target(name: "ReminderIntegration", dependencies: ["ReminderFeature", "JibunKitCore"]),
         .target(
-            name: "JibunKitCore"
+            name: "JibunKitCore",
+            resources: [.process("Resources")]
         ),
         .target(
             name: "CounterFeature",

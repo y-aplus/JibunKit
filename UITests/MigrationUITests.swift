@@ -21,7 +21,7 @@ final class MigrationUITests: XCTestCase {
     }
 
     private func returnToList() {
-        tap(app.navigationBars.buttons["ミニアプリ"])
+        tap(app.buttons["miniapp.back-to-list"])
         XCTAssertTrue(app.buttons["miniapp.counter"].waitForExistence(timeout: 5))
     }
 

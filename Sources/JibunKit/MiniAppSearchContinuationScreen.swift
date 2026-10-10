@@ -18,11 +18,11 @@ struct MiniAppSearchContinuationScreen: View {
                     .accessibilityIdentifier("search-continuation.\(route.id.rawValue)")
                 }
             }
-            .navigationTitle("「\(navigation.searchContinuation?.query ?? "")」を検索")
+            .navigationTitle("Search for “\(navigation.searchContinuation?.query ?? "")”")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("キャンセル") { dismiss() }
+                    Button("Cancel") { dismiss() }
                 }
             }
         }

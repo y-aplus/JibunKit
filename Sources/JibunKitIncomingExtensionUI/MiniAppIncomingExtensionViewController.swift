@@ -9,8 +9,18 @@ struct MiniAppIncomingExtensionPresentation: Equatable, Sendable {
     let explanation: String
     let accessibilityPrefix: String
 
-    static let share = Self(navigationTitle: "JibunKitへ共有", destinationTitle: "受信先を選択", emptyMessage: "この入力を受け取れるミニアプリがありません。JibunKitで受信先を登録・有効化してから共有してください。", explanation: "共有データを保存します。JibunKitを開き、「受信」から取り込めます。", accessibilityPrefix: "share")
-    static let action = Self(navigationTitle: "JibunKitに保存", destinationTitle: "保存先を選択", emptyMessage: "この入力を保存できるミニアプリがありません。JibunKitで受信先を登録・有効化してからもう一度実行してください。", explanation: "入力のコピーをJibunKitの受信箱へ保存します。元の内容は変更せず、Action Extensionから出力項目は返しません。", accessibilityPrefix: "action")
+    static let share = Self(
+        navigationTitle: String(localized: "Share to JibunKit"),
+        destinationTitle: String(localized: "Choose a Destination"),
+        emptyMessage: String(localized: "No mini app can receive this input. Register and enable a destination in JibunKit, then share again."),
+        explanation: String(localized: "Saves the shared data. Open JibunKit and import it from Inbox."),
+        accessibilityPrefix: "share")
+    static let action = Self(
+        navigationTitle: String(localized: "Save to JibunKit"),
+        destinationTitle: String(localized: "Choose Where to Save"),
+        emptyMessage: String(localized: "No mini app can save this input. Register and enable a destination in JibunKit, then try again."),
+        explanation: String(localized: "Saves a copy of the input to JibunKit’s inbox. The original isn’t changed, and the action returns no output items."),
+        accessibilityPrefix: "action")
 }
 
 @MainActor
@@ -50,10 +60,10 @@ private struct MiniAppIncomingScreen: View {
     var body: some View {
         NavigationStack {
             List {
-                if job != nil { ProgressView("処理しています") }
+                if job != nil { ProgressView("Working") }
                 if let errorMessage { Text(errorMessage).foregroundStyle(.red).accessibilityIdentifier("\(presentation.accessibilityPrefix).error") }
                 if let prepared {
-                    Section("\(presentation.destinationTitle)（\(prepared.inputs.count)件）") {
+                    Section("\(presentation.destinationTitle) (\(prepared.inputs.count))") {
                         ForEach(destinations) { destination in
                             Button(destination.title) { save(to: destination) }
                                 .disabled(job != nil || ending)
@@ -65,7 +75,7 @@ private struct MiniAppIncomingScreen: View {
                 }
             }
             .navigationTitle(presentation.navigationTitle)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("キャンセル") { cancel() }.disabled(ending) } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { cancel() }.disabled(ending) } }
         }
         .onAppear { load() }
         .onDisappear { job?.cancel() }
@@ -118,7 +128,10 @@ private struct MiniAppIncomingScreen: View {
                 // This is a save-only action: no transformed output item is produced.
                 context.completeRequest(returningItems: [])
             } catch is CancellationError { }
-            catch { errorMessage = "保存できませんでした。\(error.localizedDescription)" }
+            catch {
+                let reason = error.localizedDescription
+                errorMessage = String(localized: "Couldn’t save. \(reason)")
+            }
         }
     }
 

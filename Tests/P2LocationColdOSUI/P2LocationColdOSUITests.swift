@@ -27,7 +27,7 @@ final class P2LocationColdOSUITests: XCTestCase {
         tap(app.buttons["management.open"])
         let consent = app.buttons["management.consent.p2-location-regions.location"]
         for _ in 0..<20 where !consent.isHittable { app.swipeUp() }
-        tap(consent); tap(app.buttons["許可"]); tap(app.buttons["閉じる"])
+        tap(consent); tap(app.buttons["Allow"]); tap(app.buttons["Close"])
 
         XCUIDevice.shared.location = XCUILocation(location: outside)
         XCUIDevice.shared.system.open(try XCTUnwrap(

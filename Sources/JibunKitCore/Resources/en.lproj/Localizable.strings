@@ -1,0 +1,16 @@
+/* JibunKitCore views and errors shown by the host. Keys are the English text in the Swift source. */
+
+"Waiting to finish" = "Waiting to finish";
+"Can’t Start the App" = "Can’t Start the App";
+"Try Again" = "Try Again";
+"Start the App" = "Start the App";
+"Preparing the app" = "Preparing the app";
+"Couldn’t confirm the received data’s format or destination (invalidInput)." = "Couldn’t confirm the received data’s format or destination (invalidInput).";
+"Couldn’t safely use the destination’s storage folder (unsafeOwnerDirectory)." = "Couldn’t safely use the destination’s storage folder (unsafeOwnerDirectory).";
+"The destination can’t receive this kind of shared data (unsupportedInputType)." = "The destination can’t receive this kind of shared data (unsupportedInputType).";
+"Couldn’t save because the destination is disabled or changed (unavailableOwner)." = "Couldn’t save because the destination is disabled or changed (unavailableOwner).";
+"Couldn’t confirm the saved received data (invalidReceipt)." = "Couldn’t confirm the saved received data (invalidReceipt).";
+"Couldn’t confirm the destination list (invalidCatalog)." = "Couldn’t confirm the destination list (invalidCatalog).";
+"Couldn’t read it as a regular file (notRegularFile)." = "Couldn’t read it as a regular file (notRegularFile).";
+"Couldn’t coordinate saving or deleting the received data (coordinationFailed)." = "Couldn’t coordinate saving or deleting the received data (coordinationFailed).";
+"External account data owned by this Feature" = "External account data owned by this Feature";

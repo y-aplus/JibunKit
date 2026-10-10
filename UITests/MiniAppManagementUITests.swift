@@ -56,6 +56,22 @@ final class MiniAppManagementUITests: XCTestCase {
         tap(app.buttons["閉じる"])
     }
 
+    func testHostScreensFollowTheDeviceLanguage() {
+        for (language, locale, list, management, close) in [
+            ("en", "en_US", "Mini Apps", "Manage Mini Apps", "Close"),
+            ("ja", "ja_JP", "ミニアプリ", "ミニアプリの管理", "閉じる"),
+        ] {
+            app.terminate()
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", locale]
+            app.launch()
+            showMiniAppList()
+            XCTAssertTrue(app.navigationBars[list].waitForExistence(timeout: 5), app.debugDescription)
+            tap(app.buttons["management.open"])
+            XCTAssertTrue(app.navigationBars[management].waitForExistence(timeout: 5), app.debugDescription)
+            tap(app.buttons[close])
+        }
+    }
+
     func testDisableRestartCancelDeleteAndReregisterPreserveReminder() throws {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()

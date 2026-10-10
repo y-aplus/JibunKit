@@ -474,7 +474,7 @@ jobs:
           echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/tuist/tuist" version
 
-      - name: Check Feature connections and document links
+      - name: Check Feature connections, document links and host strings
         shell: bash
         run: |
           set -euo pipefail
@@ -483,6 +483,8 @@ jobs:
           python3 Tools/jibunkit-feature.py check
           python3 -m unittest discover -s Tools/tests -p test_doc_links.py
           python3 Tools/check-doc-links.py
+          python3 -m unittest discover -s Tools/tests -p test_localization.py
+          python3 Tools/check-localization.py
 
       - name: Test shared feature logic
         timeout-minutes: 10

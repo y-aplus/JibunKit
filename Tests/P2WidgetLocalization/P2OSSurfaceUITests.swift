@@ -127,9 +127,9 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         let consent = app.buttons["management.consent.p2-location-tracker.location"]
         for _ in 0..<20 where !consent.isHittable { app.swipeUp() }
         tap(consent, in: app)
-        let allow = app.buttons["許可"]
+        let allow = app.buttons["Allow"]
         tap(allow, in: app)
-        let close = app.buttons["閉じる"]
+        let close = app.buttons["Close"]
         tap(close, in: app)
 
         XCUIDevice.shared.location = XCUILocation(
@@ -199,8 +199,8 @@ final class P2OSSurfaceUITests: WidgetGalleryTestCase {
         let consent = app.buttons["management.consent.p2-location-regions.location"]
         for _ in 0..<20 where !consent.isHittable { app.swipeUp() }
         tap(consent, in: app)
-        tap(app.buttons["許可"], in: app)
-        tap(app.buttons["閉じる"], in: app)
+        tap(app.buttons["Allow"], in: app)
+        tap(app.buttons["Close"], in: app)
 
         // Both points are well beyond the boundary's uncertainty cushion.
         let outside = CLLocation(latitude: 37.3280, longitude: -122.0090)

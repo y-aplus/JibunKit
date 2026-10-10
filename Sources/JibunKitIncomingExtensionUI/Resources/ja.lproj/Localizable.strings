@@ -1,0 +1,14 @@
+/* Share and Action extension screens. Keys are the English text in the Swift source. */
+
+"Share to JibunKit" = "JibunKitへ共有";
+"Choose a Destination" = "受信先を選択";
+"No mini app can receive this input. Register and enable a destination in JibunKit, then share again." = "この入力を受け取れるミニアプリがありません。JibunKitで受信先を登録・有効化してから共有してください。";
+"Saves the shared data. Open JibunKit and import it from Inbox." = "共有データを保存します。JibunKitを開き、「受信」から取り込めます。";
+"Save to JibunKit" = "JibunKitに保存";
+"Choose Where to Save" = "保存先を選択";
+"No mini app can save this input. Register and enable a destination in JibunKit, then try again." = "この入力を保存できるミニアプリがありません。JibunKitで受信先を登録・有効化してからもう一度実行してください。";
+"Saves a copy of the input to JibunKit’s inbox. The original isn’t changed, and the action returns no output items." = "入力のコピーをJibunKitの受信箱へ保存します。元の内容は変更せず、Action Extensionから出力項目は返しません。";
+"Working" = "処理しています";
+"%@ (%lld)" = "%1$@（%2$lld件）";
+"Cancel" = "キャンセル";
+"Couldn’t save. %@" = "保存できませんでした。%@";

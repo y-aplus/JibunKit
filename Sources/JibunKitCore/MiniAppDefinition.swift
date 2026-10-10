@@ -200,24 +200,24 @@ private struct MiniAppLifetimeDestination<Content: View>: View {
                     .disabled(lifetime.state == .stopping)
                     .overlay {
                         if lifetime.state == .stopping {
-                            ProgressView("終了を待っています")
+                            ProgressView { Text("Waiting to finish", bundle: .module) }
                                 .accessibilityIdentifier("miniapp.start.pending")
                         }
                     }
             case .failed(let reason):
                 ContentUnavailableView {
-                    Label("アプリを開始できません", systemImage: "exclamationmark.triangle")
+                    Label { Text("Can’t Start the App", bundle: .module) } icon: { Image(systemName: "exclamationmark.triangle") }
                 } description: {
                     Text(reason)
                 } actions: {
-                    Button("再試行") { attempt += 1 }
+                    Button { attempt += 1 } label: { Text("Try Again", bundle: .module) }
                         .accessibilityIdentifier("miniapp.start.retry")
                 }
             case .stopped:
-                Button("アプリを開始") { attempt += 1 }
+                Button { attempt += 1 } label: { Text("Start the App", bundle: .module) }
                     .accessibilityIdentifier("miniapp.start.resume")
             case .starting:
-                ProgressView("アプリを準備しています")
+                ProgressView { Text("Preparing the app", bundle: .module) }
                     .accessibilityIdentifier("miniapp.start.pending")
             }
         }

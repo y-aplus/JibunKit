@@ -26,12 +26,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check module Feature connections
+      - name: Check module Feature connections and host strings
         shell: bash
         run: |
           set -euo pipefail
           python3 Tools/jibunkit-feature.py sync --check
           python3 Tools/jibunkit-feature.py check
+          python3 Tools/check-localization.py
 
       - name: Select Xcode 26.6
         shell: bash

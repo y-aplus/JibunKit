@@ -26,8 +26,8 @@ struct MiniAppListScreen: View {
             if let owner, let miniApp = MiniAppRegistry.all.first(where: { $0.id == owner }) {
                 Group {
                     if let failure = MiniAppRegistry.launchState.errors[owner] {
-                        ContentUnavailableView("起動時の準備に失敗しました", systemImage: "exclamationmark.triangle",
-                            description: Text(failure + "\n登録条件を修正した後、アプリを起動し直してください。"))
+                        ContentUnavailableView("Preparation at launch failed", systemImage: "exclamationmark.triangle",
+                            description: Text("\(failure)\nFix the registration conditions, then restart the app."))
                             .accessibilityIdentifier("miniapp.launch.error.\(owner.rawValue)")
                     } else {
                         miniApp.makeDestination()
@@ -42,9 +42,9 @@ struct MiniAppListScreen: View {
                                 // Tap returns to the list; a long press switches
                                 // Features. The host keeps the bottom edge free.
                                 Menu {
-                                    Button("ミニアプリ一覧", systemImage: "square.grid.2x2") { navigation.showList() }
+                                    Button("All Mini Apps", systemImage: "square.grid.2x2") { navigation.showList() }
                                         .accessibilityIdentifier("miniapp.switch.list")
-                                    Section("切り替え") {
+                                    Section("Switch") {
                                         ForEach(MiniAppRegistry.enabled.filter { $0.id != owner }) { other in
                                             Button { navigation.open(other.id) } label: {
                                                 Label(other.title, systemImage: other.systemImage)
@@ -53,12 +53,12 @@ struct MiniAppListScreen: View {
                                         }
                                     }
                                 } label: {
-                                    Label("ミニアプリ", systemImage: "chevron.left")
+                                    Label("Mini Apps", systemImage: "chevron.left")
                                 } primaryAction: {
                                     navigation.showList()
                                 }
-                                .accessibilityLabel("ミニアプリ")
-                                .accessibilityHint("長押しで別のミニアプリに切り替えます")
+                                .accessibilityLabel("Mini Apps")
+                                .accessibilityHint("Touch and hold to switch to another mini app.")
                                 .accessibilityIdentifier("miniapp.back-to-list")
                             }
                         }
@@ -71,10 +71,10 @@ struct MiniAppListScreen: View {
         // Rebuild the stack for its owner while retaining that owner's path.
         .id(navigation.stackID)
         .onChange(of: MiniAppRegistry.registeredIDs) { _, _ in navigation.discardUnavailableOwners() }
-        .alert("ウインドウを開けませんでした", isPresented: Binding(
+        .alert("Couldn’t Open a Window", isPresented: Binding(
             get: { windowError != nil }, set: { if !$0 { windowError = nil } }
         )) {
-            Button("閉じる", role: .cancel) { windowError = nil }
+            Button("Close", role: .cancel) { windowError = nil }
         } message: { Text(windowError ?? "") }
         .sheet(item: $navigation.hostSheet, onDismiss: navigation.hostSheetDidDismiss) { sheet in
             switch sheet {
@@ -90,22 +90,22 @@ struct MiniAppListScreen: View {
     private var launcher: some View {
         List {
             if let failure = MiniAppRegistry.launchState.hostError {
-                Text("起動時の設定に失敗しました: \(failure)").foregroundStyle(.red)
+                Text("Setup at launch failed: \(failure)").foregroundStyle(.red)
             }
             ForEach(matchingApps) { miniApp in
                 Button { navigation.open(miniApp.id) } label: {
                     VStack(alignment: .leading) {
                         Label(miniApp.title, systemImage: miniApp.systemImage)
                         if let failure = MiniAppRegistry.launchState.errors[miniApp.id] {
-                            Text("準備失敗: \(failure)").font(.caption).foregroundStyle(.red)
+                            Text("Preparation failed: \(failure)").font(.caption).foregroundStyle(.red)
                         }
                     }
                 }
                 .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
             }
         }
-        .navigationTitle("ミニアプリ")
-        .searchable(text: $searchText, prompt: "アプリ名・IDで検索")
+        .navigationTitle("Mini Apps")
+        .searchable(text: $searchText, prompt: "Search by app name or ID")
         .overlay {
             if matchingApps.isEmpty && !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 ContentUnavailableView.search(text: searchText)
@@ -113,20 +113,20 @@ struct MiniAppListScreen: View {
         }
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Button("管理", systemImage: "slider.horizontal.3") { navigation.requestHostSheet(.management) }
+                Button("Manage", systemImage: "slider.horizontal.3") { navigation.requestHostSheet(.management) }
                     .accessibilityIdentifier("management.open")
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button("バックアップ", systemImage: "externaldrive") { navigation.requestHostSheet(.backup) }
+                Button("Backup", systemImage: "externaldrive") { navigation.requestHostSheet(.backup) }
                     .accessibilityIdentifier("backup.open")
             }
             ToolbarItem(placement: .bottomBar) {
-                Button("受信", systemImage: "tray.and.arrow.down") { navigation.requestHostSheet(.incoming) }
+                Button("Inbox", systemImage: "tray.and.arrow.down") { navigation.requestHostSheet(.incoming) }
                     .accessibilityIdentifier("incoming.open")
             }
             if UIApplication.shared.supportsMultipleScenes {
                 ToolbarItem(placement: .bottomBar) {
-                    Button("新しいウインドウ", systemImage: "rectangle.badge.plus") {
+                    Button("New Window", systemImage: "rectangle.badge.plus") {
                         MiniAppUIKitWindowSceneRequester().requestWindow(userActivity: nil) {
                             windowError = $0.localizedDescription
                         }

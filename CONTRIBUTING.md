@@ -19,6 +19,7 @@ Report vulnerabilities privately according to [SECURITY.md](SECURITY.md), not in
 - Treat cancellation and shutdown as completion boundaries. Shared native resources are not available to a new owner until the old owner has actually released them.
 - Do not describe unit tests, injected callbacks, Simulator runs, physical-device runs, and live Apple-service results as interchangeable evidence.
 - Do not broaden a verified claim beyond its tested OS, device, signing, radio, account, or service conditions.
+- Write the host's user-facing text in English and add its Japanese translation to the `ja.lproj/Localizable.strings` next to it: `Sources/JibunKit/Resources` for the app, `Sources/JibunKitCore/Resources` for Core (with `bundle: .module`) and `Sources/JibunKitIncomingExtensionUI/Resources` for the Share and Action extensions. `python3 Tools/check-localization.py` reports a missing or unused entry and Japanese left in the source. Features localize their own text.
 
 The focused contracts under [docs/guides](docs/guides/) and the [coexistence ledger](docs/coexistence-ledger.md) contain the detailed rules for individual system surfaces.
 

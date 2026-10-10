@@ -1,0 +1,14 @@
+/* Share and Action extension screens. Keys are the English text in the Swift source. */
+
+"Share to JibunKit" = "Share to JibunKit";
+"Choose a Destination" = "Choose a Destination";
+"No mini app can receive this input. Register and enable a destination in JibunKit, then share again." = "No mini app can receive this input. Register and enable a destination in JibunKit, then share again.";
+"Saves the shared data. Open JibunKit and import it from Inbox." = "Saves the shared data. Open JibunKit and import it from Inbox.";
+"Save to JibunKit" = "Save to JibunKit";
+"Choose Where to Save" = "Choose Where to Save";
+"No mini app can save this input. Register and enable a destination in JibunKit, then try again." = "No mini app can save this input. Register and enable a destination in JibunKit, then try again.";
+"Saves a copy of the input to JibunKit’s inbox. The original isn’t changed, and the action returns no output items." = "Saves a copy of the input to JibunKit’s inbox. The original isn’t changed, and the action returns no output items.";
+"Working" = "Working";
+"%@ (%lld)" = "%@ (%lld)";
+"Cancel" = "Cancel";
+"Couldn’t save. %@" = "Couldn’t save. %@";

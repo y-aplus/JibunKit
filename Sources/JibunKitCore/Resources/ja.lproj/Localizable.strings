@@ -1,0 +1,16 @@
+/* JibunKitCore views and errors shown by the host. Keys are the English text in the Swift source. */
+
+"Waiting to finish" = "終了を待っています";
+"Can’t Start the App" = "アプリを開始できません";
+"Try Again" = "再試行";
+"Start the App" = "アプリを開始";
+"Preparing the app" = "アプリを準備しています";
+"Couldn’t confirm the received data’s format or destination (invalidInput)." = "受信データの形式または保存先を確認できませんでした（invalidInput）。";
+"Couldn’t safely use the destination’s storage folder (unsafeOwnerDirectory)." = "受信先の保存フォルダーを安全に使用できませんでした（unsafeOwnerDirectory）。";
+"The destination can’t receive this kind of shared data (unsupportedInputType)." = "この種類の共有データは受信先で受け取れません（unsupportedInputType）。";
+"Couldn’t save because the destination is disabled or changed (unavailableOwner)." = "受信先が無効または変更されたため保存できませんでした（unavailableOwner）。";
+"Couldn’t confirm the saved received data (invalidReceipt)." = "保存済みの受信データを確認できませんでした（invalidReceipt）。";
+"Couldn’t confirm the destination list (invalidCatalog)." = "受信先一覧を確認できませんでした（invalidCatalog）。";
+"Couldn’t read it as a regular file (notRegularFile)." = "通常のファイルとして読み込めませんでした（notRegularFile）。";
+"Couldn’t coordinate saving or deleting the received data (coordinationFailed)." = "受信データの保存・削除を調停できませんでした（coordinationFailed）。";
+"External account data owned by this Feature" = "このFeatureが所有する外部アカウントのデータ";

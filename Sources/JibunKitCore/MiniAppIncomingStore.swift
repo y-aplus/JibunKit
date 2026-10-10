@@ -60,14 +60,14 @@ public enum MiniAppIncomingError: Error, Equatable, Sendable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidInput: "受信データの形式または保存先を確認できませんでした（invalidInput）。"
-        case .unsafeOwnerDirectory: "受信先の保存フォルダーを安全に使用できませんでした（unsafeOwnerDirectory）。"
-        case .unsupportedInputType: "この種類の共有データは受信先で受け取れません（unsupportedInputType）。"
-        case .unavailableOwner: "受信先が無効または変更されたため保存できませんでした（unavailableOwner）。"
-        case .invalidReceipt: "保存済みの受信データを確認できませんでした（invalidReceipt）。"
-        case .invalidCatalog: "受信先一覧を確認できませんでした（invalidCatalog）。"
-        case .notRegularFile: "通常のファイルとして読み込めませんでした（notRegularFile）。"
-        case .coordinationFailed: "受信データの保存・削除を調停できませんでした（coordinationFailed）。"
+        case .invalidInput: String(localized: "Couldn’t confirm the received data’s format or destination (invalidInput).", bundle: .module)
+        case .unsafeOwnerDirectory: String(localized: "Couldn’t safely use the destination’s storage folder (unsafeOwnerDirectory).", bundle: .module)
+        case .unsupportedInputType: String(localized: "The destination can’t receive this kind of shared data (unsupportedInputType).", bundle: .module)
+        case .unavailableOwner: String(localized: "Couldn’t save because the destination is disabled or changed (unavailableOwner).", bundle: .module)
+        case .invalidReceipt: String(localized: "Couldn’t confirm the saved received data (invalidReceipt).", bundle: .module)
+        case .invalidCatalog: String(localized: "Couldn’t confirm the destination list (invalidCatalog).", bundle: .module)
+        case .notRegularFile: String(localized: "Couldn’t read it as a regular file (notRegularFile).", bundle: .module)
+        case .coordinationFailed: String(localized: "Couldn’t coordinate saving or deleting the received data (coordinationFailed).", bundle: .module)
         }
     }
 }

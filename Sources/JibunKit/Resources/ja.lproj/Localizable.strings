@@ -114,3 +114,8 @@
 "Search for “%@”" = "「%@」を検索";
 "Save or cancel the current item first, then open the file again." = "先に現在の受信を保存またはキャンセルしてから、もう一度ファイルを開いてください。";
 "Unimported shared data" = "未取込みの共有データ";
+"Show Mini Apps" = "表示するミニアプリ";
+"Choose the mini apps this Focus shows. The others leave the list, quick actions and icon badge, and their notifications are silenced." = "この集中モードで表示するミニアプリを選びます。ほかのミニアプリは一覧・クイックアクション・アイコンのバッジから外れ、通知は消音されます。";
+"All mini apps" = "すべてのミニアプリ";
+"Mini App" = "ミニアプリ";
+"The current Focus hides some mini apps. They still open from links and notifications." = "現在の集中モードで一部のミニアプリを非表示にしています。リンクや通知からは開けます。";

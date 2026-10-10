@@ -58,6 +58,7 @@ class LocalizationTests(unittest.TestCase):
             'Text("Waiting: \\(count) tasks")',
             'Button(retrying ? "Retry" : "Delete" as LocalizedStringKey) {}',
             'status = String(localized: "Line\\nTwo \\(name)")',
+            'DisplayRepresentation(title: "\\(title)")',
         ]))
         self.assertEqual(MODULE.check(self.root), [])
 

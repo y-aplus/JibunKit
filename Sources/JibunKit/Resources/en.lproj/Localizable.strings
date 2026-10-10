@@ -114,3 +114,8 @@
 "Search for “%@”" = "Search for “%@”";
 "Save or cancel the current item first, then open the file again." = "Save or cancel the current item first, then open the file again.";
 "Unimported shared data" = "Unimported shared data";
+"Show Mini Apps" = "Show Mini Apps";
+"Choose the mini apps this Focus shows. The others leave the list, quick actions and icon badge, and their notifications are silenced." = "Choose the mini apps this Focus shows. The others leave the list, quick actions and icon badge, and their notifications are silenced.";
+"All mini apps" = "All mini apps";
+"Mini App" = "Mini App";
+"The current Focus hides some mini apps. They still open from links and notifications." = "The current Focus hides some mini apps. They still open from links and notifications.";

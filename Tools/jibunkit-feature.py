@@ -281,7 +281,7 @@ CHECKS = [
      "sheets.", "docs/mini-apps.md#5-keep-navigation-and-app-shells-separate"),
     ("tips-configure", r"\bTips\.(configure|resetDatastore)\(",
      "The host configures TipKit once for all Features.", "docs/guides/app-wide-surfaces.md#tipkit"),
-    ("badge", r"setBadgeCount\(|applicationIconBadgeNumber",
+    ("badge", r"(?<!context\.)\bsetBadgeCount\(|applicationIconBadgeNumber",
      "The icon badge is the sum over Features. Use MiniAppContext.setBadgeCount.",
      "docs/guides/app-wide-surfaces.md#icon-badge"),
     ("shortcut-items", r"\bshortcutItems\b",

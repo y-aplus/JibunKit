@@ -53,8 +53,11 @@ class JibunKitFeatureTests(unittest.TestCase):
         with self.assertRaises(MODULE.FeatureError):
             MODULE.new(self.root, 'Notes')
 
-    def testEmptyRepositoryRendersTheCommittedStub(self):
-        self.assertEqual(MODULE.render([]), (ROOT / MODULE.HELPER).read_text(encoding='utf-8'))
+    def testCommittedHelperMatchesTheRepository(self):
+        # Upstream has no module Features, so this is the empty stub; a derived
+        # host that added some compares against its own.
+        self.assertEqual(MODULE.render(MODULE.modules(ROOT)), (ROOT / MODULE.HELPER).read_text(encoding='utf-8'))
+        self.assertIn('public static let all: [ModuleFeature] = [\n    ]\n', MODULE.render([]))
 
     def testCheckFailsUntilSyncRuns(self):
         MODULE.new(self.root, 'Notes', run_sync=False)
@@ -139,6 +142,8 @@ class JibunKitFeatureTests(unittest.TestCase):
             '@AppStorage("y", store: shared) var y = 1',
             'Tips.configure()',
             'NavigationStack { // jibunkit: allow navigation-stack, color-scheme',
+            'try await UNUserNotificationCenter.current().setBadgeCount(1)',
+            'try await context.setBadgeCount(1)',
         ]), encoding='utf-8')
         example = self.root / 'Modules/Notes/Example'
         example.mkdir(parents=True)
@@ -150,6 +155,7 @@ class JibunKitFeatureTests(unittest.TestCase):
             ('Notes.swift', 5, 'open-url'),
             ('Notes.swift', 6, 'standard-defaults'),
             ('Notes.swift', 8, 'tips-configure'),
+            ('Notes.swift', 10, 'badge'),
         ])
 
     def testCheckRulesLinkToExistingDocuments(self):

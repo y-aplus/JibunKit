@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Fixes `MiniAppExternalURL.open` opening another app long after the request: when the user left JibunKit while the request waited for activation, the URL opened the next time JibunKit became active. An expired request now throws `inactive` instead. Found in the device check of 2026-10-11.
 - Adds `MiniAppVisionCaptureAdapter.runDataScanner` and `dataScannerOperation`: a Feature creates and configures its own `DataScannerViewController` and delegate, and the adapter reserves the camera, presents it, starts and stops scanning and dismisses it. The Feature ends the scan with `MiniAppDataScannerSession.finish()`, so it can finish on the first code, read several codes in a row, or show the code and wait for a tap. `scanCode` still finishes on a tap.
 - Reminder shows its scheduled, not yet delivered reminder as its share of the app icon badge, and asks for badge authorization with its notification permission. Documents that the icon badge needs that authorization: before this, no Feature asked for it, so counts set with `setBadgeCount` were likely not shown.
 - Fixes five generated-host UI tests that failed before any action: a launch restored the Feature the scene last showed, so they did not start from the launcher, and the Records reminder test read a launcher row that the lazy list had not created. The generated-host job may now run for 90 minutes, enough for all of its UI tests.

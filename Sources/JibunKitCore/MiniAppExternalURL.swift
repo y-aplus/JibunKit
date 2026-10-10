@@ -33,15 +33,27 @@ public enum MiniAppExternalURL {
     /// the system to open `url`. Throws instead of silently doing nothing.
     @MainActor
     public static func open(_ url: URL, activationTimeout: Duration = .seconds(5)) async throws {
+        try await open(url, activationTimeout: activationTimeout,
+                       isActive: { UIApplication.shared.applicationState == .active },
+                       openURL: { await UIApplication.shared.open($0) })
+    }
+    #endif
+
+    @available(macOS 13, *)
+    @MainActor
+    static func open(_ url: URL, activationTimeout: Duration, isActive: @MainActor () -> Bool,
+                     openURL: @MainActor (URL) async -> Bool) async throws {
         try validate(url)
         let deadline = ContinuousClock.now + activationTimeout
         // Polling keeps the wait cancellable and free of observer bookkeeping;
         // the interval is far below what a user can perceive.
-        while UIApplication.shared.applicationState != .active {
+        while !isActive() {
             guard ContinuousClock.now < deadline else { throw MiniAppExternalURLError.inactive }
             try await Task.sleep(for: .milliseconds(50))
         }
-        guard await UIApplication.shared.open(url) else { throw MiniAppExternalURLError.rejected }
+        // The app can be suspended during the wait. When the user returns
+        // later, the request has expired and must not take them elsewhere.
+        guard ContinuousClock.now < deadline else { throw MiniAppExternalURLError.inactive }
+        guard await openURL(url) else { throw MiniAppExternalURLError.rejected }
     }
-    #endif
 }

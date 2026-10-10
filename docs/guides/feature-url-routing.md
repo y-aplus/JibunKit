@@ -55,7 +55,7 @@ Button("Open") {
 }
 ```
 
-It rejects file URLs, URLs without a scheme, and JibunKit's own `jibunkit://` routes. When the request arrives while the app is not yet active, such as right after a Spotlight result or a notification brought JibunKit forward, it waits until the app becomes active (5 seconds by default) instead of letting the system drop the request. It throws `inactive` if activation does not happen in time and `rejected` if the system does not open the URL, for example when no app handles the scheme. Show a retry action for those errors.
+It rejects file URLs, URLs without a scheme, and JibunKit's own `jibunkit://` routes. When the request arrives while the app is not yet active, such as right after a Spotlight result or a notification brought JibunKit forward, it waits until the app becomes active (5 seconds by default) instead of letting the system drop the request. It throws `inactive` if activation does not happen in time and `rejected` if the system does not open the URL, for example when no app handles the scheme. A request whose time ran out while the app was in the background also throws `inactive`: it is not carried out later, when the user returns to JibunKit for something else. Show a retry action for those errors.
 
 Do not open another app from `appendDestination` or `resolveIncomingURL`; those stay side-effect free. Open it from the destination view or a user action. Declare schemes in `LSApplicationQueriesSchemes` through the feature build requirements only if the Feature also calls `canOpenURL`.
 

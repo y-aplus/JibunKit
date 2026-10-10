@@ -1,6 +1,6 @@
 # App-wide system surfaces
 
-iOS treats some surfaces as one per app: the Home Screen quick action menu, the icon badge, continued user activities, TipKit's configuration, and the notification Service and Content extensions. Inside JibunKit several Features share that one app, so the host owns each surface and hands every Feature only its own part. None of these is required; add only what a Feature uses.
+iOS treats some surfaces as one per app: the Home Screen quick action menu, the icon badge, continued user activities, Focus filters, TipKit's configuration, and the notification Service and Content extensions. Inside JibunKit several Features share that one app, so the host owns each surface and hands every Feature only its own part. None of these is required; add only what a Feature uses.
 
 These are cooperative ownership boundaries, not a security sandbox. Unit tests cover owner selection and aggregation; long-press menus, badges, Handoff and notification extensions still need to be checked on a device.
 
@@ -51,6 +51,30 @@ userActivity: MiniAppUserActivityHandler(activityTypes: ["com.example.notes.view
 ```
 
 Also declare the same types in the app target's `NSUserActivityTypes` build requirement. The resolver only reads the activity; the host opens the result through `appendDestination` in the scene that received it. Each type must belong to exactly one Feature, and Spotlight's result and query types stay with the host; the host stops at launch if these rules are broken. Creating an activity (for example with SwiftUI's `userActivity(_:element:_:)`) remains Feature code.
+
+## Focus filters
+
+iOS sees JibunKit as one app, so a Focus can allow or silence all of JibunKit but cannot tell its Features apart. The host therefore offers one Focus filter, **Show Mini Apps**, under Settings > Focus > (a Focus) > Focus Filters. Its parameter is a list of mini apps. While that Focus is on, the Features it does not list:
+
+- leave the mini app list and the switch menu (a footer says that the Focus hides some),
+- leave the Home Screen quick actions,
+- stop counting toward the icon badge; their stored counts come back when the Focus ends, and
+- have their notifications silenced, if they set `filterCriteria` as below.
+
+They still open from a link, a notification or Spotlight: the filter reduces distraction and does not restrict access. A Feature already on screen stays open. Choosing no mini app shows them all.
+
+Silencing works through the notification's filter criteria, which the system compares with the filter's predicate. Set the owner ID on each notification the Feature schedules:
+
+```swift
+content.userInfo = context.notificationUserInfo
+content.filterCriteria = context.notificationFilterCriteria
+```
+
+For a remote notification, put the same value in the payload's `filter-criteria` key. Reminder and Records do this.
+
+The host stores the choice when the system calls the filter's `perform`, and reads the current filter again whenever the app becomes active. A Feature that wants its own Focus settings, such as showing only work records, has no API yet: whether an app may declare more than one `SetFocusFilterIntent` is not documented, and has not been tested.
+
+Not yet observed on a device: how the system treats a notification without filter criteria while the filter is on, whether `perform` arrives while JibunKit is not running, and how quickly the list changes after a Focus starts.
 
 ## TipKit
 

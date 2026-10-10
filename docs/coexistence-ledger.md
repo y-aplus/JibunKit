@@ -79,8 +79,8 @@ P0は0.7.0、P1は0.8.0で公開済み。2026-09-19にユーザーがP0/P1/P2の
 | D36 | TipKit | 未対応 | 2026-09-29にhostが起動時に`Tips.configure()`を一度だけ呼ぶ形へ変更。Featureはconfigureを呼ばない。tip IDはFeature名前空間を含める。Feature単位の表示履歴削除はTipKitに手段がなく、削除時に履歴が残る。 |
 | D37 | 通知Service/Content extension | 未対応 | 2026-09-29にCoreの所有者振分け（payloadの所有者を優先、なければrequest/category名前空間で一意一致）とextension基底クラスを実装。extension targetは`EnabledFeatureBuildRequirements`で任意に有効化（署名時にApp IDを追加消費するため既定は無効）。既定CIではextension targetをbuildしない。 |
 | D38 | host画面のローカライズ | 未対応 | 2026-10-11、一覧・管理・バックアップと復元・受信・Spotlight検索の選択・Share/Action拡張・Coreの開始表示とエラー文を英語原文＋日本語訳の`Localizable.strings`へ移した（app、Core（`Bundle.module`）、拡張UIの3表）。日本語端末の表示は従来と同じ文言。`Tools/check-localization.py`が表とsourceの対応・未使用・日本語の残りをCIで検査する。UIテストで英語・日本語の一覧/管理画面を確認する。Featureの文言（title、権限の説明、Counter/Reminder/Records）は各Featureの所有で対象外。UIテストはrun 38068123026と38073960708で通過。英語表示の実機確認は未実施。 |
-| D39 | 集中モードフィルタ | 未調査 | `SetFocusFilterIntent`はアプリ単位。Feature別の表示制御をhostが集約する設計が必要。未実装。 |
-| D40 | iPadハードウェアキーボード・メニューバー | 未調査 | Feature切替のキーボードショートカットとiPadOSメニューバー項目がない。iPad実機の検証自体が不足しており、設計前に実機での現状確認が必要。 |
+| D39 | 集中モードフィルタ | 未対応 | 2026-10-11、hostが一つの`SetFocusFilterIntent`「Show Mini Apps」（ミニアプリの複数選択）を持つ形で実装。選ばれなかったFeatureは一覧・切替メニュー・クイックアクション・バッジ合計から外れ、`filterCriteria`に所有者IDを付けた通知は消音される（Reminder/Recordsは付与済み）。URL・通知・Spotlightからは開ける（アクセス制限ではない）。選択の保存とバッジ集計はunit test。実際の集中モード設定・perform配送・filterCriteria未設定の通知の扱いは実機未確認。Feature独自のフィルタは、一アプリが複数のフィルタ型を持てるかが未確認のため未提供。 |
+| D40 | iPadハードウェアキーボード・メニューバー | 未調査（長期保留） | Feature切替のキーボードショートカットとiPadOSメニューバー項目がない。iPad実機の検証自体が不足しており、設計前に実機での現状確認が必要。 2026-10-11、検証できる新しいiPadがなく、手持ちのiPadにsideload環境を整える予定もないため長期保留。 |
 | D41 | 端末内の基盤モデル（FoundationModels）の利用枠 | 未調査 | 2026-10-09、Issue #16で評価。session/設定はFeatureが所有し他Featureへ波及しないため共通APIは足さず、[指針](guides/foundation-models.md)を置いた。`rateLimited`の制限単位をAppleは公開しておらず、アプリ単位ならFeature間で枠を共有し、独立アプリより各Featureの枠が減りうる。hostは枠を増やせない。 |
 
 ## 更新規則

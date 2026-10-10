@@ -395,6 +395,92 @@ final class MediaCaptureNativeTests: XCTestCase {
         await runtime.shutdown()
     }
 
+    func testFeatureConfiguredScannerEndsOnFinishOwnerStopAndStartFailure() async throws {
+        let coordinator = MiniAppCaptureCoordinator()
+        let id = MiniAppID("feature-scanner")
+        let owner = MiniAppCaptureOwner(id: id, coordinator: coordinator,
+                                        permissions: NativePermission(), consent: { _ in true })
+        let runtime = MiniAppRuntime()
+        let presentations = MiniAppPresentationOwner(id: id)
+        try presentations.connect(to: runtime)
+        try owner.connect(to: runtime)
+        activate(id) { owner.receive($0) }
+        let harness = PresentationHarness()
+        var failStart = false
+        var started = 0
+        let adapter = MiniAppVisionCaptureAdapter(
+            presentationOwner: presentations,
+            present: { harness.presented = $0 },
+            dismiss: { controller in harness.dismissed.append(controller); harness.presented = nil },
+            dataScannerSupported: { true }, dataScannerAvailable: { true },
+            startDataScanner: { _ in
+                started += 1
+                if failStart { throw MiniAppCaptureFailure.native("injected start failure") }
+            }
+        )
+        var sessions: [MiniAppDataScannerSession] = []
+        var configured: [DataScannerViewController] = []
+        let makeScanner: @MainActor @Sendable (MiniAppDataScannerSession) throws -> DataScannerViewController = { session in
+            sessions.append(session)
+            let controller = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.ean13])],
+                                                       recognizesMultipleItems: true)
+            configured.append(controller)
+            return controller
+        }
+
+        // The Feature finishes from its own logic; the adapter dismisses its controller.
+        let finished = Task { try await adapter.runDataScanner(owner: owner, makeScanner: makeScanner) }
+        await eventually { harness.presented != nil && owner.state == .running([.camera]) }
+        XCTAssertTrue(harness.presented === configured.last)
+        XCTAssertEqual(started, 1)
+        sessions[0].finish()
+        sessions[0].finish()
+        try await finished.value
+        XCTAssertTrue(sessions[0].isFinished)
+        XCTAssertEqual(harness.dismissed.count, 1)
+        XCTAssertTrue(harness.dismissed.last === configured[0])
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(presentations.activePresentationCount, 0)
+
+        // The owner stops it, for example in the background; ended still runs once.
+        var ended = 0
+        try await owner.start(adapter.dataScannerOperation(makeScanner: makeScanner,
+            ended: { ended += 1; await owner.stop() }))
+        await owner.suspend(.background)
+        await eventually { ended == 1 }
+        XCTAssertTrue(sessions[1].isFinished)
+        sessions[1].finish()
+        await Task.yield()
+        XCTAssertEqual(ended, 1)
+        XCTAssertEqual(harness.dismissed.count, 2)
+        XCTAssertNil(coordinator.currentCameraOwner)
+
+        // The guide's delegate wiring: the Feature's delegate holds the session.
+        let scan = FirstCodeScan()
+        let guided = Task {
+            try await adapter.runDataScanner(owner: owner) { session in
+                scan.session = session
+                let scanner = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.ean13])])
+                scanner.delegate = scan
+                return scanner
+            }
+        }
+        await eventually { harness.presented != nil && owner.state == .running([.camera]) }
+        scan.session?.finish()
+        try await guided.value
+        XCTAssertEqual(harness.dismissed.count, 3)
+        XCTAssertNil(coordinator.currentCameraOwner)
+
+        failStart = true
+        await XCTAssertThrowsErrorAsync(try await adapter.runDataScanner(owner: owner, makeScanner: makeScanner)) { error in
+            XCTAssertTrue(String(describing: error).contains("injected start failure"))
+        }
+        XCTAssertTrue(sessions[2].isFinished)
+        XCTAssertNil(coordinator.currentCameraOwner)
+        XCTAssertEqual(presentations.activePresentationCount, 0)
+        await runtime.shutdown()
+    }
+
     func testCameraAndMicrophoneDeclarationsRemainDistinct() {
         let photo = MediaCaptureProbe.definitions[0]
         XCTAssertEqual(Set(photo.permissions.map(\.id)), ["camera", "microphone"])
@@ -439,6 +525,28 @@ private final class NativeGate {
     func wait() async { entered = true; await withCheckedContinuation { continuation = $0 } }
     func waitUntilEntered() async { while !entered { await Task.yield() } }
     func open() { continuation?.resume(); continuation = nil }
+}
+
+/// The capture guide's first-code example; compiled here so the guide stays valid.
+@MainActor
+private final class FirstCodeScan: NSObject, DataScannerViewControllerDelegate {
+    var session: MiniAppDataScannerSession?
+    var code: String?
+
+    func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem],
+                     allItems: [RecognizedItem]) {
+        for case .barcode(let barcode) in addedItems {
+            guard let payload = barcode.payloadStringValue, !payload.isEmpty else { continue }
+            code = payload
+            session?.finish()
+            return
+        }
+    }
+
+    func dataScanner(_ dataScanner: DataScannerViewController,
+                     becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
+        session?.finish()
+    }
 }
 
 @MainActor

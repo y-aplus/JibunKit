@@ -40,6 +40,49 @@ do {
 }
 ```
 
+`scanCode` finishes when the user taps a recognized code. For any other behavior, create the `DataScannerViewController` yourself and let the adapter present it: `runDataScanner` (or the callback form `dataScannerOperation`) reserves the camera, presents your controller through the presentation owner, starts and stops scanning, and dismisses it when the scan ends. Your delegate decides what a recognized item means, as it would in a standalone app, and calls `session.finish()` when it is done. VisionKit reports each item once through `didAdd` while it stays in view, and again after it leaves and returns.
+
+Finish on the first accepted code, for example a product barcode:
+
+```swift
+@MainActor
+final class FirstCodeScan: NSObject, DataScannerViewControllerDelegate {
+    var session: MiniAppDataScannerSession?
+    var code: String?
+
+    func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem],
+                     allItems: [RecognizedItem]) {
+        for case .barcode(let barcode) in addedItems {
+            guard let payload = barcode.payloadStringValue, isProductCode(payload) else { continue }
+            code = payload
+            session?.finish()
+            return
+        }
+    }
+
+    func dataScanner(_ dataScanner: DataScannerViewController,
+                     becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
+        session?.finish()
+    }
+}
+
+let scan = FirstCodeScan()
+try await adapter.runDataScanner(owner: capture) { session in
+    scan.session = session
+    let scanner = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.ean13])])
+    scanner.delegate = scan
+    return scanner
+}
+if let code = scan.code { record(code) }
+```
+
+`isProductCode` and `record` stand for the Feature's own checks and storage.
+
+- **Read several codes in a row:** append each accepted payload in `didAdd` and do not finish; `runDataScanner` returns when the user closes the scanner. Give feedback per code, for example with `UIImpactFeedbackGenerator`, and add your own Done button to `scanner.overlayContainerView` if closing by swiping is not enough.
+- **Show the code and let the user decide**, as the Camera app does: keep a label in `scanner.overlayContainerView`, update it from `didAdd`, `didUpdate` and `didRemove` using `allItems`, and finish when the user taps it or the item (`didTapOn`).
+
+The scanner's options, overlay, wording and feedback belong to the Feature. The adapter does not wrap them; it owns only the camera reservation, the presentation and the stop paths.
+
 With the callback operations, `result` (or `failure`) is delivered at most once, and `ended` exactly once for every scanner that was presented, however it ends. When the owner stops the scan itself, for example in the background, neither `result` nor `failure` is delivered, but `ended` still is, after that stop has finished; calling `owner.stop()` from `ended` is safe.
 
 Audio capture first acquires the compatible audio profile and microphone consent, then camera ownership; unwind in reverse order. Revalidate both generations after awaited permission or presentation. Compose camera/microphone usage descriptions and required background modes through build requirements. Unsupported hardware or unavailable scanners return an explicit unsupported result, not a simulated success.

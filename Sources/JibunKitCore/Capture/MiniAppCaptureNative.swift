@@ -338,6 +338,34 @@ private final class MovieDelegate: NSObject, AVCaptureFileOutputRecordingDelegat
     }
 }
 
+/// Ends a `DataScannerViewController` that the Feature configured and presented
+/// through `MiniAppVisionCaptureAdapter.dataScannerOperation` or `runDataScanner`.
+@MainActor
+public final class MiniAppDataScannerSession {
+    /// True once the scanner has ended for any reason: `finish()`, the user
+    /// closing it, the owner stopping it, or a failed start.
+    public private(set) var isFinished = false
+    fileprivate var onFinish: (() -> Void)?
+
+    fileprivate init() {}
+
+    /// Closes the scanner and releases the camera. Call it when the Feature has
+    /// what it needs, for example from its `DataScannerViewControllerDelegate`.
+    /// Later calls, and calls after the scanner ended, do nothing.
+    public func finish() {
+        guard !isFinished else { return }
+        isFinished = true
+        let action = onFinish
+        onFinish = nil
+        action?()
+    }
+
+    fileprivate func markEnded() {
+        isFinished = true
+        onFinish = nil
+    }
+}
+
 @MainActor
 public final class MiniAppVisionCaptureAdapter: NSObject,
     @preconcurrency VNDocumentCameraViewControllerDelegate, DataScannerViewControllerDelegate,
@@ -353,6 +381,7 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         let failure: (@MainActor @Sendable (MiniAppCaptureFailure) -> Void)?
         let ended: @MainActor @Sendable () async -> Void
         var handle: MiniAppPresentationOwner.Handle?
+        var session: MiniAppDataScannerSession?
         var finishing = false
         var endingFromOwner = false
         var endedDelivered = false
@@ -492,6 +521,72 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         }
     }
 
+    /// Presents a `DataScannerViewController` that the Feature creates and
+    /// configures, under the same camera reservation and presentation ownership
+    /// as `codeOperation`. The Feature is the scanner's delegate, so it decides
+    /// what a recognized item means: finish on the first code, collect codes until
+    /// the user closes the scanner, or show what was read and wait for a tap.
+    /// Call `session.finish()` to close the scanner. The adapter starts and stops
+    /// scanning; do not call `startScanning()`. `ended` runs exactly once,
+    /// however the scanner ends; also handle `becameUnavailableWithError` in the
+    /// Feature's delegate, typically by finishing.
+    public func dataScannerOperation(
+        makeScanner: @escaping @MainActor @Sendable (MiniAppDataScannerSession) throws -> DataScannerViewController,
+        ended: @escaping @MainActor @Sendable () async -> Void
+    ) -> MiniAppCaptureOperation {
+        MiniAppCaptureOperation(resources: [.camera]) { [weak self] in
+            guard let self else { throw MiniAppCaptureFailure.stopped }
+            guard self.dataScannerSupported() else { throw MiniAppCaptureFailure.unsupported }
+            guard self.dataScannerAvailable() else { throw MiniAppCaptureFailure.unavailable("data scanner") }
+            let session = MiniAppDataScannerSession()
+            let controller = try makeScanner(session)
+            let pending = Operation(controller: controller, ended: ended)
+            pending.session = session
+            session.onFinish = { [weak self, weak pending] in
+                guard let self, let pending else { return }
+                self.finish(pending) {}
+            }
+            try await self.begin(pending)
+            do { try self.startDataScanner(controller) }
+            catch {
+                await self.end(generation: pending.generation)
+                throw error
+            }
+            return { [weak self] _ in
+                controller.stopScanning()
+                await self?.end(generation: pending.generation)
+            }
+        }
+    }
+
+    /// Presents a Feature-configured scanner through `owner` (see
+    /// `dataScannerOperation`), waits until it ends, and releases the camera.
+    /// Returns when the Feature calls `session.finish()`, the user closes the
+    /// scanner, or `owner` stops it. Throws when the scan cannot start.
+    public func runDataScanner(
+        owner: MiniAppCaptureOwner,
+        switching: MiniAppCaptureSwitch = .reject,
+        sceneScope: MiniAppCaptureSceneScope = .anyVisible,
+        makeScanner: @escaping @MainActor @Sendable (MiniAppDataScannerSession) throws -> DataScannerViewController
+    ) async throws {
+        let run = ScanCompletion<Void>()
+        _ = try await withCheckedThrowingContinuation { continuation in
+            run.continuation = continuation
+            let operation = dataScannerOperation(makeScanner: makeScanner, ended: {
+                await owner.stop()
+                run.scannerEnded()
+            })
+            Task { @MainActor in
+                do {
+                    try await owner.start(operation, switching: switching, sceneScope: sceneScope)
+                    run.startReturned()
+                } catch {
+                    run.resume(.failure(error))
+                }
+            }
+        }
+    }
+
     /// Presents the code scanner through `owner`, waits until it ends, and
     /// releases the camera. Returns the payload the user tapped, or nil when
     /// the user closed the scanner or `owner` stopped it (for example in the
@@ -503,11 +598,11 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         switching: MiniAppCaptureSwitch = .reject,
         sceneScope: MiniAppCaptureSceneScope = .anyVisible
     ) async throws -> String? {
-        let scan = CodeScanCompletion()
+        let scan = ScanCompletion<String>()
         return try await withCheckedThrowingContinuation { continuation in
             scan.continuation = continuation
             let operation = codeOperation(symbologies: symbologies,
-                result: { scan.code = $0 },
+                result: { scan.value = $0 },
                 failure: { scan.failure = $0 },
                 ended: {
                     await owner.stop()
@@ -571,6 +666,7 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
 
     /// Every presented scanner reports `ended` exactly once, however it ends.
     private func deliverEnded(_ pending: Operation) {
+        pending.session?.markEnded()
         guard !pending.endedDelivered else { return }
         pending.endedDelivered = true
         let ended = pending.ended
@@ -588,6 +684,7 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
         }
         guard !pending.finishing else { return }
         pending.finishing = true
+        pending.session?.markEnded()
         pending.documentResult?(.failure(failure))
         pending.failure?(failure)
         operation = nil
@@ -645,13 +742,13 @@ public final class MiniAppVisionCaptureAdapter: NSObject,
     }
 }
 
-/// Resumes `scanCode` once. A scanner can end before `owner.start` returns, and
-/// a start failure after presentation still ends the scanner; the start result
-/// decides in both cases.
+/// Resumes `scanCode` or `runDataScanner` once. A scanner can end before
+/// `owner.start` returns, and a start failure after presentation still ends the
+/// scanner; the start result decides in both cases.
 @MainActor
-private final class CodeScanCompletion {
-    var continuation: CheckedContinuation<String?, Error>?
-    var code: String?
+private final class ScanCompletion<Value: Sendable> {
+    var continuation: CheckedContinuation<Value?, Error>?
+    var value: Value?
     var failure: MiniAppCaptureFailure?
     private var started = false
     private var ended = false
@@ -666,14 +763,14 @@ private final class CodeScanCompletion {
         if started { complete() }
     }
 
-    func resume(_ result: Result<String?, Error>) {
+    func resume(_ result: Result<Value?, Error>) {
         guard let continuation else { return }
         self.continuation = nil
         continuation.resume(with: result)
     }
 
     private func complete() {
-        if let code { return resume(.success(code)) }
+        if let value { return resume(.success(value)) }
         switch failure {
         case nil, .presentationEnded?: resume(.success(nil))
         case let failure?: resume(.failure(failure))

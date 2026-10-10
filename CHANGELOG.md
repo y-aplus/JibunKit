@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- Adds `MiniAppVisionCaptureAdapter.runDataScanner` and `dataScannerOperation`: a Feature creates and configures its own `DataScannerViewController` and delegate, and the adapter reserves the camera, presents it, starts and stops scanning and dismisses it. The Feature ends the scan with `MiniAppDataScannerSession.finish()`, so it can finish on the first code, read several codes in a row, or show the code and wait for a tap. `scanCode` still finishes on a tap.
+
 - Documents state the current release only in `docs/status.md` and the changelog; the others link there. `python3 Tools/check-doc-links.py` checks that relative links in the current documents point to existing files and headings, and CI runs it.
 
 - Features under `Modules/` connect to the host through their own `JibunKitFeature.json`: package products, integration sources, definitions, widgets, build requirements and App Shortcuts. `python3 Tools/jibunkit-feature.py sync` writes `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, and `Project.swift` adds the rest, so adding a feature no longer edits `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle. Hand-registered features keep working.

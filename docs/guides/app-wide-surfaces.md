@@ -36,6 +36,10 @@ try await context.setBadgeCount(lowStockItems.count)
 
 The icon shows the sum over enabled Features. Disabling or deleting a Feature clears its count. Do not set `UNNotificationContent.badge` or call `setBadgeCount` on `UNUserNotificationCenter` directly: either replaces every Feature's count. Counts change only while JibunKit runs; a notification delivered to a stopped app cannot add to them.
 
+iOS shows the number only when the app's notification authorization includes the badge. Notification authorization is shared by the whole app, so a Feature that sets a count includes `.badge` when it asks: `requestAuthorization(options: [.alert, .sound, .badge])`. An installation that allowed notifications earlier without the badge reports `badgeSetting == .notSupported`; Reminder asks again with the badge in that case. On the owner's iPhone, an installation that had allowed alerts and sounds showed no prompt and then displayed Reminder's badge (2026-10-10).
+
+Update the count whenever it can have changed: when the Feature's screen appears, when the scene becomes active again (`scenePhase`), and after the event that changes it. Returning to the app does not show a Feature's screen again, so `task` alone misses changes made while the app was in the background.
+
 ## Handoff and other user activities
 
 A Feature that continues its own `NSUserActivity` types declares them once:

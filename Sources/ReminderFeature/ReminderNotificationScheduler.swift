@@ -24,12 +24,17 @@ public struct ReminderNotificationScheduler: Sendable {
 
         switch settings.authorizationStatus {
         case .notDetermined:
-            let granted = try await center.requestAuthorization(options: [.alert, .sound])
+            let granted = try await center.requestAuthorization(options: Self.authorizationOptions)
             guard granted else { return .denied }
         case .denied:
             return .denied
         case .authorized, .provisional, .ephemeral:
-            break
+            // Installations that allowed notifications before the badge was
+            // added asked only for alerts and sounds. Ask again with the
+            // badge; iOS decides whether to show anything.
+            if settings.badgeSetting == .notSupported {
+                _ = try? await center.requestAuthorization(options: Self.authorizationOptions)
+            }
         @unknown default:
             return .denied
         }
@@ -43,11 +48,29 @@ public struct ReminderNotificationScheduler: Sendable {
         let request = UNNotificationRequest(
             identifier: context.notificationRequestIdentifier,
             content: content,
-            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 10, repeats: false)
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: Self.delay, repeats: false)
         )
         try Task.checkCancellation()
         try await center.add(request)
         return .scheduled
     }
+
+    /// Shows the number of reminders that are scheduled and not yet delivered
+    /// as this Feature's share of the app icon badge. The count changes only
+    /// while JibunKit runs, so a reminder delivered in the background clears
+    /// its count the next time Reminder opens.
+    @MainActor
+    public func refreshBadge() async throws {
+        let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+            .filter { context.ownsNotificationRequestIdentifier($0.identifier) }.count
+        try await context.setBadgeCount(pending)
+    }
+
+    /// Seconds from scheduling to delivery.
+    public static let delay: TimeInterval = 10
+
+    /// The badge needs its own authorization option; without it the icon
+    /// shows no number even when the count is set.
+    static let authorizationOptions: UNAuthorizationOptions = [.alert, .sound, .badge]
 }
 #endif

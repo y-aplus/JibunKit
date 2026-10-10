@@ -8,6 +8,7 @@ public struct ReminderRootView: View {
     private let owner: MiniAppID
     @Environment(\.miniAppConsentStore) private var consents
     @Environment(\.miniAppLifetime) private var lifetime
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var message = ""
     @State private var statusMessage: String?
@@ -53,6 +54,12 @@ public struct ReminderRootView: View {
         .navigationTitle("リマインダー")
         .task {
             await load()
+            try? await scheduler.refreshBadge()
+        }
+        // Returning to the app does not show this view again, so the reminder
+        // delivered meanwhile is cleared here.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { runOwned { try? await scheduler.refreshBadge() } }
         }
         .alert("リマインダーが通知を利用します", isPresented: $requestingConsent) {
             Button("許可") {
@@ -116,6 +123,10 @@ public struct ReminderRootView: View {
             case .scheduled:
                 statusMessage = "10秒後の通知を予約しました"
                 isError = false
+                try? await scheduler.refreshBadge()
+                // Clear the count after delivery while the app stays open.
+                try? await Task.sleep(for: .seconds(ReminderNotificationScheduler.delay + 1))
+                try? await scheduler.refreshBadge()
             case .denied:
                 statusMessage = "通知は許可されていません。設定で変更できます"
                 isError = true

@@ -3,7 +3,7 @@
 Updated 2026-10-10. **Stable: 1.1.0/build17**, published on 2026-10-10. It adds the app-wide surfaces, Feature parts and fixes listed in the [release notes](releases/release-notes-1.1.0.md).
 
 - Build source `0a6c4602690c233f69ed3d4b148f0a430db181ec`, run 37959506516; IPA 5,258,091 bytes, SHA-256 `c1e0ac8c599db9fba4d1a0c61870db73a36202a50a03f7e21ef09d69ca41998e`. Candidate tests, the five generated-host UI failures that predate this release, and the device check are in the [verification record](verification/2026-10-10-1.1-release.md).
-- Icon badges, Spotlight "Search in App", `NSUserActivity` routing, `MiniAppExternalURL`, `scanCode` and the notification extensions were not device-checked in this release.
+- Icon badges, Spotlight "Search in App", `NSUserActivity` routing, `MiniAppExternalURL`, `scanCode` and the notification extensions were not device-checked in this release. All but the notification extensions were checked on 2026-10-11 with a diagnostic build; the check found a defect in `MiniAppExternalURL`, fixed after 1.1.0 ([record](verification/2026-10-11-app-wide-surfaces-device.md)).
 
 The 1.0 boundary below still describes the adopted P0/P1/P2 scope.
 

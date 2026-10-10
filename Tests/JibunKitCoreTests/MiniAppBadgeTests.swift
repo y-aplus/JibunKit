@@ -24,6 +24,21 @@ final class MiniAppBadgeTests: XCTestCase {
         await XCTAssertThrowsErrorAsync { try await badge.setCount(1, for: MiniAppID("Bad")) }
     }
 
+    func testFocusFilterHidesOwnersWithoutForgettingTheirCounts() async throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "badge-" + UUID().uuidString))
+        var shown: [Int] = []
+        let badge = MiniAppBadgeCoordinator(defaults: defaults) { shown.append($0) }
+        let a = MiniAppID("a")
+        let b = MiniAppID("b")
+        try await badge.setCount(3, for: a)
+        try await badge.setCount(2, for: b)
+        try await badge.setFocusedOwners([b])
+        try await badge.setEnabledOwners([a])
+        try await badge.setFocusedOwners(nil)
+        XCTAssertEqual(shown, [3, 5, 2, 0, 3])
+        XCTAssertEqual(badge.count(for: b), 2)
+    }
+
     func testStoredCountsSurviveANewCoordinatorAndIgnoreMalformedValues() async throws {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: "badge-" + UUID().uuidString))
         try await MiniAppBadgeCoordinator(defaults: defaults) { _ in }.setCount(4, for: MiniAppID("a"))

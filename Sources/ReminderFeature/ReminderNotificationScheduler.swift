@@ -44,6 +44,7 @@ public struct ReminderNotificationScheduler: Sendable {
         content.body = message
         content.sound = .default
         content.userInfo = context.notificationUserInfo
+        content.filterCriteria = context.notificationFilterCriteria
 
         let request = UNNotificationRequest(
             identifier: context.notificationRequestIdentifier,

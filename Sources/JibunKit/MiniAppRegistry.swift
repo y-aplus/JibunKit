@@ -167,6 +167,14 @@ enum MiniAppRegistry {
     }
 
     static let recentUsage = MiniAppRecentUsage(defaults: .standard)
+    static let focus = MiniAppFocusSelection(defaults: .standard)
+
+    /// Applies the Focus filter's choice, from its perform and on activation.
+    static func applyFocus(_ ids: Set<MiniAppID>?) {
+        guard focus.apply(ids) else { return }
+        refreshQuickActions()
+        refreshBadge()
+    }
 
     static func recordUse(_ id: MiniAppID) {
         recentUsage.record(id)
@@ -175,7 +183,7 @@ enum MiniAppRegistry {
 
     /// Publishes Home Screen quick actions for enabled, launchable Features.
     static func refreshQuickActions() {
-        let candidates = enabled.filter { launchState.errors[$0.id] == nil }.map {
+        let candidates = enabled.filter { launchState.errors[$0.id] == nil && focus.isShown($0.id) }.map {
             MiniAppQuickActions.Candidate(id: $0.id, title: $0.title, systemImage: $0.systemImage, actions: $0.quickActions)
         }
         UIApplication.shared.shortcutItems = MiniAppQuickActions.entries(recent: recentUsage.ids, candidates: candidates).map { entry in
@@ -187,11 +195,16 @@ enum MiniAppRegistry {
         }
     }
 
-    /// Disabled owners stop contributing to the icon badge.
+    /// Disabled owners, and owners the current Focus hides, stop contributing
+    /// to the icon badge.
     static func refreshBadge() {
         let owners = registeredIDs
+        let focused = focus.shownIDs
         Task {
-            do { try await MiniAppBadgeCoordinator.shared.setEnabledOwners(owners) }
+            do {
+                try await MiniAppBadgeCoordinator.shared.setFocusedOwners(focused)
+                try await MiniAppBadgeCoordinator.shared.setEnabledOwners(owners)
+            }
             catch {
                 Logger(subsystem: "com.jibunkit.app", category: "Badge")
                     .error("Badge update failed: \(error.localizedDescription)")

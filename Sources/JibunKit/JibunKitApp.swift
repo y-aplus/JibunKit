@@ -16,7 +16,14 @@ struct JibunKitApp: App {
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             switch phase {
-            case .active: lifecycle.update(.active)
+            case .active:
+                lifecycle.update(.active)
+                // The system calls the filter's perform when a Focus changes;
+                // reading the current filter also covers a missed call.
+                Task {
+                    guard let current = try? await JibunKitFocusFilter.current else { return }
+                    MiniAppRegistry.applyFocus(current.shownIDs)
+                }
             case .inactive: lifecycle.update(.inactive)
             case .background: lifecycle.update(.background)
             @unknown default: break

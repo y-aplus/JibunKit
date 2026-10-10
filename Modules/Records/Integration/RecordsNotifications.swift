@@ -31,6 +31,7 @@ public enum RecordsNotifications {
         content.body = "記録を確認する時刻です。"
         content.sound = .default
         content.userInfo = context.notificationUserInfo(destination: record.id.uuidString)!
+        if #available(macOS 13, *) { content.filterCriteria = context.notificationFilterCriteria }
         return UNNotificationRequest(identifier: context.notificationRequestIdentifier(for: record.id.uuidString),
                                      content: content,
                                      trigger: UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false))

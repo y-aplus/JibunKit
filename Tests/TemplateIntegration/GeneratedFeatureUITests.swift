@@ -13,7 +13,24 @@ final class GeneratedFeatureUITests: XCTestCase {
         item.tap()
     }
 
+    /// A launch can restore the Feature that the scene last showed, so a test
+    /// that starts from the list first leaves any Feature screen.
+    private func showLauncher(in app: XCUIApplication) {
+        let launcher = app.buttons["management.open"]
+        for _ in 0..<6 {
+            if launcher.waitForExistence(timeout: 3) { return }
+            let featureRoot = app.buttons["miniapp.back-to-list"]
+            if featureRoot.exists {
+                featureRoot.tap()
+            } else if app.navigationBars.buttons.firstMatch.exists {
+                app.navigationBars.buttons.firstMatch.tap()
+            }
+        }
+        XCTAssertTrue(launcher.exists, app.debugDescription)
+    }
+
     private func revealLauncherRow(_ row: XCUIElement, in app: XCUIApplication) {
+        showLauncher(in: app)
         let list = app.collectionViews.firstMatch
         XCTAssertTrue(list.waitForExistence(timeout: 10), app.debugDescription)
 
@@ -878,10 +895,12 @@ final class GeneratedFeatureUITests: XCTestCase {
         app.launchArguments = ["-AppleLanguages", "(ja)", "-AppleLocale", "ja_JP"]
         app.launch()
         func tap(_ element: XCUIElement) {
-            if element.identifier.hasPrefix("miniapp.") { revealLauncherRow(element, in: app) }
             XCTAssertTrue(element.waitForExistence(timeout: 10))
             element.tap()
         }
+        // Reading `identifier` resolves the query, which fails while a lazy
+        // launcher row is not materialized; reveal the known row first.
+        revealLauncherRow(app.buttons["miniapp.records"], in: app)
         tap(app.buttons["miniapp.records"])
         tap(app.buttons["records.add"])
         let title = "Notification-" + UUID().uuidString.prefix(8)

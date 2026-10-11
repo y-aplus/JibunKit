@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-10-11
+
 - Fixes `MiniAppExternalURL.open` opening another app long after the request: when the user left JibunKit while the request waited for activation, the URL opened the next time JibunKit became active. An expired request now throws `inactive` instead. Found in the device check of 2026-10-11.
 - The host's own screens follow the device language: the list, management, backup and restore, inbox, Spotlight search choice, the Share and Action extensions, and Core's start and error text. They are written in English with a Japanese translation, so a device set to Japanese shows the same wording as before and other languages show English. Features keep their own text. `python3 Tools/check-localization.py` checks the string tables against the source, and CI runs it.
 - Adds the **Show Mini Apps** Focus filter. Each Focus can choose the mini apps it shows; the others leave the list, the switch menu, the quick actions and the icon badge, and their notifications are silenced when they set `content.filterCriteria = context.notificationFilterCriteria` (Reminder and Records do). They still open from links, notifications and Spotlight. Checked on a device except notification silencing, which could not be tested there.

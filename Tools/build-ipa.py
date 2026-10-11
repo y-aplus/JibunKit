@@ -95,7 +95,11 @@ def main(argv=None):
     repo = args.repo or parse_repo(git("remote", "get-url", "origin"))
 
     print(f"Pushing {branch} to {repo}...")
-    run(["git", "push", "origin", f"HEAD:refs/heads/{branch}"])
+    # Push with the GitHub CLI's sign-in, which this tool needs anyway, rather
+    # than a credential helper that may not be set up or reachable.
+    run(["git", "-c", "credential.https://github.com.helper=",
+         "-c", "credential.https://github.com.helper=!gh auth git-credential",
+         "push", "origin", f"HEAD:refs/heads/{branch}"])
 
     # GitHub and this machine may disagree slightly about the time.
     since = datetime.now(timezone.utc) - timedelta(minutes=2)

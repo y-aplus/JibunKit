@@ -1,15 +1,15 @@
 # Release and development status
 
-Updated 2026-10-11. **Release candidate: 1.2.0/build18**, not yet published; its changes are in the [draft release notes](releases/release-notes-1.2.0.md) and its checks in the [verification record](verification/2026-10-11-1.2-release.md).
+Updated 2026-10-11. **Stable: 1.2.0/build18**, published on 2026-10-11. It adds Module Features connected through `JibunKitFeature.json`, host screens in the device language, the Show Mini Apps Focus filter and Feature-configured data scanners, listed in the [release notes](releases/release-notes-1.2.0.md).
 
-**Stable: 1.1.0/build17**, published on 2026-10-10. It adds the app-wide surfaces, Feature parts and fixes listed in the [release notes](releases/release-notes-1.1.0.md).
+- Build source `3064db571945f37f25c9805d4e73e9376bb5e674`, run 38116133109; IPA 5,348,298 bytes, SHA-256 `43c69940e6694d78e1f9a236dab8ed091c9fb95512c7d36e56d67c75e497d9a6`. Candidate tests, the intermittent web data UI test, the device checks and their limits are in the [verification record](verification/2026-10-11-1.2-release.md).
+- Not device-checked: notification silencing by the Focus filter (the test device's Focus did not silence JibunKit even without it), and the notification Service and Content extensions.
 
-- Build source `0a6c4602690c233f69ed3d4b148f0a430db181ec`, run 37959506516; IPA 5,258,091 bytes, SHA-256 `c1e0ac8c599db9fba4d1a0c61870db73a36202a50a03f7e21ef09d69ca41998e`. Candidate tests, the five generated-host UI failures that predate this release, and the device check are in the [verification record](verification/2026-10-10-1.1-release.md).
-- Icon badges, Spotlight "Search in App", `NSUserActivity` routing, `MiniAppExternalURL`, `scanCode` and the notification extensions were not device-checked in this release. All but the notification extensions were checked on 2026-10-11 with a diagnostic build; the check found a defect in `MiniAppExternalURL`, fixed after 1.1.0 ([record](verification/2026-10-11-app-wide-surfaces-device.md)).
+**Previous stable: 1.1.0/build17**, published on 2026-10-10 ([release notes](releases/release-notes-1.1.0.md)). Build source `0a6c4602690c233f69ed3d4b148f0a430db181ec`; its app-wide surfaces except the notification extensions were checked on a device on 2026-10-11 ([record](verification/2026-10-11-app-wide-surfaces-device.md)).
 
 The 1.0 boundary below still describes the adopted P0/P1/P2 scope.
 
-**Previous stable: 1.0.0/build16.** The adopted P0/P1/P2 criteria were published after the final document and artifact audit. The explicit unobserved conditions remain disclosed below.
+**Earlier stable: 1.0.0/build16.** The adopted P0/P1/P2 criteria were published after the final document and artifact audit. The explicit unobserved conditions remain disclosed below.
 
 - Build source: `82553cfe2c81cd83111cd2a247c90f87bd1015ac`; CI35409750733 passed shared443 tests (2 existing skips), Module11, normal IPA checks and the selected cold/warm URL regression.
 - Normal IPA: 4,747,918 bytes, SHA-256 `6d077f2caf52f9a1151e0e00cdb02332536baaed922e977b1ac0e7afe3e84d3f`. App, Widget and Share report 1.0.0/build16. It is published at the 1.0.0 release.

@@ -27,4 +27,7 @@ Previous stable release: 1.1.0. This release makes adding a Feature mostly a mat
 
 ## Verification and limits
 
+Release IPA: 5,348,298 bytes, SHA-256 `43c69940e6694d78e1f9a236dab8ed091c9fb95512c7d36e56d67c75e497d9a6`, built from `3064db5`.
+
+
 See the [verification record](../verification/2026-10-11-1.2-release.md). Device checks on 2026-10-11 covered the app-wide surfaces from 1.1.0, the data scanner modes and the Focus filter. Notification silencing by the Focus filter could not be tested: on the test device the Focus did not silence JibunKit's notifications even without the filter.

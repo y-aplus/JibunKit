@@ -1,0 +1,11 @@
+/* Counter Feature text. Keys are the English text in the Swift source. */
+
+"Counter" = "Counter";
+"Loading the saved value" = "Loading the saved value";
+"Add 1" = "Add 1";
+"This app has ended" = "This app has ended";
+"Reload" = "Reload";
+"Can’t load the shared value" = "Can’t load the shared value";
+"Can’t update the shared value" = "Can’t update the shared value";
+"The counter value is out of range." = "The counter value is out of range.";
+"Saved counter value" = "Saved counter value";

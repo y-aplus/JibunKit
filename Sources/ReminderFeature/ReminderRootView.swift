@@ -23,23 +23,29 @@ public struct ReminderRootView: View {
 
     public var body: some View {
         Form {
-            Section("通知内容") {
-                TextField("例: 水を飲む", text: $message)
+            Section {
+                TextField(String(localized: "Example: Drink water", bundle: .module), text: $message)
+            } header: {
+                Text("Message", bundle: .module)
             }
 
             Section {
-                Button("保存") {
+                Button {
                     runOwned { await save() }
+                } label: {
+                    Text("Save", bundle: .module)
                 }
 
-                Button("10秒後に通知") {
+                Button {
                     switch consents?.consent(for: owner, permissionID: ReminderNotificationScheduler.permission.id) {
                     case .notDetermined?: requestingConsent = true
                     case .denied?:
-                        statusMessage = "リマインダーでの通知利用を拒否しています。ミニアプリの管理で変更できます。"
+                        statusMessage = String(localized: "You denied notifications for Reminder. You can change this in Manage Mini Apps.", bundle: .module)
                         isError = true
                     default: runOwned { await scheduleNotification() }
                     }
+                } label: {
+                    Text("Notify in 10 Seconds", bundle: .module)
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -51,7 +57,7 @@ public struct ReminderRootView: View {
                 }
             }
         }
-        .navigationTitle("リマインダー")
+        .navigationTitle(Text("Reminder", bundle: .module))
         .task {
             await load()
             try? await scheduler.refreshBadge()
@@ -61,16 +67,21 @@ public struct ReminderRootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { runOwned { try? await scheduler.refreshBadge() } }
         }
-        .alert("リマインダーが通知を利用します", isPresented: $requestingConsent) {
-            Button("許可") {
+        .alert(Text("Reminder Uses Notifications", bundle: .module), isPresented: $requestingConsent) {
+            Button {
                 consents?.setConsent(.allowed, for: owner, permissionID: ReminderNotificationScheduler.permission.id)
                 runOwned { await scheduleNotification() }
+            } label: {
+                Text("Allow", bundle: .module)
             }
-            Button("拒否", role: .cancel) {
+            Button(role: .cancel) {
                 consents?.setConsent(.denied, for: owner, permissionID: ReminderNotificationScheduler.permission.id)
+            } label: {
+                Text("Don’t Allow", bundle: .module)
             }
         } message: {
-            Text(ReminderNotificationScheduler.permission.purpose + "\n拒否した場合: " + ReminderNotificationScheduler.permission.deniedBehavior)
+            let permission = ReminderNotificationScheduler.permission
+            Text(String(localized: "\(permission.purpose)\nIf you don’t allow: \(permission.deniedBehavior)", bundle: .module))
         }
     }
 
@@ -79,7 +90,7 @@ public struct ReminderRootView: View {
         if let lifetime {
             guard lifetime.isStartAllowed, let runtime = lifetime.runtime else { return }
             do { try runtime.start { await operation() } }
-            catch { statusMessage = "このアプリは終了しています"; isError = true }
+            catch { statusMessage = String(localized: "This app has ended", bundle: .module); isError = true }
         } else {
             Task { @MainActor in await operation() }
         }
@@ -92,7 +103,7 @@ public struct ReminderRootView: View {
             statusMessage = nil
             isError = false
         } catch {
-            statusMessage = "保存内容を読み込めません"
+            statusMessage = String(localized: "Can’t load the saved message", bundle: .module)
             isError = true
         }
     }
@@ -101,13 +112,13 @@ public struct ReminderRootView: View {
     private func save() async {
         do {
             _ = try await saveCurrentMessage()
-            statusMessage = "保存しました"
+            statusMessage = String(localized: "Saved", bundle: .module)
             isError = false
         } catch ReminderInputError.emptyMessage {
-            statusMessage = "通知内容を入力してください"
+            statusMessage = String(localized: "Enter a message", bundle: .module)
             isError = true
         } catch {
-            statusMessage = "保存できません"
+            statusMessage = String(localized: "Can’t save the message", bundle: .module)
             isError = true
         }
     }
@@ -121,21 +132,21 @@ public struct ReminderRootView: View {
             )
             switch result {
             case .scheduled:
-                statusMessage = "10秒後の通知を予約しました"
+                statusMessage = String(localized: "Scheduled a notification in 10 seconds", bundle: .module)
                 isError = false
                 try? await scheduler.refreshBadge()
                 // Clear the count after delivery while the app stays open.
                 try? await Task.sleep(for: .seconds(ReminderNotificationScheduler.delay + 1))
                 try? await scheduler.refreshBadge()
             case .denied:
-                statusMessage = "通知は許可されていません。設定で変更できます"
+                statusMessage = String(localized: "Notifications aren’t allowed. You can change this in Settings", bundle: .module)
                 isError = true
             }
         } catch ReminderInputError.emptyMessage {
-            statusMessage = "通知内容を入力してください"
+            statusMessage = String(localized: "Enter a message", bundle: .module)
             isError = true
         } catch {
-            statusMessage = "通知を予約できません"
+            statusMessage = String(localized: "Can’t schedule the notification", bundle: .module)
             isError = true
         }
     }

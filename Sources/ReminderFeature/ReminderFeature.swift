@@ -8,6 +8,11 @@ public extension MiniAppID {
     static let reminder = MiniAppID("reminder")
 }
 
+/// Text the host shows for this Feature, in the device language.
+public enum ReminderText {
+    public static var title: String { String(localized: "Reminder", bundle: .module) }
+}
+
 
 
 public actor ReminderStore {
@@ -111,7 +116,7 @@ public actor ReminderStore {
     public nonisolated var removalProvider: MiniAppRemovalProvider {
         MiniAppRemovalProvider(
             id: miniAppID,
-            dataDescription: "保存したリマインダーメッセージ",
+            dataDescription: String(localized: "Saved reminder message", bundle: .module),
             removeData: { try await self.removeOwnedData() })
     }
 

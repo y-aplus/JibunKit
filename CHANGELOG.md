@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+- The bundled Counter and Reminder Features follow the device language: their screens, titles, notification permission text, reminder notification and data descriptions are written in English with a Japanese translation, so a device set to Japanese shows the same wording as before. `Tools/check-localization.py` checks their string tables too. The Counter shortcut's App Intent and App Shortcut phrases are still Japanese.
+
 ## [1.2.0] — 2026-10-11
 
 - Fixes `MiniAppExternalURL.open` opening another app long after the request: when the user left JibunKit while the request waited for activation, the URL opened the next time JibunKit became active. An expired request now throws `inactive` instead. Found in the device check of 2026-10-11.

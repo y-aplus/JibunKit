@@ -9,7 +9,7 @@ public enum ReminderMiniApp {
     @MainActor
     public static let definition = MiniAppDefinition(
         id: .reminder,
-        title: "リマインダー",
+        title: ReminderText.title,
         systemImage: "bell",
         backup: ReminderStore.shared.backupProvider,
         lifetime: lifetime,

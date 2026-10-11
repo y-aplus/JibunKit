@@ -8,6 +8,11 @@ public extension MiniAppID {
     static let counter = MiniAppID("counter")
 }
 
+/// Text the host shows for this Feature, in the device language.
+public enum CounterText {
+    public static var title: String { String(localized: "Counter", bundle: .module) }
+}
+
 
 
 public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
@@ -16,7 +21,7 @@ public enum CounterStoreError: Error, Equatable, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .valueOutOfRange:
-            "カウンターの値が範囲を超えます。"
+            String(localized: "The counter value is out of range.", bundle: .module)
         }
     }
 }
@@ -142,7 +147,7 @@ public actor CounterStore {
     public nonisolated var removalProvider: MiniAppRemovalProvider {
         MiniAppRemovalProvider(
             id: miniAppID,
-            dataDescription: "保存したカウンター値",
+            dataDescription: String(localized: "Saved counter value", bundle: .module),
             removeData: { try await self.removeOwnedData() })
     }
 

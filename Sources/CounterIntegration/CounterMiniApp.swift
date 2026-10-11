@@ -9,7 +9,7 @@ public enum CounterMiniApp {
     @MainActor
     public static let definition = MiniAppDefinition(
         id: .counter,
-        title: "カウンター",
+        title: CounterText.title,
         systemImage: "number",
         backup: CounterStore.shared.backupProvider,
         lifetime: lifetime,

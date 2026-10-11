@@ -20,7 +20,7 @@ public struct CounterRootView: View {
 
     public var body: some View {
         VStack(spacing: 16) {
-            Text("カウンター")
+            Text("Counter", bundle: .module)
                 .font(.headline)
             if let value {
                 Text(value, format: .number)
@@ -28,17 +28,19 @@ public struct CounterRootView: View {
                     .font(.largeTitle)
                     .monospacedDigit()
             } else if errorMessage == nil {
-                ProgressView("保存値を読み込んでいます")
+                ProgressView { Text("Loading the saved value", bundle: .module) }
                     .accessibilityIdentifier("counter.loading")
             }
-            Button("1を追加") {
+            Button {
                 if let lifetime {
                     guard lifetime.isStartAllowed, let runtime = lifetime.runtime else { return }
                     do { try runtime.start { await addOne() } }
-                    catch { errorMessage = "このアプリは終了しています" }
+                    catch { errorMessage = String(localized: "This app has ended", bundle: .module) }
                 } else {
                     Task { await addOne() }
                 }
+            } label: {
+                Text("Add 1", bundle: .module)
             }
             .buttonStyle(.borderedProminent)
             .disabled(value == nil)
@@ -47,7 +49,7 @@ public struct CounterRootView: View {
                 Text(errorMessage)
                     .font(.caption)
                     .foregroundStyle(.red)
-                Button("再読み込み") { Task { await loadValue() } }
+                Button { Task { await loadValue() } } label: { Text("Reload", bundle: .module) }
             }
         }
         .padding()
@@ -68,7 +70,7 @@ public struct CounterRootView: View {
             value = try await store.currentValue()
             errorMessage = nil
         } catch {
-            errorMessage = "共有値を読み込めません"
+            errorMessage = String(localized: "Can’t load the shared value", bundle: .module)
         }
     }
 
@@ -78,7 +80,7 @@ public struct CounterRootView: View {
             value = try await store.add(1)
             errorMessage = nil
         } catch {
-            errorMessage = "共有値を更新できません"
+            errorMessage = String(localized: "Can’t update the shared value", bundle: .module)
         }
     }
 }

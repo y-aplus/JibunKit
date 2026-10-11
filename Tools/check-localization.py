@@ -11,7 +11,8 @@ This reports
 - en and ja tables with different keys, or a translation whose format
   specifiers differ from its key, and
 - Japanese text left in the source, which would show untranslated.
-Features under Sources/*Feature and Modules/ localize their own text.
+Other Features localize their own text; the bundled Counter and Reminder are
+checked here as examples.
 """
 from pathlib import Path
 import re
@@ -25,6 +26,9 @@ TABLES = [
     ("Sources/JibunKit/Resources", ["Sources/JibunKit"], False),
     ("Sources/JibunKitCore/Resources", ["Sources/JibunKitCore"], True),
     ("Sources/JibunKitIncomingExtensionUI/Resources", ["Sources/JibunKitIncomingExtensionUI"], False),
+    # The bundled sample Features, whose integrations take the title from them.
+    ("Sources/CounterFeature/Resources", ["Sources/CounterFeature", "Sources/CounterIntegration"], True),
+    ("Sources/ReminderFeature/Resources", ["Sources/ReminderFeature", "Sources/ReminderIntegration"], True),
 ]
 # Counter's App Intent lives in the host target but belongs to the Counter
 # Feature, which keeps its own wording.

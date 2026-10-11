@@ -9,8 +9,9 @@ public enum ReminderScheduleResult {
 
 public struct ReminderNotificationScheduler: Sendable {
     public static let permission = MiniAppPermissionDeclaration(
-        id: "notifications", title: "通知", purpose: "保存したメッセージを指定時刻に通知します。",
-        deniedBehavior: "メッセージの保存と閲覧は引き続き利用できます。")
+        id: "notifications", title: String(localized: "Notifications", bundle: .module),
+        purpose: String(localized: "Notifies you of the saved message at the set time.", bundle: .module),
+        deniedBehavior: String(localized: "You can still save and view the message.", bundle: .module))
     private let context: MiniAppContext
 
     public init(context: MiniAppContext) {
@@ -40,7 +41,7 @@ public struct ReminderNotificationScheduler: Sendable {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "リマインダー"
+        content.title = String(localized: "Reminder", bundle: .module)
         content.body = message
         content.sound = .default
         content.userInfo = context.notificationUserInfo

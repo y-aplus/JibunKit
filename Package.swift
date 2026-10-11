@@ -50,11 +50,13 @@ let package = Package(
         ),
         .target(
             name: "CounterFeature",
-            dependencies: ["JibunKitCore"]
+            dependencies: ["JibunKitCore"],
+            resources: [.process("Resources")]
         ),
         .target(
             name: "ReminderFeature",
-            dependencies: ["JibunKitCore"]
+            dependencies: ["JibunKitCore"],
+            resources: [.process("Resources")]
         ),
         .testTarget(
             name: "CounterFeatureTests",

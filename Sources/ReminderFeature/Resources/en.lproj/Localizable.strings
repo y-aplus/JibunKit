@@ -1,0 +1,24 @@
+/* Reminder Feature text. Keys are the English text in the Swift source. */
+
+"Reminder" = "Reminder";
+"Saved reminder message" = "Saved reminder message";
+"Notifications" = "Notifications";
+"Notifies you of the saved message at the set time." = "Notifies you of the saved message at the set time.";
+"You can still save and view the message." = "You can still save and view the message.";
+"Message" = "Message";
+"Example: Drink water" = "Example: Drink water";
+"Save" = "Save";
+"Notify in 10 Seconds" = "Notify in 10 Seconds";
+"You denied notifications for Reminder. You can change this in Manage Mini Apps." = "You denied notifications for Reminder. You can change this in Manage Mini Apps.";
+"Reminder Uses Notifications" = "Reminder Uses Notifications";
+"Allow" = "Allow";
+"Don’t Allow" = "Don’t Allow";
+"%@\nIf you don’t allow: %@" = "%@\nIf you don’t allow: %@";
+"This app has ended" = "This app has ended";
+"Can’t load the saved message" = "Can’t load the saved message";
+"Saved" = "Saved";
+"Enter a message" = "Enter a message";
+"Can’t save the message" = "Can’t save the message";
+"Scheduled a notification in 10 seconds" = "Scheduled a notification in 10 seconds";
+"Notifications aren’t allowed. You can change this in Settings" = "Notifications aren’t allowed. You can change this in Settings";
+"Can’t schedule the notification" = "Can’t schedule the notification";

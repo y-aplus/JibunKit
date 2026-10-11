@@ -1,0 +1,24 @@
+/* Reminder Feature text. Keys are the English text in the Swift source. */
+
+"Reminder" = "リマインダー";
+"Saved reminder message" = "保存したリマインダーメッセージ";
+"Notifications" = "通知";
+"Notifies you of the saved message at the set time." = "保存したメッセージを指定時刻に通知します。";
+"You can still save and view the message." = "メッセージの保存と閲覧は引き続き利用できます。";
+"Message" = "通知内容";
+"Example: Drink water" = "例: 水を飲む";
+"Save" = "保存";
+"Notify in 10 Seconds" = "10秒後に通知";
+"You denied notifications for Reminder. You can change this in Manage Mini Apps." = "リマインダーでの通知利用を拒否しています。ミニアプリの管理で変更できます。";
+"Reminder Uses Notifications" = "リマインダーが通知を利用します";
+"Allow" = "許可";
+"Don’t Allow" = "拒否";
+"%@\nIf you don’t allow: %@" = "%@\n拒否した場合: %@";
+"This app has ended" = "このアプリは終了しています";
+"Can’t load the saved message" = "保存内容を読み込めません";
+"Saved" = "保存しました";
+"Enter a message" = "通知内容を入力してください";
+"Can’t save the message" = "保存できません";
+"Scheduled a notification in 10 seconds" = "10秒後の通知を予約しました";
+"Notifications aren’t allowed. You can change this in Settings" = "通知は許可されていません。設定で変更できます";
+"Can’t schedule the notification" = "通知を予約できません";

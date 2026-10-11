@@ -1,0 +1,11 @@
+/* Counter Feature text. Keys are the English text in the Swift source. */
+
+"Counter" = "カウンター";
+"Loading the saved value" = "保存値を読み込んでいます";
+"Add 1" = "1を追加";
+"This app has ended" = "このアプリは終了しています";
+"Reload" = "再読み込み";
+"Can’t load the shared value" = "共有値を読み込めません";
+"Can’t update the shared value" = "共有値を更新できません";
+"The counter value is out of range." = "カウンターの値が範囲を超えます。";
+"Saved counter value" = "保存したカウンター値";

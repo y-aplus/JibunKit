@@ -1,13 +1,14 @@
 name: Publish IPA prerelease
 
-# Attaches the plain JibunKit.ipa from a successful "Build JibunKit IPA" run to
+# Attaches the plain JibunKit.ipa from a successful "Build JibunKit IPA" or
+# "Build IPA (quick)" run (one started without `publish`) to
 # a prerelease, so a device can download the IPA directly instead of the
 # ZIP-wrapped Actions artifact. Run it in your own (derived) repository.
 on:
   workflow_dispatch:
     inputs:
       run_id:
-        description: ID of a successful "Build JibunKit IPA" run in this repository
+        description: ID of a successful "Build JibunKit IPA" or "Build IPA (quick)" run in this repository
         type: string
         required: true
       tag:
@@ -40,7 +41,7 @@ jobs:
           # The workflow name contains spaces; split only on the tabs that @tsv emits.
           IFS=$'\t' read -r name conclusion sha < <(gh run view "$RUN_ID" --json workflowName,conclusion,headSha \
             --jq '[.workflowName, .conclusion, .headSha] | @tsv')
-          test "$name" = "Build JibunKit IPA" || { echo "Run $RUN_ID is '$name', not Build JibunKit IPA" >&2; exit 1; }
+          [[ "$name" = "Build JibunKit IPA" || "$name" = "Build IPA (quick)" ]] || { echo "Run $RUN_ID is '$name', not an IPA build" >&2; exit 1; }
           test "$conclusion" = success || { echo "Run $RUN_ID concluded '$conclusion'" >&2; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"

@@ -147,7 +147,13 @@ tuist generate --no-open
 tuist build JibunKit-App
 ```
 
-The package-specific test may run on Linux/WSL only if that feature's dependencies are portable; the repository-root `swift test` currently does not. A WSL installation that already has a compatible Darwin Swift SDK may additionally perform an iOS compile-only check, but that is not an IPA build or a generally installed prerequisite; see the build guide. A compile check does not run tests or produce an IPA; use the **Build JibunKit IPA** workflow for those.
+The package-specific test may run on Linux/WSL only if that feature's dependencies are portable; the repository-root `swift test` currently does not. A WSL installation that already has a compatible Darwin Swift SDK may additionally perform an iOS compile-only check, but that is not an IPA build or a generally installed prerequisite; see the build guide. A compile check does not run tests or produce an IPA.
+
+To try the feature on your device, commit it and build an IPA with one command; it prints a link to pass to SideStore or AltStore ([build guide](build.md#build-an-ipa-with-one-command)):
+
+```bash
+python3 Tools/build-ipa.py
+```
 
 Also verify:
 

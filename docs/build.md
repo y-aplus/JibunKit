@@ -56,9 +56,21 @@ xcodebuild build \
 
 The `CounterExample` scheme is a small standalone reference. A generated feature has its own example workspace and scheme; develop there before integrating it into the host.
 
+## Build an IPA with one command
+
+From any machine with Git, Python 3 and a signed-in GitHub CLI, commit your changes and run:
+
+```bash
+python3 Tools/build-ipa.py
+```
+
+It runs the Feature connection and string checks locally, pushes the current branch to `origin`, starts the **Build IPA (quick)** workflow (`quick-ipa.yml`) there, waits for it, and prints a direct IPA link that a device can open and pass to SideStore or AltStore. It always builds in the repository named by `origin`, never `upstream`; `--repo OWNER/REPO` chooses another one and `--download` saves the IPA under `build/` instead of creating a prerelease.
+
+The quick build repeats the checks, generates the project, builds the app and its extensions in Release, checks what every IPA needs (arm64 executables, extension IDs and versions, InfoPlist translations, the App Group in the signed entitlements), ad-hoc signs and packages the IPA. It runs no tests, so it proves that the selected Features compile and package, not that they behave correctly. The job that builds the code has read-only access and no secrets; a separate job that runs no repository code creates the `build-RUN_ID` prerelease. A prerelease asset in a private repository requires signing in to GitHub in the device's browser.
+
 ## GitHub Actions build
 
-From any machine with Git and GitHub CLI access, push a branch and run:
+The **Build JibunKit IPA** workflow tests JibunKit itself as well as building an IPA. From any machine with Git and GitHub CLI access, push a branch and run:
 
 ```bash
 gh workflow run build-ios.yml \
@@ -87,7 +99,7 @@ Use the workflow inputs, completed steps, test summaries, and artifacts as the e
 | Environment | Supported local work | Important limit |
 | --- | --- | --- |
 | macOS with Xcode and Tuist 4.207.0 | Root tests, feature tests, scaffold, project generation, Xcode build, Simulator, and local signing/install | Capabilities still depend on the signing account, profiles, device, and services. |
-| Windows | Source editing, Git/GitHub CLI operations, and `python3 Tools/jibunkit-feature.py` (create, connect and check features) | Use macOS or Actions for project generation, Xcode builds, and IPA packaging. |
+| Windows | Source editing, Git/GitHub CLI operations, `python3 Tools/jibunkit-feature.py` (create, connect and check features) and `python3 Tools/build-ipa.py` (build an IPA in Actions) | Use macOS or Actions for project generation, Xcode builds, and IPA packaging. |
 | Linux/WSL with Swift | Tests for a portable independent package, for example `swift test --package-path Modules/Notes` | The root package does not currently build on Linux/WSL. |
 | Linux/WSL with the tested Tuist 4.207.0 binary | Installation and `tuist version` worked in the reported experiment | In that experiment, its command set did not provide the local `tuist scaffold` or Xcode-project `tuist generate` path used by this repository. Do not generalize this result to other Tuist versions. |
 
@@ -101,7 +113,7 @@ Without a Mac, run the **Compile check** workflow on your branch to find compile
 gh workflow run compile-check.yml --ref <branch>
 ```
 
-It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors appear as annotations in `gh run view <id>` and in `gh run view <id> --log-failed`, so they can be read without a browser. Use the full **Build JibunKit IPA** workflow for tests and an installable IPA.
+It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors appear as annotations in `gh run view <id>` and in `gh run view <id> --log-failed`, so they can be read without a browser. Use `python3 Tools/build-ipa.py` for an installable IPA and the full **Build JibunKit IPA** workflow for tests.
 
 ## Sign and install
 

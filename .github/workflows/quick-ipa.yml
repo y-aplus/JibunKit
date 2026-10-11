@@ -1,0 +1,135 @@
+name: Build IPA (quick)
+
+# The build for using your own Features: the pre-build checks, then a Release
+# build of the app and its extensions, the checks every IPA needs, ad-hoc
+# signing and packaging. No tests run; use "Build JibunKit IPA" to test
+# JibunKit itself. With `publish`, a separate job attaches the IPA to a
+# prerelease so a device can download it directly.
+# Start it with `python3 Tools/build-ipa.py`, or:
+#   gh workflow run quick-ipa.yml --repo OWNER/REPO --ref <branch> -f publish=true
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Attach the IPA to a prerelease and print its direct link
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Xcode 26.6 (Release IPA)
+    runs-on: macos-26
+    timeout-minutes: 30
+    # The Feature code built here gets no write access and no secrets.
+    permissions:
+      contents: read
+    env:
+      TUIST_VERSION: "4.207.0"
+      TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Check Feature connections and host strings
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 Tools/jibunkit-feature.py sync --check
+          python3 Tools/jibunkit-feature.py check
+          python3 Tools/check-localization.py
+
+      - name: Select Xcode 26.6
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          test "$(xcodebuild -version | sed -n '1p')" = "Xcode 26.6"
+
+      - name: Install pinned Tuist
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/tuist.zip" \
+            "https://github.com/tuist/tuist/releases/download/$TUIST_VERSION/tuist.zip"
+          echo "$TUIST_SHA256  $RUNNER_TEMP/tuist.zip" | shasum --algorithm 256 --check
+          mkdir -p "$RUNNER_TEMP/tuist"
+          ditto -x -k "$RUNNER_TEMP/tuist.zip" "$RUNNER_TEMP/tuist"
+          echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
+
+      - name: Generate and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          tuist generate --no-open
+          status=0
+          xcodebuild build \
+            -workspace JibunKit.xcworkspace \
+            -scheme JibunKit-App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO > "$RUNNER_TEMP/build.log" 2>&1 || status=$?
+          [[ "$status" -eq 0 ]] && exit 0
+          errors="$(grep -E '^/.+:[0-9]+:[0-9]+: error: ' "$RUNNER_TEMP/build.log" | sed "s|^$GITHUB_WORKSPACE/||" | sort -u || true)"
+          {
+            echo "### Compile errors"
+            echo '```'
+            if [[ -n "$errors" ]]; then echo "$errors" | head -100; else tail -60 "$RUNNER_TEMP/build.log"; fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [[ -n "$errors" ]]; then
+            echo "$errors" | head -100
+            echo "$errors" | head -10 | sed -E 's/^([^:]+):([0-9]+):([0-9]+): error: (.*)$/::error file=\1,line=\2,col=\3::\4/'
+          else
+            tail -60 "$RUNNER_TEMP/build.log"
+          fi
+          exit "$status"
+
+      - name: Check, ad-hoc sign and package the IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash Tools/package-ipa.sh \
+            "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos/JibunKit_App.app" \
+            artifacts/JibunKit.ipa
+          echo "Built JibunKit.ipa (SHA-256 $(shasum --algorithm 256 artifacts/JibunKit.ipa | cut -d' ' -f1))." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JibunKit-ad-hoc
+          path: artifacts/JibunKit.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish prerelease
+    needs: build
+    if: ${{ inputs.publish }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only this job can write, and it runs no code from the checkout.
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: build-${{ github.run_id }}
+    steps:
+      - name: Create the prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$GITHUB_RUN_ID" --name JibunKit-ad-hoc --dir ipa
+          unzip -tq ipa/JibunKit.ipa
+          sha="$(sha256sum ipa/JibunKit.ipa | cut -d' ' -f1)"
+          gh release create "$TAG" ipa/JibunKit.ipa \
+            --prerelease --target "$GITHUB_SHA" --title "$TAG" \
+            --notes "Built from $GITHUB_SHA by run $GITHUB_RUN_ID (quick build, no tests). SHA-256: $sha"
+          echo "Direct IPA link: https://github.com/$GH_REPO/releases/download/$TAG/JibunKit.ipa" >> "$GITHUB_STEP_SUMMARY"

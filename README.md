@@ -35,7 +35,7 @@ For a first feature, prefer an independent package under `Modules/`: it is easie
 
 ## Build and install
 
-JibunKit currently targets iOS 26 and uses Swift 6, Tuist 4.207.0, and Xcode 26.6 on the verified build path. See [Build, sign, and install](docs/build.md) for local and GitHub Actions commands.
+JibunKit currently targets iOS 26 and uses Swift 6, Tuist 4.207.0, and Xcode 26.6 on the verified build path. From Windows, Linux or macOS, `python3 Tools/build-ipa.py` builds an IPA of your branch in GitHub Actions and prints a link to install it with SideStore or AltStore. See [Build, sign, and install](docs/build.md) for this and the local Xcode path.
 
 The general delivery path is **source configuration → Tuist/Xcode build → signing → installation**. SideStore is one verified installation example, not a requirement of JibunKit itself. Apple account capabilities, entitlements, App Groups, extensions, and OS services must match the signing method you choose.
 

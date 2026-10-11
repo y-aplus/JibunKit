@@ -4,5 +4,12 @@ import ProjectDescription
 
 public enum ModuleFeatures {
     public static let all: [ModuleFeature] = [
+        ModuleFeature(
+            id: "builder",
+            path: "Modules/Builder",
+            products: ["BuilderFeature"],
+            sources: ["Integration/**"],
+            definitions: ["BuilderMiniApp.definition"]
+        ),
     ]
 }

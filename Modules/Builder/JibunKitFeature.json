@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "builder",
+  "products": ["BuilderFeature"],
+  "sources": ["Integration/**"],
+  "definitions": ["BuilderMiniApp.definition"]
+}

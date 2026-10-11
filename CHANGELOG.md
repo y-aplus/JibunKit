@@ -4,6 +4,7 @@
 
 ## [Unreleased]
 
+- Adds the **Build** mini app (`Modules/Builder`), the first Feature connected through `JibunKitFeature.json`. With a fine-grained GitHub token it starts the repository's quick build from the phone, follows the run, downloads the IPA and hands it to SideStore or AltStore through the share sheet. The app may be closed while GitHub builds; an optional notification at the expected finishing time reminds you to come back.
 - `python3 Tools/build-ipa.py` builds an IPA of the current branch with one command: it runs the Feature checks, pushes to `origin`, runs the new **Build IPA (quick)** workflow and prints a direct IPA link for SideStore or AltStore. The quick workflow builds in Release and checks and packages the IPA without running tests; its build job has read-only access and a separate job publishes the prerelease. `Tools/package-ipa.sh` holds the IPA checks, signing and packaging that both IPA workflows now use, and **Publish IPA prerelease** also accepts quick runs.
 - The bundled Counter and Reminder Features follow the device language: their screens, titles, notification permission text, reminder notification and data descriptions are written in English with a Japanese translation, so a device set to Japanese shows the same wording as before. `Tools/check-localization.py` checks their string tables too. The Counter shortcut's App Intent and App Shortcut phrases are still Japanese.
 

@@ -68,6 +68,10 @@ It runs the Feature connection and string checks locally, pushes the current bra
 
 The quick build repeats the checks, generates the project, builds the app and its extensions in Release, checks what every IPA needs (arm64 executables, extension IDs and versions, InfoPlist translations, the App Group in the signed entitlements), ad-hoc signs and packages the IPA. It runs no tests, so it proves that the selected Features compile and package, not that they behave correctly. The job that builds the code has read-only access and no secrets; a separate job that runs no repository code creates the `build-RUN_ID` prerelease. A prerelease asset in a private repository requires signing in to GitHub in the device's browser.
 
+### From the phone
+
+The **Build** mini app starts the same quick build from JibunKit itself, downloads the IPA when it is done and passes it to SideStore or AltStore through the share sheet. It needs a fine-grained GitHub token for the repository; see its [README](../Modules/Builder/README.md).
+
 ## GitHub Actions build
 
 The **Build JibunKit IPA** workflow tests JibunKit itself as well as building an IPA. From any machine with Git and GitHub CLI access, push a branch and run:

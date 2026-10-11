@@ -29,6 +29,8 @@ Do not add another `NotificationAppDelegate`; route the common payload through t
 
 `JibunKitCore`, root navigation, notification entry points, shared build settings, workflows, and common documentation are foundation-owned. Do not embed personal feature behavior there.
 
+The host screens' wording is in `Sources/JibunKit/Resources/en.lproj` and `ja.lproj/Localizable.strings` (and the Core and extension tables named in [CONTRIBUTING](../CONTRIBUTING.md)); the Swift source holds the English text, which is also the key. To reword a host screen in your host, change the Japanese value in `ja.lproj` instead of the Swift string, so later foundation updates merge cleanly, and run `python3 Tools/check-localization.py`.
+
 ## Update one of two independent packages
 
 Assume `Modules/FeatureA` and `Modules/FeatureB` are independent and only A is changing. Resources with the same file or localization key remain declared in their own targets and are read with `Bundle.module`; do not move A's resource into `Bundle.main` or include B files in the A commit.

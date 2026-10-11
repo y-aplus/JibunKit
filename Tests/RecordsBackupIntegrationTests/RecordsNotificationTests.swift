@@ -18,6 +18,7 @@ final class RecordsNotificationTests: XCTestCase {
         XCTAssertEqual(a.identifier, replacement.identifier)
         XCTAssertEqual((replacement.trigger as? UNTimeIntervalNotificationTrigger)?.timeInterval, 180)
         XCTAssertEqual(a.content.title, first.title)
+        if #available(macOS 13, *) { XCTAssertEqual(a.content.filterCriteria, "records") }
         for (record, request) in [(first, a), (second, b)] {
             let route = try XCTUnwrap(MiniAppNotificationRoute.candidateRoute(userInfo: request.content.userInfo))
             XCTAssertEqual(route.id, MiniAppID("records"))

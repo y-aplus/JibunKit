@@ -167,6 +167,16 @@ enum MiniAppRegistry {
     }
 
     static let recentUsage = MiniAppRecentUsage(defaults: .standard)
+    static let focus = MiniAppFocusSelection(defaults: .standard)
+
+    /// Applies the Focus filter's choice, from its perform and on activation.
+    /// Returns after the icon badge is updated: the system may suspend the app
+    /// as soon as perform returns.
+    static func applyFocus(_ ids: Set<MiniAppID>?) async {
+        guard focus.apply(ids) else { return }
+        refreshQuickActions()
+        await updateBadge()
+    }
 
     static func recordUse(_ id: MiniAppID) {
         recentUsage.record(id)
@@ -175,7 +185,7 @@ enum MiniAppRegistry {
 
     /// Publishes Home Screen quick actions for enabled, launchable Features.
     static func refreshQuickActions() {
-        let candidates = enabled.filter { launchState.errors[$0.id] == nil }.map {
+        let candidates = enabled.filter { launchState.errors[$0.id] == nil && focus.isShown($0.id) }.map {
             MiniAppQuickActions.Candidate(id: $0.id, title: $0.title, systemImage: $0.systemImage, actions: $0.quickActions)
         }
         UIApplication.shared.shortcutItems = MiniAppQuickActions.entries(recent: recentUsage.ids, candidates: candidates).map { entry in
@@ -187,15 +197,19 @@ enum MiniAppRegistry {
         }
     }
 
-    /// Disabled owners stop contributing to the icon badge.
+    /// Disabled owners, and owners the current Focus hides, stop contributing
+    /// to the icon badge.
     static func refreshBadge() {
-        let owners = registeredIDs
-        Task {
-            do { try await MiniAppBadgeCoordinator.shared.setEnabledOwners(owners) }
-            catch {
-                Logger(subsystem: "com.jibunkit.app", category: "Badge")
-                    .error("Badge update failed: \(error.localizedDescription)")
-            }
+        Task { await updateBadge() }
+    }
+
+    static func updateBadge() async {
+        do {
+            try await MiniAppBadgeCoordinator.shared.setFocusedOwners(focus.shownIDs)
+            try await MiniAppBadgeCoordinator.shared.setEnabledOwners(registeredIDs)
+        } catch {
+            Logger(subsystem: "com.jibunkit.app", category: "Badge")
+                .error("Badge update failed: \(error.localizedDescription)")
         }
     }
 

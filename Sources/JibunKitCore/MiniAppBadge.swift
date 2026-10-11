@@ -15,6 +15,8 @@ public final class MiniAppBadgeCoordinator {
     private let apply: @MainActor (Int) async throws -> Void
     /// nil until the host reports admission; every stored owner counts meanwhile.
     private var enabledOwners: Set<MiniAppID>?
+    /// The owners the current Focus shows; nil when no Focus filter applies.
+    private var focusedOwners: Set<MiniAppID>?
 
     public init(defaults: UserDefaults, storageKey: String = MiniAppBadgeCoordinator.defaultStorageKey,
                 apply: @escaping @MainActor (Int) async throws -> Void) {
@@ -48,7 +50,8 @@ public final class MiniAppBadgeCoordinator {
     /// The number currently shown on the icon.
     public var total: Int {
         counts.reduce(0) { sum, entry in
-            guard enabledOwners?.contains(MiniAppID(entry.key)) ?? true else { return sum }
+            let owner = MiniAppID(entry.key)
+            guard enabledOwners?.contains(owner) ?? true, focusedOwners?.contains(owner) ?? true else { return sum }
             let (value, overflow) = sum.addingReportingOverflow(entry.value)
             return overflow ? Int.max : value
         }
@@ -66,6 +69,13 @@ public final class MiniAppBadgeCoordinator {
     /// Host management reports admission; disabled owners stop contributing.
     public func setEnabledOwners(_ owners: Set<MiniAppID>) async throws {
         enabledOwners = owners
+        try await apply(total)
+    }
+
+    /// The host's Focus filter: owners it hides stop contributing until the
+    /// Focus ends. Their stored counts are kept.
+    public func setFocusedOwners(_ owners: Set<MiniAppID>?) async throws {
+        focusedOwners = owners
         try await apply(total)
     }
 

@@ -9,10 +9,15 @@ struct MiniAppListScreen: View {
     @State private var searchText = ""
     @State private var windowError: String?
 
+    /// Enabled Features the current Focus shows.
+    private var shownApps: [MiniAppDefinition] {
+        MiniAppRegistry.enabled.filter { MiniAppRegistry.focus.isShown($0.id) }
+    }
+
     private var matchingApps: [MiniAppDefinition] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return MiniAppRegistry.enabled }
-        return MiniAppRegistry.enabled.filter {
+        guard !query.isEmpty else { return shownApps }
+        return shownApps.filter {
             $0.title.localizedStandardContains(query)
                 || $0.id.rawValue.localizedStandardContains(query)
         }
@@ -45,7 +50,7 @@ struct MiniAppListScreen: View {
                                     Button("All Mini Apps", systemImage: "square.grid.2x2") { navigation.showList() }
                                         .accessibilityIdentifier("miniapp.switch.list")
                                     Section("Switch") {
-                                        ForEach(MiniAppRegistry.enabled.filter { $0.id != owner }) { other in
+                                        ForEach(shownApps.filter { $0.id != owner }) { other in
                                             Button { navigation.open(other.id) } label: {
                                                 Label(other.title, systemImage: other.systemImage)
                                             }
@@ -102,6 +107,12 @@ struct MiniAppListScreen: View {
                     }
                 }
                 .accessibilityIdentifier("miniapp.\(miniApp.id.rawValue)")
+            }
+            if shownApps.count < MiniAppRegistry.enabled.count {
+                Section {} footer: {
+                    Text("The current Focus hides some mini apps. They still open from links and notifications.")
+                        .accessibilityIdentifier("focus.hidden")
+                }
             }
         }
         .navigationTitle("Mini Apps")

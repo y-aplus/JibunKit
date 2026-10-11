@@ -32,7 +32,11 @@ UNCHECKED_SOURCES = {"Sources/JibunKit/AddCounterValueIntent.swift"}
 
 VIEW_CALLS = ("Text", "Button", "Label", "Section", "ProgressView", "Toggle", "Picker", "LabeledContent",
               "ContentUnavailableView", "navigationTitle", "accessibilityLabel", "accessibilityHint", "alert")
-LOCALIZED_BEFORE = re.compile(r"(?:\b(?:%s)\(\s*|String\(localized:\s*|\bprompt:\s*)$" % "|".join(VIEW_CALLS))
+# App Intents text: titles, descriptions, parameters and display representations.
+INTENT_TEXT = (r"(?:LocalizedStringResource|TypeDisplayRepresentation)\s*=\s*", r"IntentDescription\(\s*",
+               r"@Parameter\(title:\s*", r"DisplayRepresentation\(title:\s*")
+LOCALIZED_BEFORE = re.compile(r"(?:\b(?:%s)\(\s*|String\(localized:\s*|\bprompt:\s*|%s)$"
+                              % ("|".join(VIEW_CALLS), "|".join(INTENT_TEXT)))
 JAPANESE = re.compile(r"[぀-ヿ㐀-鿿＀-￯]")
 SPECIFIER = re.compile(r"%(?:\d+\$)?(@|lld|ld|d|lf|f)")
 ENTRY = re.compile(r'^\s*"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;\s*$')
@@ -156,6 +160,8 @@ def check(root=ROOT):
                         continue
                     if not localized(source, literal, module):
                         continue
+                    if all(part is None for part in literal.parts):
+                        continue  # only an interpolation, such as a Feature's title
                     matches = [key for key in keys if literal.pattern().match(key)]
                     if not matches:
                         problems.append(f"{relative}:{literal.line}: {literal.text()!r} has no entry in {table_dir}")

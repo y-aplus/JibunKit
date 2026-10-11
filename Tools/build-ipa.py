@@ -97,9 +97,16 @@ def main(argv=None):
     print(f"Pushing {branch} to {repo}...")
     # Push with the GitHub CLI's sign-in, which this tool needs anyway, rather
     # than a credential helper that may not be set up or reachable.
-    run(["git", "-c", "credential.https://github.com.helper=",
-         "-c", "credential.https://github.com.helper=!gh auth git-credential",
-         "push", "origin", f"HEAD:refs/heads/{branch}"])
+    push = subprocess.run(["git", "-c", "credential.https://github.com.helper=",
+                           "-c", "credential.https://github.com.helper=!gh auth git-credential",
+                           "push", "origin", f"HEAD:refs/heads/{branch}"],
+                          cwd=ROOT, text=True, encoding="utf-8", capture_output=True)
+    print((push.stdout + push.stderr).strip())
+    if push.returncode != 0:
+        if "`workflow` scope" in push.stderr:
+            raise Failure("The push changes a workflow file, which needs the `workflow` scope. Run\n"
+                          "  gh auth refresh -h github.com -s workflow\nand try again.")
+        raise Failure("git push failed.")
 
     # GitHub and this machine may disagree slightly about the time.
     since = datetime.now(timezone.utc) - timedelta(minutes=2)

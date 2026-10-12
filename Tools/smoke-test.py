@@ -22,6 +22,7 @@ from datetime import datetime
 import json
 from pathlib import Path
 import plistlib
+import re
 import subprocess
 import sys
 import time
@@ -31,6 +32,9 @@ OPEN_ARGUMENT = "-JibunKitOpenMiniApp"
 LIST_PREFIX = "jibunkit-mini-app\t"
 CRASH_REPORTS = Path.home() / "Library/Logs/DiagnosticReports"
 FRAMES = 5
+# What Swift, the Objective-C runtime and UIKit print when they stop the app.
+STOP_MESSAGE = re.compile(r"Fatal error|Precondition failed|Assertion failed|Terminating app|uncaught exception"
+                          r"|Thread \d+: |EXC_[A-Z_]+")
 
 
 class Failure(Exception):
@@ -104,18 +108,30 @@ def describe_crash(body):
     return lines
 
 
-def new_crash(bundle_id, since, seen):
-    """The description of the newest crash report of the app written after `since`, or None."""
-    if not CRASH_REPORTS.is_dir():
-        return None
-    for path in sorted(CRASH_REPORTS.glob("*.ips"), key=lambda path: path.stat().st_mtime, reverse=True):
-        if path in seen or path.stat().st_mtime < since:
-            continue
-        parsed = parse_crash_report(path.read_text(encoding="utf-8", errors="replace"))
-        if parsed and parsed[0].get("bundleID") == bundle_id:
-            seen.add(path)
-            return describe_crash(parsed[1])
-    return None
+def new_crash(bundle_id, since, seen, wait=15):
+    """The description of the newest crash report of the app written after `since`, or None.
+    ReportCrash writes it a few seconds after the process ends, so this waits up to `wait` seconds."""
+    deadline = time.time() + wait
+    while True:
+        paths = sorted(CRASH_REPORTS.glob("**/*.ips"), key=lambda path: path.stat().st_mtime, reverse=True) \
+            if CRASH_REPORTS.is_dir() else []
+        for path in paths:
+            if path in seen or path.stat().st_mtime < since:
+                continue
+            parsed = parse_crash_report(path.read_text(encoding="utf-8", errors="replace"))
+            if parsed and parsed[0].get("bundleID") == bundle_id:
+                seen.add(path)
+                return describe_crash(parsed[1])
+        if time.time() >= deadline:
+            return None
+        time.sleep(1)
+
+
+def stop_messages(console):
+    """The lines of the app's console output that say why it stopped, or its last lines."""
+    lines = [line.strip() for line in console.splitlines() if line.strip()]
+    found = [line for line in lines if STOP_MESSAGE.search(line)]
+    return (found or lines[-3:])[:5]
 
 
 def screenshot(simulator, path):
@@ -181,18 +197,30 @@ def main(argv=None):
         results.append(("home", "Mini app list", "OK", [], "home.jpg"))
     for app_id, title in apps:
         opened = time.time() - 1
-        launch(args.simulator, bundle_id, OPEN_ARGUMENT, app_id)
-        time.sleep(args.wait)
-        alive = is_running(simctl("spawn", args.simulator, "launchctl", "list").stdout, bundle_id)
+        # With --console-pty, launch keeps running with the app and records what it prints.
+        console_path = args.output / f"{app_id}.console.txt"
+        with console_path.open("w", encoding="utf-8") as console:
+            process = subprocess.Popen(["xcrun", "simctl", "launch", "--console-pty", "--terminate-running-process",
+                                        args.simulator, bundle_id, OPEN_ARGUMENT, app_id],
+                                       stdout=console, stderr=subprocess.STDOUT)
+            time.sleep(args.wait)
+            alive = is_running(simctl("spawn", args.simulator, "launchctl", "list").stdout, bundle_id)
+            if alive:
+                image = f"{app_id}.jpg"
+                screenshot(args.simulator, args.output / image)
+            simctl("terminate", args.simulator, bundle_id, check=False)
+            try:
+                process.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                process.kill()
+        printed = console_path.read_text(encoding="utf-8", errors="replace")
+        console_path.unlink()
         if alive:
-            image = f"{app_id}.jpg"
-            screenshot(args.simulator, args.output / image)
             results.append((app_id, title, "OK", [], image))
         else:
-            time.sleep(3)  # ReportCrash writes the report shortly after the process ends.
-            details = new_crash(bundle_id, opened, seen) or ["The app stopped; no crash report was found."]
+            details = stop_messages(printed)
+            details += new_crash(bundle_id, opened, seen) or ["No crash report was found."]
             results.append((app_id, title, "CRASHED", details, None))
-        simctl("terminate", args.simulator, bundle_id, check=False)
 
     report = format_report(device, results, crashed_launch, args.screenshot_url)
     (args.output / "report.txt").write_text(report + "\n", encoding="utf-8")

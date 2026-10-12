@@ -64,6 +64,18 @@ class CrashTests(unittest.TestCase):
         self.assertIsNone(smoke_test.parse_crash_report("not json\n{}"))
 
 
+class ConsoleTests(unittest.TestCase):
+    def test_keeps_the_lines_that_say_why_it_stopped(self):
+        console = ("com.jibunkit.app: 4242\nloading\nReminderFeature/ReminderRootView.swift:27: "
+                   "Fatal error: Launch check crash test\n\n")
+        self.assertEqual(smoke_test.stop_messages(console),
+                         ["ReminderFeature/ReminderRootView.swift:27: Fatal error: Launch check crash test"])
+
+    def test_otherwise_the_last_lines(self):
+        self.assertEqual(smoke_test.stop_messages("a\nb\nc\nd\n"), ["b", "c", "d"])
+        self.assertEqual(smoke_test.stop_messages(""), [])
+
+
 class ReportTests(unittest.TestCase):
     def test_lists_results_and_screenshot_links(self):
         report = smoke_test.format_report(

@@ -11,5 +11,12 @@ public enum ModuleFeatures {
             sources: ["Integration/**"],
             definitions: ["BuilderMiniApp.definition"]
         ),
+        ModuleFeature(
+            id: "verlet",
+            path: "Modules/Verlet",
+            products: ["VerletFeature"],
+            sources: ["Integration/**"],
+            definitions: ["VerletMiniApp.definition"]
+        ),
     ]
 }

@@ -1,7 +1,6 @@
 {
   "schema": 1,
   "id": "verlet",
-  "draft": true,
   "products": [
     "VerletFeature"
   ],

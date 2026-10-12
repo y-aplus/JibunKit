@@ -132,7 +132,7 @@ reject("NSUserActivityTypes value shared.view requested by task-a, task-b") {
 }
 let resolvedTasks = try FeatureBuildConfiguration(features: [taskA, taskB],
     infoPlistResolutions: ["BGTaskSchedulerPermittedIdentifiers": ["app.shared", "app.refresh"]])
-    .compose(infoPlist: [:], entitlements: [:])
+    .compose(infoPlist: ["NSUserActivityTypes": ["native"]], entitlements: [:])
 require(resolvedTasks.infoPlist["BGTaskSchedulerPermittedIdentifiers"] == ["app.refresh", "app.shared"], "Explicit task resolution ignored")
 let entitlementResolution = try FeatureBuildConfiguration(features: [.init(owner: "push", entitlements: ["aps-environment": "production"])],
     entitlementResolutions: ["aps-environment": "development"]).compose(infoPlist: [:], entitlements: ["aps-environment": "development"])

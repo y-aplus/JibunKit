@@ -1,0 +1,61 @@
+name: Check Compatibility
+
+# Reports how far the code in another repository, such as an ordinary iOS
+# app, is from a JibunKit Feature (`Tools/jibunkit-feature.py inspect`): what
+# can be moved as it is, by a mechanical rewrite, by hand, or not at all. The
+# Build mini app starts it from the phone; from a computer, run the tool
+# itself, or:
+#   gh workflow run check-compatibility.yml --ref main -f repository=https://github.com/someone/app
+# The tool reads the repository with Git and never runs its code. This
+# workflow only reads; it commits nothing.
+run-name: "check ${{ inputs.repository }} ${{ inputs.path }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Git URL of the repository, or OWNER/REPO on GitHub
+        required: true
+      ref:
+        description: Branch, tag or full commit hash (empty for the default branch)
+        default: ""
+      path:
+        description: Directory to check (empty for the repository root)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      REPOSITORY: ${{ inputs.repository }}
+      REF: ${{ inputs.ref }}
+      CHECK_PATH: ${{ inputs.path }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Run the tool
+        shell: bash
+        run: |
+          set -uo pipefail
+          args=(inspect "$REPOSITORY")
+          [[ -z "$REF" ]] || args+=(--ref "$REF")
+          [[ -z "$CHECK_PATH" ]] || args+=(--path "$CHECK_PATH")
+          # GitHub runs `shell: bash` with -e; keep going to show the report of a failure.
+          status=0
+          python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1 || status=$?
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          { echo '```'; cat "$RUNNER_TEMP/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"

@@ -119,6 +119,8 @@ gh workflow run compile-check.yml --ref <branch>
 
 It checks the module feature connections, generates the project, and compiles the app and its extensions for iOS in Debug without signing. It runs no tests and produces no IPA, and a pass proves only compilation. Compiler errors appear as annotations in `gh run view <id>` and in `gh run view <id> --log-failed`, so they can be read without a browser. Use `python3 Tools/build-ipa.py` for an installable IPA and the full **Build JibunKit IPA** workflow for tests.
 
+From a computer, `python3 Tools/compile-check.py` does all of this with one command and needs no commit: it snapshots the working tree, uncommitted and untracked files included, as a commit on a temporary `compile-check/...` branch of `origin`, runs the workflow there, waits, prints the report with the compiler errors as `file:line:col`, and deletes the branch, whether the check passed or not. Your branch and index are not changed. `--draft Notes` (with `--ignore-check`) compiles a draft as below; `--repo OWNER/REPO` chooses another repository.
+
 To compile a [draft](mini-apps.md#moving-an-app-in-with-migrate) with the app, name it: `gh workflow run compile-check.yml --ref <branch> -f draft=Notes`. The run connects the draft only for itself and commits nothing. Add `-f ignore_check=true` to compile it while `check` still reports findings; they are listed with the compile result.
 
 ## Sign and install

@@ -218,8 +218,9 @@ def main(argv=None):
         if alive:
             results.append((app_id, title, "OK", [], image))
         else:
-            details = stop_messages(printed)
-            details += new_crash(bundle_id, opened, seen) or ["No crash report was found."]
+            # GitHub's macOS runners may write no crash report; the console usually says why.
+            details = stop_messages(printed) + (new_crash(bundle_id, opened, seen) or [])
+            details = details or ["The app stopped; it printed nothing and no crash report was found."]
             results.append((app_id, title, "CRASHED", details, None))
 
     report = format_report(device, results, crashed_launch, args.screenshot_url)

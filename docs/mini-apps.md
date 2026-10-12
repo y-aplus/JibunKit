@@ -264,6 +264,31 @@ python3 Tools/jibunkit-feature.py inspect someone/apps --path Apps/Notes --ref v
 
 It also lists capabilities that may not work with free signing (push notifications, iCloud and Associated Domains, for example, usually need a paid Apple Developer Program membership) and the Swift packages the code depends on. It reads `.xcodeproj` projects with their `.xcconfig` files, `Package.swift` and Swift Playgrounds apps; for an XcodeGen or Tuist project it checks only the code. It skips tests, examples and vendored code. Like `check`, it matches text: "can be moved" does not mean that the moved code compiles. The **Check Compatibility** workflow (`.github/workflows/check-compatibility.yml`) runs it on GitHub without committing anything, and the [Build](../Modules/Builder/README.md#import-features-from-other-repositories) mini app starts it from the phone.
 
+### Moving an app in with migrate
+
+```bash
+python3 Tools/jibunkit-feature.py migrate https://github.com/someone/app --name Notes
+```
+
+`migrate` makes the mechanical changes for you. It reads the repository like `inspect`, without running its code, and writes `Modules/Notes`:
+
+- the files of the app target (or of a Swift Playgrounds app) in `Sources/NotesFeature`, without tests, Info.plist, entitlements, launch screen and Objective-C or C files;
+- the `@main` App turned into `public struct NotesRootView: View`, which shows what the app's `WindowGroup` showed, with the App's properties and the modifiers a view also has. Scene-only modifiers such as `.commands` are dropped, and an `@UIApplicationDelegateAdaptor` is removed; the report says whether the view still uses it. An App with several scenes, a `DocumentGroup` or a UIKit app delegate entry is left as it was, and `NotesRootView` then shows only the name;
+- `bundle: .module` added to asset catalog images and colors and, when the app has Localizable strings, to `Text("...")`, `String(localized:)` and `NSLocalizedString`;
+- a `Package.swift` with the app's Swift packages (local ones are copied to `Packages/`), its resources, its development language and the Swift 5 language mode when the app used it;
+- a `JibunKitFeature.json` with the Info.plist keys, entitlements and localized `InfoPlist.strings` the Feature needs. Entitlements that usually need a paid membership, App Groups and keychain groups are not copied; the report says so;
+- `Integration/NotesMiniApp.swift`, the example app and `MIGRATION.md`, which lists what changed, what is still to change (with the new file and line), and what did not come from the app, such as extensions.
+
+The Feature is a **draft**: its `JibunKitFeature.json` has `"draft": true`, and `sync`, `check`, the package tests and the document checks leave it out, so it does not affect builds and can sit in `main` while you finish it. Compile it with the app using the [compile check](build.md#compile-check-in-actions) and `-f draft=Notes -f ignore_check=true`. When it compiles and `python3 Tools/jibunkit-feature.py check Modules/Notes` reports nothing, connect it:
+
+```bash
+python3 Tools/jibunkit-feature.py connect Notes
+```
+
+`connect` refuses while `check` reports findings and leaves the draft as it was. `remove Notes` deletes a draft. Choose the app with `--target` when the project has several, and the Feature ID with `--id` (default: the name in lowercase). Text in SwiftUI controls such as `Button("Save")` still looks its translation up in JibunKit's bundle; give such controls a `Text(..., bundle: .module)` label. Files kept with Git LFS and Core Image kernels (`.ci.metal`) are not copied; the report lists them.
+
+The **Migrate App** workflow (`.github/workflows/migrate-app.yml`) commits the draft to the branch it runs on and then compiles it in a separate, read-only job; the **Connect Draft** workflow compiles first and connects only when that passes. The Build mini app starts both from the phone.
+
 ## Compatibility checklist
 
 Before publishing an update, review [Compatibility and stable identities](compatibility.md). In particular, do not casually change:

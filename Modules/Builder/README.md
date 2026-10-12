@@ -28,13 +28,15 @@ When the tool stops, for example because the Feature collides with another one o
 
 To see what a repository that is not a JibunKit Feature yet, such as an ordinary iOS app, would need to become one, enter it in the same form and tap **Check Compatibility**. Builder starts the **Check Compatibility** workflow (`.github/workflows/check-compatibility.yml`), which runs `python3 Tools/jibunkit-feature.py inspect` and commits nothing. Its **Report** gives a verdict and lists what cannot come into JibunKit, what needs manual or mechanical changes, and what may not work with free signing ([details](../../docs/mini-apps.md#checking-a-repository-first)).
 
+To move such an app in, also enter a name under `Modules/` and tap **Migrate the App**. The **Migrate App** workflow runs `python3 Tools/jibunkit-feature.py migrate`, commits the result to the branch as a draft, which does not change builds, and compiles it; this takes about ten minutes. The **Report** shows what changed, what is still to change and the compile errors. Drafts are listed under the imported Features: **Connect** starts the **Connect Draft** workflow, which compiles the app with the draft and connects it only when that passes and `check` reports nothing; **Open the Report on GitHub** shows its `MIGRATION.md`; **Remove** deletes it ([details](../../docs/mini-apps.md#moving-an-app-in-with-migrate)).
+
 
 ## Boundaries
 
 - The token can start workflows in the selected repository. Anyone who can use the unlocked phone can use it through this Feature.
 - The build attaches the IPA to a `build-RUN_ID` prerelease; this Feature does not delete old prereleases.
 - Builder needs no capability, entitlement or background mode. It follows a build only while it is open.
-- The Import Feature workflow can push to the branch it runs on. Starting it needs the same token permissions as a build.
+- The Import Feature, Migrate App and Connect Draft workflows can push to the branch they run on. Starting them needs the same token permissions as a build. Code from another repository is compiled only in read-only jobs.
 
 ## Develop
 

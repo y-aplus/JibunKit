@@ -33,7 +33,7 @@ The generated package includes an example app, so feature UI and business logic 
 
 For a first feature, prefer an independent package under `Modules/`: it is easier to test in isolation, reuse in a standalone app, and validate from Windows/WSL than code added to the root package. See the feature and build guides for the exact platform limits.
 
-A feature kept in another Git repository can be copied in at a recorded commit with `python3 Tools/jibunkit-feature.py add URL` and moved to a newer one with `update` ([importing a feature](docs/mini-apps.md#importing-a-feature-from-another-repository)). `inspect URL` reports what an ordinary app's repository needs to become a feature ([checking a repository](docs/mini-apps.md#checking-a-repository-first)).
+A feature kept in another Git repository can be copied in at a recorded commit with `python3 Tools/jibunkit-feature.py add URL` and moved to a newer one with `update` ([importing a feature](docs/mini-apps.md#importing-a-feature-from-another-repository)). `inspect URL` reports what an ordinary app's repository needs to become a feature ([checking a repository](docs/mini-apps.md#checking-a-repository-first)), and `migrate URL --name Notes` moves the app in as a draft with the mechanical changes made ([moving an app in](docs/mini-apps.md#moving-an-app-in-with-migrate)).
 
 ## Build and install
 

@@ -7,6 +7,7 @@ SECURITY, CHANGELOG, docs/*.md, docs/guides and docs/releases. Dated
 verification records and history stay as they were written and are not checked
 by default. External URLs are not fetched.
 """
+import json
 from pathlib import Path
 import re
 import sys
@@ -15,6 +16,17 @@ from urllib.parse import unquote
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md", "docs/*.md",
            "docs/guides/*.md", "docs/releases/*.md", "Modules/*/README.md"]
+
+
+def draft_document(path):
+    """Documents inside a draft Feature (still being moved in) are not checked by default."""
+    parts = path.relative_to(ROOT).parts
+    if len(parts) < 3 or parts[0] != "Modules":
+        return False
+    try:
+        return json.loads((ROOT / parts[0] / parts[1] / "JibunKitFeature.json").read_text(encoding="utf-8")).get("draft") is True
+    except (OSError, ValueError, AttributeError):
+        return False
 INLINE = re.compile(r"!?\[(?:[^\]\[]|\[[^\]]*\])*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
 REFERENCE = re.compile(r"^\s{0,3}\[[^\]]+\]:\s*<?(\S+?)>?(?:\s+.*)?$")
 HEADING = re.compile(r"^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
@@ -91,7 +103,7 @@ def selected(arguments):
         if candidate.is_dir():
             paths += sorted(candidate.rglob("*.md"))
         elif any(character in pattern for character in "*?["):
-            paths += sorted(ROOT.glob(pattern))
+            paths += sorted(path for path in ROOT.glob(pattern) if arguments or not draft_document(path))
         else:
             paths.append(Path(pattern).resolve() if Path(pattern).is_absolute() else candidate)
     return [path for path in dict.fromkeys(paths) if path.is_file()]

@@ -102,7 +102,21 @@ public struct ImportedFeature: Codable, Equatable, Identifiable, Sendable {
     public var id: String { name }
 }
 
-/// One run of the Import Feature workflow, or of Check Compatibility.
+/// A Feature under Modules/ whose JibunKitFeature.json says `"draft": true`:
+/// moved in by Migrate App and not connected to builds yet.
+public struct DraftFeature: Codable, Equatable, Identifiable, Sendable {
+    public var name: String
+
+    public init(name: String) {
+        self.name = name
+    }
+
+    public var id: String { name }
+}
+
+/// One run of a workflow that changes the Features of the branch or reports on
+/// another repository: Import Feature, Check Compatibility, Migrate App or
+/// Connect Draft.
 public enum FeatureImportOperation: Codable, Equatable, Sendable {
     /// Empty strings leave the choice to the tool: the default branch, the
     /// repository root and a name derived from the path or URL.
@@ -112,9 +126,28 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
     case remove(name: String)
     /// Reports how far a repository is from a JibunKit Feature; commits nothing.
     case inspect(repository: String, ref: String, path: String)
+    /// Moves an ordinary app in as a draft Feature, then reports what still fails to compile.
+    case migrate(repository: String, ref: String, path: String, name: String)
+    /// Connects a draft once it compiles and `check` reports nothing for it.
+    case connect(name: String)
 
     public var workflow: String {
-        if case .inspect = self { GitHubBuildClient.checkWorkflow } else { GitHubBuildClient.importWorkflow }
+        switch self {
+        case .add, .update, .remove: GitHubBuildClient.importWorkflow
+        case .inspect: GitHubBuildClient.checkWorkflow
+        case .migrate: GitHubBuildClient.migrateWorkflow
+        case .connect: GitHubBuildClient.connectWorkflow
+        }
+    }
+
+    /// The workflow's name in the repository's Actions page.
+    var workflowTitle: String {
+        switch self {
+        case .add, .update, .remove: "Import Feature"
+        case .inspect: "Check Compatibility"
+        case .migrate: "Migrate App"
+        case .connect: "Connect Draft"
+        }
     }
 
     public var inputs: [String: String] {
@@ -127,6 +160,10 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
             ["operation": "remove", "name": name]
         case let .inspect(repository, ref, path):
             ["repository": repository, "ref": ref, "path": path]
+        case let .migrate(repository, ref, path, name):
+            ["repository": repository, "ref": ref, "path": path, "name": name]
+        case let .connect(name):
+            ["name": name]
         }
     }
 }
@@ -139,8 +176,8 @@ public enum BuildClientError: Error, Equatable, LocalizedError {
     case server(Int)
     case missingIPA
     case invalidResponse
-    case missingImportWorkflow
-    case missingCheckWorkflow
+    /// The repository predates the workflow, named as in its Actions page.
+    case missingWorkflow(String)
 
     public var errorDescription: String? {
         switch self {
@@ -158,10 +195,8 @@ public enum BuildClientError: Error, Equatable, LocalizedError {
             BuilderText.localized("The build finished, but its IPA was not found.")
         case .invalidResponse:
             BuilderText.localized("GitHub returned an unexpected response.")
-        case .missingImportWorkflow:
-            BuilderText.localized("The repository has no Import Feature workflow. Update it from JibunKit first.")
-        case .missingCheckWorkflow:
-            BuilderText.localized("The repository has no Check Compatibility workflow. Update it from JibunKit first.")
+        case .missingWorkflow(let name):
+            BuilderText.localized("The repository has no %@ workflow. Update it from JibunKit first.", name)
         }
     }
 }
@@ -177,9 +212,11 @@ public struct GitHubBuildClient: Sendable {
     public static let workflow = "quick-ipa.yml"
     public static let importWorkflow = "import-feature.yml"
     public static let checkWorkflow = "check-compatibility.yml"
+    public static let migrateWorkflow = "migrate-app.yml"
+    public static let connectWorkflow = "connect-draft.yml"
     public static let ipaName = "JibunKit.ipa"
     public static let importsFile = "JibunKitImports.json"
-    /// import-feature.yml and check-compatibility.yml print the tool's output between these lines.
+    /// The Feature workflows print the tool's output between these lines.
     static let reportStart = "=== JibunKit import report ==="
     static let reportEnd = "=== end of report ==="
 
@@ -199,14 +236,12 @@ public struct GitHubBuildClient: Sendable {
         try await dispatch(workflow: Self.workflow, inputs: ["publish": "true"])
     }
 
-    /// Asks GitHub to run Import Feature, which commits the result to the
-    /// branch, or Check Compatibility.
+    /// Asks GitHub to run the operation's workflow.
     public func requestImport(_ operation: FeatureImportOperation) async throws {
         do {
             try await dispatch(workflow: operation.workflow, inputs: operation.inputs)
         } catch BuildClientError.notFound {
-            if case .inspect = operation { throw BuildClientError.missingCheckWorkflow }
-            throw BuildClientError.missingImportWorkflow
+            throw BuildClientError.missingWorkflow(operation.workflowTitle)
         }
     }
 
@@ -270,18 +305,51 @@ public struct GitHubBuildClient: Sendable {
             .sorted { $0.name < $1.name }
     }
 
-    /// What the tool printed in a finished Import Feature or Check Compatibility run, read from its log.
+    /// What the tool printed in a finished run, read from the logs of its jobs
+    /// in order (Migrate App adds the compile check's report). Nil until every
+    /// job that ran has a log.
     public func importReport(runID: Int) async throws -> String? {
         struct Jobs: Decodable {
-            struct Job: Decodable { let id: Int }
+            struct Job: Decodable { let id: Int; let conclusion: String? }
             let jobs: [Job]
         }
-        guard let job = try decode(Jobs.self, from: try await send(path: "actions/runs/\(runID)/jobs")).jobs.first else {
-            return nil
+        var reports: [String] = []
+        for job in try decode(Jobs.self, from: try await send(path: "actions/runs/\(runID)/jobs")).jobs
+        where job.conclusion != "skipped" {
+            let url = try endpoint(path: "actions/jobs/\(job.id)/logs")
+            let log = try await downloadFromStorage(authorized(URLRequest(url: url)))
+            if let report = Self.report(fromLog: String(decoding: log, as: UTF8.self)) {
+                reports.append(report)
+            }
         }
-        let url = try endpoint(path: "actions/jobs/\(job.id)/logs")
-        let log = try await downloadFromStorage(authorized(URLRequest(url: url)))
-        return Self.report(fromLog: String(decoding: log, as: UTF8.self))
+        return reports.isEmpty ? nil : reports.joined(separator: "\n\n")
+    }
+
+    /// The drafts under Modules/ on the branch; none when it has no Modules directory.
+    public func drafts() async throws -> [DraftFeature] {
+        struct Entry: Decodable { let name: String; let type: String }
+        struct Manifest: Decodable { let draft: Bool? }
+        let branch = [URLQueryItem(name: "ref", value: repository.branch)]
+        let listing: Data
+        do {
+            listing = try await send(path: "contents/Modules", query: branch)
+        } catch BuildClientError.notFound {
+            return []
+        }
+        var drafts: [DraftFeature] = []
+        for entry in try decode([Entry].self, from: listing) where entry.type == "dir" {
+            let manifest: Data
+            do {
+                manifest = try await send(path: "contents/Modules/\(entry.name)/JibunKitFeature.json", query: branch,
+                                          accept: "application/vnd.github.raw+json")
+            } catch BuildClientError.notFound {
+                continue
+            }
+            if (try? decode(Manifest.self, from: manifest))?.draft == true {
+                drafts.append(DraftFeature(name: entry.name))
+            }
+        }
+        return drafts.sorted { $0.name < $1.name }
     }
 
     /// The lines between the report markers, without the timestamp GitHub puts before each line.

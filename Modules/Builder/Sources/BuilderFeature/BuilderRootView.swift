@@ -238,7 +238,7 @@ public struct BuilderRootView: View {
             progressRow
             if let ipaURL = model.ipaURL {
                 ShareLink(item: ipaURL) {
-                    Label { Text("Send to SideStore or AltStore", bundle: .module) } icon: { Image(systemName: "square.and.arrow.up") }
+                    Label { Text("Share the IPA", bundle: .module) } icon: { Image(systemName: "square.and.arrow.up") }
                 }
                 .accessibilityIdentifier("builder.share")
             } else if case .finished(let run) = model.progress, run.succeeded {

@@ -3,7 +3,7 @@
 "Build" = "ビルド";
 "Build the IPA" = "IPAをビルド";
 "Download the IPA" = "IPAをダウンロード";
-"Send to SideStore or AltStore" = "SideStoreまたはAltStoreへ送る";
+"Share the IPA" = "IPAを共有";
 "No build requested yet" = "まだビルドを依頼していません";
 "Waiting for GitHub to start the build (requested %@)" = "GitHubがビルドを開始するのを待っています（%@に依頼）";
 "Building since %@" = "%@からビルド中";

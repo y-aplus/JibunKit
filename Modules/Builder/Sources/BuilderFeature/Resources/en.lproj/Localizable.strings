@@ -3,7 +3,7 @@
 "Build" = "Build";
 "Build the IPA" = "Build the IPA";
 "Download the IPA" = "Download the IPA";
-"Send to SideStore or AltStore" = "Send to SideStore or AltStore";
+"Share the IPA" = "Share the IPA";
 "No build requested yet" = "No build requested yet";
 "Waiting for GitHub to start the build (requested %@)" = "Waiting for GitHub to start the build (requested %@)";
 "Building since %@" = "Building since %@";

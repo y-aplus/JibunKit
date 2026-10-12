@@ -34,7 +34,7 @@ To move such an app in, also enter a name under `Modules/` and tap **Migrate the
 ## Boundaries
 
 - The token can start workflows in the selected repository. Anyone who can use the unlocked phone can use it through this Feature.
-- The build attaches the IPA to a `build-RUN_ID` prerelease; this Feature does not delete old prereleases.
+- The build attaches the IPA to a `build-RUN_ID` prerelease. The workflow keeps the five newest `build-` prereleases and deletes older ones, so download an IPA you want to keep.
 - Builder needs no capability, entitlement or background mode. It follows a build only while it is open.
 - The Import Feature, Migrate App and Connect Draft workflows can push to the branch they run on. Starting them needs the same token permissions as a build. Code from another repository is compiled only in read-only jobs.
 

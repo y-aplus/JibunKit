@@ -66,3 +66,14 @@ jobs:
             --prerelease --target "$SHA" --title "$TAG" \
             --notes "Built from $SHA by run $RUN_ID. SHA-256: $(cut -d' ' -f1 ipa/JibunKit.ipa.sha256)"
           echo "Direct IPA link: https://github.com/$GH_REPO/releases/download/$TAG/JibunKit.ipa" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove older build prereleases
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Keep the five newest build-RUN_ID prereleases; named releases and prereleases are never touched.
+          gh release list --limit 200 --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | test("^build-[0-9]+$")))] | sort_by(.createdAt) | reverse | .[5:] | .[].tagName' |
+          while read -r old; do
+            gh release delete "$old" --yes --cleanup-tag || echo "::warning::Could not delete the prerelease $old"
+          done

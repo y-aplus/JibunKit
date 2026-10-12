@@ -10,7 +10,7 @@ Follow the [official SideStore installation instructions](https://docs.sidestore
 
 For a published release, download the IPA linked by that release rather than an outer Actions ZIP. For a custom feature build, run `python3 Tools/build-ipa.py` in your derived host; it prints a direct IPA link when the build finishes ([build guide](build.md#build-an-ipa-with-one-command)). The rest of this section is the manual path from a `JibunKit-ad-hoc` artifact.
 
-GitHub always wraps an Actions artifact in a ZIP, so the artifact cannot be opened directly as an IPA on iPhone. To get a direct IPA link for a custom build, run the **Publish IPA prerelease** workflow in your derived host (not in upstream JibunKit) with the ID of a successful **Build JibunKit IPA** or **Build IPA (quick)** run. It checks the run, attaches the plain `JibunKit.ipa` to a prerelease at that run's commit, and prints the direct link in the run summary. Without that workflow, the same result is:
+GitHub always wraps an Actions artifact in a ZIP, so the artifact cannot be opened directly as an IPA on iPhone. To get a direct IPA link for a custom build, run the **Publish IPA prerelease** workflow in your derived host (not in upstream JibunKit) with the ID of a successful **Build JibunKit IPA** or **Build IPA (quick)** run. It checks the run, attaches the plain `JibunKit.ipa` to a prerelease at that run's commit, and prints the direct link in the run summary. Like the quick build, it then deletes all but the five newest `build-RUN_ID` prereleases; a prerelease with another tag is kept. Without that workflow, the same result is:
 
 ```bash
 gh run download RUN_ID --repo OWNER/PRIVATE_HOST --name JibunKit-ad-hoc --dir ipa-RUN_ID

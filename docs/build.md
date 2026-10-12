@@ -123,6 +123,18 @@ From a computer, `python3 Tools/compile-check.py` does all of this with one comm
 
 To compile a [draft](mini-apps.md#moving-an-app-in-with-migrate) with the app, name it: `gh workflow run compile-check.yml --ref <branch> -f draft=Notes`. The run connects the draft only for itself and commits nothing. Add `-f ignore_check=true` to compile it while `check` still reports findings; they are listed with the compile result.
 
+### Launch check in the Simulator
+
+A compile check does not show whether a Feature opens. The **Launch check** workflow (`smoke-test.yml`) builds the app in Debug for the iOS Simulator, starts it once for each mini app, opens that mini app, waits a few seconds and takes a screenshot:
+
+```bash
+gh workflow run smoke-test.yml --ref <branch> [-f draft=Notes -f ignore_check=true]
+```
+
+Its report, printed between the `=== JibunKit import report ===` lines and in the run summary, lists each mini app as `OK` or `CRASHED`; a crash comes with its reason and the app's own frames from the Simulator's crash report. A separate job that runs no repository code attaches the screenshots to a `launch-RUN_ID` prerelease, which the report links to, and keeps only the five newest of them. The Build mini app starts it and shows the screenshots, and the **Migrate App** workflow runs it on the new draft. `Tools/smoke-test.py` does the work and can run on any Mac with a booted Simulator. The app opens mini apps through the launch arguments `-JibunKitListMiniApps` and `-JibunKitOpenMiniApp`, which exist only in Debug builds.
+
+It proves only that each first screen opens in the Simulator without stopping: it taps nothing, and permission prompts, services and hardware behave differently on a device.
+
 ## Sign and install
 
 An unsigned app cannot run on a normal device. Choose a signing and installation path that fits your Apple account and environment:
@@ -132,6 +144,16 @@ An unsigned app cannot run on a normal device. Choose a signing and installation
 - SideStore can sign and install a compatible IPA and is the path used for some JibunKit device checks. See the [SideStore example](sidestore.md).
 
 SideStore is an example, not part of JibunKit and not a prerequisite for the source project. Follow the installer's own current documentation. Do not commit signing material or account credentials to this repository.
+
+### Crash reports from a device
+
+When JibunKit stops unexpectedly or freezes on a device, iOS usually delivers a MetricKit report the next time it opens. JibunKit keeps the newest 20 under **Manage Mini Apps → Crash Reports**, with the reason and the mini app that was open, and shares each as a JSON file. The report names functions only by binary and offset. The quick build attaches the build's symbol files (`JibunKit-dSYMs.zip`) to its prerelease, and
+
+```bash
+python3 Tools/symbolicate-crash.py REPORT.json
+```
+
+finds the matching symbol files in the newest `build-` prereleases by their UUIDs and prints the stack with function names, files and lines. It needs `llvm-symbolizer`, which a Swift toolchain includes, or `atos` on macOS; `--dsyms DIR` uses symbol files you already have. A report from a build whose prerelease was already deleted cannot be symbolicated.
 
 Free and paid Apple accounts expose different capabilities and provisioning lifetimes. A successful ad-hoc package, Xcode build, or Simulator run does not prove that every entitlement can be signed or used by a chosen account. CloudKit and APNs are optional in JibunKit 1.0 scope and their live service paths remain unverified.
 

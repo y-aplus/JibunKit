@@ -279,7 +279,7 @@ python3 Tools/jibunkit-feature.py migrate https://github.com/someone/app --name 
 - a `JibunKitFeature.json` with the Info.plist keys, entitlements and localized `InfoPlist.strings` the Feature needs. Entitlements that usually need a paid membership, App Groups and keychain groups are not copied; the report says so;
 - `Integration/NotesMiniApp.swift`, the example app and `MIGRATION.md`, which lists what changed, what is still to change (with the new file and line), and what did not come from the app, such as extensions.
 
-The Feature is a **draft**: its `JibunKitFeature.json` has `"draft": true`, and `sync`, `check`, the package tests and the document checks leave it out, so it does not affect builds and can sit in `main` while you finish it. Compile it with the app using the [compile check](build.md#compile-check-in-actions) and `-f draft=Notes -f ignore_check=true`. When it compiles and `python3 Tools/jibunkit-feature.py check Modules/Notes` reports nothing, connect it:
+The Feature is a **draft**: its `JibunKitFeature.json` has `"draft": true`, and `sync`, `check`, the package tests and the document checks leave it out, so it does not affect builds and can sit in `main` while you finish it. Compile it with the app using the [compile check](build.md#compile-check-in-actions) and `-f draft=Notes -f ignore_check=true`, or open it in the Simulator with the [launch check](build.md#launch-check-in-the-simulator) and the same inputs. When it compiles and `python3 Tools/jibunkit-feature.py check Modules/Notes` reports nothing, connect it:
 
 ```bash
 python3 Tools/jibunkit-feature.py connect Notes
@@ -287,7 +287,7 @@ python3 Tools/jibunkit-feature.py connect Notes
 
 `connect` refuses while `check` reports findings and leaves the draft as it was. `remove Notes` deletes a draft. Choose the app with `--target` when the project has several, and the Feature ID with `--id` (default: the name in lowercase). Text in SwiftUI controls such as `Button("Save")` still looks its translation up in JibunKit's bundle; give such controls a `Text(..., bundle: .module)` label. Files kept with Git LFS and Core Image kernels (`.ci.metal`) are not copied; the report lists them.
 
-The **Migrate App** workflow (`.github/workflows/migrate-app.yml`) commits the draft to the branch it runs on and then compiles it in a separate, read-only job; the **Connect Draft** workflow compiles first and connects only when that passes. The Build mini app starts both from the phone.
+The **Migrate App** workflow (`.github/workflows/migrate-app.yml`) commits the draft to the branch it runs on and then runs the [launch check](build.md#launch-check-in-the-simulator) with it in a separate, read-only job, so the report has the compile errors or, when it compiles, a screenshot of its first screen; the **Connect Draft** workflow compiles first and connects only when that passes. The Build mini app starts both from the phone.
 
 ## Compatibility checklist
 

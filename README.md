@@ -37,7 +37,7 @@ A feature kept in another Git repository can be copied in at a recorded commit w
 
 ## Build and install
 
-JibunKit currently targets iOS 26 and uses Swift 6, Tuist 4.207.0, and Xcode 26.6 on the verified build path. From Windows, Linux or macOS, `python3 Tools/build-ipa.py` builds an IPA of your branch in GitHub Actions and prints a link to install it with SideStore or AltStore. `python3 Tools/compile-check.py` compiles your uncommitted changes there and prints the compiler errors. See [Build, sign, and install](docs/build.md) for this and the local Xcode path.
+JibunKit currently targets iOS 26 and uses Swift 6, Tuist 4.207.0, and Xcode 26.6 on the verified build path. From Windows, Linux or macOS, `python3 Tools/build-ipa.py` builds an IPA of your branch in GitHub Actions and prints a link to install it with SideStore or AltStore. `python3 Tools/compile-check.py` compiles your uncommitted changes there and prints the compiler errors, and the **Launch check** workflow opens every mini app in the iOS Simulator and takes screenshots. See [Build, sign, and install](docs/build.md) for this and the local Xcode path.
 
 The general delivery path is **source configuration → Tuist/Xcode build → signing → installation**. SideStore is one verified installation example, not a requirement of JibunKit itself. Apple account capabilities, entitlements, App Groups, extensions, and OS services must match the signing method you choose.
 

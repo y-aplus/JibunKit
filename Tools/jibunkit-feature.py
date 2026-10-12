@@ -1755,6 +1755,20 @@ def app_to_root_view(text, root_name, color_scheme=None):
     notes, modifiers, cursor = [], [], content_close + 1
     modifier = re.compile(r"\s*\.\s*([A-Za-z_]\w*)")
     while True:
+        condition = re.compile(r"\s*#if\b").match(masked, cursor, body_close)
+        if condition:
+            # Conditional modifiers are valid in a view's chain too; keep them as written.
+            depth, end = 0, condition.end()
+            for directive in re.compile(r"#(if|endif)\b").finditer(masked, condition.end() - 3, body_close):
+                depth += 1 if directive.group(1) == "if" else -1
+                if depth == 0:
+                    end = directive.end()
+                    break
+            if depth:
+                break
+            modifiers.append(text[condition.start():end].strip())
+            cursor = end
+            continue
         found = modifier.match(masked, cursor, body_close)
         if not found:
             break
@@ -1914,6 +1928,20 @@ def members_of(names, paths):
     return chosen
 
 
+def local_libraries(base, names, cache={}):
+    """{library product: package directory} for the Swift packages in the repository."""
+    key = (str(base), len(names))
+    if key not in cache:
+        found = {}
+        for name in names:
+            if name.rsplit("/", 1)[-1] == "Package.swift" and "/" in name and app_code(name):
+                text = (base / name).read_text(encoding="utf-8", errors="replace")
+                for product in re.findall(r'\.library\(\s*name:\s*"([^"]+)"', text):
+                    found.setdefault(product, name.rsplit("/", 1)[0])
+        cache[key] = found
+    return cache[key]
+
+
 def xcode_app_source(base, names, xcode, identifier, target, values):
     name = target.get("name", identifier)
     source = AppSource(f"Xcode project {xcode.project}, target {name}")
@@ -1928,16 +1956,26 @@ def xcode_app_source(base, names, xcode, identifier, target, values):
             reference = xcode.objects.get(reference_id, {})
             children = reference.get("children", []) if reference.get("isa") == "PBXVariantGroup" else [reference_id]
             paths += [relative(xcode.file_path(child)) for child in children]
-    for group in target.get("fileSystemSynchronizedGroups", []):
+    members = set(target.get("fileSystemSynchronizedGroups", []))
+    for group, item in xcode.objects.items():
+        if not isinstance(item, dict) or item.get("isa") != "PBXFileSystemSynchronizedRootGroup":
+            continue
         folder = relative(xcode.file_path(group))
         if not folder:
             continue
-        paths.append(folder)
-        for exception in xcode.objects.get(group, {}).get("exceptions", []):
+        if group in members:
+            paths.append(folder)
+        for exception in item.get("exceptions", []):
             exception = xcode.objects.get(exception, {})
             if exception.get("isa") == "PBXFileSystemSynchronizedBuildFileExceptionSet" \
                     and exception.get("target") == identifier:
-                excluded |= {f"{folder}/{item}" for item in exception.get("membershipExceptions", [])}
+                # Exceptions leave files out of a folder the target includes,
+                # and add files of a folder it does not include.
+                listed = {f"{folder}/{name}" for name in exception.get("membershipExceptions", [])}
+                if group in members:
+                    excluded |= listed
+                else:
+                    paths += sorted(listed)
     info = setting(values, "INFOPLIST_FILE", name)
     entitlements = setting(values, "CODE_SIGN_ENTITLEMENTS", name)
     for path in (info, entitlements):
@@ -1980,6 +2018,11 @@ def xcode_app_source(base, names, xcode, identifier, target, values):
                 source.notes.append((MANUAL, f"The local package {reference.get('relativePath')} is outside the "
                                              f"repository directory; {product} is not connected."))
                 continue
+            identity = package_identity(path)
+            source.local_packages[identity] = path
+            declaration = f".package(path: {swift_string('Packages/' + identity)})"
+        elif product in local_libraries(base, names):
+            path = local_libraries(base, names)[product]
             identity = package_identity(path)
             source.local_packages[identity] = path
             declaration = f".package(path: {swift_string('Packages/' + identity)})"
@@ -2232,11 +2275,24 @@ def migrate_files(root, module, name, feature_id, base, names, source):
     if entries:
         changed.append(f"Copied {len(resources)} resource file(s); Package.swift declares them: "
                        + ", ".join(entries[:10]) + (" ..." if len(entries) > 10 else "") + ".")
-    for identity, path in sorted(source.local_packages.items()):
-        local = members_of(names, [path])
-        for file in local:
+    pending, copied_packages = sorted(source.local_packages.items()), {}
+    while pending:
+        identity, path = pending.pop(0)
+        if identity in copied_packages:
+            continue
+        copied_packages[identity] = path
+        for file in members_of(names, [path]):
             write_file(module / "Packages" / identity, file[len(path) + 1:], (base / file).read_bytes())
         changed.append(f"Copied the local package {path} to `Packages/{identity}`.")
+        manifest_text = (base / path / "Package.swift").read_text(encoding="utf-8", errors="replace") \
+            if (base / path / "Package.swift").is_file() else ""
+        for reference in re.findall(r'\.package\(\s*(?:name:\s*"[^"]*"\s*,\s*)?path:\s*"([^"]+)"', manifest_text):
+            other = posixpath.normpath(posixpath.join(path, reference))
+            if posixpath.dirname(other) != posixpath.dirname(path) or other.startswith(".."):
+                notes.append((MANUAL, f"`Packages/{identity}` depends on {reference}, which is not next to it; fix "
+                                      "the path in its Package.swift."))
+            elif package_identity(other) not in copied_packages:
+                pending.append((package_identity(other), other))
     if other_code:
         notes.append((MANUAL, f"Objective-C, C or C++ files were not copied ({', '.join(other_code[:5])}"
                               f"{' ...' if len(other_code) > 5 else ''}); a Swift package target holds one language. "

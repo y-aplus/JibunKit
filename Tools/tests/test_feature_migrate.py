@@ -147,6 +147,14 @@ class RootViewTests(unittest.TestCase):
         self.assertNotIn('public init() {}', text)
         self.assertTrue(any('still uses `delegate`' in note for note in notes))
 
+    def testConditionalModifiersStayAsWritten(self):
+        app = APP.replace('        .modelContainer(for: Item.self)\n',
+                          '        #if os(macOS)\n        .windowStyle(.hiddenTitleBar)\n        #endif\n'
+                          '        .modelContainer(for: Item.self)\n')
+        text, _ = MODULE.app_to_root_view(app, 'DemoRootView')
+        self.assertIn('        }\n        #if os(macOS)\n        .windowStyle(.hiddenTitleBar)\n        #endif\n'
+                      '        .modelContainer(for: Item.self)\n    }', text)
+
     def testUnusualAppsAreLeftAlone(self):
         cases = {
             'struct DemoApp: App {}': 'no SwiftUI App',
@@ -358,6 +366,43 @@ class MigrateTests(unittest.TestCase):
         status, out, err = self.run_main('migrate', str(self.upstream), '--name', 'Memo', '--id', 'notes')
         self.assertEqual(status, 0, err)
         self.assertIn("The Feature ID 'notes' is also used by Modules/Notes", out)
+
+    def testFilesAddedByExceptionsAndPackagesFoundByProduct(self):
+        # A folder the target does not include lists the files it does include;
+        # a product without a package reference comes from a package in the repository.
+        repository = Path(self.temporary.name) / 'listed'
+        write(repository, 'Listed.xcodeproj/project.pbxproj', r'''{ objects = {
+            R = {isa = PBXProject; buildConfigurationList = L; mainGroup = G; targets = (T); };
+            G = {isa = PBXGroup; children = (APPF, VIEWS, ); sourceTree = "<group>"; };
+            APPF = {isa = PBXFileSystemSynchronizedRootGroup; path = App; sourceTree = "<group>"; };
+            VIEWS = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (E, ); path = Views; sourceTree = "<group>"; };
+            E = {isa = PBXFileSystemSynchronizedBuildFileExceptionSet; membershipExceptions = (Used.swift, ); target = T; };
+            L = {isa = XCConfigurationList; buildConfigurations = (C); };
+            C = {isa = XCBuildConfiguration; name = Release; buildSettings = {SDKROOT = iphoneos; SWIFT_VERSION = 6.0; }; };
+            T = {isa = PBXNativeTarget; name = Listed; productType = "com.apple.product-type.application";
+                 buildConfigurationList = L; fileSystemSynchronizedGroups = (APPF, ); packageProductDependencies = (U, ); };
+            U = {isa = XCSwiftPackageProductDependency; productName = Util; };
+        }; rootObject = R; }''')
+        write(repository, 'App/ListedApp.swift', APP.replace('DemoApp', 'ListedApp'))
+        write(repository, 'Views/Used.swift', 'struct Used {}\n')
+        write(repository, 'Views/Unused.swift', 'struct Unused {}\n')
+        write(repository, 'Modules/Util/Package.swift', 'let package = Package(name: "Util", products: '
+              '[.library(name: "Util", targets: ["Util"])], dependencies: [.package(path: "../Base")])\n')
+        write(repository, 'Modules/Base/Package.swift', 'let package = Package(name: "Base")\n')
+        git(repository, 'init', '-q')
+        git(repository, 'add', '-A')
+        git(repository, 'commit', '-q', '-m', 'x')
+        status, _, err = self.run_main('migrate', str(repository), '--name', 'Listed')
+        self.assertEqual(status, 0, err)
+        module = self.root / 'Modules/Listed'
+        source = module / 'Sources/ListedFeature'
+        self.assertEqual(sorted(p.relative_to(source).as_posix() for p in source.rglob('*.swift')),
+                         ['App/ListedApp.swift', 'Views/Used.swift'])
+        package = (module / 'Package.swift').read_text(encoding='utf-8')
+        self.assertIn('.package(path: "Packages/Util"),', package)
+        self.assertIn('.product(name: "Util", package: "Util"),', package)
+        self.assertTrue((module / 'Packages/Util/Package.swift').is_file())
+        self.assertTrue((module / 'Packages/Base/Package.swift').is_file())
 
     def testClassicProjectsAndPlaygroundsApps(self):
         classic = Path(self.temporary.name) / 'classic'

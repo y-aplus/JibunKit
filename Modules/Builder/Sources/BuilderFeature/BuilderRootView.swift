@@ -177,8 +177,12 @@ final class BuilderModel {
             try await client.requestImport(operation)
             state.importRequest = ImportRequest(operation: operation, requestedAt: requestedAt)
             try environment.storage.saveState(state)
-            show(String(localized: "Requested. GitHub commits the result to the branch in about a minute.", bundle: .module),
-                 isError: false)
+            if case .inspect = operation {
+                show(String(localized: "Requested. GitHub writes the report in about a minute.", bundle: .module), isError: false)
+            } else {
+                show(String(localized: "Requested. GitHub commits the result to the branch in about a minute.", bundle: .module),
+                     isError: false)
+            }
         } catch {
             show(error)
         }
@@ -461,6 +465,9 @@ public struct BuilderRootView: View {
             return String(localized: "Update \(name)", bundle: .module)
         case let .remove(name):
             return String(localized: "Remove \(name)", bundle: .module)
+        case let .inspect(repository, _, path):
+            let subject = path.isEmpty ? repository : "\(repository) \(path)"
+            return String(localized: "Check \(subject)", bundle: .module)
         }
     }
 
@@ -509,7 +516,7 @@ public struct BuilderRootView: View {
     }
 }
 
-/// Asks for a repository to copy a Feature from. `OWNER/REPO` means GitHub.
+/// Asks for a repository to copy a Feature from, or to check. `OWNER/REPO` means GitHub.
 private struct ImportFeatureForm: View {
     let onImport: (FeatureImportOperation) -> Void
     @Environment(\.dismiss) private var dismiss
@@ -530,7 +537,8 @@ private struct ImportFeatureForm: View {
                 } header: {
                     Text("Repository", bundle: .module)
                 } footer: {
-                    Text("The directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json.", bundle: .module)
+                    Text("To import, the directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json.",
+                         bundle: .module)
                 }
                 Section {
                     TextField(String(localized: "Branch, tag or commit", bundle: .module), text: $ref)
@@ -543,6 +551,17 @@ private struct ImportFeatureForm: View {
                 }
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
+                Section {
+                    Button {
+                        onImport(.inspect(repository: repositoryURL, ref: trimmed(ref), path: trimmed(path)))
+                        dismiss()
+                    } label: { Text("Check Compatibility", bundle: .module) }
+                        .disabled(repositoryURL.isEmpty)
+                        .accessibilityIdentifier("builder.inspect")
+                } footer: {
+                    Text("Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed.",
+                         bundle: .module)
+                }
             }
             .navigationTitle(Text("Import a Feature", bundle: .module))
             .navigationBarTitleDisplayMode(.inline)

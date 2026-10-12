@@ -19,9 +19,15 @@
                      Move an imported Feature to a new commit, keeping your
                      own changes to it (three-way merge), and report changes.
   remove Notes       Delete an imported Feature and its record, then sync.
+  inspect URL [--ref REF] [--path DIR]
+                     Report how far the code in another repository, such as
+                     an ordinary iOS app, is from a JibunKit Feature: what can
+                     be moved as it is, by a mechanical rewrite, by hand, or
+                     not at all. Writes nothing.
 
-The commands need only Python (and Git for add/update), so they also work on
-Windows and Linux. add and update never run code from the repository. The
+The commands need only Python (and Git for add/update/inspect), so they also
+work on Windows and Linux. add, update and inspect never run code from the
+repository. The
 generated helper is read by Project.swift; `tuist generate` (macOS or CI) then
 adds the packages, Integration sources, registry entries, widgets and build
 requirements. Hand-registered Features keep working unchanged.
@@ -30,6 +36,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import plistlib
 import re
 import shutil
 import subprocess
@@ -528,8 +535,8 @@ def fetch(work, repository, ref):
     return git(["rev-parse", "FETCH_HEAD^{commit}"], cwd=work).decode().strip()
 
 
-def read_tree(work, commit, path):
-    """{relative path: (bytes, executable)} of a directory at a commit, read from Git's objects."""
+def list_tree(work, commit, path):
+    """(relative path, mode, kind, object) for each entry of a directory at a commit."""
     spec = f"{commit}:{path}" if path else commit
     try:
         listing = git(["ls-tree", "-r", "-z", spec], cwd=work)
@@ -539,20 +546,32 @@ def read_tree(work, commit, path):
     for record in filter(None, listing.split(b"\0")):
         meta, name = record.split(b"\t", 1)
         mode, kind, sha = meta.decode().split()
-        name = name.decode("utf-8")
+        entries.append((name.decode("utf-8"), mode, kind, sha))
+    return entries
+
+
+def read_blobs(work, objects):
+    """The contents of Git blobs, in the order given."""
+    if not objects:
+        return []
+    output = git(["cat-file", "--batch"], cwd=work, data="".join(f"{sha}\n" for sha in objects).encode())
+    contents, offset = [], 0
+    for _ in objects:
+        header_end = output.index(b"\n", offset)
+        size = int(output[offset:header_end].split()[2])
+        contents.append(output[header_end + 1:header_end + 1 + size])
+        offset = header_end + 1 + size + 1
+    return contents
+
+
+def read_tree(work, commit, path):
+    """{relative path: (bytes, executable)} of a directory at a commit, read from Git's objects."""
+    entries = list_tree(work, commit, path)
+    for name, mode, kind, _ in entries:
         require(mode != "120000", f"{name} is a symbolic link; JibunKit imports files only")
         require(kind == "blob", f"{name} is a Git submodule; JibunKit imports files only")
-        entries.append((name, sha, mode == "100755"))
-    files = {}
-    if entries:
-        output = git(["cat-file", "--batch"], cwd=work, data="".join(f"{sha}\n" for _, sha, _ in entries).encode())
-        offset = 0
-        for name, _, executable in entries:
-            header_end = output.index(b"\n", offset)
-            size = int(output[offset:header_end].split()[2])
-            files[name] = (output[header_end + 1:header_end + 1 + size], executable)
-            offset = header_end + 1 + size + 1
-    return files
+    contents = read_blobs(work, [sha for _, _, _, sha in entries])
+    return {name: (data, mode == "100755") for (name, mode, _, _), data in zip(entries, contents)}
 
 
 def write_file(module, name, data, executable=False):
@@ -672,6 +691,18 @@ def describe(root, module):
     def add(category, item):
         report.setdefault(category, set()).add(item)
 
+    describe_package(module, add)
+    data = json.loads((module / MANIFEST).read_text(encoding="utf-8"))
+    for category, items in describe_requirements(data).items():
+        for item in items:
+            add(category, item)
+    for file, number, rule, _, _ in check([module]):
+        add(FINDINGS, f"{file.relative_to(root).as_posix()}:{number} [{rule}]")
+    return {category: sorted(items) for category, items in report.items()}
+
+
+def describe_package(module, add):
+    """The dependencies and build-time code that module/Package.swift declares."""
     package = (module / "Package.swift").read_text(encoding="utf-8", errors="replace")
     package = re.sub(r"(?m)^\s*//.*$", "", package)
     for arguments in balanced_calls(package, "package"):
@@ -691,24 +722,6 @@ def describe(root, module):
         for arguments in balanced_calls(package, function):
             name = re.search(r'\bname:\s*"([^"]+)"', arguments)
             add(category, f".{function} {name.group(1) if name else arguments.strip()}")
-    data = json.loads((module / MANIFEST).read_text(encoding="utf-8"))
-    for target, section in (("app", data.get("app") or {}), ("widget", data.get("widget") or {})):
-        for kind in ("infoPlist", "entitlements"):
-            for key, value in (section.get(kind) or {}).items():
-                if key == "CFBundleURLTypes" and isinstance(value, list):
-                    for declaration in value:
-                        for scheme in (declaration.get("CFBundleURLSchemes") or []) if isinstance(declaration, dict) else []:
-                            add(REQUIREMENTS, f"{target} {kind} CFBundleURLTypes: {scheme}")
-                elif isinstance(value, list) and all(isinstance(item, str) for item in value):
-                    for item in value:
-                        add(REQUIREMENTS, f"{target} {kind} {key}: {item}")
-                else:
-                    add(REQUIREMENTS, f"{target} {kind} {key}")
-    if data.get("appShortcuts"):
-        add(REQUIREMENTS, "App Shortcuts")
-    for file, number, rule, _, _ in check([module]):
-        add(FINDINGS, f"{file.relative_to(root).as_posix()}:{number} [{rule}]")
-    return {category: sorted(items) for category, items in report.items()}
 
 
 def print_report(report):
@@ -733,6 +746,763 @@ def print_changes(before, after):
                 print(f"  - {item}")
     if not changes:
         print("No change in packages, precompiled code, build-time code, build requirements or check findings.")
+
+
+# Compatibility check (`inspect`): how far the code in a repository, such as an
+# ordinary iOS app, is from a JibunKit Feature. Like add, it reads files with
+# Git and never runs them, and it writes nothing to this repository. It reads
+# text, so "can be moved" does not mean the moved code compiles.
+UNSUPPORTED, MANUAL, MECHANICAL = "unsupported", "manual", "mechanical"
+FREE_SIGNING, BRINGS, NOT_READ = "free signing", "brings", "not read"
+SECTION_TITLES = {
+    UNSUPPORTED: "Not supported (these parts cannot come into JibunKit)",
+    MANUAL: "Manual changes",
+    MECHANICAL: "Mechanical changes (the same rewrite every time)",
+    FREE_SIGNING: "May not work with free signing (usually needs a paid Apple Developer Program membership)",
+    BRINGS: "What it brings",
+    NOT_READ: "Not read",
+}
+HOST_IOS = (26, 0)
+# Directories that hold tests, examples, other people's code or build output.
+NOT_APP_CODE = {"Tests", "UITests", "Example", "Examples", "Pods", "Carthage", ".build", ".swiftpm",
+                "DerivedData", "build", "node_modules", "fastlane", "vendor", "Tuist"}
+INSPECTED_SUFFIXES = {".swift", ".pbxproj", ".plist", ".entitlements", ".xcconfig"}
+INSPECTED_NAMES = {MANIFEST, "Podfile", "Cartfile", "project.yml"}
+MANIFEST_FILE = re.compile(r"Package(@swift-[0-9.]+)?\.swift|Project\.swift|Tuist\.swift|Workspace\.swift")
+SHOWN_LOCATIONS = 5
+
+# Code that has to change when it moves from an app target into a package, in
+# addition to `check`. (rule, pattern, exempt, section, message, guide): when
+# the pattern ends with "(", a call whose arguments match `exempt` is fine.
+MOVE_CHECKS = [
+    ("asset-lookup", r'\b(?:Image|Color)\((?=\s*")|\bUI(?:Image|Color)\((?=\s*named:)', r"\b(?:bundle|in):",
+     MECHANICAL, "Images and colors from an asset catalog: add `bundle: .module`; in a package they are otherwise "
+     "looked up in JibunKit's own bundle.", "docs/mini-apps.md#6-validate-the-integration"),
+    ("localized-string", r"\bNSLocalizedString\(|\bString\((?=\s*localized:)", r"\bbundle:", MECHANICAL,
+     "Localized strings: add `bundle: .module` so the Feature's translations are used.",
+     "docs/mini-apps.md#6-validate-the-integration"),
+    ("main-bundle", r"\bBundle\.main\b", None, MANUAL,
+     "Bundle.main is JibunKit's bundle, not the Feature's; use Bundle.module for the Feature's resources.",
+     "docs/updating.md"),
+    ("app-delegate", r"@UIApplicationDelegateAdaptor|@UIApplicationMain|\bUIApplicationDelegate\b", None, MANUAL,
+     "App delegate: JibunKit owns it; move each job to the MiniAppDefinition (onHostLaunch) or the guide for "
+     "that system event.", "docs/mini-apps.md#moving-an-existing-app"),
+    ("scene-delegate", r"\bUIWindowSceneDelegate\b", None, MANUAL,
+     "Scene delegate: JibunKit owns the windows and scenes.", "docs/guides/window-scene-ownership.md"),
+    ("core-data-model", r"\bNSPersistent(?:CloudKit)?Container\((?=\s*name:)", r"\bmanagedObjectModel:", MANUAL,
+     "Core Data looks for the model in JibunKit's bundle and stores in an app-wide place: load the model from "
+     "Bundle.module and put the store in the Feature's files.", "docs/guides/database-files.md"),
+    ("swiftdata-default-store", r"\.modelContainer\((?=\s*for:)|\bModelContainer\((?=\s*for:)",
+     r"\bconfigurations?:|\binMemory:\s*true", MANUAL,
+     "SwiftData's default store is one file for the whole app: give it the Feature's own file with "
+     "ModelConfiguration(url:).", "docs/guides/database-files.md"),
+]
+# Only when the repository has Localizable strings: Text("key") looks the key up.
+LOCALIZED_TEXT = ("localized-text", r'\bText\((?=\s*")', r"\bbundle:", MECHANICAL,
+                  "Text(\"...\") looks its key up in JibunKit's bundle: add `bundle: .module`.",
+                  "docs/mini-apps.md#6-validate-the-integration")
+APP_ENTRY = re.compile(r"@main\s+(?:(?:public|final)\s+)*(?:struct|class|enum)\s+\w+\s*:\s*([\w.]+)")
+
+PRODUCT_TYPES = {
+    "com.apple.product-type.application.watchapp": "Apple Watch app",
+    "com.apple.product-type.application.watchapp2": "Apple Watch app",
+    "com.apple.product-type.application.watchapp2-container": "Apple Watch app",
+    "com.apple.product-type.watchkit-extension": "Apple Watch app",
+    "com.apple.product-type.watchkit2-extension": "Apple Watch app",
+    "com.apple.product-type.application.on-demand-install-capable": "App Clip",
+    "com.apple.product-type.application.messages": "iMessage app",
+    "com.apple.product-type.app-extension.messages": "iMessage app",
+    "com.apple.product-type.app-extension.messages-sticker-pack": "iMessage sticker pack",
+}
+LIBRARY_TYPES = {"com.apple.product-type.framework", "com.apple.product-type.framework.static",
+                 "com.apple.product-type.library.static", "com.apple.product-type.library.dynamic"}
+EXTENSION_TYPES = {"com.apple.product-type.app-extension", "com.apple.product-type.extensionkit-extension"}
+IGNORED_TYPES = {"com.apple.product-type.bundle.unit-test", "com.apple.product-type.bundle.ui-testing",
+                 "com.apple.product-type.tool", "com.apple.product-type.bundle"}
+# Extensions whose job JibunKit's own extensions do for every Feature.
+HOST_EXTENSIONS = {
+    "com.apple.widgetkit-extension": (
+        "Widget extension (widgets, Live Activities, controls): JibunKit has one widget extension; declare the "
+        "widgets under `widget` in JibunKitFeature.json.", "docs/guides/package-static-widgets.md"),
+    "com.apple.share-services": (
+        "Share extension: JibunKit's share extension saves shared items and hands them to the chosen Feature.",
+        "docs/guides/feature-incoming.md"),
+    "com.apple.ui-services": (
+        "Action extension: JibunKit's optional action extension hands items to the chosen Feature.",
+        "docs/guides/action-extension.md"),
+    "com.apple.services": (
+        "Action extension: JibunKit's optional action extension hands items to the chosen Feature.",
+        "docs/guides/action-extension.md"),
+    "com.apple.usernotifications.service": (
+        "Notification service extension: JibunKit's optional one calls the Feature's handler (it uses another "
+        "App ID).", "docs/guides/app-wide-surfaces.md#notification-service-and-content-extensions"),
+    "com.apple.usernotifications.content-extension": (
+        "Notification content extension: JibunKit's optional one shows the Feature's view (it uses another App ID).",
+        "docs/guides/app-wide-surfaces.md#notification-service-and-content-extensions"),
+    "com.apple.intents-service": (
+        "SiriKit Intents extension: write the actions as App Intents in the Feature's package.",
+        "docs/guides/package-app-intents.md"),
+    "com.apple.intents-ui-service": (
+        "SiriKit Intents UI extension: write the actions as App Intents in the Feature's package.",
+        "docs/guides/package-app-intents.md"),
+    "com.apple.appintents-extension": (
+        "App Intents extension: declare the intents in the Feature's package.", "docs/guides/package-app-intents.md"),
+}
+EXTENSION_NAMES = {
+    "com.apple.keyboard-service": "Custom keyboard",
+    "com.apple.Safari.web-extension": "Safari extension",
+    "com.apple.Safari.content-blocker": "Safari content blocker",
+    "com.apple.fileprovider-nonui": "File Provider",
+    "com.apple.fileprovider-actionsui": "File Provider",
+    "com.apple.photo-editing": "Photo editing",
+    "com.apple.broadcast-services-upload": "Screen broadcast",
+    "com.apple.broadcast-services-setupui": "Screen broadcast",
+    "com.apple.callkit.call-directory": "Call directory",
+    "com.apple.identitylookup.message-filter": "Message filter",
+    "com.apple.authentication-services-credential-provider-ui": "Password AutoFill",
+    "com.apple.deviceactivity.monitor-extension": "Screen Time",
+    "com.apple.spotlight.import": "Spotlight import",
+}
+# Info.plist keys the host app sets for itself; a Feature's copy is dropped.
+HOST_PLIST_KEYS = {
+    "CFBundleDevelopmentRegion", "CFBundleDisplayName", "CFBundleExecutable", "CFBundleIdentifier",
+    "CFBundleInfoDictionaryVersion", "CFBundleName", "CFBundlePackageType", "CFBundleShortVersionString",
+    "CFBundleVersion", "CFBundleSignature", "CFBundleIconName", "CFBundleIconFile", "CFBundleIconFiles",
+    "CFBundleAllowMixedLocalizations", "CFBundleLocalizations", "LSRequiresIPhoneOS", "LSApplicationCategoryType",
+    "UIApplicationSceneManifest", "UIApplicationSupportsIndirectInputEvents", "UIApplicationSupportsMultipleScenes",
+    "UIRequiredDeviceCapabilities", "UIRequiresFullScreen", "UIViewControllerBasedStatusBarAppearance",
+    "ITSAppUsesNonExemptEncryption", "NSHumanReadableCopyright", "MinimumOSVersion", "UIDeviceFamily",
+    "NSPrincipalClass", "UIPrerenderedIcon",
+}
+HOST_PLIST_PREFIXES = ("UISupportedInterfaceOrientations", "CFBundleIcons", "UIStatusBar", "UILaunch", "DT",
+                       "BuildMachine")
+FREE_SIGNING_ENTITLEMENTS = {
+    "aps-environment": "Push notifications",
+    "com.apple.developer.aps-environment": "Push notifications",
+    "com.apple.developer.icloud-container-identifiers": "iCloud",
+    "com.apple.developer.icloud-container-environment": "iCloud",
+    "com.apple.developer.icloud-services": "iCloud",
+    "com.apple.developer.ubiquity-container-identifiers": "iCloud Documents",
+    "com.apple.developer.ubiquity-kvstore-identifier": "iCloud key-value storage",
+    "com.apple.developer.associated-domains": "Associated Domains (universal links, password AutoFill)",
+    "com.apple.developer.applesignin": "Sign in with Apple",
+    "com.apple.developer.in-app-payments": "Apple Pay",
+    "com.apple.developer.pass-type-identifiers": "Wallet",
+    "com.apple.developer.siri": "Siri",
+    "com.apple.developer.networking.networkextension": "Network Extensions",
+    "com.apple.developer.networking.vpn.api": "Personal VPN",
+}
+SIGNING_ENTITLEMENTS = {"application-identifier", "com.apple.developer.team-identifier", "get-task-allow",
+                        "keychain-access-groups", "com.apple.security.application-groups"}
+
+
+class Inspection:
+    """Findings by section: {(section, message): [where, ...]}, plus what was found."""
+
+    def __init__(self):
+        self.items = {}
+        self.found = []
+        self.whole = None  # Why the repository as a whole cannot become a Feature.
+        self.feature = False
+        self.packages = set()
+
+    def add(self, section, message, where=None):
+        places = self.items.setdefault((section, message), [])
+        if where and where not in places:
+            places.append(where)
+
+    def add_package(self, name, text, category="Swift package"):
+        """A Swift package dependency, once even when both the project and Package.swift list it."""
+        key = (category, re.sub(r"(\.git)?/?$", "", name.lower()))
+        if key not in self.packages:
+            self.packages.add(key)
+            self.add(BRINGS, f"{category} {text}")
+
+    def sections(self):
+        return {section for section, _ in self.items}
+
+    def verdict(self):
+        sections = self.sections()
+        if self.whole:
+            text = f"not supported: {self.whole}"
+        elif UNSUPPORTED in sections:
+            text = "some parts cannot come into JibunKit (see below); the rest can, with the changes listed"
+        elif MANUAL in sections:
+            text = "can be moved, with manual changes"
+        elif MECHANICAL in sections:
+            text = "can be moved with mechanical changes only"
+        elif self.feature:
+            text = "a JibunKit Feature; it can be added as it is"
+        else:
+            text = "nothing to move was found"
+        if FREE_SIGNING in sections and not self.whole:
+            text += "; some capabilities may not work with free signing"
+        return text
+
+
+def parse_openstep(text):
+    """Parse an old-style (OpenStep) property list, the format of project.pbxproj."""
+    index = 0
+    token = re.compile(r"[^\s{}()=;,\"<>]+")
+
+    def skip():
+        nonlocal index
+        while index < len(text):
+            if text[index].isspace():
+                index += 1
+            elif text.startswith("/*", index):
+                end = text.find("*/", index + 2)
+                index = len(text) if end < 0 else end + 2
+            elif text.startswith("//", index):
+                end = text.find("\n", index)
+                index = len(text) if end < 0 else end + 1
+            else:
+                return
+
+    def expect(character):
+        nonlocal index
+        skip()
+        require(text[index:index + 1] == character, f"expected {character!r} at offset {index}")
+        index += 1
+
+    def value():
+        nonlocal index
+        skip()
+        require(index < len(text), "unexpected end of the file")
+        character = text[index]
+        if character == "{":
+            index += 1
+            result = {}
+            while True:
+                skip()
+                if text[index:index + 1] == "}":
+                    index += 1
+                    return result
+                key = value()
+                expect("=")
+                result[key] = value()
+                expect(";")
+        if character == "(":
+            index += 1
+            result = []
+            while True:
+                skip()
+                if text[index:index + 1] == ")":
+                    index += 1
+                    return result
+                result.append(value())
+                skip()
+                if text[index:index + 1] == ",":
+                    index += 1
+        if character == '"':
+            index += 1
+            parts = []
+            while True:
+                require(index < len(text), "unterminated string")
+                character = text[index]
+                if character == '"':
+                    index += 1
+                    return "".join(parts)
+                if character == "\\":
+                    escaped = text[index + 1:index + 2]
+                    parts.append({"n": "\n", "t": "\t", "r": "\r"}.get(escaped, escaped))
+                    index += 2
+                else:
+                    parts.append(character)
+                    index += 1
+        if character == "<":
+            end = text.find(">", index)
+            require(end > 0, "unterminated data")
+            data = text[index + 1:end]
+            index = end + 1
+            return data
+        match = token.match(text, index)
+        require(match, f"unexpected {character!r} at offset {index}")
+        index = match.end()
+        return match.group()
+
+    result = value()
+    skip()
+    require(index == len(text), f"unexpected text at offset {index}")
+    return result
+
+
+def inside(base, path):
+    try:
+        path.resolve().relative_to(base.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def xcconfig_settings(base, path, seen=None):
+    """Build settings from an .xcconfig file and the files it includes (iOS values only)."""
+    seen = set() if seen is None else seen
+    settings = {}
+    if path in seen or not inside(base, path) or not path.is_file():
+        return settings
+    seen.add(path)
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.split("//", 1)[0].strip()
+        include = re.match(r'#include\??\s+"([^"]+)"', line)
+        if include:
+            settings.update(xcconfig_settings(base, path.parent / include.group(1), seen))
+            continue
+        match = re.match(r"([A-Za-z_][A-Za-z0-9_]*)((?:\[[^\]]*\])*)\s*=\s*(.*)", line)
+        if match and (not match.group(2) or "sdk=iphone" in match.group(2)):
+            settings[match.group(1)] = match.group(3).strip().rstrip(";").strip()
+    return settings
+
+
+def setting(values, key, target=""):
+    """A build setting as text, with the references this check can resolve replaced."""
+    value = values.get(key, "")
+    text = " ".join(value) if isinstance(value, list) else str(value)
+    text = re.sub(r"\$[({]inherited[)}]", "", text)
+    text = re.sub(r"\$[({](?:SRCROOT|PROJECT_DIR|SOURCE_ROOT)[)}]/?", "", text)
+    text = re.sub(r"\$[({](?:TARGET_NAME|PRODUCT_NAME)(?::[^)}]*)?[)}]", target, text)
+    return text.strip().strip('"')
+
+
+def version_tuple(text):
+    numbers = re.findall(r"\d+", text)
+    return tuple(int(number) for number in numbers[:2]) if numbers else None
+
+
+def read_plist(base, path, inspection, where):
+    if not path or not inside(base, path) or not path.is_file():
+        return {}
+    try:
+        data = plistlib.loads(path.read_bytes())
+    except Exception:
+        inspection.add(NOT_READ, "Property lists that could not be read", where)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def plist_item(key, value):
+    if key == "UIBackgroundModes" and isinstance(value, list):
+        return f"UIBackgroundModes ({', '.join(map(str, value))})"
+    if key == "CFBundleURLTypes" and isinstance(value, list):
+        schemes = [scheme for entry in value if isinstance(entry, dict)
+                   for scheme in entry.get("CFBundleURLSchemes") or []]
+        return f"CFBundleURLTypes ({', '.join(map(str, schemes))})"
+    return key
+
+
+def inspect_info_plist(plist, inspection, where):
+    copied = []
+    for key, value in sorted(plist.items()):
+        if (key in HOST_PLIST_KEYS or key.startswith(HOST_PLIST_PREFIXES) or key.endswith("_Generation")
+                or value in ("", None)):
+            continue
+        if key in ("UIMainStoryboardFile", "UIMainStoryboardFile~ipad", "NSMainStoryboardFile"):
+            inspection.add(MANUAL, "The app starts from a storyboard: show its first screen from the Feature's root "
+                           "view (UIViewControllerRepresentable). See docs/mini-apps.md#moving-an-existing-app", where)
+        elif key == "UIUserInterfaceStyle":
+            inspection.add(MECHANICAL, "A fixed light or dark appearance (UIUserInterfaceStyle): set "
+                           "environment(\\.colorScheme, ...) on the Feature's root view. See "
+                           "docs/guides/feature-appearance.md", where)
+        elif key == "UIAppFonts":
+            inspection.add(MANUAL, "Fonts (UIAppFonts) are registered for the whole app: register the Feature's "
+                           "fonts from Bundle.module at run time (CTFontManagerRegisterFontsForURL).", where)
+        elif key in ("UIFileSharingEnabled", "LSSupportsOpeningDocumentsInPlace"):
+            inspection.add(MANUAL, f"{key} shows the whole app's Documents folder in Files; JibunKit decides it "
+                           "for all Features. Keep the Feature's files in its own location.", where)
+        elif key == "CFBundleDocumentTypes":
+            inspection.add(MANUAL, "Document types (files opened from other apps): they arrive through JibunKit's "
+                           "incoming files. See docs/guides/feature-incoming.md", where)
+        else:
+            copied.append(plist_item(key, value))
+    if copied:
+        inspection.add(MECHANICAL, "Info.plist keys: copy them to `app.infoPlist` in JibunKitFeature.json: "
+                       + ", ".join(copied) + ". See docs/guides/feature-build-requirements.md", where)
+
+
+def inspect_entitlements(entitlements, inspection, where):
+    copied = []
+    for key, value in sorted(entitlements.items()):
+        if key in FREE_SIGNING_ENTITLEMENTS:
+            inspection.add(FREE_SIGNING, f"{FREE_SIGNING_ENTITLEMENTS[key]} ({key})", where)
+        elif key == "com.apple.security.application-groups":
+            inspection.add(MANUAL, f"App Groups ({', '.join(map(str, value or []))}) belong to the app's own "
+                           "signing: use MiniAppStorage.sharedDefaults() and the Feature's files. See "
+                           "docs/mini-apps.md#moving-an-existing-app", where)
+        elif key == "keychain-access-groups":
+            inspection.add(MANUAL, "Keychain access groups belong to the app's own signing: keep the Feature's "
+                           "items with MiniAppKeychain. See docs/guides/keychain-access-control.md", where)
+        elif key not in SIGNING_ENTITLEMENTS and not key.startswith("com.apple.security."):
+            copied.append(key)
+    if copied:
+        inspection.add(MECHANICAL, "Entitlements: copy them to `app.entitlements` in JibunKitFeature.json: "
+                       + ", ".join(copied) + ".", where)
+
+
+def inspect_xcode_project(base, project, inspection):
+    """Read one .xcodeproj. Returns True when it has an iOS app target."""
+    srcroot = (base / project).parent
+    try:
+        data = parse_openstep((base / project / "project.pbxproj").read_text(encoding="utf-8", errors="replace"))
+        objects = data["objects"]
+        root = objects[data["rootObject"]]
+    except (FeatureError, KeyError, IndexError, TypeError):
+        inspection.add(NOT_READ, "Xcode projects whose project file could not be read; only their code was checked",
+                       project)
+        return False
+    parents = {child: key for key, item in objects.items() if isinstance(item, dict)
+               for child in item.get("children", []) if isinstance(child, str)}
+
+    def file_path(identifier):
+        parts = []
+        while identifier:
+            item = objects.get(identifier, {})
+            if item.get("path"):
+                parts.append(item["path"])
+            tree = item.get("sourceTree", "<group>")
+            if tree == "SOURCE_ROOT":
+                break
+            if tree != "<group>":
+                return None
+            identifier = parents.get(identifier)
+        return srcroot.joinpath(*reversed(parts)) if parts else None
+
+    def settings(identifier):
+        configurations = [objects.get(key, {}) for key in objects.get(identifier, {}).get("buildConfigurations", [])]
+        chosen = next((item for item in configurations if item.get("name") == "Release"),
+                      configurations[0] if configurations else {})
+        values = {}
+        path = None
+        if chosen.get("baseConfigurationReference"):
+            path = file_path(chosen["baseConfigurationReference"])
+        elif chosen.get("baseConfigurationReferenceAnchor"):
+            # Xcode 16: a file inside a folder that the project mirrors.
+            folder = file_path(chosen["baseConfigurationReferenceAnchor"])
+            path = folder / chosen.get("baseConfigurationReferenceRelativePath", "") if folder else None
+        if path:
+            values.update(xcconfig_settings(base, path))
+        for key, value in chosen.get("buildSettings", {}).items():
+            # A setting for one SDK only, such as KEY[sdk=iphoneos*]: keep the iOS ones.
+            key, _, condition = key.partition("[")
+            if not condition or "sdk=iphone" in condition:
+                values[key] = value
+        return values
+
+    project_settings = settings(root.get("buildConfigurationList"))
+    apps, others, skipped = [], [], []
+    for identifier in root.get("targets", []):
+        target = objects.get(identifier, {})
+        if target.get("isa") != "PBXNativeTarget":
+            continue
+        name, kind = target.get("name", identifier), target.get("productType", "")
+        values = {**project_settings, **settings(target.get("buildConfigurationList"))}
+        platforms = set(setting(values, "SUPPORTED_PLATFORMS").split()) or {setting(values, "SDKROOT") or "iphoneos"}
+        if kind in IGNORED_TYPES:
+            continue
+        if not platforms & {"iphoneos", "iphonesimulator", "auto"}:
+            skipped.append(f"{name} ({', '.join(sorted(platforms))})")
+            continue
+        where = f"{project.rsplit('/', 1)[-1]} {name}"
+        plist = read_plist(base, srcroot / setting(values, "INFOPLIST_FILE", name)
+                           if setting(values, "INFOPLIST_FILE", name) else None, inspection, where)
+        for key, value in values.items():
+            if key.startswith("INFOPLIST_KEY_"):
+                plist.setdefault(key[len("INFOPLIST_KEY_"):], setting(values, key, name))
+        if kind == "com.apple.product-type.application":
+            apps.append(name)
+            minimum = version_tuple(setting(values, "IPHONEOS_DEPLOYMENT_TARGET"))
+            if minimum and minimum > HOST_IOS:
+                inspection.add(UNSUPPORTED, f"Needs iOS {'.'.join(map(str, minimum))}; JibunKit is built for iOS "
+                               f"{'.'.join(map(str, HOST_IOS))}.", where)
+            inspect_info_plist(plist, inspection, where)
+            path = setting(values, "CODE_SIGN_ENTITLEMENTS", name)
+            inspect_entitlements(read_plist(base, srcroot / path if path else None, inspection, where),
+                                 inspection, where)
+            language = version_tuple(setting(values, "SWIFT_VERSION"))
+            if language and language < (6, 0):
+                inspection.add(MECHANICAL, "Swift 5 code: give the package target `swiftSettings: "
+                               "[.swiftLanguageMode(.v5)]`. See docs/mini-apps.md#moving-an-existing-app", where)
+            if setting(values, "SWIFT_OBJC_BRIDGING_HEADER"):
+                inspection.add(MANUAL, "An Objective-C bridging header: packages have none; put the Objective-C code "
+                               "in its own package target and import it.", where)
+        elif kind in EXTENSION_TYPES:
+            extension = plist.get("NSExtension") or plist.get("EXAppExtensionAttributes") or {}
+            point = extension.get("NSExtensionPointIdentifier") or extension.get("EXExtensionPointIdentifier") \
+                if isinstance(extension, dict) else None
+            if point in HOST_EXTENSIONS:
+                message, guide = HOST_EXTENSIONS[point]
+                inspection.add(MANUAL, f"{message} See {guide}", where)
+            elif point:
+                inspection.add(UNSUPPORTED, f"{EXTENSION_NAMES.get(point, 'This')} extension ({point}): JibunKit "
+                               "has no extension of this kind.", where)
+            else:
+                inspection.add(MANUAL, "An app extension of a kind this check could not read: see whether one of "
+                               "JibunKit's extensions does its job.", where)
+        elif kind in PRODUCT_TYPES:
+            inspection.add(UNSUPPORTED, f"{PRODUCT_TYPES[kind]}: JibunKit builds one iPhone app.", where)
+        elif kind in LIBRARY_TYPES:
+            inspection.add(MANUAL, "Framework and library targets: make each one a target of the Feature's "
+                           "Swift package.", where)
+        else:
+            inspection.add(NOT_READ, f"Targets of a type this check does not know ({kind})", where)
+        others.append(name)
+    packages = []
+    for identifier in root.get("packageReferences", []):
+        reference = objects.get(identifier, {})
+        if reference.get("isa") == "XCRemoteSwiftPackageReference":
+            url = reference.get("repositoryURL", "")
+            requirement = reference.get("requirement", {})
+            kind = requirement.get("kind", "")
+            pinned = requirement.get("version") or requirement.get("revision") or requirement.get("branch") \
+                or requirement.get("minimumVersion") or ""
+            inspection.add_package(url, f"{url} ({kind} {pinned})".replace(" )", ")"))
+            if kind not in ("exactVersion", "revision"):
+                inspection.add_package(url, url, f"{UNPINNED}:")
+            packages.append(url)
+        elif reference.get("isa") == "XCLocalSwiftPackageReference":
+            path = reference.get("relativePath", "")
+            inspection.add_package(f"local {path}", f"local {path}")
+            if not inside(base, srcroot / path):
+                inspection.add(MANUAL, f"A local package outside the inspected directory ({path}): it is not "
+                               "copied with the Feature.", project)
+            packages.append(path)
+    if packages:
+        inspection.add(MECHANICAL, "Swift packages the Xcode project uses: declare them as dependencies in the "
+                       "Feature's Package.swift.", project)
+    summary = ", ".join(apps + [name for name in others if name not in apps]) or "no iOS targets"
+    inspection.found.append(f"Xcode project {project} ({summary})")
+    if skipped:
+        inspection.found.append(f"targets for other platforms skipped: {', '.join(skipped)}")
+    return bool(apps)
+
+
+def inspect_package(base, directory, inspection):
+    """Read a Package.swift. Returns True when it can provide a Feature's products."""
+    module = base / directory
+    text = re.sub(r"(?m)^\s*//.*$", "", (module / "Package.swift").read_text(encoding="utf-8", errors="replace"))
+    name = re.search(r'Package\(\s*name:\s*"([^"]+)"', text)
+    label = f"Swift package {name.group(1) if name else directory or '(root)'}"
+    libraries = re.findall(r'\.library\(\s*name:\s*"([^"]+)"', text)
+    def add(category, item):
+        if category == "Swift packages":
+            inspection.add_package(item if item.startswith("local ") else item.split()[0], item)
+        elif category == UNPINNED:
+            inspection.add_package(item, item, f"{UNPINNED}:")
+        else:
+            inspection.add(BRINGS, f"{category}: {item}")
+
+    describe_package(module, add)
+    where = f"{directory}/Package.swift" if directory else "Package.swift"
+    if (module / MANIFEST).exists():
+        inspection.feature = True
+        label = f"JibunKit Feature ({label})"
+        try:
+            data = load(module)
+        except FeatureError as error:
+            inspection.add(MANUAL, f"{MANIFEST} is not valid: {error}", where)
+        else:
+            for item in sorted(item for items in describe_requirements(data).values() for item in items):
+                inspection.add(BRINGS, f"{REQUIREMENTS}: {item}")
+    elif ".iOSApplication(" in text:
+        inspection.add(MECHANICAL, "A Swift Playgrounds app: make the app product a library, add "
+                       f"{MANIFEST} and replace the App with a MiniAppDefinition.", where)
+        capabilities = sorted(set(re.findall(r"\.(\w+)\(\s*purposeString:", text)))
+        if capabilities:
+            inspection.add(MECHANICAL, f"Capabilities of the Playgrounds app ({', '.join(capabilities)}): put their "
+                           "usage descriptions in `app.infoPlist` in JibunKitFeature.json. See "
+                           "docs/guides/feature-build-requirements.md", where)
+    elif libraries:
+        inspection.add(MECHANICAL, f"No {MANIFEST}: add one that lists the products ({', '.join(libraries)}) and "
+                       "an Integration file that creates the MiniAppDefinition with the root view; `new --name "
+                       "Example` shows both. See docs/mini-apps.md#2-connect-it-to-the-host", where)
+    else:
+        inspection.add(MANUAL, "The package has no library product; JibunKit links a Feature as a library.", where)
+    inspection.found.append(label)
+    return bool(libraries) or ".iOSApplication(" in text
+
+
+def describe_requirements(data):
+    """The Info.plist keys, entitlements and App Shortcuts a Feature manifest declares."""
+    report = {}
+    for target, section in (("app", data.get("app") or {}), ("widget", data.get("widget") or {})):
+        for kind in ("infoPlist", "entitlements"):
+            for key, value in (section.get(kind) or {}).items():
+                if key == "CFBundleURLTypes" and isinstance(value, list):
+                    for declaration in value:
+                        for scheme in (declaration.get("CFBundleURLSchemes") or []) if isinstance(declaration, dict) else []:
+                            report.setdefault(REQUIREMENTS, set()).add(f"{target} {kind} CFBundleURLTypes: {scheme}")
+                elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+                    for item in value:
+                        report.setdefault(REQUIREMENTS, set()).add(f"{target} {kind} {key}: {item}")
+                else:
+                    report.setdefault(REQUIREMENTS, set()).add(f"{target} {kind} {key}")
+    if data.get("appShortcuts"):
+        report.setdefault(REQUIREMENTS, set()).add("App Shortcuts")
+    return report
+
+
+def app_code(name):
+    """Whether a file is part of the app rather than tests, examples or other people's code."""
+    parts = name.split("/")
+    return not any(part in NOT_APP_CODE or part.endswith(("Tests", ".xcodeproj", ".xcworkspace", ".docc"))
+                   for part in parts[:-1])
+
+
+def inspect_code(base, names, inspection):
+    files = [base / name for name in names if name.endswith(".swift") and app_code(name)
+             and not MANIFEST_FILE.fullmatch(name.rsplit("/", 1)[-1]) and (base / name).is_file()]
+    for file, number, rule, message, guide in check(files):
+        if rule != "app-entry":
+            inspection.add(MANUAL, f"[{rule}] {message} See {guide}", f"{file.relative_to(base).as_posix()}:{number}")
+    rules = MOVE_CHECKS
+    if any(name.rsplit("/", 1)[-1] in ("Localizable.strings", "Localizable.xcstrings") for name in names):
+        rules = rules + [LOCALIZED_TEXT]
+    compiled = [(rule, re.compile(pattern), exempt and re.compile(exempt), section, message, guide)
+                for rule, pattern, exempt, section, message, guide in rules]
+    for file in files:
+        text = file.read_text(encoding="utf-8", errors="replace")
+        relative = file.relative_to(base).as_posix()
+        code = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+        for rule, pattern, exempt, section, message, guide in compiled:
+            for match in pattern.finditer(code):
+                if exempt and exempt.search(call_arguments(code, match.end())):
+                    continue
+                inspection.add(section, f"[{rule}] {message} See {guide}",
+                               f"{relative}:{code.count(chr(10), 0, match.start()) + 1}")
+        for entry in APP_ENTRY.finditer(code):
+            where = f"{relative}:{code.count(chr(10), 0, entry.start()) + 1}"
+            # Other @main types are widget bundles, plugins or tools; an app
+            # delegate entry is reported by the app-delegate rule.
+            if entry.group(1) in ("App", "SwiftUI.App"):
+                inspection.add(MECHANICAL, "[app-entry] The App with @main: JibunKit owns the app entry; show its "
+                               "root view from a MiniAppDefinition instead. See docs/mini-apps.md#3-write-the-integration",
+                               where)
+    return len(files)
+
+
+def call_arguments(code, start):
+    """The argument text of a call whose "(" ends at `start`, skipping parentheses in string literals."""
+    depth, index, in_string = 1, start, False
+    end = min(len(code), start + 4000)
+    while index < end and depth:
+        character = code[index]
+        if in_string:
+            if character == "\\":
+                index += 1
+            elif character in '"\n':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+        index += 1
+    return code[start:index]
+
+
+def inspect_directory(base, names=None):
+    """Inspect the files under base; `names` lists every file, including ones not written to disk."""
+    if names is None:
+        names = sorted(path.relative_to(base).as_posix() for path in base.rglob("*")
+                       if path.is_file() and ".git" not in path.relative_to(base).parts)
+    inspection = Inspection()
+    projects = sorted({name[:-len("/project.pbxproj")] for name in names
+                       if name.endswith(".xcodeproj/project.pbxproj") and app_code(name.rsplit(".xcodeproj/", 1)[0] + "/x")})
+    has_app = False
+    for project in projects:
+        has_app = inspect_xcode_project(base, project, inspection) or has_app
+    packages = [""] if "Package.swift" in names else []
+    packages += sorted(name[:-len("/Package.swift")] for name in names
+                       if re.fullmatch(r"[^/]+\.swiftpm/Package\.swift", name))
+    has_package = False
+    for directory in packages:
+        has_package = inspect_package(base, directory, inspection) or has_package
+    if not projects and not packages:
+        for marker, tool in (("project.yml", "XcodeGen"), ("Project.swift", "Tuist")):
+            if marker in names:
+                inspection.add(NOT_READ, f"The {tool} project ({marker}): its targets, Info.plist keys and "
+                               "entitlements were not read; only the code was checked.")
+    for manager, pattern in (("Podfile", r"""^\s*pod\s+['"]([^'"]+)"""), ("Cartfile", r'^\s*\w+\s+"([^"]+)"')):
+        for name in names:
+            if name.rsplit("/", 1)[-1] == manager and app_code(name) and (base / name).is_file():
+                used = re.findall(pattern, (base / name).read_text(encoding="utf-8", errors="replace"), re.M)
+                tool = "CocoaPods" if manager == "Podfile" else "Carthage"
+                inspection.add(MANUAL, f"{tool} ({', '.join(used) or 'no libraries listed'}): JibunKit builds with "
+                               "Swift packages only; use each library's Swift package.", name)
+    for name in names:
+        if not app_code(name):
+            continue
+        suffix = Path(name).suffix
+        if suffix in (".m", ".mm", ".c", ".cc", ".cpp"):
+            inspection.add(MANUAL, "Objective-C, C or C++ code: a package target holds one language; put it in a "
+                           "target of its own.", name)
+        elif suffix in (".storyboard", ".xib") and not Path(name).stem.startswith("LaunchScreen"):
+            inspection.add(MANUAL, "Storyboards and xibs: load them from Bundle.module.", name)
+        elif "Settings.bundle/" in name and name.endswith("Root.plist"):
+            inspection.add(UNSUPPORTED, "Settings.bundle: the Settings app shows one page for JibunKit, not one per "
+                           "Feature; move the settings into the Feature's screens.", name)
+        elif name.rsplit("/", 1)[-1] in ("InfoPlist.strings", "InfoPlist.xcstrings") and projects:
+            inspection.add(MECHANICAL, "Localized Info.plist text: move it to `app.localizedInfoPlist` in "
+                           "JibunKitFeature.json. See docs/guides/feature-build-requirements.md", name)
+    count = inspect_code(base, names, inspection)
+    inspection.found.append(f"{count} Swift file(s) checked")
+    if not count and not projects and not packages:
+        inspection.whole = "no Swift code, Xcode project or Swift package was found"
+    elif projects and not has_app and not has_package:
+        inspection.whole = "no iOS app target was found"
+    return inspection
+
+
+def inspect_repository(repository, ref="HEAD", path=""):
+    """Fetch one commit and inspect a directory of it. Returns (repository, commit, Inspection)."""
+    repository = repository_url(repository)
+    path = source_path(path)
+    with tempfile.TemporaryDirectory() as temporary:
+        work, base = Path(temporary) / "git", Path(temporary) / "files"
+        work.mkdir()
+        base.mkdir()
+        commit = fetch(work, repository, ref)
+        names, wanted, links, submodules = [], [], [], []
+        for name, mode, kind, sha in list_tree(work, commit, path):
+            if kind == "commit":
+                submodules.append(name)
+            elif mode == "120000":
+                links.append(name)
+            else:
+                names.append(name)
+                if Path(name).suffix in INSPECTED_SUFFIXES or Path(name).name in INSPECTED_NAMES:
+                    wanted.append((name, sha))
+        unwritten = []
+        for (name, _), data in zip(wanted, read_blobs(work, [sha for _, sha in wanted])):
+            try:
+                write_file(base, name, data)
+            except OSError:
+                unwritten.append(name)
+        inspection = inspect_directory(base, names)
+    for name in submodules:
+        inspection.add(MANUAL, "Git submodules: their code is in another repository and is not copied; copy it in "
+                       "or depend on its Swift package.", name)
+    for name in links:
+        inspection.add(NOT_READ, "Symbolic links (not followed)", name)
+    for name in unwritten:
+        inspection.add(NOT_READ, "Files whose names this computer cannot store", name)
+    return repository, commit, inspection
+
+
+def print_inspection(inspection):
+    print("Found: " + "; ".join(inspection.found) + ".")
+    print(f"Verdict: {inspection.verdict()}.")
+    for section, title in SECTION_TITLES.items():
+        entries = [(message, places) for (kind, message), places in inspection.items.items() if kind == section]
+        if not entries:
+            continue
+        print(f"\n{title}:")
+        for message, places in sorted(entries):
+            print(f"  {message}")
+            if places:
+                shown = ", ".join(places[:SHOWN_LOCATIONS])
+                more = f" (+{len(places) - SHOWN_LOCATIONS} more)" if len(places) > SHOWN_LOCATIONS else ""
+                print(f"    {shown}{more}")
 
 
 def default_name(repository, path):
@@ -867,6 +1637,10 @@ def main(argv=None):
     updating.add_argument("--path", help="The Feature moved to another directory of the repository")
     removing = commands.add_parser("remove", help="Delete an imported Feature")
     removing.add_argument("name")
+    inspecting = commands.add_parser("inspect", help="Report how far a repository is from a JibunKit Feature")
+    inspecting.add_argument("repository", help="Git URL, OWNER/REPO on GitHub, or a local path")
+    inspecting.add_argument("--ref", default="HEAD", help="Branch, tag or commit (default: the default branch)")
+    inspecting.add_argument("--path", default="", help="Directory to inspect (default: the repository root)")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     try:
@@ -910,6 +1684,10 @@ def main(argv=None):
             remove_feature(root, args.name)
             sync(root)
             print(f"Removed Modules/{args.name} and its record; updated {HELPER.as_posix()}")
+        elif args.command == "inspect":
+            repository, commit, inspection = inspect_repository(args.repository, args.ref, args.path)
+            print(f"Inspected {repository} {args.path or '(root)'} at {commit} ({args.ref}).")
+            print_inspection(inspection)
         else:
             changed = sync(root, check=args.check)
             print(f"{HELPER.as_posix()} {'updated' if changed else 'is up to date'}")

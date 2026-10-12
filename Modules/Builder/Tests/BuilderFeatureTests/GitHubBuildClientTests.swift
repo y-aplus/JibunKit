@@ -190,6 +190,29 @@ final class GitHubBuildClientTests: XCTestCase {
         }
     }
 
+    func testACompatibilityCheckDispatchesItsOwnWorkflowAndFollowsIt() async throws {
+        let operation = FeatureImportOperation.inspect(repository: "https://github.com/someone/app", ref: "v2", path: "")
+        let transport = StubTransport([("/check-compatibility.yml/dispatches", .init(status: 204))])
+        try await client(transport).requestImport(operation)
+        let request = try XCTUnwrap(transport.requests.first?.request)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        XCTAssertEqual(body["inputs"] as? [String: String], ["repository": "https://github.com/someone/app", "ref": "v2", "path": ""])
+
+        let requestedAt = ISO8601DateFormatter().date(from: "2026-10-12T07:00:00Z")!
+        let list = #"{"workflow_runs": [\#(runJSON(id: 8, status: "queued", conclusion: nil, created: "2026-10-12T07:00:02Z"))]}"#
+        let started = try await client(StubTransport([("/check-compatibility.yml/runs?", .init(status: 200, body: list))]))
+            .refresh(ImportRequest(operation: operation, requestedAt: requestedAt), now: requestedAt + 5)
+        XCTAssertEqual(started.run?.id, 8)
+
+        let missing = StubTransport([("/check-compatibility.yml/dispatches", .init(status: 404))])
+        do {
+            try await client(missing).requestImport(operation)
+            XCTFail("A missing workflow succeeded")
+        } catch {
+            XCTAssertEqual(error as? BuildClientError, .missingCheckWorkflow)
+        }
+    }
+
     func testImportedFeaturesReadTheBranchRecord() async throws {
         let record = """
         {"schema": 1, "features": {

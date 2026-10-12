@@ -102,7 +102,7 @@ public struct ImportedFeature: Codable, Equatable, Identifiable, Sendable {
     public var id: String { name }
 }
 
-/// One run of the Import Feature workflow.
+/// One run of the Import Feature workflow, or of Check Compatibility.
 public enum FeatureImportOperation: Codable, Equatable, Sendable {
     /// Empty strings leave the choice to the tool: the default branch, the
     /// repository root and a name derived from the path or URL.
@@ -110,6 +110,12 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
     /// An empty ref keeps the recorded one.
     case update(name: String, ref: String)
     case remove(name: String)
+    /// Reports how far a repository is from a JibunKit Feature; commits nothing.
+    case inspect(repository: String, ref: String, path: String)
+
+    public var workflow: String {
+        if case .inspect = self { GitHubBuildClient.checkWorkflow } else { GitHubBuildClient.importWorkflow }
+    }
 
     public var inputs: [String: String] {
         switch self {
@@ -119,6 +125,8 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
             ["operation": "update", "name": name, "ref": ref]
         case let .remove(name):
             ["operation": "remove", "name": name]
+        case let .inspect(repository, ref, path):
+            ["repository": repository, "ref": ref, "path": path]
         }
     }
 }
@@ -132,6 +140,7 @@ public enum BuildClientError: Error, Equatable, LocalizedError {
     case missingIPA
     case invalidResponse
     case missingImportWorkflow
+    case missingCheckWorkflow
 
     public var errorDescription: String? {
         switch self {
@@ -151,6 +160,8 @@ public enum BuildClientError: Error, Equatable, LocalizedError {
             BuilderText.localized("GitHub returned an unexpected response.")
         case .missingImportWorkflow:
             BuilderText.localized("The repository has no Import Feature workflow. Update it from JibunKit first.")
+        case .missingCheckWorkflow:
+            BuilderText.localized("The repository has no Check Compatibility workflow. Update it from JibunKit first.")
         }
     }
 }
@@ -165,9 +176,10 @@ public protocol BuildHTTPTransport: Sendable {
 public struct GitHubBuildClient: Sendable {
     public static let workflow = "quick-ipa.yml"
     public static let importWorkflow = "import-feature.yml"
+    public static let checkWorkflow = "check-compatibility.yml"
     public static let ipaName = "JibunKit.ipa"
     public static let importsFile = "JibunKitImports.json"
-    /// import-feature.yml prints the tool's output between these lines.
+    /// import-feature.yml and check-compatibility.yml print the tool's output between these lines.
     static let reportStart = "=== JibunKit import report ==="
     static let reportEnd = "=== end of report ==="
 
@@ -187,11 +199,13 @@ public struct GitHubBuildClient: Sendable {
         try await dispatch(workflow: Self.workflow, inputs: ["publish": "true"])
     }
 
-    /// Asks GitHub to run Import Feature, which commits the result to the branch.
+    /// Asks GitHub to run Import Feature, which commits the result to the
+    /// branch, or Check Compatibility.
     public func requestImport(_ operation: FeatureImportOperation) async throws {
         do {
-            try await dispatch(workflow: Self.importWorkflow, inputs: operation.inputs)
+            try await dispatch(workflow: operation.workflow, inputs: operation.inputs)
         } catch BuildClientError.notFound {
+            if case .inspect = operation { throw BuildClientError.missingCheckWorkflow }
             throw BuildClientError.missingImportWorkflow
         }
     }
@@ -256,7 +270,7 @@ public struct GitHubBuildClient: Sendable {
             .sorted { $0.name < $1.name }
     }
 
-    /// What the tool printed in a finished Import Feature run, read from its log.
+    /// What the tool printed in a finished Import Feature or Check Compatibility run, read from its log.
     public func importReport(runID: Int) async throws -> String? {
         struct Jobs: Decodable {
             struct Job: Decodable { let id: Int }

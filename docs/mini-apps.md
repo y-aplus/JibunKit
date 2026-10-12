@@ -214,7 +214,7 @@ The **Import Feature** workflow (`.github/workflows/import-feature.yml`) runs th
 
 ## Moving an existing app
 
-Moving an existing Xcode app into a feature means removing its app shell. Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:
+Moving an existing Xcode app into a feature means removing its app shell. To see first how much of that an app needs, [check its repository](#checking-a-repository-first). Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:
 
 | In the standalone app | In JibunKit |
 | --- | --- |
@@ -248,6 +248,21 @@ Code written for Swift 5 can be moved first and adapted to Swift 6 later. The ho
 ```
 
 This separates the move from the concurrency rewrite. The Swift 6 integration code may still report concurrency errors where it passes the feature's types between actors. Keep the integration thin. If you use `@preconcurrency import` there, treat it as temporary.
+
+### Checking a repository first
+
+```bash
+python3 Tools/jibunkit-feature.py inspect https://github.com/someone/app
+python3 Tools/jibunkit-feature.py inspect someone/apps --path Apps/Notes --ref v2
+```
+
+`inspect` reads a repository as [`add`](#importing-a-feature-from-another-repository) does, without running its code or writing anything, and reports how far it is from a feature. Its verdict comes from the heaviest of these parts:
+
+- **Not supported**: what JibunKit cannot hold, such as an iOS version above the host's, an extension that JibunKit has no counterpart for (a custom keyboard or a Safari extension, for example), an Apple Watch app, an App Clip or a `Settings.bundle`. The rest of the app can still move.
+- **Manual changes**: the `check` findings above, App Groups and keychain groups, Objective-C or C code, CocoaPods and Carthage, storyboards, app and scene delegates, Core Data and SwiftData stores in app-wide places, framework targets, and widget, share, action, notification and Intents extensions whose job JibunKit's own extensions do.
+- **Mechanical changes**: rewrites that are the same every time: Info.plist keys and entitlements into `JibunKitFeature.json`, the Xcode project's Swift packages into `Package.swift`, the `@main` App into a `MiniAppDefinition`, `bundle: .module` for asset catalog images and colors and for localized text, and the Swift 5 language mode.
+
+It also lists capabilities that may not work with free signing (push notifications, iCloud and Associated Domains, for example, usually need a paid Apple Developer Program membership) and the Swift packages the code depends on. It reads `.xcodeproj` projects with their `.xcconfig` files, `Package.swift` and Swift Playgrounds apps; for an XcodeGen or Tuist project it checks only the code. It skips tests, examples and vendored code. Like `check`, it matches text: "can be moved" does not mean that the moved code compiles. The **Check Compatibility** workflow (`.github/workflows/check-compatibility.yml`) runs it on GitHub without committing anything, and the [Build](../Modules/Builder/README.md#import-features-from-other-repositories) mini app starts it from the phone.
 
 ## Compatibility checklist
 

@@ -62,7 +62,7 @@
 "Update %@" = "%@を更新";
 "Remove %@" = "%@を削除";
 "https://github.com/OWNER/REPO" = "https://github.com/OWNER/REPO";
-"The directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json." = "そのディレクトリにJibunKitのFeature（Package.swiftとJibunKitFeature.json）が必要です。";
+"To import, the directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json." = "取り込むには、そのディレクトリにJibunKitのFeature（Package.swiftとJibunKitFeature.json）が必要です。";
 "Branch, tag or commit" = "ブランチ、タグまたはコミット";
 "Directory in the repository" = "リポジトリ内のディレクトリ";
 "Name under Modules" = "Modules内の名前";
@@ -70,3 +70,8 @@
 "Leave these empty to use the default branch, the repository root and a name from the URL." = "空欄なら、既定のブランチ、リポジトリのルート、URLから決めた名前を使います。";
 "Cancel" = "キャンセル";
 "Import" = "取り込む";
+"The repository has no Check Compatibility workflow. Update it from JibunKit first." = "リポジトリにCheck Compatibilityワークフローがありません。先にJibunKitの更新を取り込んでください。";
+"Requested. GitHub writes the report in about a minute." = "依頼しました。1分ほどでGitHubがレポートを用意します。";
+"Check %@" = "%@をチェック";
+"Check Compatibility" = "互換性をチェック";
+"Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed." = "普通のiOSアプリなど、どのリポジトリでも読み込み、JibunKitのFeatureにするには何が必要かをレポートにまとめます。何もコミットしません。";

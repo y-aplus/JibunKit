@@ -62,7 +62,7 @@
 "Update %@" = "Update %@";
 "Remove %@" = "Remove %@";
 "https://github.com/OWNER/REPO" = "https://github.com/OWNER/REPO";
-"The directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json." = "The directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json.";
+"To import, the directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json." = "To import, the directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json.";
 "Branch, tag or commit" = "Branch, tag or commit";
 "Directory in the repository" = "Directory in the repository";
 "Name under Modules" = "Name under Modules";
@@ -70,3 +70,8 @@
 "Leave these empty to use the default branch, the repository root and a name from the URL." = "Leave these empty to use the default branch, the repository root and a name from the URL.";
 "Cancel" = "Cancel";
 "Import" = "Import";
+"The repository has no Check Compatibility workflow. Update it from JibunKit first." = "The repository has no Check Compatibility workflow. Update it from JibunKit first.";
+"Requested. GitHub writes the report in about a minute." = "Requested. GitHub writes the report in about a minute.";
+"Check %@" = "Check %@";
+"Check Compatibility" = "Check Compatibility";
+"Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed." = "Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed.";

@@ -5,7 +5,7 @@ public struct BuilderState: Codable, Equatable, Sendable {
     public var repository: BuildRepository?
     /// The last build this app requested, kept until another one starts.
     public var request: BuildRequest?
-    /// The last import, update or removal this app requested.
+    /// The last import, update, removal or compatibility check this app requested.
     public var importRequest: ImportRequest?
 
     public init(repository: BuildRepository? = nil, request: BuildRequest? = nil, importRequest: ImportRequest? = nil) {
@@ -101,7 +101,7 @@ extension GitHubBuildClient {
     /// finished, the tool's report.
     public func refresh(_ request: ImportRequest, now: Date = Date()) async throws -> ImportRequest {
         var request = request
-        request.run = try await track(request.run, workflow: Self.importWorkflow, requestedAt: request.requestedAt,
+        request.run = try await track(request.run, workflow: request.operation.workflow, requestedAt: request.requestedAt,
                                       now: now, lost: .importDidNotStart)
         if let run = request.run, run.isFinished, request.report == nil {
             // GitHub may need a moment to publish the log; a later refresh tries again.

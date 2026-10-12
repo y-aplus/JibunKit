@@ -26,6 +26,8 @@ The imported Features are listed from the branch's `JibunKitImports.json`. Tap o
 
 When the tool stops, for example because the Feature collides with another one or an update conflicts with your own edits, nothing is committed and the report says why. Resolve it on a computer with the same tool. The import never runs code from the other repository; that code runs when you build.
 
+To see what a repository that is not a JibunKit Feature yet, such as an ordinary iOS app, would need to become one, enter it in the same form and tap **Check Compatibility**. Builder starts the **Check Compatibility** workflow (`.github/workflows/check-compatibility.yml`), which runs `python3 Tools/jibunkit-feature.py inspect` and commits nothing. Its **Report** gives a verdict and lists what cannot come into JibunKit, what needs manual or mechanical changes, and what may not work with free signing ([details](../../docs/mini-apps.md#checking-a-repository-first)).
+
 
 ## Boundaries
 

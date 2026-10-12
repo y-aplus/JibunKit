@@ -14,7 +14,7 @@ The token is kept in the Keychain under this Feature's own service; the reposito
 
 ## Use
 
-Tap **Build the IPA**. The app may be closed while GitHub builds, which usually takes a few minutes. If you allow it, a notification a few minutes later reminds you to come back; it is sent at the expected time, not when GitHub finishes, so the build may still be running. When the run has finished, tap **Download the IPA**, then **Share the IPA** and choose SideStore or AltStore in the share sheet. If the installer is not listed there, as SideStore was not in the 2026-10-12 device check, choose **Save to Files** and add the IPA with the installer's **+** button.
+Tap **Build the IPA**. The app may be closed while GitHub builds, which usually takes a few minutes. If you allow it, a notification a few minutes later reminds you to come back; it is sent at the expected time, not when GitHub finishes, so the build may still be running. When the run has finished, tap **Download the IPA**, then **Share the IPA** and choose SideStore or AltStore in the share sheet. In the 2026-10-12 device check SideStore was listed but tapping it did nothing; choosing **Save to Files** and adding the IPA with SideStore's **+** button installed it.
 
 The quick build runs no tests. A failed run shows a link to its page on GitHub.
 

@@ -244,6 +244,8 @@ class MigrateTests(unittest.TestCase):
         write(up, 'Demo/ja.lproj/InfoPlist.strings', '/* camera */\n"NSCameraUsageDescription" = "メモを読み取ります";\n'
                                                     'CFBundleDisplayName = "デモ";\n')
         write(up, 'Demo/Sounds/ding.caf', b'\x00\x01')
+        write(up, 'Demo/big.png', b'version https://git-lfs.github.com/spec/v1\noid sha256:00\nsize 9\n')
+        write(up, '.gitattributes', '*.png filter=lfs diff=lfs merge=lfs -text\n')
         write(up, 'Packages/Core/Package.swift', 'let package = Package(name: "Core")\n')
         write(up, 'Packages/Core/Sources/Core/Core.swift', 'public struct Core {}\n')
         write(up, 'DemoTests/DemoTests.swift', 'import XCTest\n')
@@ -308,7 +310,8 @@ class MigrateTests(unittest.TestCase):
         self.assertIn('## Still to change', report)
         for expected in ('[standard-defaults]', '[open-url]', 'Sources/NotesFeature/Views/ContentView.swift:10',
                          'aps-environment', 'Legacy.m', 'plugin', 'UIAppFonts', 'LastUpdate',
-                         'App Groups (group.demo)', '## Not brought from the app'):
+                         'App Groups (group.demo)', '## Not brought from the app',
+                         'stored with Git LFS', 'Demo/big.png'):
             self.assertIn(expected, report)
 
     def testADraftStaysOutOfSyncCheckAndPackageTestsUntilConnected(self):

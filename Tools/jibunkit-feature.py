@@ -791,7 +791,9 @@ HOST_IOS = (26, 0)
 NOT_APP_CODE = {"Tests", "UITests", "Example", "Examples", "Pods", "Carthage", ".build", ".swiftpm",
                 "DerivedData", "build", "node_modules", "fastlane", "vendor", "Tuist"}
 INSPECTED_SUFFIXES = {".swift", ".pbxproj", ".plist", ".entitlements", ".xcconfig"}
-INSPECTED_NAMES = {MANIFEST, "Podfile", "Cartfile", "project.yml"}
+INSPECTED_NAMES = {MANIFEST, "Podfile", "Cartfile", "project.yml", ".gitattributes"}
+# The first line of a file that Git LFS keeps outside the repository.
+LFS_POINTER = b"version https://git-lfs.github.com/spec/v1"
 MANIFEST_FILE = re.compile(r"Package(@swift-[0-9.]+)?\.swift|Project\.swift|Tuist\.swift|Workspace\.swift")
 SHOWN_LOCATIONS = 5
 
@@ -1475,6 +1477,10 @@ def inspect_directory(base, names=None):
             if marker in names:
                 inspection.add(NOT_READ, f"The {tool} project ({marker}): its targets, Info.plist keys and "
                                "entitlements were not read; only the code was checked.")
+    if any(name.rsplit("/", 1)[-1] == ".gitattributes" and (base / name).is_file()
+           and "filter=lfs" in (base / name).read_text(encoding="utf-8", errors="replace") for name in names):
+        inspection.add(MANUAL, "Git LFS keeps some files outside the repository; migrate copies only their "
+                       "pointers, so download those files yourself.", ".gitattributes")
     for manager, pattern in (("Podfile", r"""^\s*pod\s+['"]([^'"]+)"""), ("Cartfile", r'^\s*\w+\s+"([^"]+)"')):
         for name in names:
             if name.rsplit("/", 1)[-1] == manager and app_code(name) and (base / name).is_file():
@@ -2269,8 +2275,15 @@ def migrate_files(root, module, name, feature_id, base, names, source):
         template_view.write_bytes(template_text)
         notes.append((MANUAL, f"No SwiftUI App was turned into the root view; `{name}RootView.swift` shows only the "
                               "name. Make it show the app's first screen."))
+    pointers = [file for file in resources if (base / file).read_bytes().startswith(LFS_POINTER)]
+    resources = [file for file in resources if file not in pointers]
     for file in resources:
         write_file(target, inside_target(file), (base / file).read_bytes())
+    if pointers:
+        notes.append((MANUAL, f"{len(pointers)} file(s) are stored with Git LFS, so the repository holds only a "
+                              f"pointer to them and they were not copied: {', '.join(pointers[:5])}"
+                              f"{' ...' if len(pointers) > 5 else ''}. Download them (`git lfs pull` in a clone) "
+                              f"and put them under `Sources/{name}Feature`."))
     entries = sorted({resource_entry(inside_target(file)) for file in resources})
     if entries:
         changed.append(f"Copied {len(resources)} resource file(s); Package.swift declares them: "

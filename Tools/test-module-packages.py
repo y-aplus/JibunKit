@@ -5,9 +5,20 @@ import subprocess
 import sys
 
 
+def is_draft(package: Path) -> bool:
+    """A draft is still being moved in; jibunkit-feature.py connect removes the flag."""
+    try:
+        return json.loads((package / "JibunKitFeature.json").read_text(encoding="utf-8")).get("draft") is True
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def main(root: Path) -> None:
     for manifest in sorted(root.glob("*/Package.swift")):
         package = manifest.parent
+        if is_draft(package):
+            print(f"Skip draft Feature: {package}", flush=True)
+            continue
         # A Feature with iOS-only tests can supply its own xcodebuild invocation.
         # This is an explicit test entry point, not automatic platform inference.
         ios_runner = package / "ci-test.sh"

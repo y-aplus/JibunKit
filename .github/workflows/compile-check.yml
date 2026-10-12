@@ -4,10 +4,40 @@ name: Compile check
 # compile the app and its extensions for iOS. No tests run, no IPA is made and
 # nothing is signed, so a pass proves only that the code compiles.
 # Run it from any branch:  gh workflow run compile-check.yml --ref <branch>
-# Compiler errors appear as annotations in `gh run view <id>` and in the
-# failed log (`gh run view <id> --log-failed`).
+# With `draft`, it first connects that draft Feature (`jibunkit-feature.py
+# connect`) in this run only, so the draft compiles with the app; nothing is
+# committed. `ignore_check` connects it although `check` still reports
+# findings, and `report_only` passes even when the code does not compile; the
+# Migrate App workflow uses both to report on a draft it has just written.
+# Compiler errors appear as annotations in `gh run view <id>`, in the failed
+# log (`gh run view <id> --log-failed`) and in the report between the
+# "=== JibunKit import report ===" lines that the Build mini app shows.
 on:
   workflow_dispatch:
+    inputs:
+      draft:
+        description: Draft Feature to connect before compiling (a directory name under Modules/)
+        default: ""
+      ignore_check:
+        description: Connect the draft even when check reports findings
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to compile (empty for the commit that started the workflow)
+        type: string
+        default: ""
+      draft:
+        type: string
+        default: ""
+      ignore_check:
+        type: boolean
+        default: false
+      report_only:
+        description: Pass even when the code does not compile; the report says what failed
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -17,24 +47,56 @@ jobs:
     name: Xcode 26.6 (compile only)
     runs-on: macos-26
     timeout-minutes: 20
+    # The code compiled here may come from another repository; plugins and
+    # macros run during the build, so this job has read access only.
+    permissions:
+      contents: read
     env:
       TUIST_VERSION: "4.207.0"
       TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
+      DRAFT: ${{ inputs.draft }}
+      IGNORE_CHECK: ${{ inputs.ignore_check }}
+      REPORT_ONLY: ${{ inputs.report_only }}
     steps:
       - name: Check out source
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
+          ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - name: Check module Feature connections and host strings
+        id: check
         shell: bash
         run: |
-          set -euo pipefail
-          python3 Tools/jibunkit-feature.py sync --check
-          python3 Tools/jibunkit-feature.py check
-          python3 Tools/check-localization.py
+          set -uo pipefail
+          status=0
+          touch "$RUNNER_TEMP/check.txt"
+          if [[ -n "$DRAFT" ]]; then
+            args=(connect "$DRAFT")
+            [[ "$IGNORE_CHECK" != "true" ]] || args+=(--ignore-check)
+            if ! python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/check.txt" 2>&1; then
+              cat "$RUNNER_TEMP/check.txt"
+              echo "=== JibunKit import report ==="
+              echo "Modules/$DRAFT could not be connected, so it was not compiled:"
+              cat "$RUNNER_TEMP/check.txt"
+              echo "=== end of report ==="
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              [[ "$REPORT_ONLY" == "true" ]] && exit 0
+              exit 1
+            fi
+            # With ignore_check the findings are reported and the draft compiles anyway.
+            python3 Tools/jibunkit-feature.py check >> "$RUNNER_TEMP/check.txt" 2>&1 \
+              || [[ "$IGNORE_CHECK" == "true" ]] || status=1
+          else
+            { python3 Tools/jibunkit-feature.py sync --check && python3 Tools/jibunkit-feature.py check; } \
+              > "$RUNNER_TEMP/check.txt" 2>&1 || status=$?
+          fi
+          cat "$RUNNER_TEMP/check.txt"
+          python3 Tools/check-localization.py || status=$?
+          exit "$status"
 
       - name: Select Xcode 26.6
+        if: steps.check.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -42,6 +104,7 @@ jobs:
           test "$(xcodebuild -version | sed -n '1p')" = "Xcode 26.6"
 
       - name: Install pinned Tuist
+        if: steps.check.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -53,34 +116,46 @@ jobs:
           echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
 
       - name: Generate and compile
+        if: steps.check.outputs.skip != 'true'
         shell: bash
         run: |
-          set -euo pipefail
-          tuist generate --no-open
+          set -uo pipefail
           status=0
-          xcodebuild build \
-            -workspace JibunKit.xcworkspace \
-            -scheme JibunKit-App \
-            -configuration Debug \
-            -destination 'generic/platform=iOS' \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            CODE_SIGNING_ALLOWED=NO > "$RUNNER_TEMP/build.log" 2>&1 || status=$?
-          errors="$(grep -E '^/.+:[0-9]+:[0-9]+: error: ' "$RUNNER_TEMP/build.log" | sed "s|^$GITHUB_WORKSPACE/||" | sort -u || true)"
-          if [[ "$status" -eq 0 ]]; then
-            echo "Compiled the app and its extensions for iOS (Debug, unsigned)." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
           {
-            echo "### Compile errors"
-            echo '```'
-            if [[ -n "$errors" ]]; then echo "$errors" | head -100; else tail -60 "$RUNNER_TEMP/build.log"; fi
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+            tuist generate --no-open && xcodebuild build \
+              -workspace JibunKit.xcworkspace \
+              -scheme JibunKit-App \
+              -configuration Debug \
+              -destination 'generic/platform=iOS' \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              CODE_SIGNING_ALLOWED=NO
+          } > "$RUNNER_TEMP/build.log" 2>&1 || status=$?
+          errors="$(grep -E '^/.+:[0-9]+:[0-9]+: error: ' "$RUNNER_TEMP/build.log" | sed "s|^$GITHUB_WORKSPACE/||" | sort -u || true)"
+          {
+            if [[ -n "$DRAFT" ]]; then
+              echo "Compile check of the draft Modules/$DRAFT, connected in this run only:"
+              grep -vE '^(Draft, not connected|[0-9]+ finding)' "$RUNNER_TEMP/check.txt" || true
+            fi
+            if [[ "$status" -eq 0 ]]; then
+              echo "Compiled the app and its extensions for iOS (Debug, unsigned)."
+            elif [[ -n "$errors" ]]; then
+              echo "Compile errors ($(echo "$errors" | wc -l | tr -d ' ')):"
+              echo "$errors" | head -100
+            else
+              echo "The build failed before compiling:"
+              tail -40 "$RUNNER_TEMP/build.log"
+            fi
+          } > "$RUNNER_TEMP/report.txt"
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          { echo '```'; cat "$RUNNER_TEMP/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           if [[ -n "$errors" ]]; then
-            echo "$errors" | head -100
             # Annotations are listed by `gh run view` without opening the log.
             echo "$errors" | head -10 | sed -E 's/^([^:]+):([0-9]+):([0-9]+): error: (.*)$/::error file=\1,line=\2,col=\3::\4/'
-          else
-            tail -60 "$RUNNER_TEMP/build.log"
+          fi
+          if [[ "$REPORT_ONLY" == "true" ]]; then
+            exit 0
           fi
           exit "$status"

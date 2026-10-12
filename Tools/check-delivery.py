@@ -141,13 +141,24 @@ def approved_unverified_criteria(unit):
             if c.get("conditional_verification", {}).get("status") == "approved-unverified"]
 
 
+def draft_document(root, path):
+    """Documents inside a draft Feature (still being moved in) are not current prose yet."""
+    parts = path.relative_to(root).parts
+    if len(parts) < 3 or parts[0] != "Modules":
+        return False
+    try:
+        return json.loads((root / parts[0] / parts[1] / "JibunKitFeature.json").read_text(encoding="utf-8")).get("draft") is True
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def current_docs(root, version):
     """Dynamic inventory: current prose, not archived research or historical release notes."""
     fixed = {"README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md",
              "THIRD_PARTY_NOTICES.md", "docs/superpowers/plans/2026-09-08-jibunkit-1.0.md",
              f"docs/releases/release-notes-{version}.md"}
     for pattern in ("docs/*.md", "docs/guides/**/*.md", "docs/delivery/**/*.md", "Modules/**/README.md"):
-        fixed.update(p.relative_to(root).as_posix() for p in root.glob(pattern))
+        fixed.update(p.relative_to(root).as_posix() for p in root.glob(pattern) if not draft_document(root, p))
     return sorted(fixed)
 
 

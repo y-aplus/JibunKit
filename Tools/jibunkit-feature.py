@@ -18,7 +18,7 @@
   update Notes [--ref REF] [--path DIR]
                      Move an imported Feature to a new commit, keeping your
                      own changes to it (three-way merge), and report changes.
-  remove Notes       Delete an imported Feature and its record, then sync.
+  remove Notes       Delete an imported Feature and its record, or a draft, then sync.
   migrate URL --name Notes [--ref REF] [--path DIR] [--target App] [--id notes]
                      Move an ordinary iOS app (an Xcode app target or a Swift
                      Playgrounds app) into Modules/<Name> as a draft Feature,
@@ -2276,7 +2276,13 @@ def migrate_files(root, module, name, feature_id, base, names, source):
         notes.append((MANUAL, f"No SwiftUI App was turned into the root view; `{name}RootView.swift` shows only the "
                               "name. Make it show the app's first screen."))
     pointers = [file for file in resources if (base / file).read_bytes().startswith(LFS_POINTER)]
-    resources = [file for file in resources if file not in pointers]
+    # Core Image kernels need the -fcikernel compiler flag, which a package cannot set.
+    kernels = [file for file in resources if file.endswith(".ci.metal")]
+    resources = [file for file in resources if file not in pointers and file not in kernels]
+    if kernels:
+        notes.append((MANUAL, f"Core Image kernels were not copied ({', '.join(kernels[:5])}): they need the "
+                              "-fcikernel Metal flag, which a Swift package cannot set. Compile them into a "
+                              ".metallib on a Mac and add that file as a resource, or write the filter another way."))
     for file in resources:
         write_file(target, inside_target(file), (base / file).read_bytes())
     if pointers:
@@ -2499,13 +2505,17 @@ def update_feature(root, name, ref=None, path=None):
 
 
 def remove_feature(root, name):
+    """Delete an imported Feature and its record, or a draft that migrate wrote."""
     features = load_imports(root)
-    require(name in features, f"{name} is not in {IMPORTS}; delete a Feature you created yourself by hand")
     module = root / "Modules" / name
+    draft = NAME_PATTERN.fullmatch(name) and is_draft(module)
+    require(name in features or draft,
+            f"{name} is not in {IMPORTS} and is not a draft; delete a Feature you created yourself by hand")
     if module.exists():
         shutil.rmtree(module)
-    del features[name]
-    save_imports(root, features)
+    if name in features:
+        del features[name]
+        save_imports(root, features)
 
 
 def print_drafts(root):
@@ -2553,7 +2563,7 @@ def main(argv=None):
     updating.add_argument("name")
     updating.add_argument("--ref", help="Follow another branch, tag or commit from now on")
     updating.add_argument("--path", help="The Feature moved to another directory of the repository")
-    removing = commands.add_parser("remove", help="Delete an imported Feature")
+    removing = commands.add_parser("remove", help="Delete an imported Feature or a draft")
     removing.add_argument("name")
     migrating = commands.add_parser("migrate", help="Move an app from another repository in as a draft Feature")
     migrating.add_argument("repository", help="Git URL, OWNER/REPO on GitHub, or a local path")
@@ -2611,8 +2621,8 @@ def main(argv=None):
             return 0 if synced and not conflicts else 1
         elif args.command == "remove":
             remove_feature(root, args.name)
-            sync(root)
-            print(f"Removed Modules/{args.name} and its record; updated {HELPER.as_posix()}")
+            changed = sync(root)
+            print(f"Removed Modules/{args.name}; {HELPER.as_posix()} {'updated' if changed else 'is up to date'}")
         elif args.command == "migrate":
             module, commit, text = migrate_feature(root, args.repository, args.ref, args.path, args.name,
                                                    args.target, args.id)

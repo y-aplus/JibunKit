@@ -339,6 +339,17 @@ class MigrateTests(unittest.TestCase):
         status, _, err = self.run_main('connect', 'Notes')
         self.assertIn('not a draft', err)
 
+    def testRemoveDeletesADraftButNotAFeatureMadeByHand(self):
+        module, _ = self.migrate()
+        status, out, err = self.run_main('remove', 'Notes')
+        self.assertEqual(status, 0, err)
+        self.assertFalse(module.exists())
+        MODULE.new(self.root, 'Own', run_sync=False)
+        status, _, err = self.run_main('remove', 'Own')
+        self.assertEqual(status, 1)
+        self.assertIn('is not a draft', err)
+        self.assertTrue((self.root / 'Modules/Own').exists())
+
     def testConnectsOnceCheckIsClean(self):
         module, _ = self.migrate()
         view = module / 'Sources/NotesFeature/Views/ContentView.swift'

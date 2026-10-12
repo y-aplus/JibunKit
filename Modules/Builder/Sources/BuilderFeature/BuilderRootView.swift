@@ -54,6 +54,8 @@ final class BuilderModel {
     var state = BuilderState()
     /// The branch's JibunKitImports.json, read when the screen refreshes.
     var imported: [ImportedFeature] = []
+    /// The branch's draft Features, read when the screen refreshes.
+    var drafts: [DraftFeature] = []
     var ipaURL: URL?
     var message: String?
     var isError = false
@@ -177,9 +179,16 @@ final class BuilderModel {
             try await client.requestImport(operation)
             state.importRequest = ImportRequest(operation: operation, requestedAt: requestedAt)
             try environment.storage.saveState(state)
-            if case .inspect = operation {
+            switch operation {
+            case .inspect:
                 show(String(localized: "Requested. GitHub writes the report in about a minute.", bundle: .module), isError: false)
-            } else {
+            case .migrate:
+                show(String(localized: "Requested. GitHub writes the draft and compiles it; this takes about 10 minutes.",
+                            bundle: .module), isError: false)
+            case .connect:
+                show(String(localized: "Requested. GitHub compiles with the draft connected and connects it only if that passes; this takes about 10 minutes.",
+                            bundle: .module), isError: false)
+            case .add, .update, .remove:
                 show(String(localized: "Requested. GitHub commits the result to the branch in about a minute.", bundle: .module),
                      isError: false)
             }
@@ -212,6 +221,7 @@ final class BuilderModel {
         }
         do {
             imported = try await client.importedFeatures()
+            drafts = try await client.drafts()
         } catch {
             show(error)
         }
@@ -270,6 +280,7 @@ public struct BuilderRootView: View {
     @State private var askingNotificationConsent = false
     @State private var showingImportForm = false
     @State private var removing: ImportedFeature?
+    @State private var removingDraft: DraftFeature?
     @Environment(\.scenePhase) private var scenePhase
 
     public init(environment: BuilderEnvironment) {
@@ -314,6 +325,15 @@ public struct BuilderRootView: View {
         } message: { feature in
             Text("GitHub deletes Modules/\(feature.name) and commits the change. To delete the data it saved on this iPhone, do that in Manage Mini Apps before you install a build without it.",
                  bundle: .module)
+        }
+        .confirmationDialog(Text("Remove the Draft?", bundle: .module),
+                            isPresented: Binding(get: { removingDraft != nil }, set: { if !$0 { removingDraft = nil } }),
+                            titleVisibility: .visible, presenting: removingDraft) { draft in
+            Button(role: .destructive) {
+                Task { await model.startImport(.remove(name: draft.name)) }
+            } label: { Text("Remove", bundle: .module) }
+        } message: { draft in
+            Text("GitHub deletes Modules/\(draft.name) and commits the change.", bundle: .module)
         }
         .alert(Text("Notify When the Build Is Likely Done?", bundle: .module), isPresented: $askingNotificationConsent) {
             Button { answerNotificationConsent(true) } label: { Text("Allow", bundle: .module) }
@@ -400,6 +420,28 @@ public struct BuilderRootView: View {
                 }
                 .disabled(!model.canImport)
             }
+            ForEach(model.drafts) { draft in
+                Menu {
+                    Button { Task { await model.startImport(.connect(name: draft.name)) } } label: {
+                        Label { Text("Connect", bundle: .module) } icon: { Image(systemName: "link") }
+                    }
+                    if let repository = model.state.repository,
+                       let report = URL(string: "https://github.com/\(repository.slug)/blob/\(repository.branch)/Modules/\(draft.name)/MIGRATION.md") {
+                        Link(destination: report) {
+                            Label { Text("Open the Report on GitHub", bundle: .module) } icon: { Image(systemName: "doc.text") }
+                        }
+                    }
+                    Button(role: .destructive) { removingDraft = draft } label: {
+                        Label { Text("Remove", bundle: .module) } icon: { Image(systemName: "trash") }
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: draft.name).foregroundStyle(.primary)
+                        Text("Draft, not connected", bundle: .module).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!model.canImport)
+            }
             Button { showingImportForm = true } label: { Text("Import a Feature", bundle: .module) }
                 .disabled(!model.canImport)
                 .accessibilityIdentifier("builder.import")
@@ -468,6 +510,10 @@ public struct BuilderRootView: View {
         case let .inspect(repository, _, path):
             let subject = path.isEmpty ? repository : "\(repository) \(path)"
             return String(localized: "Check \(subject)", bundle: .module)
+        case let .migrate(_, _, _, name):
+            return String(localized: "Migrate \(name)", bundle: .module)
+        case let .connect(name):
+            return String(localized: "Connect \(name)", bundle: .module)
         }
     }
 
@@ -560,6 +606,17 @@ private struct ImportFeatureForm: View {
                         .accessibilityIdentifier("builder.inspect")
                 } footer: {
                     Text("Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed.",
+                         bundle: .module)
+                }
+                Section {
+                    Button {
+                        onImport(.migrate(repository: repositoryURL, ref: trimmed(ref), path: trimmed(path), name: trimmed(name)))
+                        dismiss()
+                    } label: { Text("Migrate the App", bundle: .module) }
+                        .disabled(repositoryURL.isEmpty || trimmed(name).isEmpty)
+                        .accessibilityIdentifier("builder.migrate")
+                } footer: {
+                    Text("Copies an ordinary iOS app into Modules as a draft, makes the mechanical changes and compiles it. A draft does not change your builds; connect it once it compiles. Needs a name under Modules.",
                          bundle: .module)
                 }
             }

@@ -1,0 +1,82 @@
+name: Connect Draft
+
+# Connects a draft Feature, such as one that Migrate App wrote: first compiles
+# the app with the draft connected and `check` enforced, in a read-only job
+# (compile-check.yml), and only when that passes removes the draft flag
+# (`Tools/jibunkit-feature.py connect`) and commits it to the branch. The Build
+# mini app starts it from the phone; from a computer, run the tool itself, or:
+#   gh workflow run connect-draft.yml --ref main -f name=Notes
+run-name: "connect ${{ inputs.name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Directory of the draft under Modules/, such as Notes
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-feature-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    name: Compile with the draft connected
+    permissions:
+      contents: read
+    uses: ./.github/workflows/compile-check.yml
+    with:
+      ref: ${{ github.sha }}
+      draft: ${{ inputs.name }}
+
+  connect:
+    name: Connect
+    needs: compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      NAME: ${{ inputs.name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Connect and push
+        shell: bash
+        run: |
+          set -uo pipefail
+          status=0
+          python3 Tools/jibunkit-feature.py connect "$NAME" > "$RUNNER_TEMP/report.txt" 2>&1 || status=$?
+          if [[ "$status" -eq 0 ]]; then
+            git add -A
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git commit -q -m "Connect the Feature $NAME" \
+              -m "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            status=1
+            for attempt in 1 2 3; do
+              if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+                status=0
+                break
+              fi
+              git pull -q --rebase origin "$GITHUB_REF_NAME"
+            done
+            if [[ "$status" -eq 0 ]]; then
+              printf 'Committed to %s; build the IPA to include %s.\n' "$GITHUB_REF_NAME" "$NAME" >> "$RUNNER_TEMP/report.txt"
+            else
+              printf 'Could not push to %s.\n' "$GITHUB_REF_NAME" >> "$RUNNER_TEMP/report.txt"
+            fi
+          fi
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          exit "$status"

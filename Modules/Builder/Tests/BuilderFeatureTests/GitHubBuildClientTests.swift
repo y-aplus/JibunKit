@@ -186,7 +186,7 @@ final class GitHubBuildClientTests: XCTestCase {
             try await client(missing).requestImport(.remove(name: "Notes"))
             XCTFail("A missing workflow succeeded")
         } catch {
-            XCTAssertEqual(error as? BuildClientError, .missingImportWorkflow)
+            XCTAssertEqual(error as? BuildClientError, .missingWorkflow("Import Feature"))
         }
     }
 
@@ -209,8 +209,58 @@ final class GitHubBuildClientTests: XCTestCase {
             try await client(missing).requestImport(operation)
             XCTFail("A missing workflow succeeded")
         } catch {
-            XCTAssertEqual(error as? BuildClientError, .missingCheckWorkflow)
+            XCTAssertEqual(error as? BuildClientError, .missingWorkflow("Check Compatibility"))
         }
+    }
+
+    func testMigrationAndConnectionUseTheirOwnWorkflows() async throws {
+        let migrate = FeatureImportOperation.migrate(repository: "https://github.com/someone/app", ref: "", path: "App",
+                                                     name: "Notes")
+        XCTAssertEqual(migrate.workflow, "migrate-app.yml")
+        XCTAssertEqual(migrate.inputs, ["repository": "https://github.com/someone/app", "ref": "", "path": "App", "name": "Notes"])
+        XCTAssertEqual(FeatureImportOperation.connect(name: "Notes").workflow, "connect-draft.yml")
+        XCTAssertEqual(FeatureImportOperation.connect(name: "Notes").inputs, ["name": "Notes"])
+        let missing = StubTransport([("/migrate-app.yml/dispatches", .init(status: 404))])
+        do {
+            try await client(missing).requestImport(migrate)
+            XCTFail("A missing workflow succeeded")
+        } catch {
+            XCTAssertEqual(error as? BuildClientError, .missingWorkflow("Migrate App"))
+        }
+    }
+
+    func testDraftsAreTheModulesWhoseManifestSaysDraft() async throws {
+        let transport = StubTransport([
+            ("/contents/Modules/Notes/JibunKitFeature.json", .init(status: 200, body: #"{"schema": 1, "id": "notes", "draft": true}"#)),
+            ("/contents/Modules/Builder/JibunKitFeature.json", .init(status: 200, body: #"{"schema": 1, "id": "builder"}"#)),
+            ("/contents/Modules/Records/JibunKitFeature.json", .init(status: 404)),
+            ("/contents/Modules?ref=main", .init(status: 200, body: #"""
+                [{"name": "Builder", "type": "dir"}, {"name": "Notes", "type": "dir"},
+                 {"name": "Records", "type": "dir"}, {"name": "README.md", "type": "file"}]
+                """#)),
+        ])
+        let drafts = try await client(transport).drafts()
+        XCTAssertEqual(drafts, [DraftFeature(name: "Notes")])
+        XCTAssertEqual(transport.requests.count, 4)
+        let none = try await client(StubTransport([("/contents/Modules?ref=main", .init(status: 404))])).drafts()
+        XCTAssertEqual(none, [])
+    }
+
+    func testAReportJoinsTheReportsOfEveryJobThatRan() async throws {
+        let log = { (text: String) in
+            "2026-10-12T07:00:21.0000000Z === JibunKit import report ===\n2026-10-12T07:00:21.0000001Z \(text)\n"
+                + "2026-10-12T07:00:21.0000002Z === end of report ===\n"
+        }
+        let transport = StubTransport([
+            ("/actions/runs/9/jobs", .init(status: 200, body: #"""
+                {"jobs": [{"id": 1, "conclusion": "success"}, {"id": 2, "conclusion": "skipped"},
+                          {"id": 3, "conclusion": "success"}]}
+                """#)),
+            ("/actions/jobs/1/logs", .init(status: 200, body: log("Wrote Modules/Notes as a draft"))),
+            ("/actions/jobs/3/logs", .init(status: 200, body: log("Compile errors (1):"))),
+        ])
+        let report = try await client(transport).importReport(runID: 9)
+        XCTAssertEqual(report, "Wrote Modules/Notes as a draft\n\nCompile errors (1):")
     }
 
     func testImportedFeaturesReadTheBranchRecord() async throws {

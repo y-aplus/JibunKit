@@ -94,6 +94,13 @@ class ReportTests(unittest.TestCase):
             "  2  JibunKit_App  NotesView.body.getter (NotesView.swift:12:5)",
         ])
 
+    def test_places_are_relative_to_the_checkout(self):
+        self.assertEqual(symbolicate_crash.place("/Users/runner/work/JibunKit/JibunKit/Sources/A/B.swift:39:12"),
+                         "Sources/A/B.swift:39")
+        self.assertEqual(symbolicate_crash.place("/Users/me/Host/Sources/A/B.swift:7:1"), "/Users/me/Host/Sources/A/B.swift:7")
+        self.assertEqual(symbolicate_crash.place("/Users/runner/work/JibunKit/JibunKit/<stdin>:0:0"), "")
+        self.assertEqual(symbolicate_crash.place("??:0:0"), "")
+
     def test_a_plain_payload_works_too(self):
         text = symbolicate_crash.describe(REPORT["payload"], {}, lambda dwarf, addresses: {})
         self.assertIn("  1  JibunKit_App  +0x200", text.splitlines())

@@ -124,30 +124,47 @@ def symbolizer():
 
 
 def symbolicate(tool, dwarf, addresses):
-    """{address: [lines]} for addresses in one binary."""
+    """{address: [lines]} for addresses in one binary, innermost inlined function first."""
     if tool == "atos":
         output = subprocess.run(["atos", "-o", str(dwarf), *[hex(address) for address in addresses]],
                                 capture_output=True, text=True, check=True).stdout.splitlines()
         return {address: [line] for address, line in zip(addresses, output)}
     # Addresses are virtual addresses in the file: __TEXT's vmaddr plus the offset.
-    output = subprocess.run([tool, "--obj", str(dwarf), "--demangle", *[hex(address) for address in addresses]],
+    # Names stay mangled here so that `swift demangle --simplified` can shorten them.
+    output = subprocess.run([tool, "--obj", str(dwarf), "--no-demangle", *[hex(address) for address in addresses]],
                             capture_output=True, text=True, check=True).stdout
     results = {}
     for address, block in zip(addresses, output.strip().split("\n\n")):
         lines = block.splitlines()
-        pairs = [f"{lines[index]} ({lines[index + 1]})" for index in range(0, len(lines) - 1, 2)]
-        results[address] = pairs or ["?"]
+        names = simplify([lines[index] for index in range(0, len(lines) - 1, 2)])
+        places = [place(lines[index]) for index in range(1, len(lines), 2)]
+        results[address] = [f"{name}{f' ({where})' if where else ''}" for name, where in zip(names, places)] or ["?"]
     return results
 
 
-def demangle(lines):
-    """Swift names that the symbolizer left mangled, through `swift demangle` when available."""
+def place(location):
+    """`file:line` relative to the repository the build ran in, or "" when the compiler recorded none."""
+    path, _, rest = location.partition(":")
+    line = rest.split(":")[0]
+    if line in ("", "0") or path.startswith("<"):
+        return ""
+    marker = "/work/"
+    if marker in path:
+        # GitHub checks the repository out at /Users/runner/work/REPO/REPO/.
+        parts = path.split(marker, 1)[1].split("/")
+        path = "/".join(parts[2:]) or path
+    return f"{path}:{line}"
+
+
+def simplify(names):
+    """Short Swift names (`closure #2 in CounterRootView.body.getter`) through `swift demangle`."""
     tool = shutil.which("swift-demangle") or shutil.which("swift")
-    if not tool or not any("$s" in line for line in lines):
-        return lines
-    command = [tool] if tool.endswith("swift-demangle") else [tool, "demangle"]
-    result = subprocess.run([*command, "--compact"], input="\n".join(lines), capture_output=True, text=True)
-    return result.stdout.splitlines() if result.returncode == 0 and result.stdout else lines
+    if not tool or not names:
+        return names
+    command = [tool] if Path(tool).stem == "swift-demangle" else [tool, "demangle"]
+    result = subprocess.run([*command, "--simplified"], input="\n".join(names), capture_output=True, text=True)
+    simplified = result.stdout.splitlines()
+    return simplified if result.returncode == 0 and len(simplified) == len(names) else names
 
 
 def describe(report, symbols, resolve):
@@ -230,11 +247,7 @@ def main(argv=None):
         symbols = fetch_dsyms(args.repo, needed)
     tool = symbolizer()
 
-    def resolve(dwarf, addresses):
-        names = symbolicate(tool, dwarf, addresses)
-        return {address: demangle(lines) for address, lines in names.items()}
-
-    print(describe(report, symbols, resolve))
+    print(describe(report, symbols, lambda dwarf, addresses: symbolicate(tool, dwarf, addresses)))
     if needed and not needed & symbols.keys():
         print("\nNo symbol files matched this report; it may come from a build whose prerelease was already "
               "deleted, or from a build made elsewhere.", file=sys.stderr)

@@ -33,6 +33,8 @@ The generated package includes an example app, so feature UI and business logic 
 
 For a first feature, prefer an independent package under `Modules/`: it is easier to test in isolation, reuse in a standalone app, and validate from Windows/WSL than code added to the root package. See the feature and build guides for the exact platform limits.
 
+A feature kept in another Git repository can be copied in at a recorded commit with `python3 Tools/jibunkit-feature.py add URL` and moved to a newer one with `update` ([importing a feature](docs/mini-apps.md#importing-a-feature-from-another-repository)).
+
 ## Build and install
 
 JibunKit currently targets iOS 26 and uses Swift 6, Tuist 4.207.0, and Xcode 26.6 on the verified build path. From Windows, Linux or macOS, `python3 Tools/build-ipa.py` builds an IPA of your branch in GitHub Actions and prints a link to install it with SideStore or AltStore. See [Build, sign, and install](docs/build.md) for this and the local Xcode path.

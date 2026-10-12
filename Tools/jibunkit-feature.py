@@ -11,17 +11,30 @@
   check [PATH ...]   Report standalone-app code that affects other Features
                      inside JibunKit (default: every Feature under Modules/).
                      Mark an intended use with `// jibunkit: allow <rule>`.
+  add URL [--ref REF] [--path DIR] [--name Notes]
+                     Copy a Feature from another Git repository into
+                     Modules/<Name>, record the repository and commit in
+                     JibunKitImports.json, sync, and report what it brings.
+  update Notes [--ref REF] [--path DIR]
+                     Move an imported Feature to a new commit, keeping your
+                     own changes to it (three-way merge), and report changes.
+  remove Notes       Delete an imported Feature and its record, then sync.
 
-Both commands need only Python, so they also work on Windows and Linux. The
+The commands need only Python (and Git for add/update), so they also work on
+Windows and Linux. add and update never run code from the repository. The
 generated helper is read by Project.swift; `tuist generate` (macOS or CI) then
 adds the packages, Integration sources, registry entries, widgets and build
 requirements. Hand-registered Features keep working unchanged.
 """
 import argparse
 import json
+import os
 from pathlib import Path
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 MANIFEST = "JibunKitFeature.json"
 HELPER = Path("Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift")
@@ -154,8 +167,8 @@ def modules(root):
     for module in found:
         data = load(module)
         require(data["id"] not in seen,
-                f"Feature ID {data['id']!r} is used by both {seen.get(data['id'])} and {module.as_posix()}")
-        seen[data["id"]] = module.as_posix()
+                f"Feature ID {data['id']!r} is used by both {seen.get(data['id'])} and {module.relative_to(root).as_posix()}")
+        seen[data["id"]] = module.relative_to(root).as_posix()
         features.append((module.relative_to(root).as_posix(), data))
     return features
 
@@ -313,6 +326,10 @@ def render(features):
 
 def sync(root, check=False):
     features = modules(root)
+    for name in load_imports(root):
+        require((root / "Modules" / name / MANIFEST).is_file(),
+                f"{IMPORTS} records {name}, but Modules/{name}/{MANIFEST} is missing; "
+                f"restore it or run `python3 Tools/jibunkit-feature.py remove {name}`")
     problems = source_conflicts(root, features)
     require(not problems, "\n".join(problems))
     text = render(features)
@@ -440,6 +457,374 @@ def new(root, name, run_sync=True):
     return module
 
 
+# Features copied from other repositories. The copy under Modules/<Name> is
+# what gets built; this file records where it came from so that an update is
+# an explicit move from one commit to another.
+IMPORTS = Path("JibunKitImports.json")
+IMPORT_KEYS = {"repository", "ref", "commit", "path"}
+COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+
+
+def load_imports(root):
+    path = root / IMPORTS
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise FeatureError(f"{IMPORTS} is not valid JSON: {error}") from None
+    require(isinstance(data, dict) and data.get("schema") == 1 and isinstance(data.get("features"), dict),
+            f'{IMPORTS} needs "schema": 1 and a "features" object')
+    for name, entry in data["features"].items():
+        where = f"{IMPORTS} {name}"
+        require(NAME_PATTERN.fullmatch(name), f"{where}: not a Feature directory name")
+        require(isinstance(entry, dict) and set(entry) == IMPORT_KEYS
+                and all(isinstance(entry[key], str) for key in IMPORT_KEYS),
+                f"{where} needs the strings {', '.join(sorted(IMPORT_KEYS))}")
+        require(COMMIT_PATTERN.fullmatch(entry["commit"]), f"{where}: commit must be a full commit hash")
+    return data["features"]
+
+
+def save_imports(root, features):
+    path = root / IMPORTS
+    if not features:
+        if path.exists():
+            path.unlink()
+        return
+    text = json.dumps({"schema": 1, "features": dict(sorted(features.items()))}, indent=2, ensure_ascii=False)
+    path.write_bytes((text + "\n").encode("utf-8"))
+
+
+def git(arguments, cwd=None, data=None):
+    result = subprocess.run(["git", "-c", "protocol.ext.allow=never", *arguments], cwd=cwd, input=data,
+                            capture_output=True)
+    if result.returncode:
+        message = result.stderr.decode("utf-8", "replace").strip()
+        raise FeatureError(f"git {' '.join(arguments)} failed: {message}")
+    return result.stdout
+
+
+def source_path(value):
+    path = value.strip("/")
+    require("\\" not in path and ".." not in Path(path).parts and not Path(path).is_absolute(),
+            f"--path must be a directory inside the repository: {value!r}")
+    return path
+
+
+def fetch(work, repository, ref):
+    """Fetch one commit into the scratch repository `work` and return its hash."""
+    for value, what in ((repository, "repository"), (ref, "ref")):
+        require(value and not value.startswith("-") and not any(c in value for c in "\r\n\0"),
+                f"Unsupported {what}: {value!r}")
+    if not (work / ".git").exists():
+        git(["init", "-q", str(work)])
+    try:
+        git(["fetch", "-q", "--depth", "1", "--no-tags", "--", repository, ref], cwd=work)
+    except FeatureError as error:
+        raise FeatureError(f"{error}\nUse a branch, a tag or a full 40-character commit hash for --ref.") from None
+    return git(["rev-parse", "FETCH_HEAD^{commit}"], cwd=work).decode().strip()
+
+
+def read_tree(work, commit, path):
+    """{relative path: (bytes, executable)} of a directory at a commit, read from Git's objects."""
+    spec = f"{commit}:{path}" if path else commit
+    try:
+        listing = git(["ls-tree", "-r", "-z", spec], cwd=work)
+    except FeatureError:
+        raise FeatureError(f"The repository has no directory {path!r} at {commit[:12]}") from None
+    entries = []
+    for record in filter(None, listing.split(b"\0")):
+        meta, name = record.split(b"\t", 1)
+        mode, kind, sha = meta.decode().split()
+        name = name.decode("utf-8")
+        require(mode != "120000", f"{name} is a symbolic link; JibunKit imports files only")
+        require(kind == "blob", f"{name} is a Git submodule; JibunKit imports files only")
+        entries.append((name, sha, mode == "100755"))
+    files = {}
+    if entries:
+        output = git(["cat-file", "--batch"], cwd=work, data="".join(f"{sha}\n" for _, sha, _ in entries).encode())
+        offset = 0
+        for name, _, executable in entries:
+            header_end = output.index(b"\n", offset)
+            size = int(output[offset:header_end].split()[2])
+            files[name] = (output[header_end + 1:header_end + 1 + size], executable)
+            offset = header_end + 1 + size + 1
+    return files
+
+
+def write_file(module, name, data, executable=False):
+    target = module / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(data)
+    if executable and os.name == "posix":
+        target.chmod(target.stat().st_mode | 0o111)
+
+
+def local_files(module):
+    """Files of an imported Feature on disk, without build output Git ignores."""
+    try:
+        listing = git(["ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "."], cwd=module)
+        names = [name for name in listing.decode("utf-8").split("\0") if name]
+    except FeatureError:
+        names = [path.relative_to(module).as_posix() for path in module.rglob("*") if path.is_file()]
+    return {name: (module / name).read_bytes() for name in names if (module / name).is_file()}
+
+
+def require_clean(module):
+    try:
+        status = git(["status", "--porcelain", "--", "."], cwd=module)
+    except FeatureError:
+        return  # Not in a Git checkout; nothing to compare with.
+    require(not status.strip(), f"{module.name} has uncommitted changes; commit them first so an update cannot lose them")
+
+
+def same_text(data):
+    """Compare text without line-ending differences an editor may have added."""
+    return data.replace(b"\r\n", b"\n") if data is not None and b"\0" not in data else data
+
+
+def merge_file(ours, base, theirs, labels):
+    with tempfile.TemporaryDirectory() as temporary:
+        paths = []
+        for label, data in zip(("ours", "base", "theirs"), (ours, base, theirs)):
+            path = Path(temporary) / label
+            path.write_bytes(data)
+            paths.append(str(path))
+        result = subprocess.run(["git", "merge-file", "-p", "-L", labels[0], "-L", labels[1], "-L", labels[2], *paths],
+                                capture_output=True)
+        # Exit status: the number of conflicts (at most 127), or 255 on error.
+        require(result.returncode < 128, f"git merge-file failed: {result.stderr.decode('utf-8', 'replace')}")
+        return result.stdout, result.returncode == 0
+
+
+def merge_tree(module, base, ours, theirs, labels):
+    """Apply the upstream change base -> theirs to the files on disk (ours)."""
+    changed, conflicts = [], []
+    for name in sorted(set(base) | set(ours) | set(theirs)):
+        base_data = base[name][0] if name in base else None
+        their_data = theirs[name][0] if name in theirs else None
+        our_data = ours.get(name)
+        b, o, t = same_text(base_data), same_text(our_data), same_text(their_data)
+        if o == t or t == b:
+            continue  # Already the same, or only changed here: keep the local file.
+        if o == b:
+            if their_data is None:
+                (module / name).unlink()
+            else:
+                write_file(module, name, their_data, theirs[name][1])
+            changed.append(name)
+        elif None in (b, o, t) or any(b"\0" in data for data in (b, o, t)):
+            # Changed on both sides and not mergeable as text: keep the local
+            # file and put the upstream one next to it.
+            if their_data is not None:
+                write_file(module, name + ".upstream", their_data, theirs[name][1])
+            conflicts.append(name)
+        else:
+            merged, clean = merge_file(o, b, t, labels)
+            write_file(module, name, merged)
+            changed.append(name)
+            if not clean:
+                conflicts.append(name)
+    for directory in sorted((path for path in module.rglob("*") if path.is_dir()), reverse=True):
+        if not any(directory.iterdir()):
+            directory.rmdir()
+    return changed, conflicts
+
+
+def balanced_calls(text, function):
+    """The argument text of each `.function(...)` call, skipping parentheses inside string literals."""
+    calls = []
+    for match in re.finditer(r"\.%s\(" % re.escape(function), text):
+        depth, index, in_string = 1, match.end(), False
+        while index < len(text) and depth:
+            character = text[index]
+            if in_string:
+                if character == "\\":
+                    index += 1
+                elif character == '"':
+                    in_string = False
+            elif character == '"':
+                in_string = True
+            elif character == "(":
+                depth += 1
+            elif character == ")":
+                depth -= 1
+            index += 1
+        calls.append(text[match.end():index - 1])
+    return calls
+
+
+UNPINNED = "Packages without an exact version (they can change between builds)"
+OUTSIDE = "Local packages outside the Feature (missing after the copy)"
+BINARY = "Precompiled code (no source in the repository)"
+BUILD_CODE = "Code that runs during the build (plugins and macros)"
+REQUIREMENTS = "Build requirements (Info.plist, entitlements)"
+FINDINGS = "check findings (CI stops on these)"
+
+
+def describe(root, module):
+    """What a Feature brings into the host, read from its files without running them."""
+    report = {}
+
+    def add(category, item):
+        report.setdefault(category, set()).add(item)
+
+    package = (module / "Package.swift").read_text(encoding="utf-8", errors="replace")
+    package = re.sub(r"(?m)^\s*//.*$", "", package)
+    for arguments in balanced_calls(package, "package"):
+        url = re.search(r'\b(?:url|id):\s*"([^"]+)"', arguments)
+        local = re.search(r'\bpath:\s*"([^"]+)"', arguments)
+        if url:
+            requirement = " ".join(arguments[url.end():].strip(" ,\n").split())
+            add("Swift packages", f"{url.group(1)} {requirement}".strip())
+            if not re.search(r"\b(exact|revision):|\.exact\(", arguments):
+                add(UNPINNED, url.group(1))
+        elif local:
+            add("Swift packages", f"local {local.group(1)}")
+            target = (module / local.group(1)).resolve()
+            if target != module.resolve() and module.resolve() not in target.parents:
+                add(OUTSIDE, local.group(1))
+    for function, category in (("binaryTarget", BINARY), ("plugin", BUILD_CODE), ("macro", BUILD_CODE)):
+        for arguments in balanced_calls(package, function):
+            name = re.search(r'\bname:\s*"([^"]+)"', arguments)
+            add(category, f".{function} {name.group(1) if name else arguments.strip()}")
+    data = json.loads((module / MANIFEST).read_text(encoding="utf-8"))
+    for target, section in (("app", data.get("app") or {}), ("widget", data.get("widget") or {})):
+        for kind in ("infoPlist", "entitlements"):
+            for key, value in (section.get(kind) or {}).items():
+                if key == "CFBundleURLTypes" and isinstance(value, list):
+                    for declaration in value:
+                        for scheme in (declaration.get("CFBundleURLSchemes") or []) if isinstance(declaration, dict) else []:
+                            add(REQUIREMENTS, f"{target} {kind} CFBundleURLTypes: {scheme}")
+                elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+                    for item in value:
+                        add(REQUIREMENTS, f"{target} {kind} {key}: {item}")
+                else:
+                    add(REQUIREMENTS, f"{target} {kind} {key}")
+    if data.get("appShortcuts"):
+        add(REQUIREMENTS, "App Shortcuts")
+    for file, number, rule, _, _ in check([module]):
+        add(FINDINGS, f"{file.relative_to(root).as_posix()}:{number} [{rule}]")
+    return {category: sorted(items) for category, items in report.items()}
+
+
+def print_report(report):
+    if not report:
+        print("No packages, precompiled code, build-time code, build requirements or check findings.")
+    for category, items in report.items():
+        print(f"{category}:")
+        for item in items:
+            print(f"  {item}")
+
+
+def print_changes(before, after):
+    changes = False
+    for category in list(dict.fromkeys([*before, *after])):
+        old, new = set(before.get(category, [])), set(after.get(category, []))
+        if old != new:
+            changes = True
+            print(f"{category}:")
+            for item in sorted(new - old):
+                print(f"  + {item}")
+            for item in sorted(old - new):
+                print(f"  - {item}")
+    if not changes:
+        print("No change in packages, precompiled code, build-time code, build requirements or check findings.")
+
+
+def default_name(repository, path):
+    name = Path(path).name if path else re.sub(r"\.git$", "", repository.rstrip("/").replace("\\", "/").split("/")[-1].split(":")[-1])
+    require(NAME_PATTERN.fullmatch(name),
+            f"{name!r} cannot be a Feature directory name; choose one with --name, such as --name Notes")
+    return name
+
+
+def add_feature(root, repository, ref="HEAD", path="", name=None):
+    """Copy a Feature into Modules/<name> and record it. Returns the module and commit."""
+    path = source_path(path)
+    name = name or default_name(repository, path)
+    require(NAME_PATTERN.fullmatch(name),
+            "Use a Swift type name that starts with an uppercase letter and contains only letters and digits")
+    features = load_imports(root)
+    module = root / "Modules" / name
+    require(not module.exists() and name not in features, f"Modules/{name} already exists; use update or another --name")
+    with tempfile.TemporaryDirectory() as temporary:
+        work = Path(temporary)
+        commit = fetch(work, repository, ref)
+        files = read_tree(work, commit, path)
+    where = f"{repository} {path or '(root)'} at {commit[:12]}"
+    require(MANIFEST in files and "Package.swift" in files,
+            f"{where} has no {MANIFEST} and Package.swift, so it is not a JibunKit Feature")
+    for file, (data, executable) in files.items():
+        write_file(module, file, data, executable)
+    try:
+        load(module)
+    except FeatureError:
+        shutil.rmtree(module)
+        raise
+    features[name] = {"repository": repository, "ref": ref, "commit": commit, "path": path}
+    save_imports(root, features)
+    return module, commit
+
+
+def update_feature(root, name, ref=None, path=None):
+    """Move an imported Feature to a new commit. Returns (old, new, changed files, conflicts, before, after)."""
+    features = load_imports(root)
+    require(name in features, f"{name} is not in {IMPORTS}; only Features added with `add` can be updated")
+    entry = features[name]
+    module = root / "Modules" / name
+    require(module.is_dir(), f"Modules/{name} is missing")
+    require_clean(module)
+    ref = ref or entry["ref"]
+    path = entry["path"] if path is None else source_path(path)
+    with tempfile.TemporaryDirectory() as temporary:
+        work = Path(temporary)
+        commit = fetch(work, entry["repository"], ref)
+        theirs = read_tree(work, commit, path)
+        if (commit, path) == (entry["commit"], entry["path"]):
+            base = theirs
+        else:
+            try:
+                fetch(work, entry["repository"], entry["commit"])
+            except FeatureError:
+                raise FeatureError(
+                    f"The recorded commit {entry['commit'][:12]} is no longer in {entry['repository']}, so your "
+                    f"changes cannot be carried over. Run `remove {name}` and `add` again, then reapply them "
+                    "from Git history.") from None
+            base = read_tree(work, entry["commit"], entry["path"])
+    require(MANIFEST in theirs and "Package.swift" in theirs,
+            f"{entry['repository']} {path or '(root)'} at {commit[:12]} is no longer a JibunKit Feature")
+    before = describe(root, module)
+    changed, conflicts = merge_tree(module, base, local_files(module), theirs,
+                                    ("yours", entry["commit"][:12], commit[:12]))
+    features[name] = {**entry, "ref": ref, "commit": commit, "path": path}
+    save_imports(root, features)
+    return entry["commit"], commit, changed, conflicts, before, describe(root, module)
+
+
+def remove_feature(root, name):
+    features = load_imports(root)
+    require(name in features, f"{name} is not in {IMPORTS}; delete a Feature you created yourself by hand")
+    module = root / "Modules" / name
+    if module.exists():
+        shutil.rmtree(module)
+    del features[name]
+    save_imports(root, features)
+
+
+def sync_after_import(root, name):
+    """Connect the imported Feature; a collision with another Feature is reported, not undone."""
+    try:
+        sync(root)
+    except FeatureError as error:
+        sys.stdout.flush()
+        print(f"\nsync stopped:\n{error}\nFix this in Modules/{name} (an update keeps your changes) and run sync, "
+              f"or undo the import with `remove {name}`.", file=sys.stderr)
+        return False
+    print(f"\nUpdated {HELPER.as_posix()}. Review the changes, commit them, then build.")
+    return True
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent,
@@ -452,6 +837,17 @@ def main(argv=None):
     update.add_argument("--check", action="store_true", help="Fail instead of writing when out of date")
     review = commands.add_parser("check", help="Report code that affects other Features")
     review.add_argument("paths", nargs="*", type=Path, help="Directories or Swift files (default: Modules/*)")
+    importing = commands.add_parser("add", help="Copy a Feature from another Git repository")
+    importing.add_argument("repository", help="Git URL or local path of the repository")
+    importing.add_argument("--ref", default="HEAD", help="Branch, tag or commit to follow (default: the default branch)")
+    importing.add_argument("--path", default="", help="Directory of the Feature in the repository (default: its root)")
+    importing.add_argument("--name", help="Directory under Modules/ (default: the last part of --path or the URL)")
+    updating = commands.add_parser("update", help="Move an imported Feature to a new commit")
+    updating.add_argument("name")
+    updating.add_argument("--ref", help="Follow another branch, tag or commit from now on")
+    updating.add_argument("--path", help="The Feature moved to another directory of the repository")
+    removing = commands.add_parser("remove", help="Delete an imported Feature")
+    removing.add_argument("name")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     try:
@@ -471,6 +867,30 @@ def main(argv=None):
                 print(f"{shown}:{number}: [{rule}] {message} See {doc}")
             print(f"{len(findings)} finding(s) in {len(paths)} location(s)")
             return 1 if findings else 0
+        elif args.command == "add":
+            module, commit = add_feature(root, args.repository, args.ref, args.path, args.name)
+            files = [path for path in module.rglob("*") if path.is_file()]
+            print(f"Copied {args.repository} {args.path or '(root)'} at {commit} ({args.ref}) into "
+                  f"Modules/{module.name}: {len(files)} files, {sum(path.stat().st_size for path in files) // 1024} KB")
+            print_report(describe(root, module))
+            return 0 if sync_after_import(root, module.name) else 1
+        elif args.command == "update":
+            old, new, changed, conflicts, before, after = update_feature(root, args.name, args.ref, args.path)
+            if old == new and not changed:
+                print(f"{args.name} is already at {new}.")
+            else:
+                print(f"{args.name}: {old[:12]} -> {new[:12]}, {len(changed)} file(s) changed")
+                print_changes(before, after)
+            sys.stdout.flush()
+            for name in conflicts:
+                print(f"conflict: Modules/{args.name}/{name} (resolve the markers, or compare with {name}.upstream)",
+                      file=sys.stderr)
+            synced = sync_after_import(root, args.name)
+            return 0 if synced and not conflicts else 1
+        elif args.command == "remove":
+            remove_feature(root, args.name)
+            sync(root)
+            print(f"Removed Modules/{args.name} and its record; updated {HELPER.as_posix()}")
         else:
             changed = sync(root, check=args.check)
             print(f"{HELPER.as_posix()} {'updated' if changed else 'is up to date'}")

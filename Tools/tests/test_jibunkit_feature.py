@@ -73,7 +73,7 @@ class JibunKitFeatureTests(unittest.TestCase):
         data = json.loads(self.manifest('Zeta').read_text(encoding='utf-8'))
         data['id'] = 'alpha'
         self.write_manifest(data, 'Zeta')
-        with self.assertRaisesRegex(MODULE.FeatureError, 'used by both'):
+        with self.assertRaisesRegex(MODULE.FeatureError, "'alpha' is used by both Modules/Alpha and Modules/Zeta"):
             MODULE.sync(self.root)
 
     def testTwoFeaturesNamingTheSameFileOrTypeStopSync(self):

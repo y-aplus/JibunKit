@@ -177,6 +177,39 @@ Choose one of these per package:
 
 Putting `condition: .when(platforms: [.iOS])` on a root `Package.swift` dependency is not used or verified in this repository, and it would not change how the package's own `swift test` builds.
 
+## Importing a feature from another repository
+
+A feature that someone keeps in its own Git repository, in the JibunKit form above (`Package.swift` and `JibunKitFeature.json`), can be copied into your host:
+
+```bash
+python3 Tools/jibunkit-feature.py add https://github.com/someone/notes --ref v1.0
+python3 Tools/jibunkit-feature.py add https://github.com/someone/apps --path Modules/Notes --name Notes
+```
+
+`add` fetches the branch, tag or full commit hash given with `--ref` (default: the default branch), copies the directory given with `--path` (default: the repository root) to `Modules/<Name>`, writes the repository, ref, commit and path to `JibunKitImports.json`, and runs `sync`. The copy is what gets built, so a build does not depend on the other repository still existing or keeping its history. `add` and `update` read the repository with Git and copy files; they never run code from it. It refuses symbolic links and submodules.
+
+It then lists what the feature brings, read from its files:
+
+- Swift packages it depends on, and those without an exact version, which can change between builds;
+- local packages outside its directory, which the copy does not include;
+- precompiled code (`.binaryTarget`), whose source is not in the repository;
+- plugins and macros, which run code on the build machine during the build;
+- its build requirements (Info.plist keys, entitlements, URL schemes, background modes, App Shortcuts);
+- [`check`](#moving-an-existing-app) findings. CI stops on these until they are fixed or allowed.
+
+If `sync` stops because the feature collides with another one, the copy stays so that you can fix it in `Modules/<Name>`; `remove <Name>` undoes the import. Review the files and commit them with `JibunKitImports.json` and the generated helper.
+
+To move to a newer commit, commit your work, then run:
+
+```bash
+python3 Tools/jibunkit-feature.py update Notes            # the recorded ref, such as main or v1.0
+python3 Tools/jibunkit-feature.py update Notes --ref v1.1 # follow another ref from now on
+```
+
+`update` prints the old and new commit and what changed in the list above. It applies the upstream change between the two commits to your copy, so your own edits stay: a file changed on both sides is merged, with Git's conflict markers where the edits overlap (`<<<<<<< yours`); a file that cannot be merged as text keeps your version and gets the upstream one next to it as `<file>.upstream`. It then exits with an error until you resolve them. If the recorded commit has disappeared upstream, `update` stops; run `remove` and `add` again, and reapply your edits from Git history.
+
+`remove Notes` deletes `Modules/Notes` and its record and runs `sync`.
+
 ## Moving an existing app
 
 Moving an existing Xcode app into a feature means removing its app shell. Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:

@@ -479,6 +479,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest discover -s Tools/tests -p test_jibunkit_feature.py
+          python3 -m unittest discover -s Tools/tests -p test_feature_import.py
           python3 Tools/jibunkit-feature.py sync --check
           python3 Tools/jibunkit-feature.py check
           python3 -m unittest discover -s Tools/tests -p test_doc_links.py

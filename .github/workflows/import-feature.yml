@@ -1,0 +1,119 @@
+name: Import Feature
+
+# Copies a Feature from another Git repository into Modules/<Name>
+# (`Tools/jibunkit-feature.py add`), moves an imported one to a newer commit
+# (`update`) or deletes it (`remove`), and commits the result to the branch
+# the run started on. The Build mini app starts it from the phone; from a
+# computer, run the tool itself, or:
+#   gh workflow run import-feature.yml --ref main -f operation=add -f repository=https://github.com/someone/notes
+# The tool copies files with Git and never runs code from the other
+# repository, so this job may push. Nothing is committed when the tool stops,
+# for example on a collision with another Feature or a conflict in an update.
+run-name: "${{ inputs.operation }} ${{ inputs.name || inputs.repository }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: add, update or remove
+        type: choice
+        options: [add, update, remove]
+        default: add
+      repository:
+        description: Git URL of the repository (add)
+        default: ""
+      ref:
+        description: Branch, tag or full commit hash (add, update; empty keeps the default branch or the recorded ref)
+        default: ""
+      path:
+        description: Directory of the Feature in the repository (add; empty for its root)
+        default: ""
+      name:
+        description: Directory under Modules/ (update, remove; optional for add)
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-feature-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  import:
+    name: Import
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      OPERATION: ${{ inputs.operation }}
+      REPOSITORY: ${{ inputs.repository }}
+      REF: ${{ inputs.ref }}
+      FEATURE_PATH: ${{ inputs.path }}
+      NAME: ${{ inputs.name }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Run the tool
+        shell: bash
+        run: |
+          set -uo pipefail
+          case "$OPERATION" in
+            add)
+              args=(add "$REPOSITORY")
+              [[ -z "$REF" ]] || args+=(--ref "$REF")
+              [[ -z "$FEATURE_PATH" ]] || args+=(--path "$FEATURE_PATH")
+              [[ -z "$NAME" ]] || args+=(--name "$NAME") ;;
+            update)
+              args=(update "$NAME")
+              [[ -z "$REF" ]] || args+=(--ref "$REF") ;;
+            remove)
+              args=(remove "$NAME") ;;
+            *)
+              echo "Unknown operation: $OPERATION" >&2
+              exit 2 ;;
+          esac
+          python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1
+          status=$?
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          { echo '```'; cat "$RUNNER_TEMP/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Commit and push
+        shell: bash
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing changed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          {
+            echo "Import Feature: $OPERATION ${NAME:-$REPOSITORY}"
+            echo
+            cat "$RUNNER_TEMP/report.txt"
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/message.txt"
+          git commit -q -F "$RUNNER_TEMP/message.txt"
+          for attempt in 1 2 3; do
+            if git push -q origin "HEAD:$BRANCH"; then
+              git log -1 --format='Committed %H'
+              exit 0
+            fi
+            git pull -q --rebase origin "$BRANCH"
+          done
+          exit 1

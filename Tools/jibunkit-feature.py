@@ -5,6 +5,8 @@
                      files `tuist scaffold feature --name Notes` creates, then sync.
   sync               Read Modules/*/JibunKitFeature.json and write
                      Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift.
+                     Stops when two owners put the same Swift file name or
+                     file-scope name into the host app or widget target.
   sync --check       Fail if that file is not up to date.
   check [PATH ...]   Report standalone-app code that affects other Features
                      inside JibunKit (default: every Feature under Modules/).
@@ -158,6 +160,76 @@ def modules(root):
     return features
 
 
+# The host's own sources in the targets that also compile Feature sources.
+# Keep in sync with the `sources:` globs of the app and widget targets in
+# Project.swift; the generated files are written by `tuist generate`.
+HOST_TARGET_SOURCES = {
+    "app": (["Sources/JibunKit/**"], ["GeneratedFeatureSources/JibunKitShortcuts.swift",
+                                      "GeneratedFeatureSources/ModuleFeatureRegistry.swift"]),
+    "widget": (["Sources/JibunKitWidget/**"], ["GeneratedWidgetSources/ModuleWidgets.swift"]),
+}
+DECLARATION_MODIFIERS = r"(?:(?:@\w+(?:\([^)]*\))?|public|package|internal|open|final|nonisolated|indirect|private|fileprivate)\s+)*"
+TOP_LEVEL_DECLARATION = re.compile(
+    r"^(" + DECLARATION_MODIFIERS + r")(struct|class|enum|actor|protocol|typealias|let|var)\s+([A-Za-z_]\w*)")
+
+
+def swift_files(base, globs):
+    files = set()
+    for glob in globs:
+        for match in base.glob(glob):
+            if match.is_dir():
+                files.update(match.rglob("*.swift"))
+            elif match.suffix == ".swift":
+                files.add(match)
+    return sorted(files)
+
+
+def top_level_names(file):
+    """Names a file declares at file scope that other files of the target can see."""
+    names = {}
+    for number, line in enumerate(file.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+        match = TOP_LEVEL_DECLARATION.match(line)
+        if match and not re.search(r"\b(private|fileprivate)\b", match.group(1)):
+            names.setdefault(match.group(3), number)
+    return names
+
+
+def source_conflicts(root, features):
+    """Swift file names and file-scope names that two owners put into one host target.
+
+    Integration sources of every Feature compile into the host app (widget
+    sources into the widget) as one Swift module, so a shared file name or
+    type name stops the build there, often minutes later and on macOS only.
+    """
+    problems = []
+    for target, (host_globs, generated) in HOST_TARGET_SOURCES.items():
+        owned = [("host", path) for path in swift_files(root, host_globs)]
+        owned += [("generated", root / path) for path in generated]
+        for path, data in features:
+            globs = data.get("sources", []) if target == "app" else (data.get("widget") or {}).get("sources", [])
+            owned += [(data["id"], file) for file in swift_files(root / path, globs)]
+        by_name = {}
+        for owner, file in owned:
+            by_name.setdefault(file.name, []).append((owner, file))
+        for name, entries in sorted(by_name.items()):
+            if len(entries) > 1:
+                where = ", ".join(f"{file.relative_to(root).as_posix()} ({owner})" for owner, file in entries)
+                problems.append(f"The {target} target compiles two files named {name}: {where}. Rename one; "
+                                "Swift needs unique file names within a target.")
+        declared = {}
+        for owner, file in owned:
+            if owner == "generated" or not file.is_file():
+                continue
+            for name, number in top_level_names(file).items():
+                declared.setdefault(name, []).append((owner, f"{file.relative_to(root).as_posix()}:{number}"))
+        for name, entries in sorted(declared.items()):
+            if len({owner for owner, _ in entries}) > 1:
+                where = ", ".join(f"{location} ({owner})" for owner, location in entries)
+                problems.append(f"{name} is declared at file scope by more than one owner in the {target} target: "
+                                f"{where}. Rename one or make it private; these sources compile into one module.")
+    return problems
+
+
 def swift_string(text):
     out = []
     for character in text:
@@ -240,7 +312,10 @@ def render(features):
 
 
 def sync(root, check=False):
-    text = render(modules(root))
+    features = modules(root)
+    problems = source_conflicts(root, features)
+    require(not problems, "\n".join(problems))
+    text = render(features)
     helper = root / HELPER
     current = helper.read_bytes().decode("utf-8") if helper.exists() else None
     if current == text:

@@ -50,7 +50,7 @@ After adding or changing a `JibunKitFeature.json`, run:
 python3 Tools/jibunkit-feature.py sync
 ```
 
-It checks the files and rewrites `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, which `Project.swift` reads. Commit that file with the feature. `tuist generate` then adds the package, its products, the integration sources, the registry entry, the widgets, the build requirements and the App Shortcuts. You do not edit `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle, so updates from upstream do not conflict with your features there. CI fails when `sync --check` finds the helper out of date. `sync` reads the files only; it does not prove that the code compiles.
+It checks the files and rewrites `Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift`, which `Project.swift` reads. Commit that file with the feature. `tuist generate` then adds the package, its products, the integration sources, the registry entry, the widgets, the build requirements and the App Shortcuts. You do not edit `Project.swift`, `Package.swift`, `MiniAppRegistry.swift` or the widget bundle, so updates from upstream do not conflict with your features there. CI fails when `sync --check` finds the helper out of date. Every Feature's integration sources compile into the host app as one Swift module, so `sync` also stops when two Features, or a Feature and the host, put a file with the same name or a non-private type, `let` or `var` with the same name at file scope into the app or widget target; it names both files. Otherwise `sync` reads the files only; it does not prove that the code compiles.
 
 Features registered by hand, as Counter and Reminder are, keep working. Do not register the same definition both ways.
 

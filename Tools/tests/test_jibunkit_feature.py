@@ -54,8 +54,7 @@ class JibunKitFeatureTests(unittest.TestCase):
             MODULE.new(self.root, 'Notes')
 
     def testCommittedHelperMatchesTheRepository(self):
-        # Upstream has no module Features, so this is the empty stub; a derived
-        # host that added some compares against its own.
+        # A derived host that added module Features compares against its own.
         self.assertEqual(MODULE.render(MODULE.modules(ROOT)), (ROOT / MODULE.HELPER).read_text(encoding='utf-8'))
         self.assertIn('public static let all: [ModuleFeature] = [\n    ]\n', MODULE.render([]))
 
@@ -76,6 +75,50 @@ class JibunKitFeatureTests(unittest.TestCase):
         self.write_manifest(data, 'Zeta')
         with self.assertRaisesRegex(MODULE.FeatureError, 'used by both'):
             MODULE.sync(self.root)
+
+    def testTwoFeaturesNamingTheSameFileOrTypeStopSync(self):
+        MODULE.new(self.root, 'Alpha')
+        MODULE.new(self.root, 'Beta')
+        shared = 'enum Shared {}\n'
+        (self.root / 'Modules/Alpha/Integration/Helpers.swift').write_text(shared, encoding='utf-8')
+        (self.root / 'Modules/Beta/Integration/Helpers.swift').write_text('struct Other {}\n', encoding='utf-8')
+        with self.assertRaisesRegex(MODULE.FeatureError, r'two files named Helpers\.swift: '
+                                    r'Modules/Alpha/Integration/Helpers\.swift \(alpha\), '
+                                    r'Modules/Beta/Integration/Helpers\.swift \(beta\)'):
+            MODULE.sync(self.root)
+        (self.root / 'Modules/Beta/Integration/Helpers.swift').rename(self.root / 'Modules/Beta/Integration/BetaHelpers.swift')
+        (self.root / 'Modules/Beta/Integration/BetaHelpers.swift').write_text(
+            '#if os(iOS)\n@MainActor public enum Shared {\n    struct Nested {}\n}\n#endif\n', encoding='utf-8')
+        with self.assertRaisesRegex(MODULE.FeatureError, r'Shared is declared at file scope by more than one owner '
+                                    r'in the app target: Modules/Alpha/Integration/Helpers\.swift:1 \(alpha\), '
+                                    r'Modules/Beta/Integration/BetaHelpers\.swift:2 \(beta\)'):
+            MODULE.sync(self.root)
+        # Private names, nested types and extensions stay inside their file or type.
+        (self.root / 'Modules/Beta/Integration/BetaHelpers.swift').write_text(
+            'private enum Shared {}\nextension Shared {}\nenum Beta {\n    enum Shared {}\n}\n', encoding='utf-8')
+        self.assertFalse(MODULE.sync(self.root, check=True))
+
+    def testFeatureSourcesMustNotCollideWithTheHostOrItsGeneratedFiles(self):
+        MODULE.new(self.root, 'Notes')
+        host = self.root / 'Sources/JibunKit'
+        host.mkdir(parents=True)
+        (host / 'JibunKitApp.swift').write_text('@main\nstruct JibunKitApp {}\nlet sharedValue = 1\n', encoding='utf-8')
+        integration = self.root / 'Modules/Notes/Integration'
+        (integration / 'Values.swift').write_text('var sharedValue = 2\n', encoding='utf-8')
+        with self.assertRaisesRegex(MODULE.FeatureError, r'sharedValue .*JibunKitApp\.swift:3 \(host\), .*Values\.swift:1 \(notes\)'):
+            MODULE.sync(self.root)
+        (integration / 'Values.swift').unlink()
+        (integration / 'ModuleFeatureRegistry.swift').write_text('enum NotesRegistry {}\n', encoding='utf-8')
+        with self.assertRaisesRegex(MODULE.FeatureError, r'GeneratedFeatureSources/ModuleFeatureRegistry\.swift \(generated\)'):
+            MODULE.sync(self.root)
+
+    def testHostTargetSourcesMatchProjectSwift(self):
+        project = (ROOT / 'Project.swift').read_text(encoding='utf-8')
+        self.assertIn('globs: ["Sources/JibunKit/**", "GeneratedFeatureSources/**"] + ModuleFeatures.appSources', project)
+        self.assertIn('globs: ["Sources/JibunKitWidget/**", "GeneratedWidgetSources/**"] + ModuleFeatures.widgetSources', project)
+        for _, generated in MODULE.HOST_TARGET_SOURCES.values():
+            for path in generated:
+                self.assertIn(f'"{path}"', project)
 
     def testRejectsMistakesBeforeTuistRuns(self):
         MODULE.new(self.root, 'Notes')

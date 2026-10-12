@@ -109,6 +109,31 @@ reject("CFBundleAllowMixedLocalizations") {
 let activities = try FeatureBuildConfiguration(features: [.init(owner: "activity", infoPlist: ["NSUserActivityTypes": ["custom", "native"]])])
     .compose(infoPlist: ["NSUserActivityTypes": ["native"]], entitlements: [:])
 require(activities.infoPlist["NSUserActivityTypes"] == ["custom", "native"], "Activity types lost host continuation")
+let taskA = FeatureBuildRequirement(owner: "task-a", infoPlist: [
+    "BGTaskSchedulerPermittedIdentifiers": ["app.refresh", "app.export.*", "app.shared"],
+    "NSUserActivityTypes": ["native", "a.view"],
+])
+let taskB = FeatureBuildRequirement(owner: "task-b", infoPlist: [
+    "BGTaskSchedulerPermittedIdentifiers": ["app.export.*", "app.shared", "b.refresh"],
+    "NSUserActivityTypes": ["native", "b.view"],
+])
+let hostTasks: [String: Plist.Value] = ["BGTaskSchedulerPermittedIdentifiers": ["app.shared"], "NSUserActivityTypes": ["native"]]
+let sharedTasks = try FeatureBuildConfiguration(features: [taskA, taskB]).compose(infoPlist: hostTasks, entitlements: [:])
+require(sharedTasks.infoPlist["BGTaskSchedulerPermittedIdentifiers"] == ["app.export.*", "app.refresh", "app.shared", "b.refresh"],
+        "Host-declared task or shared wildcard rejected")
+reject("BGTaskSchedulerPermittedIdentifiers value app.shared requested by task-a, task-b") {
+    _ = try FeatureBuildConfiguration(features: [taskA, taskB]).compose(infoPlist: [:], entitlements: [:])
+}
+reject("NSUserActivityTypes value shared.view requested by task-a, task-b") {
+    _ = try FeatureBuildConfiguration(features: [
+        .init(owner: "task-a", infoPlist: ["NSUserActivityTypes": ["shared.view"]]),
+        .init(owner: "task-b", infoPlist: ["NSUserActivityTypes": ["shared.view"]]),
+    ]).compose(infoPlist: hostTasks, entitlements: [:])
+}
+let resolvedTasks = try FeatureBuildConfiguration(features: [taskA, taskB],
+    infoPlistResolutions: ["BGTaskSchedulerPermittedIdentifiers": ["app.shared", "app.refresh"]])
+    .compose(infoPlist: [:], entitlements: [:])
+require(resolvedTasks.infoPlist["BGTaskSchedulerPermittedIdentifiers"] == ["app.refresh", "app.shared"], "Explicit task resolution ignored")
 let entitlementResolution = try FeatureBuildConfiguration(features: [.init(owner: "push", entitlements: ["aps-environment": "production"])],
     entitlementResolutions: ["aps-environment": "development"]).compose(infoPlist: [:], entitlements: ["aps-environment": "development"])
 require(entitlementResolution.entitlements["aps-environment"] == "development", "Explicit entitlement resolution ignored")

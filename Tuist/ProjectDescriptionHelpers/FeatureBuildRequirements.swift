@@ -89,11 +89,13 @@ public struct FeatureBuildConfiguration: Sendable {
             infoPlist: merge(kind: "Info.plist", host: infoPlist,
                 contributions: features.map { ($0.owner, $0.infoPlist) },
                 resolutions: infoPlistResolutions,
-                stringSetKeys: ["UIBackgroundModes", "BGTaskSchedulerPermittedIdentifiers", "LSApplicationQueriesSchemes", "NSUserActivityTypes"]),
+                stringSetKeys: ["UIBackgroundModes", "BGTaskSchedulerPermittedIdentifiers", "LSApplicationQueriesSchemes", "NSUserActivityTypes"],
+                exclusiveKeys: Self.exclusiveInfoPlistStrings),
             entitlements: merge(kind: "entitlements", host: entitlements,
                 contributions: features.map { ($0.owner, $0.entitlements) },
                 resolutions: entitlementResolutions,
-                stringSetKeys: ["com.apple.security.application-groups", "keychain-access-groups", "com.apple.developer.associated-domains"]),
+                stringSetKeys: ["com.apple.security.application-groups", "keychain-access-groups", "com.apple.developer.associated-domains"],
+                exclusiveKeys: [:]),
             localizedInfoPlist: try mergeLocalizedInfoPlist(host: localizedInfoPlist)
         )
     }
@@ -104,9 +106,20 @@ public struct FeatureBuildConfiguration: Sendable {
         public var errorDescription: String? { message }
     }
 
+    /// Strings only one Feature can use at run time: a second registration of
+    /// a background task identifier fails, and two handlers for one user
+    /// activity type stop the app at launch. A value the host declares itself
+    /// (a host-shared task or a system activity type) is not checked.
+    /// Continued-processing wildcards (`base.*`) may be shared.
+    static let exclusiveInfoPlistStrings: [String: String] = [
+        "BGTaskSchedulerPermittedIdentifiers": "Only one Feature can register a background task identifier; if they share MiniAppSharedRefreshCenter, declare it in the host",
+        "NSUserActivityTypes": "Only one Feature can handle a user activity type",
+    ]
+
     private func merge(kind: String, host: [String: Plist.Value],
                        contributions: [(String, [String: Plist.Value])],
-                       resolutions: [String: Plist.Value], stringSetKeys: Set<String>) throws -> [String: Plist.Value] {
+                       resolutions: [String: Plist.Value], stringSetKeys: Set<String>,
+                       exclusiveKeys: [String: String]) throws -> [String: Plist.Value] {
         let sources = [("host", host)] + contributions
         let requestedKeys = Set(sources.flatMap { $0.1.keys })
         for key in resolutions.keys.sorted() where !requestedKeys.contains(key) {
@@ -117,6 +130,7 @@ public struct FeatureBuildConfiguration: Sendable {
             let requests = sources.compactMap { owner, values in values[key].map { (owner, $0) } }
             if stringSetKeys.contains(key) {
                 var strings = Set<String>()
+                var featureOwners: [String: [String]] = [:]
                 let effectiveRequests = resolutions[key].map { [("resolution", $0)] } ?? requests
                 for (owner, value) in effectiveRequests {
                     guard case let .array(values) = value else {
@@ -127,6 +141,24 @@ public struct FeatureBuildConfiguration: Sendable {
                             throw Failure("\(owner) must supply a string array for \(kind) key \(key)")
                         }
                         strings.insert(string)
+                        if resolutions[key] == nil, owner != "host", !featureOwners[string, default: []].contains(owner) {
+                            featureOwners[string, default: []].append(owner)
+                        }
+                    }
+                }
+                if let reason = exclusiveKeys[key] {
+                    let hostStrings: Set<String>
+                    if case let .array(values)? = host[key] {
+                        hostStrings = Set(values.compactMap { value in
+                            if case let .string(string) = value { return string }
+                            return nil
+                        })
+                    } else {
+                        hostStrings = []
+                    }
+                    for (string, owners) in featureOwners.sorted(by: { $0.key < $1.key })
+                    where owners.count > 1 && !hostStrings.contains(string) && !string.hasSuffix(".*") {
+                        throw Failure("\(kind) key \(key) value \(string) requested by \(owners.joined(separator: ", ")). \(reason), or add an explicit resolution")
                     }
                 }
                 result[key] = .array(strings.sorted().map { .string($0) })

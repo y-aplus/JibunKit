@@ -18,11 +18,21 @@ Tap **Build the IPA**. The app may be closed while GitHub builds, which usually 
 
 The quick build runs no tests. A failed run shows a link to its page on GitHub.
 
+## Import Features from other repositories
+
+Under **Features from Other Repositories**, tap **Import a Feature** and enter the repository (`OWNER/REPO` means GitHub, or a full Git URL) and, if needed, a branch, tag or commit, the Feature's directory in the repository and a name under `Modules/`. Builder starts the repository's **Import Feature** workflow (`.github/workflows/import-feature.yml`). It runs `python3 Tools/jibunkit-feature.py add` on GitHub, which copies the Feature, records the commit in `JibunKitImports.json` and connects it, and commits the result to the branch set below; this takes about a minute, and Builder follows it while the screen is open. When it has finished, open **Report** to see what the Feature brings: its Swift packages, precompiled code, code that runs during the build, build requirements and `check` findings ([details](../../docs/mini-apps.md#importing-a-feature-from-another-repository)). Then build the IPA as above.
+
+The imported Features are listed from the branch's `JibunKitImports.json`. Tap one to **Update** it to the newest commit of its recorded branch or tag, or to **Remove** it. To delete the data a Feature saved on the phone, do that in **Manage Mini Apps** before installing a build without it.
+
+When the tool stops, for example because the Feature collides with another one or an update conflicts with your own edits, nothing is committed and the report says why. Resolve it on a computer with the same tool. The import never runs code from the other repository; that code runs when you build.
+
+
 ## Boundaries
 
 - The token can start workflows in the selected repository. Anyone who can use the unlocked phone can use it through this Feature.
 - The build attaches the IPA to a `build-RUN_ID` prerelease; this Feature does not delete old prereleases.
 - Builder needs no capability, entitlement or background mode. It follows a build only while it is open.
+- The Import Feature workflow can push to the branch it runs on. Starting it needs the same token permissions as a build.
 
 ## Develop
 

@@ -52,6 +52,8 @@ final class BuilderModel {
     var tokenInput = ""
     var hasToken = false
     var state = BuilderState()
+    /// The branch's JibunKitImports.json, read when the screen refreshes.
+    var imported: [ImportedFeature] = []
     var ipaURL: URL?
     var message: String?
     var isError = false
@@ -137,6 +139,12 @@ final class BuilderModel {
     }
 
     func refresh() async {
+        await refreshBuild()
+        await refreshImport()
+        await loadImported()
+    }
+
+    private func refreshBuild() async {
         guard let request = state.request, !(request.run?.isFinished ?? false), let client = client() else { return }
         isWorking = true
         defer { isWorking = false }
@@ -144,6 +152,62 @@ final class BuilderModel {
             state.request = try await client.refresh(request)
             try environment.storage.saveState(state)
             message = nil
+        } catch {
+            show(error)
+        }
+    }
+
+    var importProgress: BuildProgress { state.importRequest?.progress ?? .none }
+
+    var isImporting: Bool {
+        switch importProgress {
+        case .waiting, .running: true
+        case .none, .finished: false
+        }
+    }
+
+    var canImport: Bool { isConfigured && !isWorking && !isImporting }
+
+    func startImport(_ operation: FeatureImportOperation) async {
+        guard let client = client() else { return }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            let requestedAt = Date()
+            try await client.requestImport(operation)
+            state.importRequest = ImportRequest(operation: operation, requestedAt: requestedAt)
+            try environment.storage.saveState(state)
+            show(String(localized: "Requested. GitHub commits the result to the branch in about a minute.", bundle: .module),
+                 isError: false)
+        } catch {
+            show(error)
+        }
+    }
+
+    /// Follows the last import without blocking the other buttons, so the
+    /// screen can poll it while it runs.
+    func refreshImport() async {
+        guard let request = state.importRequest, !(request.run?.isFinished ?? false) || request.report == nil,
+              let client = client() else { return }
+        do {
+            let updated = try await client.refresh(request)
+            state.importRequest = updated
+            try environment.storage.saveState(state)
+            if updated.run?.isFinished == true, request.run?.isFinished != true {
+                await loadImported()
+            }
+        } catch {
+            show(error)
+        }
+    }
+
+    func loadImported() async {
+        guard let client = client() else {
+            imported = []
+            return
+        }
+        do {
+            imported = try await client.importedFeatures()
         } catch {
             show(error)
         }
@@ -200,6 +264,8 @@ final class BuilderModel {
 public struct BuilderRootView: View {
     @State private var model: BuilderModel
     @State private var askingNotificationConsent = false
+    @State private var showingImportForm = false
+    @State private var removing: ImportedFeature?
     @Environment(\.scenePhase) private var scenePhase
 
     public init(environment: BuilderEnvironment) {
@@ -209,6 +275,7 @@ public struct BuilderRootView: View {
     public var body: some View {
         Form {
             buildSection
+            importSection
             settingsSection
             if let message = model.message {
                 Section {
@@ -223,6 +290,26 @@ public struct BuilderRootView: View {
         .refreshable { await model.refresh() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refresh() } }
+        }
+        // An import takes about a minute, so follow it while the screen is open.
+        .task(id: model.isImporting) {
+            while model.isImporting, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                await model.refreshImport()
+            }
+        }
+        .sheet(isPresented: $showingImportForm) {
+            ImportFeatureForm { operation in Task { await model.startImport(operation) } }
+        }
+        .confirmationDialog(Text("Remove the Imported Feature?", bundle: .module),
+                            isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
+                            titleVisibility: .visible, presenting: removing) { feature in
+            Button(role: .destructive) {
+                Task { await model.startImport(.remove(name: feature.name)) }
+            } label: { Text("Remove", bundle: .module) }
+        } message: { feature in
+            Text("GitHub deletes Modules/\(feature.name) and commits the change. To delete the data it saved on this iPhone, do that in Manage Mini Apps before you install a build without it.",
+                 bundle: .module)
         }
         .alert(Text("Notify When the Build Is Likely Done?", bundle: .module), isPresented: $askingNotificationConsent) {
             Button { answerNotificationConsent(true) } label: { Text("Allow", bundle: .module) }
@@ -285,6 +372,98 @@ public struct BuilderRootView: View {
         }
     }
 
+    @ViewBuilder private var importSection: some View {
+        Section {
+            if let request = model.state.importRequest {
+                importStatus(request)
+            }
+            ForEach(model.imported) { feature in
+                Menu {
+                    Button { Task { await model.startImport(.update(name: feature.name, ref: "")) } } label: {
+                        Label { Text("Update", bundle: .module) } icon: { Image(systemName: "arrow.triangle.2.circlepath") }
+                    }
+                    Button(role: .destructive) { removing = feature } label: {
+                        Label { Text("Remove", bundle: .module) } icon: { Image(systemName: "trash") }
+                    }
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: feature.name).foregroundStyle(.primary)
+                        Text(verbatim: feature.path.isEmpty ? feature.repository : "\(feature.repository) · \(feature.path)")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Text(verbatim: "\(Self.refLabel(feature.ref)) · \(feature.commit.prefix(7))")
+                            .font(.caption.monospaced()).foregroundStyle(.secondary)
+                    }
+                }
+                .disabled(!model.canImport)
+            }
+            Button { showingImportForm = true } label: { Text("Import a Feature", bundle: .module) }
+                .disabled(!model.canImport)
+                .accessibilityIdentifier("builder.import")
+        } header: {
+            Text("Features from Other Repositories", bundle: .module)
+        } footer: {
+            Text("GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change.",
+                 bundle: .module)
+        }
+    }
+
+    @ViewBuilder private func importStatus(_ request: ImportRequest) -> some View {
+        let title = Self.title(of: request.operation)
+        switch request.progress {
+        case .none:
+            EmptyView()
+        case .waiting:
+            HStack {
+                ProgressView()
+                Text("\(title): waiting for GitHub", bundle: .module)
+            }
+        case .running(let run):
+            HStack {
+                ProgressView()
+                Text("\(title): running", bundle: .module)
+            }
+            Link(destination: run.htmlURL) { Text("Open the run on GitHub", bundle: .module) }
+        case .finished(let run):
+            if run.succeeded {
+                Label { Text("\(title): done", bundle: .module) } icon: {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                }
+            } else {
+                Label { Text("\(title): stopped; see the report", bundle: .module) } icon: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+                }
+                Link(destination: run.htmlURL) { Text("Open the run on GitHub", bundle: .module) }
+            }
+            if let report = request.report, !report.isEmpty {
+                DisclosureGroup {
+                    Text(verbatim: report).font(.caption.monospaced()).textSelection(.enabled)
+                } label: {
+                    Text("Report", bundle: .module)
+                }
+            } else if request.report == nil {
+                Text("The report is not available yet. Pull down to refresh.", bundle: .module)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    /// `add` records HEAD when no ref was given.
+    static func refLabel(_ ref: String) -> String {
+        ref == "HEAD" ? String(localized: "default branch", bundle: .module) : ref
+    }
+
+    static func title(of operation: FeatureImportOperation) -> String {
+        switch operation {
+        case let .add(repository, _, path, name):
+            let subject = !name.isEmpty ? name : path.isEmpty ? repository : "\(repository) \(path)"
+            return String(localized: "Import \(subject)", bundle: .module)
+        case let .update(name, _):
+            return String(localized: "Update \(name)", bundle: .module)
+        case let .remove(name):
+            return String(localized: "Remove \(name)", bundle: .module)
+        }
+    }
+
     @ViewBuilder private var settingsSection: some View {
         Section {
             TextField(String(localized: "OWNER/REPO", bundle: .module), text: $model.slug)
@@ -328,5 +507,64 @@ public struct BuilderRootView: View {
         model.environment.notifications?.setConsent(allowed)
         Task { await model.startBuild(notify: allowed) }
     }
+}
+
+/// Asks for a repository to copy a Feature from. `OWNER/REPO` means GitHub.
+private struct ImportFeatureForm: View {
+    let onImport: (FeatureImportOperation) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var repository = ""
+    @State private var ref = ""
+    @State private var path = ""
+    @State private var name = ""
+
+    var body: some View {
+        NavigationStack { // jibunkit: allow navigation-stack
+            Form {
+                Section {
+                    TextField(String(localized: "https://github.com/OWNER/REPO", bundle: .module), text: $repository)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("builder.import.repository")
+                } header: {
+                    Text("Repository", bundle: .module)
+                } footer: {
+                    Text("The directory must contain a JibunKit Feature: Package.swift and JibunKitFeature.json.", bundle: .module)
+                }
+                Section {
+                    TextField(String(localized: "Branch, tag or commit", bundle: .module), text: $ref)
+                    TextField(String(localized: "Directory in the repository", bundle: .module), text: $path)
+                    TextField(String(localized: "Name under Modules", bundle: .module), text: $name)
+                } header: {
+                    Text("Optional", bundle: .module)
+                } footer: {
+                    Text("Leave these empty to use the default branch, the repository root and a name from the URL.", bundle: .module)
+                }
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            }
+            .navigationTitle(Text("Import a Feature", bundle: .module))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Text("Cancel", bundle: .module) }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        onImport(.add(repository: repositoryURL, ref: trimmed(ref), path: trimmed(path), name: trimmed(name)))
+                        dismiss()
+                    } label: { Text("Import", bundle: .module) }
+                        .disabled(repositoryURL.isEmpty)
+                }
+            }
+        }
+    }
+
+    private var repositoryURL: String {
+        BuildRepository(slug: repository, branch: "main").map { "https://github.com/\($0.slug)" } ?? trimmed(repository)
+    }
+
+    private func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 }
 #endif

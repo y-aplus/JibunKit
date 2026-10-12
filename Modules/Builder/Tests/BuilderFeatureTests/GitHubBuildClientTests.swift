@@ -167,6 +167,102 @@ final class GitHubBuildClientTests: XCTestCase {
         }
     }
 
+    func testRequestImportDispatchesTheImportWorkflow() async throws {
+        let transport = StubTransport([("/import-feature.yml/dispatches", .init(status: 204))])
+        try await client(transport).requestImport(.add(repository: "https://github.com/someone/notes", ref: "",
+                                                       path: "Modules/Notes", name: ""))
+        let request = try XCTUnwrap(transport.requests.first?.request)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: try XCTUnwrap(request.httpBody)) as? [String: Any])
+        XCTAssertEqual(body["ref"] as? String, "main")
+        XCTAssertEqual(body["inputs"] as? [String: String], [
+            "operation": "add", "repository": "https://github.com/someone/notes", "ref": "", "path": "Modules/Notes", "name": "",
+        ])
+        XCTAssertEqual(FeatureImportOperation.update(name: "Notes", ref: "").inputs, ["operation": "update", "name": "Notes", "ref": ""])
+        XCTAssertEqual(FeatureImportOperation.remove(name: "Notes").inputs, ["operation": "remove", "name": "Notes"])
+
+        // A host made before the workflow existed.
+        let missing = StubTransport([("/import-feature.yml/dispatches", .init(status: 404))])
+        do {
+            try await client(missing).requestImport(.remove(name: "Notes"))
+            XCTFail("A missing workflow succeeded")
+        } catch {
+            XCTAssertEqual(error as? BuildClientError, .missingImportWorkflow)
+        }
+    }
+
+    func testImportedFeaturesReadTheBranchRecord() async throws {
+        let record = """
+        {"schema": 1, "features": {
+          "Notes": {"repository": "https://github.com/someone/notes", "ref": "HEAD", "commit": "\(String(repeating: "a", count: 40))", "path": ""},
+          "Atlas": {"repository": "https://github.com/someone/apps", "ref": "v1", "commit": "\(String(repeating: "b", count: 40))", "path": "Modules/Atlas"}
+        }}
+        """
+        let transport = StubTransport([("/contents/JibunKitImports.json", .init(status: 200, body: record))])
+        let features = try await client(transport).importedFeatures()
+        XCTAssertEqual(features.map(\.name), ["Atlas", "Notes"])
+        XCTAssertEqual(features[0].path, "Modules/Atlas")
+        let request = transport.requests[0].request
+        XCTAssertEqual(request.url?.query, "ref=main")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "application/vnd.github.raw+json")
+
+        let none = StubTransport([("/contents/JibunKitImports.json", .init(status: 404))])
+        let empty = try await client(none).importedFeatures()
+        XCTAssertEqual(empty, [])
+    }
+
+    func testImportRefreshFollowsTheRunAndReadsTheReportFromItsLog() async throws {
+        let requestedAt = ISO8601DateFormatter().date(from: "2026-10-12T07:00:00Z")!
+        let operation = FeatureImportOperation.add(repository: "https://github.com/someone/notes", ref: "", path: "", name: "Notes")
+        let list = #"{"workflow_runs": [\#(runJSON(id: 7, status: "queued", conclusion: nil, created: "2026-10-12T07:00:02Z"))]}"#
+        let started = try await client(StubTransport([("/import-feature.yml/runs?", .init(status: 200, body: list))]))
+            .refresh(ImportRequest(operation: operation, requestedAt: requestedAt), now: requestedAt + 5)
+        XCTAssertEqual(started.progress, .running(started.run!))
+        XCTAssertNil(started.report)
+
+        let log = [
+            "2026-10-12T07:00:20.1000000Z ##[group]Run set -uo pipefail",
+            "2026-10-12T07:00:20.1000001Z \u{1B}[36;1mecho \"=== JibunKit import report ===\"\u{1B}[0m",
+            "2026-10-12T07:00:21.0000000Z === JibunKit import report ===",
+            "2026-10-12T07:00:21.0000001Z Copied https://github.com/someone/notes (root) at abc into Modules/Notes: 7 files, 12 KB",
+            "2026-10-12T07:00:21.0000002Z ",
+            "2026-10-12T07:00:21.0000003Z Updated Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift.",
+            "2026-10-12T07:00:21.0000004Z === end of report ===",
+            "2026-10-12T07:00:22.0000000Z Committed abc",
+        ].joined(separator: "\r\n")
+        let transport = StubTransport([
+            ("/actions/runs/7/jobs", .init(status: 200, body: #"{"jobs": [{"id": 70}]}"#)),
+            ("/actions/runs/7", .init(status: 200, body: runJSON(id: 7, status: "completed", conclusion: "success",
+                                                                 created: "2026-10-12T07:00:02Z"))),
+            ("/actions/jobs/70/logs", .init(status: 302, headers: ["Location": "https://logs.example/70?sig=x"])),
+            ("logs.example", .init(status: 200, body: log)),
+        ])
+        let finished = try await client(transport).refresh(started)
+        XCTAssertEqual(finished.run?.succeeded, true)
+        XCTAssertEqual(finished.report, """
+            Copied https://github.com/someone/notes (root) at abc into Modules/Notes: 7 files, 12 KB
+
+            Updated Tuist/ProjectDescriptionHelpers/ModuleFeatures.swift.
+            """)
+        XCTAssertNil(transport.requests.last?.request.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertFalse(transport.requests[2].followRedirects)
+    }
+
+    func testAReportWithoutMarkersIsNil() {
+        XCTAssertNil(GitHubBuildClient.report(fromLog: "2026-10-12T07:00:21.0000000Z Checking out\n"))
+        XCTAssertEqual(GitHubBuildClient.report(fromLog: "=== JibunKit import report ===\nerror: stopped"), "error: stopped")
+    }
+
+    func testStateFromAnEarlierVersionStillDecodes() throws {
+        let earlier = #"{"repository": {"owner": "owner", "name": "host", "branch": "main"}}"#
+        let state = try JSONDecoder().decode(BuilderState.self, from: Data(earlier.utf8))
+        XCTAssertEqual(state.repository, repository)
+        XCTAssertNil(state.importRequest)
+
+        let withImport = BuilderState(repository: repository, importRequest: ImportRequest(
+            operation: .update(name: "Notes", ref: "v2"), requestedAt: Date(timeIntervalSince1970: 1_000_000), report: "done"))
+        XCTAssertEqual(try JSONDecoder().decode(BuilderState.self, from: JSONEncoder().encode(withImport)), withImport)
+    }
+
     func testStateRoundTrips() throws {
         let created = Date(timeIntervalSince1970: 1_000_000)
         let state = BuilderState(repository: repository, request: BuildRequest(

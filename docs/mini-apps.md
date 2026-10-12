@@ -210,6 +210,8 @@ python3 Tools/jibunkit-feature.py update Notes --ref v1.1 # follow another ref f
 
 `remove Notes` deletes `Modules/Notes` and its record and runs `sync`.
 
+The **Import Feature** workflow (`.github/workflows/import-feature.yml`) runs the same commands on GitHub and commits the result to the branch it runs on, only when the command succeeds. The [Build](../Modules/Builder/README.md#import-features-from-other-repositories) mini app starts it from the phone.
+
 ## Moving an existing app
 
 Moving an existing Xcode app into a feature means removing its app shell. Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:

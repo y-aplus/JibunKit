@@ -5,10 +5,13 @@ public struct BuilderState: Codable, Equatable, Sendable {
     public var repository: BuildRepository?
     /// The last build this app requested, kept until another one starts.
     public var request: BuildRequest?
+    /// The last import, update or removal this app requested.
+    public var importRequest: ImportRequest?
 
-    public init(repository: BuildRepository? = nil, request: BuildRequest? = nil) {
+    public init(repository: BuildRepository? = nil, request: BuildRequest? = nil, importRequest: ImportRequest? = nil) {
         self.repository = repository
         self.request = request
+        self.importRequest = importRequest
     }
 }
 
@@ -21,6 +24,23 @@ public struct BuildRequest: Codable, Equatable, Sendable {
         self.requestedAt = requestedAt
         self.run = run
     }
+}
+
+public struct ImportRequest: Codable, Equatable, Sendable {
+    public var operation: FeatureImportOperation
+    public var requestedAt: Date
+    public var run: BuildRun?
+    /// The tool's output, read from the run's log after it finished.
+    public var report: String?
+
+    public init(operation: FeatureImportOperation, requestedAt: Date, run: BuildRun? = nil, report: String? = nil) {
+        self.operation = operation
+        self.requestedAt = requestedAt
+        self.run = run
+        self.report = report
+    }
+
+    public var progress: BuildProgress { BuildProgress(BuildRequest(requestedAt: requestedAt, run: run)) }
 }
 
 /// Saves `BuilderState` and the GitHub token for Builder.
@@ -56,9 +76,15 @@ public enum BuildTiming {
 
 public enum BuildTrackingError: Error, Equatable, LocalizedError {
     case didNotStart
+    case importDidNotStart
 
     public var errorDescription: String? {
-        BuilderText.localized("GitHub did not start the build. Check the repository's Actions page.")
+        switch self {
+        case .didNotStart:
+            BuilderText.localized("GitHub did not start the build. Check the repository's Actions page.")
+        case .importDidNotStart:
+            BuilderText.localized("GitHub did not start the import. Check the repository's Actions page.")
+        }
     }
 }
 
@@ -66,13 +92,33 @@ extension GitHubBuildClient {
     /// Returns `request` with the latest state of its run.
     public func refresh(_ request: BuildRequest, now: Date = Date()) async throws -> BuildRequest {
         var request = request
-        if let run = request.run {
-            if !run.isFinished { request.run = try await self.run(id: run.id) }
-        } else if let run = try await latestRun(since: request.requestedAt - BuildTiming.clockTolerance) {
-            request.run = run
-        } else if now.timeIntervalSince(request.requestedAt) > BuildTiming.startTimeout {
-            throw BuildTrackingError.didNotStart
+        request.run = try await track(request.run, workflow: Self.workflow, requestedAt: request.requestedAt, now: now,
+                                      lost: .didNotStart)
+        return request
+    }
+
+    /// Returns `request` with the latest state of its run and, once it has
+    /// finished, the tool's report.
+    public func refresh(_ request: ImportRequest, now: Date = Date()) async throws -> ImportRequest {
+        var request = request
+        request.run = try await track(request.run, workflow: Self.importWorkflow, requestedAt: request.requestedAt,
+                                      now: now, lost: .importDidNotStart)
+        if let run = request.run, run.isFinished, request.report == nil {
+            // GitHub may need a moment to publish the log; a later refresh tries again.
+            request.report = try? await importReport(runID: run.id)
         }
         return request
+    }
+
+    private func track(_ run: BuildRun?, workflow: String, requestedAt: Date, now: Date,
+                       lost: BuildTrackingError) async throws -> BuildRun? {
+        if let run {
+            return run.isFinished ? run : try await self.run(id: run.id)
+        }
+        if let run = try await latestRun(workflow: workflow, since: requestedAt - BuildTiming.clockTolerance) {
+            return run
+        }
+        if now.timeIntervalSince(requestedAt) > BuildTiming.startTimeout { throw lost }
+        return nil
     }
 }

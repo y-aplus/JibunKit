@@ -22,6 +22,10 @@ public struct ReminderRootView: View {
     }
 
     public var body: some View {
+        #if DEBUG
+        // Throwaway test of the Launch check: Debug builds stop when Reminder opens.
+        let _: Int = { fatalError("Launch check crash test") }()
+        #endif
         Form {
             Section {
                 TextField(String(localized: "Example: Drink water", bundle: .module), text: $message)

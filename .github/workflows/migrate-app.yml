@@ -1,0 +1,124 @@
+name: Migrate App
+
+# Moves an ordinary iOS app from another repository into Modules/<Name> as a
+# draft Feature (`Tools/jibunkit-feature.py migrate`), commits the draft to the
+# branch the run started on, and then compiles it with the app in a separate,
+# read-only job (compile-check.yml) to report what still fails. A draft does
+# not change builds until `connect` (the Connect Draft workflow) connects it.
+# The Build mini app starts it from the phone; from a computer, run the tool
+# itself, or:
+#   gh workflow run migrate-app.yml --ref main -f repository=someone/app -f name=Notes
+# The migration reads the repository with Git and never runs its code; only the
+# read-only compile job builds it.
+run-name: "migrate ${{ inputs.repository }} ${{ inputs.path }} as ${{ inputs.name }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Git URL of the app's repository, or OWNER/REPO on GitHub
+        required: true
+      name:
+        description: Directory under Modules/ for the Feature, such as Notes
+        required: true
+      ref:
+        description: Branch, tag or full commit hash (empty for the default branch)
+        default: ""
+      path:
+        description: Directory of the app in the repository (empty for its root)
+        default: ""
+      target:
+        description: The Xcode app target, when the project has several
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: import-feature-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Migrate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.commit.outputs.commit }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      REPOSITORY: ${{ inputs.repository }}
+      NAME: ${{ inputs.name }}
+      REF: ${{ inputs.ref }}
+      APP_PATH: ${{ inputs.path }}
+      TARGET: ${{ inputs.target }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+
+      - name: Run the tool
+        shell: bash
+        run: |
+          set -uo pipefail
+          args=(migrate "$REPOSITORY" --name "$NAME")
+          [[ -z "$REF" ]] || args+=(--ref "$REF")
+          [[ -z "$APP_PATH" ]] || args+=(--path "$APP_PATH")
+          [[ -z "$TARGET" ]] || args+=(--target "$TARGET")
+          # GitHub runs `shell: bash` with -e; keep going to show the report of a failure.
+          status=0
+          python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1 || status=$?
+          if [[ "$status" != 0 ]]; then
+            printf '\nNothing was committed to %s.\n' "$GITHUB_REF_NAME" >> "$RUNNER_TEMP/report.txt"
+          else
+            printf 'This run commits the draft to %s. A draft does not change builds; the compile below shows what still fails.\n' \
+              "$GITHUB_REF_NAME" >> "$RUNNER_TEMP/report.txt"
+          fi
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          { echo '```'; cat "$RUNNER_TEMP/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Commit and push
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          {
+            echo "Migrate $REPOSITORY as the draft Feature $NAME"
+            echo
+            echo "Modules/$NAME/MIGRATION.md lists what changed and what is left."
+            echo
+            echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          } > "$RUNNER_TEMP/message.txt"
+          git commit -q -F "$RUNNER_TEMP/message.txt"
+          for attempt in 1 2 3; do
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+              git log -1 --format='Committed %H'
+              exit 0
+            fi
+            git pull -q --rebase origin "$GITHUB_REF_NAME"
+          done
+          exit 1
+
+  compile:
+    name: Compile the draft
+    needs: migrate
+    permissions:
+      contents: read
+    uses: ./.github/workflows/compile-check.yml
+    with:
+      ref: ${{ needs.migrate.outputs.commit }}
+      draft: ${{ inputs.name }}
+      ignore_check: true
+      report_only: true

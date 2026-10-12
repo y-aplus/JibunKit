@@ -10,6 +10,18 @@ struct JibunKitApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var lifecycle = MiniAppRegistry.makeLifecycleDispatcher()
 
+    init() {
+        #if DEBUG
+        // Tools/smoke-test.py asks a Simulator build which mini apps to open.
+        if CommandLine.arguments.contains("-JibunKitListMiniApps") {
+            for definition in MiniAppRegistry.all {
+                print("jibunkit-mini-app\t\(definition.id.rawValue)\t\(definition.title)")
+            }
+            exit(0)
+        }
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             MiniAppSceneRoot()

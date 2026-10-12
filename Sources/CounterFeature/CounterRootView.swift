@@ -18,6 +18,11 @@ public struct CounterRootView: View {
         self.store = store
     }
 
+    private func crashForReportTest(_ index: Int) {
+        let empty: [Int] = []
+        print(empty[index])
+    }
+
     public var body: some View {
         VStack(spacing: 16) {
             Text("Counter", bundle: .module)
@@ -32,6 +37,8 @@ public struct CounterRootView: View {
                     .accessibilityIdentifier("counter.loading")
             }
             Button {
+                // Throwaway test of crash reports: the third tap reads past the end of an array.
+                if (value ?? 0) >= 2 { crashForReportTest(value ?? 0) }
                 if let lifetime {
                     guard lifetime.isStartAllowed, let runtime = lifetime.runtime else { return }
                     do { try runtime.start { await addOne() } }

@@ -186,7 +186,7 @@ python3 Tools/jibunkit-feature.py add https://github.com/someone/notes --ref v1.
 python3 Tools/jibunkit-feature.py add https://github.com/someone/apps --path Modules/Notes --name Notes
 ```
 
-`add` fetches the branch, tag or full commit hash given with `--ref` (default: the default branch), copies the directory given with `--path` (default: the repository root) to `Modules/<Name>`, writes the repository, ref, commit and path to `JibunKitImports.json`, and runs `sync`. The copy is what gets built, so a build does not depend on the other repository still existing or keeping its history. `add` and `update` read the repository with Git and copy files; they never run code from it. It refuses symbolic links and submodules.
+The repository is a Git URL, `OWNER/REPO` for GitHub, or a local directory. `add` fetches the branch, tag or full commit hash given with `--ref` (default: the default branch), copies the directory given with `--path` (default: the repository root) to `Modules/<Name>`, writes the repository, ref, commit and path to `JibunKitImports.json`, and runs `sync`. The copy is what gets built, so a build does not depend on the other repository still existing or keeping its history. `add` and `update` read the repository with Git and copy files; they never run code from it. It refuses symbolic links and submodules.
 
 It then lists what the feature brings, read from its files:
 

@@ -463,6 +463,8 @@ def new(root, name, run_sync=True):
 IMPORTS = Path("JibunKitImports.json")
 IMPORT_KEYS = {"repository", "ref", "commit", "path"}
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{40}")
+# `OWNER/REPO` means a GitHub repository, as in the Build mini app.
+GITHUB_SHORTHAND = re.compile(r"[A-Za-z0-9-]+/[A-Za-z0-9._-]+")
 
 
 def load_imports(root):
@@ -521,7 +523,8 @@ def fetch(work, repository, ref):
     try:
         git(["fetch", "-q", "--depth", "1", "--no-tags", "--", repository, ref], cwd=work)
     except FeatureError as error:
-        raise FeatureError(f"{error}\nUse a branch, a tag or a full 40-character commit hash for --ref.") from None
+        raise FeatureError(f"{error}\nCheck the repository URL, and use a branch, a tag or a full 40-character "
+                           "commit hash for --ref.") from None
     return git(["rev-parse", "FETCH_HEAD^{commit}"], cwd=work).decode().strip()
 
 
@@ -739,8 +742,18 @@ def default_name(repository, path):
     return name
 
 
+def repository_url(value):
+    """A local directory as an absolute path (Git runs elsewhere), `OWNER/REPO` as GitHub, else unchanged."""
+    if Path(value).is_dir():
+        return str(Path(value).resolve())
+    if GITHUB_SHORTHAND.fullmatch(value):
+        return f"https://github.com/{value}"
+    return value
+
+
 def add_feature(root, repository, ref="HEAD", path="", name=None):
     """Copy a Feature into Modules/<name> and record it. Returns the module and commit."""
+    repository = repository_url(repository)
     path = source_path(path)
     name = name or default_name(repository, path)
     require(NAME_PATTERN.fullmatch(name),
@@ -844,7 +857,7 @@ def main(argv=None):
     review = commands.add_parser("check", help="Report code that affects other Features")
     review.add_argument("paths", nargs="*", type=Path, help="Directories or Swift files (default: Modules/*)")
     importing = commands.add_parser("add", help="Copy a Feature from another Git repository")
-    importing.add_argument("repository", help="Git URL or local path of the repository")
+    importing.add_argument("repository", help="Git URL, OWNER/REPO on GitHub, or a local path")
     importing.add_argument("--ref", default="HEAD", help="Branch, tag or commit to follow (default: the default branch)")
     importing.add_argument("--path", default="", help="Directory of the Feature in the repository (default: its root)")
     importing.add_argument("--name", help="Directory under Modules/ (default: the last part of --path or the URL)")

@@ -73,9 +73,16 @@ class FeatureImportTests(unittest.TestCase):
         self.assertEqual(copied, upstream)
         record = json.loads((self.root / MODULE.IMPORTS).read_text(encoding='utf-8'))
         self.assertEqual(record, {'schema': 1, 'features': {'Notes': {
-            'repository': str(self.upstream), 'ref': 'HEAD', 'commit': self.first, 'path': 'Features/Notes'}}})
+            'repository': str(self.upstream.resolve()), 'ref': 'HEAD', 'commit': self.first, 'path': 'Features/Notes'}}})
         self.assertIn('path: "Modules/Notes"', (self.root / MODULE.HELPER).read_text(encoding='utf-8'))
         self.assertFalse(MODULE.sync(self.root, check=True))
+
+    def testRepositoryShorthandsMeanGitHubOrALocalDirectory(self):
+        self.assertEqual(MODULE.repository_url('someone/notes'), 'https://github.com/someone/notes')
+        self.assertEqual(MODULE.repository_url('someone/notes.kit'), 'https://github.com/someone/notes.kit')
+        self.assertEqual(MODULE.repository_url('https://gitlab.com/someone/notes.git'), 'https://gitlab.com/someone/notes.git')
+        self.assertEqual(MODULE.repository_url('git@github.com:someone/notes.git'), 'git@github.com:someone/notes.git')
+        self.assertEqual(MODULE.repository_url(str(self.upstream)), str(self.upstream.resolve()))
 
     def testAddFollowsATagAndRefusesWhatIsNotAFeature(self):
         git(self.upstream, 'tag', 'v1')

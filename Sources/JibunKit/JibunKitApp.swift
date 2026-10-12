@@ -109,6 +109,7 @@ private struct MiniAppSceneRoot: View {
             }
             .onChange(of: navigation.activeID) { _, selectedID in
                 restoredOwner = selectedID?.rawValue
+                UserDefaults.standard.set(selectedID?.rawValue, forKey: CrashReportStore.lastMiniAppKey)
                 activity.update(phase: activityPhase, selectedID: selectedID)
                 windowConnection.update(phase: activityPhase, selectedID: selectedID)
             }

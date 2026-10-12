@@ -13,6 +13,8 @@ final class NotificationAppDelegate: NSObject, UIApplicationDelegate,
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        // First, so a report of the previous crash is kept even if this launch stops early.
+        CrashReportStore.shared.start()
         UNUserNotificationCenter.current().delegate = self
         // Apply persisted admission before passive cold-launch registrations.
         // Registration rejection must not turn a fallible OS operation into an

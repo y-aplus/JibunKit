@@ -82,6 +82,16 @@ struct MiniAppManagementScreen: View {
                     }
                 }
                 Section {
+                    NavigationLink {
+                        CrashReportsScreen()
+                    } label: {
+                        Label("Crash Reports", systemImage: "exclamationmark.triangle")
+                    }
+                    .accessibilityIdentifier("management.crashReports")
+                } footer: {
+                    Text("Reports from iOS about times JibunKit stopped or froze, to share with whoever fixes the app.")
+                }
+                Section {
                     Text("Consent is saved for each mini app. iOS permissions are shared by all of JibunKit and aren’t changed by allowing here.")
                     Text("Deleting removes the registration and owned data. Removing the built-in code requires a rebuild.")
                 }

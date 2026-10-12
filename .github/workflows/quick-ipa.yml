@@ -4,7 +4,8 @@ name: Build IPA (quick)
 # build of the app and its extensions, the checks every IPA needs, ad-hoc
 # signing and packaging. No tests run; use "Build JibunKit IPA" to test
 # JibunKit itself. With `publish`, a separate job attaches the IPA to a
-# prerelease so a device can download it directly.
+# prerelease so a device can download it directly, with the build's symbol
+# files (JibunKit-dSYMs.zip) for Tools/symbolicate-crash.py.
 # Start it with `python3 Tools/build-ipa.py`, or:
 #   gh workflow run quick-ipa.yml --repo OWNER/REPO --ref <branch> -f publish=true
 on:
@@ -107,6 +108,26 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Collect the symbol files
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/DerivedData/Build/Products/Release-iphoneos"
+          if compgen -G "*.dSYM" > /dev/null; then
+            zip -qry "$GITHUB_WORKSPACE/artifacts/JibunKit-dSYMs.zip" ./*.dSYM
+            ls -d ./*.dSYM
+          else
+            echo "::warning::The build wrote no dSYM, so crash reports of this IPA cannot be symbolicated."
+          fi
+
+      - name: Upload symbol files
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: JibunKit-dSYMs
+          path: artifacts/JibunKit-dSYMs.zip
+          if-no-files-found: warn
+          retention-days: 7
+
   publish:
     name: Publish prerelease
     needs: build
@@ -133,6 +154,17 @@ jobs:
             --prerelease --target "$GITHUB_SHA" --title "$TAG" \
             --notes "Built from $GITHUB_SHA by run $GITHUB_RUN_ID (quick build, no tests). SHA-256: $sha"
           echo "Direct IPA link: https://github.com/$GH_REPO/releases/download/$TAG/JibunKit.ipa" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Attach the symbol files
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh run download "$GITHUB_RUN_ID" --name JibunKit-dSYMs --dir dsyms; then
+            unzip -tq dsyms/JibunKit-dSYMs.zip
+            gh release upload "$TAG" dsyms/JibunKit-dSYMs.zip
+          else
+            echo "::warning::No symbol files to attach."
+          fi
 
       - name: Remove older build prereleases
         shell: bash

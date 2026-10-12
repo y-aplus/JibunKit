@@ -50,7 +50,7 @@
 "Update" = "Update";
 "Import a Feature" = "Import a Feature";
 "Features from Other Repositories" = "Features from Other Repositories";
-"GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change." = "GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change.";
+"GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change. The Simulator check opens each mini app of the branch and shows a screenshot of each, so a mini app that stops at launch is found before you install." = "GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change. The Simulator check opens each mini app of the branch and shows a screenshot of each, so a mini app that stops at launch is found before you install.";
 "%@: waiting for GitHub" = "%@: waiting for GitHub";
 "%@: running" = "%@: running";
 "%@: done" = "%@: done";
@@ -85,3 +85,9 @@
 "Migrate the App" = "Migrate the App";
 "Copies an ordinary iOS app into Modules as a draft, makes the mechanical changes and compiles it. A draft does not change your builds; connect it once it compiles. Needs a name under Modules." = "Copies an ordinary iOS app into Modules as a draft, makes the mechanical changes and compiles it. A draft does not change your builds; connect it once it compiles. Needs a name under Modules.";
 "Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed." = "Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed.";
+"Requested. GitHub builds the app for the iOS Simulator and opens each mini app; this takes about 15 minutes." = "Requested. GitHub builds the app for the iOS Simulator and opens each mini app; this takes about 15 minutes.";
+"Open in the Simulator" = "Open in the Simulator";
+"Open Every Mini App in the Simulator" = "Open Every Mini App in the Simulator";
+"Mini app list" = "Mini app list";
+"Simulator check" = "Simulator check";
+"Simulator check of %@" = "Simulator check of %@";

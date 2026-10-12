@@ -5,9 +5,10 @@
       --output DIR [--screenshot-url URL]
 
 installs the app (a Debug build for the Simulator), asks it for its mini apps
-(`-JibunKitListMiniApps`, only in Debug builds), then for each one starts the
-app fresh, opens `jibunkit://mini-app/<id>`, waits, checks that the app is
-still running and takes a screenshot. A crash is reported with the reason and
+(`-JibunKitListMiniApps`), then for each one starts the app fresh with
+`-JibunKitOpenMiniApp <id>`, waits, checks that the app is still running and
+takes a screenshot. Both arguments work only in Debug builds; a
+`jibunkit://` URL would first make iOS ask whether to open the app. A crash is reported with the reason and
 the app's own frames from the Simulator's crash report. DIR receives the
 screenshots (`home.jpg`, `<id>.jpg`) and `report.txt`; with --screenshot-url the
 report links each screenshot as URL/<file>.
@@ -26,6 +27,7 @@ import sys
 import time
 
 LIST_ARGUMENT = "-JibunKitListMiniApps"
+OPEN_ARGUMENT = "-JibunKitOpenMiniApp"
 LIST_PREFIX = "jibunkit-mini-app\t"
 CRASH_REPORTS = Path.home() / "Library/Logs/DiagnosticReports"
 FRAMES = 5
@@ -125,8 +127,8 @@ def screenshot(simulator, path):
     png.unlink()
 
 
-def launch(simulator, bundle_id):
-    return simctl("launch", "--terminate-running-process", simulator, bundle_id, timeout=60)
+def launch(simulator, bundle_id, *arguments):
+    return simctl("launch", "--terminate-running-process", simulator, bundle_id, *arguments, timeout=60)
 
 
 def format_report(device, results, crashed_launch, screenshot_url):
@@ -179,9 +181,7 @@ def main(argv=None):
         results.append(("home", "Mini app list", "OK", [], "home.jpg"))
     for app_id, title in apps:
         opened = time.time() - 1
-        launch(args.simulator, bundle_id)
-        time.sleep(2)
-        simctl("openurl", args.simulator, f"jibunkit://mini-app/{app_id}", check=False)
+        launch(args.simulator, bundle_id, OPEN_ARGUMENT, app_id)
         time.sleep(args.wait)
         alive = is_running(simctl("spawn", args.simulator, "launchctl", "list").stdout, bundle_id)
         if alive:

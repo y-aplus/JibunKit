@@ -56,6 +56,9 @@ final class BuilderModel {
     var imported: [ImportedFeature] = []
     /// The branch's draft Features, read when the screen refreshes.
     var drafts: [DraftFeature] = []
+    /// The screenshots of the last Simulator check or migration, read once it has finished.
+    var screenshots: [LaunchScreenshot] = []
+    private var screenshotsRunID: Int?
     var ipaURL: URL?
     var message: String?
     var isError = false
@@ -144,6 +147,7 @@ final class BuilderModel {
         await refreshBuild()
         await refreshImport()
         await loadImported()
+        await loadScreenshots()
     }
 
     private func refreshBuild() async {
@@ -179,6 +183,8 @@ final class BuilderModel {
             try await client.requestImport(operation)
             state.importRequest = ImportRequest(operation: operation, requestedAt: requestedAt)
             try environment.storage.saveState(state)
+            screenshots = []
+            screenshotsRunID = nil
             switch operation {
             case .inspect:
                 show(String(localized: "Requested. GitHub writes the report in about a minute.", bundle: .module), isError: false)
@@ -187,6 +193,9 @@ final class BuilderModel {
                             bundle: .module), isError: false)
             case .connect:
                 show(String(localized: "Requested. GitHub compiles with the draft connected and connects it only if that passes; this takes about 10 minutes.",
+                            bundle: .module), isError: false)
+            case .launch:
+                show(String(localized: "Requested. GitHub builds the app for the iOS Simulator and opens each mini app; this takes about 15 minutes.",
                             bundle: .module), isError: false)
             case .add, .update, .remove:
                 show(String(localized: "Requested. GitHub commits the result to the branch in about a minute.", bundle: .module),
@@ -208,6 +217,7 @@ final class BuilderModel {
             try environment.storage.saveState(state)
             if updated.run?.isFinished == true, request.run?.isFinished != true {
                 await loadImported()
+                await loadScreenshots()
             }
         } catch {
             show(error)
@@ -222,6 +232,17 @@ final class BuilderModel {
         do {
             imported = try await client.importedFeatures()
             drafts = try await client.drafts()
+        } catch {
+            show(error)
+        }
+    }
+
+    func loadScreenshots() async {
+        guard let request = state.importRequest, request.operation.takesScreenshots,
+              let run = request.run, run.isFinished, run.id != screenshotsRunID, let client = client() else { return }
+        do {
+            screenshots = try await client.launchScreenshots(runID: run.id)
+            screenshotsRunID = run.id
         } catch {
             show(error)
         }
@@ -425,6 +446,9 @@ public struct BuilderRootView: View {
                     Button { Task { await model.startImport(.connect(name: draft.name)) } } label: {
                         Label { Text("Connect", bundle: .module) } icon: { Image(systemName: "link") }
                     }
+                    Button { Task { await model.startImport(.launch(draft: draft.name)) } } label: {
+                        Label { Text("Open in the Simulator", bundle: .module) } icon: { Image(systemName: "iphone") }
+                    }
                     if let repository = model.state.repository,
                        let report = URL(string: "https://github.com/\(repository.slug)/blob/\(repository.branch)/Modules/\(draft.name)/MIGRATION.md") {
                         Link(destination: report) {
@@ -445,10 +469,15 @@ public struct BuilderRootView: View {
             Button { showingImportForm = true } label: { Text("Import a Feature", bundle: .module) }
                 .disabled(!model.canImport)
                 .accessibilityIdentifier("builder.import")
+            Button { Task { await model.startImport(.launch(draft: "")) } } label: {
+                Text("Open Every Mini App in the Simulator", bundle: .module)
+            }
+            .disabled(!model.canImport)
+            .accessibilityIdentifier("builder.launch")
         } header: {
             Text("Features from Other Repositories", bundle: .module)
         } footer: {
-            Text("GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change.",
+            Text("GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change. The Simulator check opens each mini app of the branch and shows a screenshot of each, so a mini app that stops at launch is found before you install.",
                  bundle: .module)
         }
     }
@@ -490,7 +519,35 @@ public struct BuilderRootView: View {
                 Text("The report is not available yet. Pull down to refresh.", bundle: .module)
                     .font(.caption).foregroundStyle(.secondary)
             }
+            if !model.screenshots.isEmpty {
+                screenshotStrip
+            }
         }
+    }
+
+    private var screenshotStrip: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(alignment: .top, spacing: 12) {
+                ForEach(model.screenshots) { screenshot in
+                    VStack(spacing: 4) {
+                        if let image = UIImage(data: screenshot.data) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(height: 320)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        if screenshot.name == "home" {
+                            Text("Mini app list", bundle: .module).font(.caption)
+                        } else {
+                            Text(verbatim: screenshot.name).font(.caption)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+        }
+        .accessibilityIdentifier("builder.screenshots")
     }
 
     /// `add` records HEAD when no ref was given.
@@ -514,6 +571,9 @@ public struct BuilderRootView: View {
             return String(localized: "Migrate \(name)", bundle: .module)
         case let .connect(name):
             return String(localized: "Connect \(name)", bundle: .module)
+        case let .launch(draft):
+            return draft.isEmpty ? String(localized: "Simulator check", bundle: .module)
+                                 : String(localized: "Simulator check of \(draft)", bundle: .module)
         }
     }
 

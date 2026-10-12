@@ -229,6 +229,39 @@ final class GitHubBuildClientTests: XCTestCase {
         }
     }
 
+    func testTheSimulatorCheckUsesTheLaunchWorkflowAndOpensADraftDespiteFindings() {
+        XCTAssertEqual(FeatureImportOperation.launch(draft: "").workflow, "smoke-test.yml")
+        XCTAssertEqual(FeatureImportOperation.launch(draft: "").inputs, [:])
+        XCTAssertEqual(FeatureImportOperation.launch(draft: "Notes").inputs, ["draft": "Notes", "ignore_check": "true"])
+        XCTAssertTrue(FeatureImportOperation.launch(draft: "").takesScreenshots)
+        XCTAssertTrue(FeatureImportOperation.migrate(repository: "r", ref: "", path: "", name: "Notes").takesScreenshots)
+        XCTAssertFalse(FeatureImportOperation.connect(name: "Notes").takesScreenshots)
+    }
+
+    func testLaunchScreenshotsComeFromTheRunsPrereleaseWithTheListFirst() async throws {
+        let release = #"{"assets": [{"name": "notes.jpg", "url": "https://api.github.com/repos/owner/host/releases/assets/1"},"#
+            + #" {"name": "home.jpg", "url": "https://api.github.com/repos/owner/host/releases/assets/2"},"#
+            + #" {"name": "counter.jpg", "url": "https://api.github.com/repos/owner/host/releases/assets/3"},"#
+            + #" {"name": "notes.txt", "url": "https://api.github.com/repos/owner/host/releases/assets/4"}]}"#
+        let transport = StubTransport([
+            ("/releases/tags/launch-7", .init(status: 200, body: release)),
+            ("/releases/assets/1", .init(status: 302, headers: ["Location": "https://objects.example/1"])),
+            ("objects.example/1", .init(status: 200, body: "N")),
+            ("/releases/assets/2", .init(status: 302, headers: ["Location": "https://objects.example/2"])),
+            ("objects.example/2", .init(status: 200, body: "H")),
+            ("/releases/assets/3", .init(status: 302, headers: ["Location": "https://objects.example/3"])),
+            ("objects.example/3", .init(status: 200, body: "C")),
+        ])
+        let screenshots = try await client(transport).launchScreenshots(runID: 7)
+        XCTAssertEqual(screenshots, [LaunchScreenshot(name: "home", data: Data("H".utf8)),
+                                     LaunchScreenshot(name: "counter", data: Data("C".utf8)),
+                                     LaunchScreenshot(name: "notes", data: Data("N".utf8))])
+        XCTAssertTrue(transport.requests.filter { $0.request.url!.host == "objects.example" }
+            .allSatisfy { $0.request.value(forHTTPHeaderField: "Authorization") == nil })
+        let none = try await client(StubTransport([("/releases/tags/launch-7", .init(status: 404))])).launchScreenshots(runID: 7)
+        XCTAssertEqual(none, [])
+    }
+
     func testDraftsAreTheModulesWhoseManifestSaysDraft() async throws {
         let transport = StubTransport([
             ("/contents/Modules/Notes/JibunKitFeature.json", .init(status: 200, body: #"{"schema": 1, "id": "notes", "draft": true}"#)),

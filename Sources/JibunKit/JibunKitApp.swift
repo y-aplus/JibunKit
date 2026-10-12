@@ -123,6 +123,16 @@ private struct MiniAppSceneRoot: View {
                 }
                 navigation.open(candidate)
             }
+            #if DEBUG
+            // Tools/smoke-test.py opens one mini app per launch; a URL would
+            // first ask whether to open JibunKit.
+            .task {
+                let arguments = CommandLine.arguments
+                if let index = arguments.firstIndex(of: "-JibunKitOpenMiniApp"), index + 1 < arguments.count {
+                    navigation.open(MiniAppID(arguments[index + 1]))
+                }
+            }
+            #endif
     }
 }
 

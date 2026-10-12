@@ -114,6 +114,19 @@ public struct DraftFeature: Codable, Equatable, Identifiable, Sendable {
     public var id: String { name }
 }
 
+/// One screenshot of the Launch check: `home` for the mini app list, otherwise a mini app ID.
+public struct LaunchScreenshot: Equatable, Identifiable, Sendable {
+    public var name: String
+    public var data: Data
+
+    public init(name: String, data: Data) {
+        self.name = name
+        self.data = data
+    }
+
+    public var id: String { name }
+}
+
 /// One run of a workflow that changes the Features of the branch or reports on
 /// another repository: Import Feature, Check Compatibility, Migrate App or
 /// Connect Draft.
@@ -130,6 +143,9 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
     case migrate(repository: String, ref: String, path: String, name: String)
     /// Connects a draft once it compiles and `check` reports nothing for it.
     case connect(name: String)
+    /// Opens every mini app in the iOS Simulator and takes screenshots; with a
+    /// draft name, connects that draft for the check only. Commits nothing.
+    case launch(draft: String)
 
     public var workflow: String {
         switch self {
@@ -137,6 +153,15 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
         case .inspect: GitHubBuildClient.checkWorkflow
         case .migrate: GitHubBuildClient.migrateWorkflow
         case .connect: GitHubBuildClient.connectWorkflow
+        case .launch: GitHubBuildClient.launchWorkflow
+        }
+    }
+
+    /// Whether the run may attach screenshots to a `launch-RUN_ID` prerelease.
+    var takesScreenshots: Bool {
+        switch self {
+        case .migrate, .launch: true
+        case .add, .update, .remove, .inspect, .connect: false
         }
     }
 
@@ -147,6 +172,7 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
         case .inspect: "Check Compatibility"
         case .migrate: "Migrate App"
         case .connect: "Connect Draft"
+        case .launch: "Launch check"
         }
     }
 
@@ -164,6 +190,9 @@ public enum FeatureImportOperation: Codable, Equatable, Sendable {
             ["repository": repository, "ref": ref, "path": path, "name": name]
         case let .connect(name):
             ["name": name]
+        case let .launch(draft):
+            // A draft is opened even while `check` still reports findings; the report lists them.
+            draft.isEmpty ? [:] : ["draft": draft, "ignore_check": "true"]
         }
     }
 }
@@ -214,6 +243,7 @@ public struct GitHubBuildClient: Sendable {
     public static let checkWorkflow = "check-compatibility.yml"
     public static let migrateWorkflow = "migrate-app.yml"
     public static let connectWorkflow = "connect-draft.yml"
+    public static let launchWorkflow = "smoke-test.yml"
     public static let ipaName = "JibunKit.ipa"
     public static let importsFile = "JibunKitImports.json"
     /// The Feature workflows print the tool's output between these lines.
@@ -284,6 +314,30 @@ public struct GitHubBuildClient: Sendable {
         let data = try await downloadFromStorage(authorized(URLRequest(url: asset.url), accept: "application/octet-stream"))
         guard !data.isEmpty else { throw BuildClientError.missingIPA }
         try data.write(to: destination, options: .atomic)
+    }
+
+    /// The screenshots that the Launch check attached to the run's `launch-RUN_ID`
+    /// prerelease, in the order of the report; none when it has no such prerelease.
+    public func launchScreenshots(runID: Int) async throws -> [LaunchScreenshot] {
+        struct Release: Decodable {
+            struct Asset: Decodable { let name: String; let url: URL }
+            let assets: [Asset]
+        }
+        let release: Release
+        do {
+            release = try decode(Release.self, from: try await send(path: "releases/tags/launch-\(runID)"))
+        } catch BuildClientError.notFound {
+            return []
+        }
+        var screenshots: [LaunchScreenshot] = []
+        for asset in release.assets where asset.name.hasSuffix(".jpg") {
+            let data = try await downloadFromStorage(authorized(URLRequest(url: asset.url), accept: "application/octet-stream"))
+            screenshots.append(LaunchScreenshot(name: String(asset.name.dropLast(4)), data: data))
+        }
+        // The mini app list first, then the mini apps by ID.
+        return screenshots.sorted { a, b in
+            (a.name == "home") != (b.name == "home") ? a.name == "home" : a.name < b.name
+        }
     }
 
     /// The Features recorded in the branch's JibunKitImports.json; none when it has no such file.

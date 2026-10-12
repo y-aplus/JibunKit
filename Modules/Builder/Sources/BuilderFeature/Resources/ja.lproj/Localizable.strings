@@ -50,7 +50,7 @@
 "Update" = "更新";
 "Import a Feature" = "Featureを取り込む";
 "Features from Other Repositories" = "他のリポジトリのFeature";
-"GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change." = "GitHubがFeatureをModulesにコピーし、下のブランチにコミットします。そのコードが動くのはビルドするときだけです。変更を反映するには、そのあとIPAをビルドしてください。";
+"GitHub copies the Feature into Modules and commits it to the branch below. Its code runs only when you build; build the IPA afterwards to include the change. The Simulator check opens each mini app of the branch and shows a screenshot of each, so a mini app that stops at launch is found before you install." = "GitHubがFeatureをModulesにコピーし、下のブランチにコミットします。そのコードが動くのはビルドするときだけです。変更を反映するには、そのあとIPAをビルドしてください。シミュレーターでのチェックは、ブランチの各ミニアプリを開いてスクリーンショットを撮るので、起動直後に止まるミニアプリをインストール前に見つけられます。";
 "%@: waiting for GitHub" = "%@：GitHubの開始を待っています";
 "%@: running" = "%@：実行中";
 "%@: done" = "%@：完了";
@@ -85,3 +85,9 @@
 "Migrate the App" = "アプリを移行";
 "Copies an ordinary iOS app into Modules as a draft, makes the mechanical changes and compiles it. A draft does not change your builds; connect it once it compiles. Needs a name under Modules." = "普通のiOSアプリを下書きとしてModulesにコピーし、決まった書き換えをしてコンパイルします。下書きはビルドに影響しません。コンパイルが通ったら「つなぐ」を使ってください。Modules内の名前が必要です。";
 "Reads any repository, such as an ordinary iOS app, and reports what it needs to become a JibunKit Feature. Nothing is committed." = "普通のiOSアプリなど、どのリポジトリでも読み込み、JibunKitのFeatureにするには何が必要かをレポートにまとめます。何もコミットしません。";
+"Requested. GitHub builds the app for the iOS Simulator and opens each mini app; this takes about 15 minutes." = "依頼しました。GitHubがiOSシミュレーター用にアプリをビルドし、ミニアプリを1つずつ開きます。15分ほどかかります。";
+"Open in the Simulator" = "シミュレーターで開く";
+"Open Every Mini App in the Simulator" = "全ミニアプリをシミュレーターで開く";
+"Mini app list" = "ミニアプリ一覧";
+"Simulator check" = "シミュレーターでのチェック";
+"Simulator check of %@" = "%@のシミュレーターでのチェック";

@@ -490,6 +490,8 @@ jobs:
           python3 Tools/check-localization.py
           python3 -m unittest discover -s Tools/tests -p test_build_ipa.py
           python3 -m unittest discover -s Tools/tests -p test_compile_check.py
+          python3 -m unittest discover -s Tools/tests -p test_smoke_test.py
+          python3 -m unittest discover -s Tools/tests -p test_symbolicate_crash.py
 
       - name: Test shared feature logic
         timeout-minutes: 10

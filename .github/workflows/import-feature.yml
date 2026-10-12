@@ -79,8 +79,9 @@ jobs:
               echo "Unknown operation: $OPERATION" >&2
               exit 2 ;;
           esac
-          python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1
-          status=$?
+          # GitHub runs `shell: bash` with -e; keep going to show the report of a failure.
+          status=0
+          python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1 || status=$?
           # The Build mini app shows the lines between these two markers.
           echo "=== JibunKit import report ==="
           cat "$RUNNER_TEMP/report.txt"

@@ -814,14 +814,20 @@ def remove_feature(root, name):
 
 def sync_after_import(root, name):
     """Connect the imported Feature; a collision with another Feature is reported, not undone."""
+    # Import Feature (import-feature.yml) commits only after success and says so itself.
+    in_workflow = bool(os.environ.get("GITHUB_ACTIONS"))
     try:
-        sync(root)
+        changed = sync(root)
     except FeatureError as error:
         sys.stdout.flush()
-        print(f"\nsync stopped:\n{error}\nFix this in Modules/{name} (an update keeps your changes) and run sync, "
-              f"or undo the import with `remove {name}`.", file=sys.stderr)
+        print(f"\nsync stopped:\n{error}", file=sys.stderr)
+        if not in_workflow:
+            print(f"Fix this in Modules/{name} (an update keeps your changes) and run sync, "
+                  f"or undo the import with `remove {name}`.", file=sys.stderr)
         return False
-    print(f"\nUpdated {HELPER.as_posix()}. Review the changes, commit them, then build.")
+    print(f"\n{HELPER.as_posix()} {'updated' if changed else 'is up to date'}.")
+    if not in_workflow:
+        print("Review the changes, commit them, then build.")
     return True
 
 

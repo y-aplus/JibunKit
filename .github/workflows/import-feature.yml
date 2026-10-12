@@ -84,6 +84,8 @@ jobs:
           python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/report.txt" 2>&1 || status=$?
           if [[ "$status" != 0 ]]; then
             printf '\nNothing was committed to %s. Fix it on a computer with the same command.\n' "$GITHUB_REF_NAME" >> "$RUNNER_TEMP/report.txt"
+          else
+            printf 'This run commits the changes to %s; build the IPA to include them.\n' "$GITHUB_REF_NAME" >> "$RUNNER_TEMP/report.txt"
           fi
           # The Build mini app shows the lines between these two markers.
           echo "=== JibunKit import report ==="

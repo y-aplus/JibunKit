@@ -1,0 +1,231 @@
+name: Launch check
+
+# Opens every mini app in the iOS Simulator and takes a screenshot of each,
+# so a Feature that stops at launch, or shows an empty screen, is found
+# before the IPA goes onto a device. It builds the app in Debug for the
+# Simulator and runs Tools/smoke-test.py; a separate job attaches the
+# screenshots to a `launch-RUN_ID` prerelease that the report links to.
+# It proves only that each first screen opens in the Simulator.
+#   gh workflow run smoke-test.yml --ref <branch> [-f draft=Notes]
+# With `draft`, it first connects that draft Feature in this run only, as the
+# Compile check does. `report_only` passes even when something crashed; the
+# Migrate App workflow uses it. The report is printed between the
+# "=== JibunKit import report ===" lines that the Build mini app shows.
+on:
+  workflow_dispatch:
+    inputs:
+      draft:
+        description: Draft Feature to connect before the check (a directory name under Modules/)
+        default: ""
+      ignore_check:
+        description: Connect the draft even when check reports findings
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to check (empty for the commit that started the workflow)
+        type: string
+        default: ""
+      draft:
+        type: string
+        default: ""
+      ignore_check:
+        type: boolean
+        default: false
+      report_only:
+        description: Pass even when the code does not compile or a mini app crashed
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  launch:
+    name: Xcode 26.6 (iOS Simulator)
+    runs-on: macos-26
+    timeout-minutes: 30
+    # The code built and run here may come from another repository; plugins
+    # and macros run during the build, so this job has read access only.
+    permissions:
+      contents: read
+    env:
+      TUIST_VERSION: "4.207.0"
+      TUIST_SHA256: 583fec75cc187bb84a30509ba5afe7455607547be0917fdcf5899a7ef338305e
+      DRAFT: ${{ inputs.draft }}
+      IGNORE_CHECK: ${{ inputs.ignore_check }}
+      REPORT_ONLY: ${{ inputs.report_only }}
+      SCREENSHOT_URL: https://github.com/${{ github.repository }}/releases/download/launch-${{ github.run_id }}
+    outputs:
+      screenshots: ${{ steps.launch.outputs.screenshots }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Connect the draft
+        id: check
+        if: inputs.draft != ''
+        shell: bash
+        run: |
+          set -uo pipefail
+          args=(connect "$DRAFT")
+          [[ "$IGNORE_CHECK" != "true" ]] || args+=(--ignore-check)
+          if ! python3 Tools/jibunkit-feature.py "${args[@]}" > "$RUNNER_TEMP/check.txt" 2>&1; then
+            cat "$RUNNER_TEMP/check.txt"
+            echo "=== JibunKit import report ==="
+            echo "Modules/$DRAFT could not be connected, so it was not opened:"
+            cat "$RUNNER_TEMP/check.txt"
+            echo "=== end of report ==="
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            [[ "$REPORT_ONLY" == "true" ]] && exit 0
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/check.txt"
+
+      - name: Select Xcode 26.6
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          test "$(xcodebuild -version | sed -n '1p')" = "Xcode 26.6"
+
+      - name: Install pinned Tuist
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output "$RUNNER_TEMP/tuist.zip" \
+            "https://github.com/tuist/tuist/releases/download/$TUIST_VERSION/tuist.zip"
+          echo "$TUIST_SHA256  $RUNNER_TEMP/tuist.zip" | shasum --algorithm 256 --check
+          mkdir -p "$RUNNER_TEMP/tuist"
+          ditto -x -k "$RUNNER_TEMP/tuist.zip" "$RUNNER_TEMP/tuist"
+          echo "$RUNNER_TEMP/tuist" >> "$GITHUB_PATH"
+
+      - name: Boot a Simulator
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available --json > "$RUNNER_TEMP/simulators.json"
+          sim_id="$(python3 - "$RUNNER_TEMP/simulators.json" <<'PY'
+          import json, sys
+          devices = json.load(open(sys.argv[1]))['devices']
+          runtimes = [runtime for runtime in devices if 'iOS-26' in runtime]
+          if not runtimes:
+              raise SystemExit('No iOS 26 simulator runtime is installed')
+          runtime = max(runtimes, key=lambda value: tuple(map(int, value.split('iOS-')[1].split('-'))))
+          candidates = [d for d in devices[runtime] if d['name'].startswith('iPhone') and d['isAvailable']]
+          if not candidates:
+              raise SystemExit('No available iOS 26 iPhone simulator')
+          candidates.sort(key=lambda d: (d['name'] != 'iPhone 16e', d['name']))
+          print(candidates[0]['udid'])
+          PY
+          )"
+          echo "SIMULATOR_ID=$sim_id" >> "$GITHUB_ENV"
+          xcrun simctl boot "$sim_id"
+
+      - name: Build, open each mini app and take screenshots
+        id: launch
+        if: steps.check.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -uo pipefail
+          status=0
+          {
+            tuist generate --no-open && xcodebuild build \
+              -workspace JibunKit.xcworkspace \
+              -scheme JibunKit-App \
+              -configuration Debug \
+              -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+              -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+              CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual
+          } > "$RUNNER_TEMP/build.log" 2>&1 || status=$?
+          shots="$RUNNER_TEMP/screenshots"
+          mkdir -p "$shots"
+          {
+            if [[ -n "$DRAFT" ]]; then
+              echo "Launch check of the draft Modules/$DRAFT, connected in this run only:"
+              grep -vE '^(Draft, not connected|[0-9]+ finding)' "$RUNNER_TEMP/check.txt" || true
+            fi
+            if [[ "$status" -ne 0 ]]; then
+              errors="$(grep -E '^/.+:[0-9]+:[0-9]+: error: ' "$RUNNER_TEMP/build.log" | sed "s|^$GITHUB_WORKSPACE/||" | sort -u || true)"
+              if [[ -n "$errors" ]]; then
+                echo "The app did not compile for the Simulator, so nothing was opened. Compile errors ($(echo "$errors" | wc -l | tr -d ' ')):"
+                echo "$errors" | head -100
+              else
+                echo "The build failed before compiling:"
+                tail -40 "$RUNNER_TEMP/build.log"
+              fi
+            else
+              xcrun simctl bootstatus "$SIMULATOR_ID" -b > /dev/null
+              python3 Tools/smoke-test.py --simulator "$SIMULATOR_ID" \
+                --app "$RUNNER_TEMP/DerivedData/Build/Products/Debug-iphonesimulator/JibunKit_App.app" \
+                --output "$shots" --screenshot-url "$SCREENSHOT_URL" > "$RUNNER_TEMP/launch.txt" 2>&1 || status=$?
+              if [[ -s "$shots/report.txt" ]]; then cat "$shots/report.txt"; else cat "$RUNNER_TEMP/launch.txt"; fi
+            fi
+          } > "$RUNNER_TEMP/report.txt"
+          cat "$RUNNER_TEMP/launch.txt" 2>/dev/null || true
+          # The Build mini app shows the lines between these two markers.
+          echo "=== JibunKit import report ==="
+          cat "$RUNNER_TEMP/report.txt"
+          echo "=== end of report ==="
+          { echo '```'; cat "$RUNNER_TEMP/report.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if compgen -G "$shots/*.jpg" > /dev/null; then
+            echo "screenshots=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ "$REPORT_ONLY" == "true" ]]; then
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Upload screenshots
+        if: always() && steps.launch.outputs.screenshots == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: launch-screenshots
+          path: ${{ runner.temp }}/screenshots/*.jpg
+          retention-days: 1
+
+  publish:
+    name: Publish screenshots
+    needs: launch
+    if: always() && needs.launch.outputs.screenshots == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Only this job can write, and it runs no code from the checkout.
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: launch-${{ github.run_id }}
+    steps:
+      - name: Create the prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$GITHUB_RUN_ID" --name launch-screenshots --dir screenshots
+          for file in screenshots/*; do
+            [[ "$(basename "$file")" =~ ^[A-Za-z0-9._-]+\.jpg$ ]] || { echo "Unexpected file $file" >&2; exit 1; }
+            [[ "$(file --brief --mime-type "$file")" == image/jpeg ]] || { echo "$file is not a JPEG" >&2; exit 1; }
+          done
+          gh release create "$TAG" screenshots/*.jpg \
+            --prerelease --target "$GITHUB_SHA" --title "$TAG" \
+            --notes "Launch check screenshots from run $GITHUB_RUN_ID."
+
+      - name: Remove older launch prereleases
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Keep the five newest launch-RUN_ID prereleases; other releases are never touched.
+          gh release list --limit 200 --json tagName,isPrerelease,createdAt \
+            --jq '[.[] | select(.isPrerelease and (.tagName | test("^launch-[0-9]+$")))] | sort_by(.createdAt) | reverse | .[5:] | .[].tagName' |
+          while read -r old; do
+            gh release delete "$old" --yes --cleanup-tag || echo "::warning::Could not delete the prerelease $old"
+          done

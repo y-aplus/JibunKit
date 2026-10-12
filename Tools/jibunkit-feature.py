@@ -889,7 +889,7 @@ def main(argv=None):
         elif args.command == "add":
             module, commit = add_feature(root, args.repository, args.ref, args.path, args.name)
             files = [path for path in module.rglob("*") if path.is_file()]
-            print(f"Copied {args.repository} {args.path or '(root)'} at {commit} ({args.ref}) into "
+            print(f"Copied {load_imports(root)[module.name]['repository']} {args.path or '(root)'} at {commit} ({args.ref}) into "
                   f"Modules/{module.name}: {len(files)} files, {sum(path.stat().st_size for path in files) // 1024} KB")
             print_report(describe(root, module))
             return 0 if sync_after_import(root, module.name) else 1

@@ -20,7 +20,8 @@
 "Saved" = "保存しました";
 "Remove the Token" = "トークンを削除";
 "Removed the token" = "トークンを削除しました";
-"Use a fine-grained token for this repository only, with read and write access to Actions and read access to Contents. The repository needs the Build IPA (quick) workflow." = "このリポジトリだけを対象にしたfine-grainedトークンを使い、Actionsに読み書き、Contentsに読み取りの権限を付けてください。リポジトリには「Build IPA (quick)」ワークフローが必要です。";
+"The token needs read and write access to Actions and read access to Contents. GitHub fills these in from the button; under Repository access, choose only this repository. The repository needs the Build IPA (quick) workflow." = "トークンにはActionsの読み書きとContentsの読み取りの権限が必要です。ボタンから開くとGitHubがこれらを入力済みにします。Repository accessではこのリポジトリだけを選んでください。リポジトリには「Build IPA (quick)」ワークフローが必要です。";
+"Create a Token on GitHub" = "GitHubでトークンを作成";
 "Enter the repository as OWNER/REPO." = "リポジトリはOWNER/REPOの形で入力してください。";
 "Requested a build. You can close the app; it usually takes a few minutes." = "ビルドを依頼しました。アプリを閉じても大丈夫です。通常は数分で終わります。";
 "Notify When the Build Is Likely Done?" = "ビルドが終わる頃に通知しますか？";

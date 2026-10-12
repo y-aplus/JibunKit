@@ -20,7 +20,8 @@
 "Saved" = "Saved";
 "Remove the Token" = "Remove the Token";
 "Removed the token" = "Removed the token";
-"Use a fine-grained token for this repository only, with read and write access to Actions and read access to Contents. The repository needs the Build IPA (quick) workflow." = "Use a fine-grained token for this repository only, with read and write access to Actions and read access to Contents. The repository needs the Build IPA (quick) workflow.";
+"The token needs read and write access to Actions and read access to Contents. GitHub fills these in from the button; under Repository access, choose only this repository. The repository needs the Build IPA (quick) workflow." = "The token needs read and write access to Actions and read access to Contents. GitHub fills these in from the button; under Repository access, choose only this repository. The repository needs the Build IPA (quick) workflow.";
+"Create a Token on GitHub" = "Create a Token on GitHub";
 "Enter the repository as OWNER/REPO." = "Enter the repository as OWNER/REPO.";
 "Requested a build. You can close the app; it usually takes a few minutes." = "Requested a build. You can close the app; it usually takes a few minutes.";
 "Notify When the Build Is Likely Done?" = "Notify When the Build Is Likely Done?";

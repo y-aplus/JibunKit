@@ -4,11 +4,11 @@ A mini app that builds this JibunKit's IPA from the phone. It starts the reposit
 
 ## Set up
 
-1. On GitHub, create a fine-grained personal access token (Settings → Developer settings → Personal access tokens → Fine-grained tokens):
-   - Repository access: **Only select repositories**, the repository JibunKit is built from.
-   - Permissions: **Actions: Read and write**, **Contents: Read-only**.
-   - Choose an expiration you are comfortable with; enter a new token when it expires.
-2. In JibunKit, open **Build**, enter the repository as `OWNER/REPO`, the branch (default `main`) and the token, and tap **Save**.
+1. In JibunKit, open **Build** and enter the repository your JibunKit is built from as `OWNER/REPO` (your own derived repository, not upstream JibunKit unless you build from it) and the branch (default `main`).
+2. Tap **Create a Token on GitHub**. It opens GitHub's form for a new fine-grained personal access token with your account as the resource owner, **Actions: Read and write** and **Contents: Read-only** filled in, using GitHub's [URL parameters](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens). GitHub cannot pre-select a repository: under **Repository access**, choose **Only select repositories** and that repository. Adjust the expiration if you like, generate the token and copy it.
+3. Paste the token into Build and tap **Save**.
+
+To create the token on another device, open `https://github.com/settings/personal-access-tokens/new?name=JibunKit+Build&actions=write&contents=read` and choose the same settings.
 
 The token is kept in the Keychain under this Feature's own service; the repository and the last build in the host's shared defaults under its own key. Deleting the Feature's data in **Manage Mini Apps** removes both, the downloaded IPA and its notification.
 

@@ -300,11 +300,14 @@ public struct BuilderRootView: View {
             Button { model.saveSettings() } label: { Text("Save", bundle: .module) }
             if model.hasToken {
                 Button(role: .destructive) { model.removeToken() } label: { Text("Remove the Token", bundle: .module) }
+            } else if let repository = BuildRepository(slug: model.slug, branch: model.branch) {
+                Link(destination: repository.tokenCreationURL) { Text("Create a Token on GitHub", bundle: .module) }
+                    .accessibilityIdentifier("builder.createToken")
             }
         } header: {
             Text("Repository", bundle: .module)
         } footer: {
-            Text("Use a fine-grained token for this repository only, with read and write access to Actions and read access to Contents. The repository needs the Build IPA (quick) workflow.",
+            Text("The token needs read and write access to Actions and read access to Contents. GitHub fills these in from the button; under Repository access, choose only this repository. The repository needs the Build IPA (quick) workflow.",
                  bundle: .module)
         }
     }

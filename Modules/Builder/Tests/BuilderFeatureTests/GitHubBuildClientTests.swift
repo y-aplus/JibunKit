@@ -54,6 +54,18 @@ final class GitHubBuildClientTests: XCTestCase {
         XCTAssertNil(BuildRepository(slug: "owner/host", branch: "a..b"))
     }
 
+    func testTokenCreationURLNamesTheRepositoryOwnerAndPermissions() throws {
+        let url = BuildRepository(owner: "someone", name: "my-host", branch: "main").tokenCreationURL
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.host, "github.com")
+        XCTAssertEqual(components.path, "/settings/personal-access-tokens/new")
+        let items = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        XCTAssertEqual(items["target_name"], "someone")
+        XCTAssertEqual(items["actions"], "write")
+        XCTAssertEqual(items["contents"], "read")
+        XCTAssertTrue(items["description"]?.contains("someone/my-host") ?? false)
+    }
+
     func testRequestBuildDispatchesThePublishingWorkflow() async throws {
         let transport = StubTransport([("/dispatches", .init(status: 204))])
         try await client(transport).requestBuild()

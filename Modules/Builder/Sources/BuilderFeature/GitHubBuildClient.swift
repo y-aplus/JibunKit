@@ -32,6 +32,23 @@ public struct BuildRepository: Codable, Equatable, Sendable {
 
     public var slug: String { "\(owner)/\(name)" }
 
+    /// GitHub's form for a new fine-grained token with this owner, the name and
+    /// the permissions Builder needs filled in. GitHub cannot pre-select the
+    /// repository; the user chooses it under Repository access.
+    /// https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens
+    public var tokenCreationURL: URL {
+        var components = URLComponents(string: "https://github.com/settings/personal-access-tokens/new")!
+        components.queryItems = [
+            URLQueryItem(name: "name", value: "JibunKit Build"),
+            URLQueryItem(name: "description", value: "Starts the Build IPA (quick) workflow of \(slug) from JibunKit"),
+            URLQueryItem(name: "target_name", value: owner),
+            URLQueryItem(name: "expires_in", value: "90"),
+            URLQueryItem(name: "actions", value: "write"),
+            URLQueryItem(name: "contents", value: "read"),
+        ]
+        return components.url!
+    }
+
     public var isValid: Bool {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_."))
         return [owner, name].allSatisfy { !$0.isEmpty && $0.unicodeScalars.allSatisfy(allowed.contains) }

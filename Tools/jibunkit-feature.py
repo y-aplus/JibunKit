@@ -39,6 +39,7 @@ adds the packages, Integration sources, registry entries, widgets and build
 requirements. Hand-registered Features keep working unchanged.
 """
 import argparse
+import base64
 import json
 import os
 from pathlib import Path
@@ -528,9 +529,9 @@ def save_imports(root, features):
     path.write_bytes((text + "\n").encode("utf-8"))
 
 
-def git(arguments, cwd=None, data=None):
+def git(arguments, cwd=None, data=None, env=None):
     result = subprocess.run(["git", "-c", "protocol.ext.allow=never", *arguments], cwd=cwd, input=data,
-                            capture_output=True)
+                            capture_output=True, env=env)
     if result.returncode:
         message = result.stderr.decode("utf-8", "replace").strip()
         raise FeatureError(f"git {' '.join(arguments)} failed: {message}")
@@ -544,6 +545,29 @@ def source_path(value):
     return path
 
 
+# A token that can read other repositories on GitHub, for private ones. The
+# workflows pass the repository secret of the same name; on a computer, Git's
+# own credentials are used instead.
+READ_TOKEN = "JIBUNKIT_READ_TOKEN"
+NOT_READABLE = ("could not read Username", "Authentication failed", "Repository not found",
+                "terminal prompts disabled", "Invalid username or password")
+
+
+def fetch_environment(repository, environ=None):
+    """The environment for fetching `repository`: never prompt, and send READ_TOKEN to github.com.
+    The token goes in an HTTP header set through GIT_CONFIG_*, so it is not on the command line."""
+    environ = dict(os.environ if environ is None else environ)
+    environ["GIT_TERMINAL_PROMPT"] = "0"
+    token = environ.pop(READ_TOKEN, "").strip()
+    if token and repository.startswith("https://github.com/"):
+        index = int(environ.get("GIT_CONFIG_COUNT") or 0)
+        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        environ.update({"GIT_CONFIG_COUNT": str(index + 1),
+                        f"GIT_CONFIG_KEY_{index}": "http.https://github.com/.extraheader",
+                        f"GIT_CONFIG_VALUE_{index}": f"AUTHORIZATION: basic {basic}"})
+    return environ
+
+
 def fetch(work, repository, ref):
     """Fetch one commit into the scratch repository `work` and return its hash."""
     for value, what in ((repository, "repository"), (ref, "ref")):
@@ -551,9 +575,19 @@ def fetch(work, repository, ref):
                 f"Unsupported {what}: {value!r}")
     if not (work / ".git").exists():
         git(["init", "-q", str(work)])
+    environment = fetch_environment(repository)
     try:
-        git(["fetch", "-q", "--depth", "1", "--no-tags", "--", repository, ref], cwd=work)
+        git(["fetch", "-q", "--depth", "1", "--no-tags", "--", repository, ref], cwd=work, env=environment)
     except FeatureError as error:
+        if any(text in str(error) for text in NOT_READABLE):
+            if environment.get("GIT_CONFIG_COUNT") and READ_TOKEN in os.environ:
+                hint = (f"The {READ_TOKEN} token could not read it: give the token read access to its "
+                        "contents, or check the repository URL.")
+            else:
+                hint = ("The repository is private or does not exist. To read a private repository on GitHub, "
+                        f"add a token that can read it as the repository secret {READ_TOKEN} "
+                        "(see docs/mini-apps.md); on a computer, sign in to Git.")
+            raise FeatureError(f"Could not read {repository}.\n{hint}") from None
         raise FeatureError(f"{error}\nCheck the repository URL, and use a branch, a tag or a full 40-character "
                            "commit hash for --ref.") from None
     return git(["rev-parse", "FETCH_HEAD^{commit}"], cwd=work).decode().strip()

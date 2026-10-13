@@ -45,6 +45,9 @@ jobs:
 
       - name: Run the tool
         shell: bash
+        env:
+          # Optional: lets the tool read private repositories (docs/build.md).
+          JIBUNKIT_READ_TOKEN: ${{ secrets.JIBUNKIT_READ_TOKEN }}
         run: |
           set -uo pipefail
           args=(inspect "$REPOSITORY")

@@ -212,6 +212,15 @@ python3 Tools/jibunkit-feature.py update Notes --ref v1.1 # follow another ref f
 
 The **Import Feature** workflow (`.github/workflows/import-feature.yml`) runs the same commands on GitHub and commits the result to the branch it runs on, only when the command succeeds. The [Build](../Modules/Builder/README.md#import-features-from-other-repositories) mini app starts it from the phone.
 
+### Private repositories
+
+On a computer, the tool reads a private repository with your own Git sign-in. On GitHub, the Import Feature, Check Compatibility and Migrate App workflows can read only public repositories unless the repository has an Actions secret named `JIBUNKIT_READ_TOKEN`:
+
+1. On GitHub, create a fine-grained personal access token (Settings > Developer settings > Personal access tokens > Fine-grained tokens). Under **Repository access**, choose the private repositories to read; under **Permissions**, set **Contents** to **Read-only**.
+2. In the JibunKit repository, open Settings > Secrets and variables > Actions and add a repository secret named `JIBUNKIT_READ_TOKEN` with the token. From a computer, `gh secret set JIBUNKIT_READ_TOKEN` does the same.
+
+Only the step that runs `jibunkit-feature.py` receives the token, and only for `https://github.com/` repositories. It sends it as an HTTP header to fetch, never runs the fetched code, and the Simulator check that builds a migrated app does not receive it. Without the secret, a private repository stops with "The repository is private or does not exist".
+
 ## Moving an existing app
 
 Moving an existing Xcode app into a feature means removing its app shell. To see first how much of that an app needs, [check its repository](#checking-a-repository-first). Move the code into a package as described above, without the `@main` type, `Info.plist`, entitlements, app icon, and launch screen. Then move each responsibility the shell had:

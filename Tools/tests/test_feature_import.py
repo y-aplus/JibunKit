@@ -20,6 +20,25 @@ def git(cwd, *arguments):
     return result.stdout.decode().strip()
 
 
+class FetchEnvironmentTests(unittest.TestCase):
+    def test_token_goes_to_github_only(self):
+        environment = MODULE.fetch_environment('https://github.com/someone/app',
+                                               {'JIBUNKIT_READ_TOKEN': 'secret', 'GIT_CONFIG_COUNT': '1'})
+        self.assertEqual(environment['GIT_TERMINAL_PROMPT'], '0')
+        self.assertNotIn('JIBUNKIT_READ_TOKEN', environment)
+        self.assertEqual(environment['GIT_CONFIG_COUNT'], '2')
+        self.assertEqual(environment['GIT_CONFIG_KEY_1'], 'http.https://github.com/.extraheader')
+        self.assertEqual(environment['GIT_CONFIG_VALUE_1'], 'AUTHORIZATION: basic eC1hY2Nlc3MtdG9rZW46c2VjcmV0')
+        other = MODULE.fetch_environment('https://example.com/app.git', {'JIBUNKIT_READ_TOKEN': 'secret'})
+        self.assertNotIn('GIT_CONFIG_COUNT', other)
+        self.assertNotIn('JIBUNKIT_READ_TOKEN', other)
+
+    def test_unreadable_repository_says_why(self):
+        with tempfile.TemporaryDirectory() as work, self.assertRaises(MODULE.FeatureError) as raised:
+            MODULE.fetch(Path(work), str(Path(work) / 'missing'), 'HEAD')
+        self.assertIn('Check the repository URL', str(raised.exception))
+
+
 class FeatureImportTests(unittest.TestCase):
     """A host and an upstream repository with a Feature under Features/Notes."""
 

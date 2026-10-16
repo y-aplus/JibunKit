@@ -2641,11 +2641,11 @@ def main(argv=None):
             print_report(describe(root, module))
             return 0 if sync_after_import(root, module.name) else 1
         elif args.command == "update":
-            old, new, changed, conflicts, before, after = update_feature(root, args.name, args.ref, args.path)
-            if old == new and not changed:
-                print(f"{args.name} is already at {new}.")
+            old_commit, new_commit, changed, conflicts, before, after = update_feature(root, args.name, args.ref, args.path)
+            if old_commit == new_commit and not changed:
+                print(f"{args.name} is already at {new_commit}.")
             else:
-                print(f"{args.name}: {old[:12]} -> {new[:12]}, {len(changed)} file(s) changed")
+                print(f"{args.name}: {old_commit[:12]} -> {new_commit[:12]}, {len(changed)} file(s) changed")
                 print_changes(before, after)
             sys.stdout.flush()
             for name in conflicts:

@@ -91,3 +91,15 @@
 "Mini app list" = "Mini app list";
 "Simulator check" = "Simulator check";
 "Simulator check of %@" = "Simulator check of %@";
+
+/* Install with SideStore through a shortcut */
+"Install with SideStore" = "Install with SideStore";
+"Install JibunKit" = "Install JibunKit";
+"Set Up Install with SideStore" = "Set Up Install with SideStore";
+"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action." = "In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action.";
+"Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it." = "Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it.";
+"Enter the repository and a GitHub token in Build first." = "Enter the repository and a GitHub token in Build first.";
+"No build has been requested in Build yet." = "No build has been requested in Build yet.";
+"The build has not finished yet. Try again in a few minutes." = "The build has not finished yet. Try again in a few minutes.";
+"The last build failed. Open Build to see why." = "The last build failed. Open Build to see why.";
+"Build is turned off or removed. Turn it on again in Manage Mini Apps." = "Build is turned off or removed. Turn it on again in Manage Mini Apps.";

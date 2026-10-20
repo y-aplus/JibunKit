@@ -1,6 +1,6 @@
 # Build
 
-A mini app that builds this JibunKit's IPA from the phone. It starts the repository's **Build IPA (quick)** workflow (`.github/workflows/quick-ipa.yml`) through the GitHub API, follows the run, downloads the IPA and hands it to SideStore or AltStore through the share sheet. It never opens GitHub in a browser.
+A mini app that builds this JibunKit's IPA from the phone. It starts the repository's **Build IPA (quick)** workflow (`.github/workflows/quick-ipa.yml`) through the GitHub API, follows the run and has SideStore install the IPA through a shortcut, or hands the IPA to another app through the share sheet. It never opens GitHub in a browser.
 
 ## Set up
 
@@ -14,7 +14,17 @@ The token is kept in the Keychain under this Feature's own service; the reposito
 
 ## Use
 
-Tap **Build the IPA**. The app may be closed while GitHub builds, which usually takes a few minutes. If you allow it, a notification a few minutes later reminds you to come back; it is sent at the expected time, not when GitHub finishes, so the build may still be running. When the run has finished, tap **Download the IPA**, then **Share the IPA** and choose SideStore or AltStore in the share sheet. In the 2026-10-12 device check SideStore was listed but tapping it did nothing; choosing **Save to Files** and adding the IPA with SideStore's **+** button installed it.
+Tap **Build the IPA**. The app may be closed while GitHub builds, which usually takes a few minutes. If you allow it, a notification a few minutes later reminds you to come back; it is sent at the expected time, not when GitHub finishes, so the build may still be running. When the run has finished, tap **Install with SideStore**.
+
+**Install with SideStore** runs a shortcut named **Install JibunKit** (in Japanese, **JibunKitをインストール**), which you make once in the Shortcuts app:
+
+1. Make a new shortcut with that name.
+2. In the search field at the bottom, search for JibunKit and add **Get the Built JibunKit IPA**. It follows the last build requested in Build, downloads its IPA if this phone does not have it yet and returns it. It stops with a message when nothing is set up, the build has not finished or it failed. Its text is English in every language.
+3. Search for SideStore and add its **Install** action (**Install IPA File**). If its IPA File is empty, tap it and choose the IPA from the first action.
+
+The shortcut can also be run on its own, from the Home Screen or Siri, once a build has been requested. The steps are also under **Set Up Install with SideStore** in Build.
+
+Without the shortcut, tap **Download the IPA**, then **Share the IPA**. In the 2026-10-12 device check SideStore was listed in the share sheet but tapping it did nothing; choosing **Save to Files** and adding the IPA with SideStore's **+** button installed it.
 
 The quick build runs no tests. A failed run shows a link to its page on GitHub.
 
@@ -39,7 +49,8 @@ To move such an app in, also enter a name under `Modules/` and tap **Migrate the
 
 - The token can start workflows in the selected repository. Anyone who can use the unlocked phone can use it through this Feature.
 - The build attaches the IPA to a `build-RUN_ID` prerelease. The workflow keeps the five newest `build-` prereleases and deletes older ones, so download an IPA you want to keep.
-- Builder needs no capability, entitlement or background mode. It follows a build only while it is open.
+- Builder needs no capability, entitlement or background mode. It follows a build only while it is open or while the shortcut runs.
+- The Shortcuts action works only while Build is turned on in **Manage Mini Apps**.
 - The Import Feature, Migrate App and Connect Draft workflows can push to the branch they run on. Starting them needs the same token permissions as a build. Code from another repository is compiled only in read-only jobs.
 
 ## Develop

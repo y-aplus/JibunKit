@@ -91,3 +91,15 @@
 "Mini app list" = "ミニアプリ一覧";
 "Simulator check" = "シミュレーターでのチェック";
 "Simulator check of %@" = "%@のシミュレーターでのチェック";
+
+/* Install with SideStore through a shortcut */
+"Install with SideStore" = "SideStoreでインストール";
+"Install JibunKit" = "JibunKitをインストール";
+"Set Up Install with SideStore" = "「SideStoreでインストール」の準備";
+"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action." = "ショートカットアプリで新規ショートカットを作り、名前を「%@」にします。下の検索欄で「JibunKit」を検索して「Get the Built JibunKit IPA」を追加し、続けて「SideStore」を検索してInstallのアクションを追加します。そのIPA Fileが空なら、タップして最初のアクションのIPAを選びます。";
+"Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it." = "「SideStoreでインストール」はそのショートカットを実行します。最後のビルドのIPAをダウンロードし、SideStoreにインストールさせます。";
+"Enter the repository and a GitHub token in Build first." = "先にビルド画面でリポジトリとGitHubトークンを入力してください。";
+"No build has been requested in Build yet." = "ビルド画面からまだビルドを依頼していません。";
+"The build has not finished yet. Try again in a few minutes." = "ビルドがまだ終わっていません。数分後にもう一度試してください。";
+"The last build failed. Open Build to see why." = "最後のビルドは失敗しました。ビルド画面で理由を確認してください。";
+"Build is turned off or removed. Turn it on again in Manage Mini Apps." = "ビルドが無効化または削除されています。「ミニアプリの管理」で有効にしてください。";

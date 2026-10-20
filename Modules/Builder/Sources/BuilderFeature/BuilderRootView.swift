@@ -274,9 +274,7 @@ final class BuilderModel {
     }
 
     private func ipaFile(for run: BuildRun) -> URL {
-        environment.ipaDirectory
-            .appendingPathComponent("build-\(run.id)", isDirectory: true)
-            .appendingPathComponent(GitHubBuildClient.ipaName)
+        BuiltIPA.file(for: run, in: environment.ipaDirectory)
     }
 
     private func removeDownloadedIPAs() {
@@ -294,8 +292,8 @@ final class BuilderModel {
     }
 }
 
-/// Builds this JibunKit's IPA in GitHub Actions and hands it to SideStore or
-/// AltStore through the share sheet.
+/// Builds this JibunKit's IPA in GitHub Actions and hands it to SideStore
+/// through a shortcut, or to another app through the share sheet.
 public struct BuilderRootView: View {
     @State private var model: BuilderModel
     @State private var askingNotificationConsent = false
@@ -303,6 +301,7 @@ public struct BuilderRootView: View {
     @State private var removing: ImportedFeature?
     @State private var removingDraft: DraftFeature?
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
 
     public init(environment: BuilderEnvironment) {
         _model = State(initialValue: BuilderModel(environment: environment))
@@ -368,6 +367,12 @@ public struct BuilderRootView: View {
     @ViewBuilder private var buildSection: some View {
         Section {
             progressRow
+            if case .finished(let run) = model.progress, run.succeeded {
+                Button { openURL(BuiltIPA.shortcutURL(named: BuiltIPA.shortcutName)) } label: {
+                    Label { Text("Install with SideStore", bundle: .module) } icon: { Image(systemName: "arrow.down.app") }
+                }
+                .accessibilityIdentifier("builder.installWithSideStore")
+            }
             if let ipaURL = model.ipaURL {
                 ShareLink(item: ipaURL) {
                     Label { Text("Share the IPA", bundle: .module) } icon: { Image(systemName: "square.and.arrow.up") }
@@ -385,6 +390,18 @@ public struct BuilderRootView: View {
             if !model.isConfigured {
                 Text("Enter the repository and a GitHub token below first.", bundle: .module)
             }
+        }
+        Section {
+            DisclosureGroup {
+                Text("In the Shortcuts app, make a new shortcut and name it “\(BuiltIPA.shortcutName)”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action.",
+                     bundle: .module)
+                    .font(.callout)
+            } label: {
+                Text("Set Up Install with SideStore", bundle: .module)
+            }
+        } footer: {
+            Text("Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it.",
+                 bundle: .module)
         }
     }
 

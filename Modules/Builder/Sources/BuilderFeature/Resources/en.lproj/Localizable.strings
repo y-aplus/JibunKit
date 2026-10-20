@@ -103,3 +103,15 @@
 "The build has not finished yet. Try again in a few minutes." = "The build has not finished yet. Try again in a few minutes.";
 "The last build failed. Open Build to see why." = "The last build failed. Open Build to see why.";
 "Build is turned off or removed. Turn it on again in Manage Mini Apps." = "Build is turned off or removed. Turn it on again in Manage Mini Apps.";
+
+/* Changes in the upstream repository */
+"Every upstream change is merged" = "Every upstream change is merged";
+"Changes not merged yet: %lld" = "Changes not merged yet: %lld";
+"More than %lld changes not merged yet" = "More than %lld changes not merged yet";
+"Latest release" = "Latest release";
+"See the Changes on GitHub" = "See the Changes on GitHub";
+"Comparing with upstream" = "Comparing with upstream";
+"Upstream: %@" = "Upstream: %@";
+"Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA." = "Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA.";
+"Upstream" = "Upstream";
+"Enter the upstream as OWNER/REPO, or leave it empty." = "Enter the upstream as OWNER/REPO, or leave it empty.";

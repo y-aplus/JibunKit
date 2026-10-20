@@ -28,6 +28,12 @@ Without the shortcut, tap **Download the IPA**, then **Share the IPA**. In the 2
 
 The quick build runs no tests. A failed run shows a link to its page on GitHub.
 
+## Upstream changes
+
+When the repository in the settings is not the upstream itself, Build shows under **Upstream** how many of the upstream's commits the repository does not have yet, the upstream's latest release and a link to the changes on GitHub. It compares each time the screen opens, so nothing runs in the background. The upstream is public JibunKit, `y-aplus/JibunKit`, unless **Upstream** in the settings names another `OWNER/REPO`; its `main` branch is compared.
+
+A derived repository is not a GitHub fork, so GitHub cannot compare the two directly. Build lists the upstream's 100 newest commits and asks which of them the repository has, with a binary search over that list; this assumes the upstream's branch only grows, as JibunKit's does. With none of the 100 merged it says more than 100. The token reads the public upstream with the read access every fine-grained token has to public repositories. Merge the changes on a computer as [Updating](../../docs/updating.md) describes, then build the IPA.
+
 ## Import Features from other repositories
 
 Under **Features from Other Repositories**, tap **Import a Feature** and enter the repository (`OWNER/REPO` means GitHub, or a full Git URL) and, if needed, a branch, tag or commit, the Feature's directory in the repository and a name under `Modules/`. Builder starts the repository's **Import Feature** workflow (`.github/workflows/import-feature.yml`). It runs `python3 Tools/jibunkit-feature.py add` on GitHub, which copies the Feature, records the commit in `JibunKitImports.json` and connects it, and commits the result to the branch set below; this takes about a minute, and Builder follows it while the screen is open. When it has finished, open **Report** to see what the Feature brings: its Swift packages, precompiled code, code that runs during the build, build requirements and `check` findings ([details](../../docs/mini-apps.md#importing-a-feature-from-another-repository)). Then build the IPA as above.

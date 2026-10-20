@@ -7,11 +7,15 @@ public struct BuilderState: Codable, Equatable, Sendable {
     public var request: BuildRequest?
     /// The last import, update, removal or compatibility check this app requested.
     public var importRequest: ImportRequest?
+    /// The repository `repository` merges from; nil means `BuildRepository.defaultUpstream`.
+    public var upstream: BuildRepository?
 
-    public init(repository: BuildRepository? = nil, request: BuildRequest? = nil, importRequest: ImportRequest? = nil) {
+    public init(repository: BuildRepository? = nil, request: BuildRequest? = nil, importRequest: ImportRequest? = nil,
+                upstream: BuildRepository? = nil) {
         self.repository = repository
         self.request = request
         self.importRequest = importRequest
+        self.upstream = upstream
     }
 }
 

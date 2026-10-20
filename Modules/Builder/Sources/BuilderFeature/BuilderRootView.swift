@@ -49,6 +49,10 @@ final class BuilderModel {
     let environment: BuilderEnvironment
     var slug = ""
     var branch = "main"
+    /// Empty means `BuildRepository.defaultUpstream`.
+    var upstreamSlug = ""
+    var upstreamStatus: UpstreamStatus?
+    var upstreamError: String?
     var tokenInput = ""
     var hasToken = false
     var state = BuilderState()
@@ -74,6 +78,7 @@ final class BuilderModel {
         }
         slug = state.repository?.slug ?? ""
         branch = state.repository?.branch ?? "main"
+        upstreamSlug = state.upstream?.slug ?? ""
         if case .finished(let run) = progress, run.succeeded,
            FileManager.default.fileExists(atPath: ipaFile(for: run).path) {
             ipaURL = ipaFile(for: run)
@@ -83,6 +88,11 @@ final class BuilderModel {
     var progress: BuildProgress { BuildProgress(state.request) }
 
     var isConfigured: Bool { state.repository != nil && hasToken }
+
+    var upstream: BuildRepository { state.upstream ?? .defaultUpstream }
+
+    /// Upstream JibunKit's own repository has no upstream to compare with.
+    var comparesWithUpstream: Bool { isConfigured && state.repository?.slug != upstream.slug }
 
     var canBuild: Bool {
         guard isConfigured, !isWorking else { return false }
@@ -97,6 +107,12 @@ final class BuilderModel {
             show(String(localized: "Enter the repository as OWNER/REPO.", bundle: .module), isError: true)
             return
         }
+        let upstreamText = upstreamSlug.trimmingCharacters(in: .whitespacesAndNewlines)
+        let upstream = BuildRepository(slug: upstreamText, branch: "main")
+        guard upstreamText.isEmpty || upstream != nil else {
+            show(String(localized: "Enter the upstream as OWNER/REPO, or leave it empty.", bundle: .module), isError: true)
+            return
+        }
         do {
             let token = tokenInput.trimmingCharacters(in: .whitespacesAndNewlines)
             if !token.isEmpty {
@@ -105,7 +121,10 @@ final class BuilderModel {
                 hasToken = true
             }
             state.repository = repository
+            state.upstream = upstream == .defaultUpstream ? nil : upstream
+            upstreamSlug = state.upstream?.slug ?? ""
             try environment.storage.saveState(state)
+            upstreamStatus = nil
             show(String(localized: "Saved", bundle: .module), isError: false)
         } catch {
             show(error)
@@ -148,6 +167,20 @@ final class BuilderModel {
         await refreshImport()
         await loadImported()
         await loadScreenshots()
+        await loadUpstream()
+    }
+
+    func loadUpstream() async {
+        guard comparesWithUpstream, let client = client() else {
+            upstreamStatus = nil
+            return
+        }
+        do {
+            upstreamStatus = try await client.upstreamStatus(of: upstream)
+            upstreamError = nil
+        } catch {
+            upstreamError = error.localizedDescription
+        }
     }
 
     private func refreshBuild() async {
@@ -310,6 +343,9 @@ public struct BuilderRootView: View {
     public var body: some View {
         Form {
             buildSection
+            if model.comparesWithUpstream {
+                upstreamSection
+            }
             importSection
             settingsSection
             if let message = model.message {
@@ -432,6 +468,46 @@ public struct BuilderRootView: View {
                 Link(destination: run.htmlURL) { Text("Open the run on GitHub", bundle: .module) }
             }
         }
+    }
+
+    @ViewBuilder private var upstreamSection: some View {
+        Section {
+            if let status = model.upstreamStatus {
+                switch status.newCommits {
+                case 0?:
+                    Label { Text("Every upstream change is merged", bundle: .module) } icon: {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                case let count?:
+                    Label { Text("Changes not merged yet: \(count)", bundle: .module) } icon: {
+                        Image(systemName: "arrow.down.circle.fill").foregroundStyle(.orange)
+                    }
+                case nil:
+                    Label { Text("More than \(UpstreamStatus.counted) changes not merged yet", bundle: .module) } icon: {
+                        Image(systemName: "arrow.down.circle.fill").foregroundStyle(.orange)
+                    }
+                }
+                if let release = status.latestRelease {
+                    LabeledContent { Text(verbatim: release) } label: { Text("Latest release", bundle: .module) }
+                }
+                if status.newCommits != 0 {
+                    Link(destination: status.changesURL) { Text("See the Changes on GitHub", bundle: .module) }
+                }
+            } else if let error = model.upstreamError {
+                Text(verbatim: error).foregroundStyle(.red)
+            } else {
+                HStack {
+                    ProgressView()
+                    Text("Comparing with upstream", bundle: .module)
+                }
+            }
+        } header: {
+            Text("Upstream: \(model.upstream.slug)", bundle: .module)
+        } footer: {
+            Text("Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA.",
+                 bundle: .module)
+        }
+        .accessibilityIdentifier("builder.upstream")
     }
 
     @ViewBuilder private var importSection: some View {
@@ -603,6 +679,14 @@ public struct BuilderRootView: View {
             TextField(String(localized: "Branch", bundle: .module), text: $model.branch)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
+            LabeledContent {
+                TextField(BuildRepository.defaultUpstream.slug, text: $model.upstreamSlug)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .multilineTextAlignment(.trailing)
+            } label: {
+                Text("Upstream", bundle: .module)
+            }
             SecureField(model.hasToken ? String(localized: "Token saved; enter to replace", bundle: .module)
                                        : String(localized: "GitHub token", bundle: .module),
                         text: $model.tokenInput)

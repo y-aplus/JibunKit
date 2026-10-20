@@ -103,3 +103,15 @@
 "The build has not finished yet. Try again in a few minutes." = "ビルドがまだ終わっていません。数分後にもう一度試してください。";
 "The last build failed. Open Build to see why." = "最後のビルドは失敗しました。ビルド画面で理由を確認してください。";
 "Build is turned off or removed. Turn it on again in Manage Mini Apps." = "ビルドが無効化または削除されています。「ミニアプリの管理」で有効にしてください。";
+
+/* Changes in the upstream repository */
+"Every upstream change is merged" = "上流の変更はすべて取り込み済みです";
+"Changes not merged yet: %lld" = "未取り込みの変更: %lld件";
+"More than %lld changes not merged yet" = "未取り込みの変更が%lld件を超えています";
+"Latest release" = "最新リリース";
+"See the Changes on GitHub" = "GitHubで変更を見る";
+"Comparing with upstream" = "上流と比べています";
+"Upstream: %@" = "上流: %@";
+"Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA." = "この画面を開くたびに比べます。変更はdocs/updating.mdの手順でパソコンから取り込み、そのあとIPAをビルドしてください。";
+"Upstream" = "上流";
+"Enter the upstream as OWNER/REPO, or leave it empty." = "上流はOWNER/REPOの形で入力するか、空のままにしてください。";

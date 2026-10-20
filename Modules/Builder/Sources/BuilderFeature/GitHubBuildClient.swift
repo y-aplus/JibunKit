@@ -448,7 +448,9 @@ public struct GitHubBuildClient: Sendable {
         return request
     }
 
-    private func endpoint(path: String, query: [URLQueryItem] = []) throws -> URL {
+    /// `path` under `other`, or under this client's repository.
+    private func endpoint(path: String, query: [URLQueryItem] = [], in other: BuildRepository? = nil) throws -> URL {
+        let repository = other ?? repository
         var components = URLComponents()
         components.scheme = "https"
         components.host = "api.github.com"
@@ -458,9 +460,9 @@ public struct GitHubBuildClient: Sendable {
         return url
     }
 
-    private func send(path: String, method: String = "GET", query: [URLQueryItem] = [], body: Data? = nil,
-                      accept: String = "application/vnd.github+json") async throws -> Data {
-        var request = authorized(URLRequest(url: try endpoint(path: path, query: query)), accept: accept)
+    func send(path: String, method: String = "GET", query: [URLQueryItem] = [], body: Data? = nil,
+              accept: String = "application/vnd.github+json", in other: BuildRepository? = nil) async throws -> Data {
+        var request = authorized(URLRequest(url: try endpoint(path: path, query: query, in: other)), accept: accept)
         request.httpMethod = method
         if let body {
             request.httpBody = body
@@ -483,7 +485,7 @@ public struct GitHubBuildClient: Sendable {
         }
     }
 
-    private func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
+    func decode<T: Decodable>(_ type: T.Type, from data: Data) throws -> T {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         do { return try decoder.decode(type, from: data) } catch { throw BuildClientError.invalidResponse }

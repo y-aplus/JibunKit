@@ -96,7 +96,7 @@
 "Install with SideStore" = "SideStoreでインストール";
 "Install JibunKit" = "JibunKitをインストール";
 "Set Up Install with SideStore" = "「SideStoreでインストール」の準備";
-"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action." = "ショートカットアプリで新規ショートカットを作り、名前を「%@」にします。下の検索欄で「JibunKit」を検索して「Get the Built JibunKit IPA」を追加し、続けて「SideStore」を検索してInstallのアクションを追加します。そのIPA Fileが空なら、タップして最初のアクションのIPAを選びます。";
+"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. Touch and hold its IPA File and choose the first action's result." = "ショートカットアプリで新規ショートカットを作り、名前を「%@」にします。下の検索欄で「JibunKit」を検索して「Get the Built JibunKit IPA」を追加し、続けて「SideStore」を検索してInstallのアクションを追加します。そのIPA Fileを長押しして、最初のアクションの結果を選びます。";
 "Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it." = "「SideStoreでインストール」はそのショートカットを実行します。最後のビルドのIPAをダウンロードし、SideStoreにインストールさせます。";
 "Enter the repository and a GitHub token in Build first." = "先にビルド画面でリポジトリとGitHubトークンを入力してください。";
 "No build has been requested in Build yet." = "ビルド画面からまだビルドを依頼していません。";

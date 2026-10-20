@@ -20,7 +20,7 @@ Tap **Build the IPA**. The app may be closed while GitHub builds, which usually 
 
 1. Make a new shortcut with that name.
 2. In the search field at the bottom, search for JibunKit and add **Get the Built JibunKit IPA**. It follows the last build requested in Build, downloads its IPA if this phone does not have it yet and returns it. It stops with a message when nothing is set up, the build has not finished or it failed. Its text is English in every language.
-3. Search for SideStore and add its **Install** action (**Install IPA File**). If its IPA File is empty, tap it and choose the IPA from the first action.
+3. Search for SideStore and add its **Install** action (**Install IPA File**). Touch and hold its IPA File and choose the first action's result; tapping IPA File only opens the Files picker. When connected, the Install action shows **Get the Built JibunKit IPA** under it.
 
 The shortcut can also be run on its own, from the Home Screen or Siri, once a build has been requested. The steps are also under **Set Up Install with SideStore** in Build.
 

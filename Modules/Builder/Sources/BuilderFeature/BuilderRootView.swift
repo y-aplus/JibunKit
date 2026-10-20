@@ -393,7 +393,7 @@ public struct BuilderRootView: View {
         }
         Section {
             DisclosureGroup {
-                Text("In the Shortcuts app, make a new shortcut and name it “\(BuiltIPA.shortcutName)”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action.",
+                Text("In the Shortcuts app, make a new shortcut and name it “\(BuiltIPA.shortcutName)”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. Touch and hold its IPA File and choose the first action's result.",
                      bundle: .module)
                     .font(.callout)
             } label: {

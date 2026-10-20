@@ -96,7 +96,7 @@
 "Install with SideStore" = "Install with SideStore";
 "Install JibunKit" = "Install JibunKit";
 "Set Up Install with SideStore" = "Set Up Install with SideStore";
-"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action." = "In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. If its IPA File is empty, tap it and choose the IPA from the first action.";
+"In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. Touch and hold its IPA File and choose the first action's result." = "In the Shortcuts app, make a new shortcut and name it “%@”. In the search field at the bottom, search for JibunKit and add Get the Built JibunKit IPA, then search for SideStore and add its Install action. Touch and hold its IPA File and choose the first action's result.";
 "Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it." = "Install with SideStore runs that shortcut. It downloads the IPA of the last build and has SideStore install it.";
 "Enter the repository and a GitHub token in Build first." = "Enter the repository and a GitHub token in Build first.";
 "No build has been requested in Build yet." = "No build has been requested in Build yet.";

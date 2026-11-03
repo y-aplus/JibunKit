@@ -107,6 +107,55 @@ public struct MiniAppLocationRegistration: Codable, Sendable, Equatable, Identif
     }
 }
 
+/// App-wide Core Location services that keep running after the app ends and
+/// relaunch it with new events. Several owners may use one; it runs while any
+/// of them does.
+public enum MiniAppLocationSystemMonitor: String, Codable, Sendable, Hashable, CaseIterable {
+    case significantChanges, visits
+}
+
+public struct MiniAppLocationMonitorRegistration: Codable, Sendable, Hashable {
+    public let owner: MiniAppID
+    public let monitor: MiniAppLocationSystemMonitor
+
+    public init(owner: MiniAppID, monitor: MiniAppLocationSystemMonitor) {
+        self.owner = owner
+        self.monitor = monitor
+    }
+
+    private enum CodingKeys: String, CodingKey { case owner, monitor }
+    public init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        owner = try values.decode(MiniAppID.self, forKey: .owner)
+        monitor = try values.decode(MiniAppLocationSystemMonitor.self, forKey: .monitor)
+        guard owner.isValid else { throw MiniAppLocationFailure.invalidRegistration }
+    }
+}
+
+/// A place the user stayed, as Core Location's `CLVisit` reports it.
+public struct MiniAppLocationVisit: Sendable, Equatable {
+    public let latitude: Double
+    public let longitude: Double
+    public let horizontalAccuracy: Double
+    /// Nil when Core Location does not know when the visit began.
+    public let arrival: Date?
+    /// Nil while the user is still there.
+    public let departure: Date?
+
+    public init(latitude: Double, longitude: Double, horizontalAccuracy: Double, arrival: Date?, departure: Date?) {
+        self.latitude = latitude
+        self.longitude = longitude
+        self.horizontalAccuracy = horizontalAccuracy
+        self.arrival = arrival
+        self.departure = departure
+    }
+}
+
+public enum MiniAppLocationMonitorEvent: Sendable, Equatable {
+    case significantChange([MiniAppLocationSample])
+    case visit(MiniAppLocationVisit)
+}
+
 public enum MiniAppLocationRegionState: Sendable, Equatable { case inside, outside, unknown }
 public enum MiniAppLocationMonitoringKind: Sendable, Hashable { case geofence, beacon }
 

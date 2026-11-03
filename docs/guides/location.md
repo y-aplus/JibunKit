@@ -10,6 +10,10 @@ Declare the stable `location` permission, construct `MiniAppLocationService` wit
 
 `startUpdates(_:)` creates a generation-scoped manager using the feature's requested accuracy, distance filter, activity type, auto-pause, and background indicator. Stop with the returned generation and drop late callbacks. Enable `UIBackgroundModes = location` before setting background updates. When In Use can continue an already-running session while the app runs; relaunch for region/significant-change events requires Always authorization. Native `CLLocation` delivery is available through `receiveCoreLocations` after the same owner/generation checks.
 
+`requestLocation(desiredAccuracy:)` asks for one fix with its own manager and returns a generation. It answers once through `receive`, as `.locations` or `.failed` with that generation; an owner may have several pending, and runtime shutdown, consent revocation and loss of OS authorization cancel them.
+
+`startMonitoring(.significantChanges)` and `startMonitoring(.visits)` start Core Location's significant-change and visit services, which keep running after the app ends and relaunch it with new events. Events arrive in `receiveMonitorEvent` as `.significantChange([MiniAppLocationSample])` and `.visit(MiniAppLocationVisit)`, also before a view connects while management allows the owner. These services are app-wide, so the coordinator shares them: each runs while any owner in the build uses it and stops when the last one calls `stopMonitoring`. Like regions, the choice is persisted and `reconnectPersistedMonitoring()` from `onHostLaunch` starts the services again, which Core Location requires before it delivers the events that relaunched the app. `unregisterAllOwned()` and consent revocation remove them with the owner's regions. They are monitoring, not continuous updates: they need no background mode, and relaunch requires Always authorization. A Feature should not create its own `CLLocationManager` for them, because the host's management and consent checks would not reach it.
+
 `register(localID:region:)` persists an owner-qualified identifier before monitoring. Reject excessive radii with the requested and maximum values, test geofence and beacon availability separately, and reject a beacon minor without a major. Count JibunKit reservations plus unknown host `monitoredRegions` against the app-wide limit of 20; return `capacityExceeded` without evicting anything. Release a reservation on registration failure. Cancellation also works before `didStartMonitoringFor`; a late success after cancellation is stopped immediately.
 
 On relaunch, validate persisted metadata and re-register only missing regions after management, consent, authorization, and capacity checks. Corruption, duplicate owner/local IDs, or invalid coordinates fail closed and prevent destructive writes for that process. Never restart continuous updates automatically. Unknown identifiers are not delivered across owners; only manager-wide errors without an identifier may be broadcast. Restore closes ordinary and cold delivery for that owner, and a concurrent management disable prevents resume from reopening it.
@@ -44,6 +48,16 @@ Core Locationのregionはapp内全managerで共有され、1 app最大20件で�
 再起動後、OSはRegion自体を保持する。JibunKitは検証済み永続metadataを読み、管理・同意・OS許可済みでOS側に欠けるものだけ、共有20枠を再評価して再登録する。破損、重複owner/local ID、不正座標等を検出したstoreは失敗を可視化し、そのprocessでは破壊的writeを拒否する。連続位置更新は勝手に再開しない。端末再起動後のmonitoringはユーザーが一度端末をunlockした後に有効になる。
 
 `startMonitoring`の完了は非同期である。adapterは要求した`CLRegion`を保持するため、`monitoredRegions`へまだ現れていない間の解除も取り消せる。解除後に`didStartMonitoringFor`が遅着した場合は直ちに同じRegionを停止する。未知identifierの失敗は他ownerへ配送せず、identifierがnilのmanager全体エラーだけを全ownerへ知らせる。
+
+## 1回の測位、大きな位置変化、訪問
+
+`requestLocation(desiredAccuracy:)`は専用managerで1回だけ測位し、generationを返す。結果は`receive`へ同じgenerationの`.locations`か`.failed`として1回だけ届く。同じownerが複数を同時に求めてよい。runtime終了、Feature同意の取り消し、OS許可の喪失で保留中の要求は取り消される。
+
+`startMonitoring(.significantChanges)`と`startMonitoring(.visits)`は、Core Locationの大きな位置変化と訪問の監視を始める。どちらもapp終了後も続き、新しいイベントでappを再起動する。イベントは`receiveMonitorEvent`へ`.significantChange([MiniAppLocationSample])`と`.visit(MiniAppLocationVisit)`として届き、管理で有効なownerにはview接続前（cold launch中）にも届く。これらはapp全体で1つのサービスなので、coordinatorが共有する。build内のどれかのownerが使っている間は動き、最後のownerが`stopMonitoring`を呼ぶと止まる。永続化された選択を読み直して利用者に数えるのは、このbuildでserviceが作られたownerだけである。
+
+regionと同じく選択は永続化し、`onHostLaunch`から`reconnectPersistedMonitoring()`を呼ぶとサービスを再開する。Core Locationは、appを再起動させたイベントを起動中にサービスを開始し直したmanagerにしか届けないため、この呼び出しが必要である。`unregisterAllOwned()`とFeature同意の取り消しは、ownerのregionと一緒にこれらも外す。これらは連続更新ではなく監視として扱い、背景modeは不要で、終了後の再起動にはAlways許可が要る。
+
+Featureがこれらのために自前の`CLLocationManager`を持つと、hostの管理・同意の検査が届かず、geofenceだけ残るといった食い違いが起きる。host APIを使う。
 
 ## host設定
 

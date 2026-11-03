@@ -2,13 +2,17 @@
 import CoreLocation
 import Foundation
 
-/// Direct Core Location adapter. Each continuous update generation gets its own
-/// manager, while a distinct manager reconnects the app-wide monitored regions.
+/// Direct Core Location adapter. Each continuous update generation and each
+/// one-time request gets its own manager, while one manager reconnects the
+/// app-wide monitored regions and another runs significant-change and visit
+/// monitoring.
 @MainActor
 public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeClient, @preconcurrency CLLocationManagerDelegate {
     public var eventHandler: (@MainActor @Sendable (MiniAppLocationNativeEvent) -> Void)?
     public var coreLocationHandler: (@MainActor (UUID, [CLLocation]) -> Void)?
     private let regionManager: CLLocationManager
+    private let monitorManager: CLLocationManager
+    private var requestManagers: [ObjectIdentifier: (manager: CLLocationManager, generation: UUID)] = [:]
     private var updateManagers: [ObjectIdentifier: (manager: CLLocationManager, generation: UUID,
                                                        configuration: MiniAppLocationUpdateConfiguration)] = [:]
     private var requestedRegions: [String: CLRegion] = [:]
@@ -17,8 +21,10 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
 
     public override init() {
         regionManager = CLLocationManager()
+        monitorManager = CLLocationManager()
         super.init()
         regionManager.delegate = self
+        monitorManager.delegate = self
     }
 
     public var authorization: MiniAppLocationAuthorization { Self.authorization(regionManager.authorizationStatus) }
@@ -58,6 +64,42 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
         entry.value.manager.stopUpdatingLocation()
         entry.value.manager.delegate = nil
         updateManagers.removeValue(forKey: entry.key)
+    }
+
+    public func requestLocation(desiredAccuracy: Double, generation: UUID) {
+        let manager = CLLocationManager()
+        manager.delegate = self
+        manager.desiredAccuracy = desiredAccuracy
+        requestManagers[ObjectIdentifier(manager)] = (manager, generation)
+        manager.requestLocation()
+    }
+
+    public func cancelLocationRequest(generation: UUID) {
+        guard let entry = requestManagers.first(where: { $0.value.generation == generation }) else { return }
+        finishRequest(entry.value.manager)
+    }
+
+    /// Stopping updates also cancels a pending `requestLocation()`.
+    private func finishRequest(_ manager: CLLocationManager) {
+        manager.stopUpdatingLocation()
+        manager.delegate = nil
+        requestManagers.removeValue(forKey: ObjectIdentifier(manager))
+    }
+
+    public func isAvailable(_ monitor: MiniAppLocationSystemMonitor) -> Bool {
+        switch monitor {
+        case .significantChanges: CLLocationManager.significantLocationChangeMonitoringAvailable()
+        case .visits: true
+        }
+    }
+
+    public func setMonitoring(_ monitor: MiniAppLocationSystemMonitor, active: Bool) {
+        switch (monitor, active) {
+        case (.significantChanges, true): monitorManager.startMonitoringSignificantLocationChanges()
+        case (.significantChanges, false): monitorManager.stopMonitoringSignificantLocationChanges()
+        case (.visits, true): monitorManager.startMonitoringVisits()
+        case (.visits, false): monitorManager.stopMonitoringVisits()
+        }
     }
 
     public func startMonitoring(_ registration: MiniAppLocationRegistration) {
@@ -109,9 +151,24 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if manager === monitorManager {
+            eventHandler?(.significantChange(locations.map(Self.sample)))
+            return
+        }
+        if let generation = requestManagers[ObjectIdentifier(manager)]?.generation {
+            finishRequest(manager)
+            coreLocationHandler?(generation, locations)
+            eventHandler?(.locations(generation: generation, locations.map(Self.sample)))
+            return
+        }
         guard let generation = updateManagers[ObjectIdentifier(manager)]?.generation else { return }
         coreLocationHandler?(generation, locations)
         eventHandler?(.locations(generation: generation, locations.map(Self.sample)))
+    }
+
+    public func locationManager(_ manager: CLLocationManager, didVisit visit: CLVisit) {
+        guard manager === monitorManager else { return }
+        eventHandler?(.visit(Self.visit(visit)))
     }
 
     public func locationManager(_ manager: CLLocationManager, didEnterRegion region: CLRegion) {
@@ -144,6 +201,11 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
         }
     }
     public func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        if let generation = requestManagers[ObjectIdentifier(manager)]?.generation {
+            finishRequest(manager)
+            eventHandler?(.failed(generation: generation, message: error.localizedDescription))
+            return
+        }
         eventHandler?(.failed(generation: updateManagers[ObjectIdentifier(manager)]?.generation, message: error.localizedDescription))
     }
 
@@ -191,6 +253,12 @@ public final class MiniAppCoreLocationClient: NSObject, MiniAppLocationNativeCli
               speed: location.speed, speedAccuracy: location.speedAccuracy,
               isSimulatedBySoftware: location.sourceInformation?.isSimulatedBySoftware,
               isProducedByAccessory: location.sourceInformation?.isProducedByAccessory)
+    }
+    @_spi(Testing) public static func visit(_ visit: CLVisit) -> MiniAppLocationVisit {
+        .init(latitude: visit.coordinate.latitude, longitude: visit.coordinate.longitude,
+              horizontalAccuracy: visit.horizontalAccuracy,
+              arrival: visit.arrivalDate == .distantPast ? nil : visit.arrivalDate,
+              departure: visit.departureDate == .distantFuture ? nil : visit.departureDate)
     }
     private static func activity(_ value: CLActivityType) -> MiniAppLocationActivity {
         switch value {

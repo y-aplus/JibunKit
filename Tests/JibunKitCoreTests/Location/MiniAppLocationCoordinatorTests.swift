@@ -304,6 +304,153 @@ final class MiniAppLocationCoordinatorTests: XCTestCase {
         try service.reconnectPersistedMonitoring()
         XCTAssertTrue(native.ids.isEmpty); XCTAssertTrue(store.values.isEmpty)
     }
+
+    func testOneTimeRequestAnswersOnceAndOnlyItsOwner() throws {
+        let native = LocationNative(); native.authorization = .whenInUse
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: MonitorStore())
+        let eventsA = LocationEvents(), eventsB = LocationEvents()
+        coordinator.connect(owner: MiniAppID("a")) { eventsA.values.append($0) }
+        coordinator.connect(owner: MiniAppID("b")) { eventsB.values.append($0) }
+        XCTAssertThrowsError(try coordinator.requestLocation(owner: MiniAppID("a"), featureConsent: false, desiredAccuracy: 10)) {
+            XCTAssertEqual($0 as? MiniAppLocationFailure, .featureConsentDenied)
+        }
+        XCTAssertTrue(native.requests.isEmpty)
+        let first = try coordinator.requestLocation(owner: MiniAppID("a"), featureConsent: true, desiredAccuracy: 10)
+        let second = try coordinator.requestLocation(owner: MiniAppID("a"), featureConsent: true, desiredAccuracy: 100)
+        XCTAssertEqual(native.requests, [first: 10, second: 100])
+        let sample = MiniAppLocationSample(latitude: 1, longitude: 2, horizontalAccuracy: 3, timestamp: .distantPast)
+        native.send(.locations(generation: first, [sample]))
+        native.send(.locations(generation: first, [sample]))
+        native.send(.failed(generation: second, message: "unknown"))
+        XCTAssertEqual(eventsA.values, [.locations(generation: first, samples: [sample]), .failed(generation: second, "unknown")])
+        XCTAssertTrue(eventsB.values.isEmpty)
+        XCTAssertThrowsError(try coordinator.cancelLocationRequest(owner: MiniAppID("a"), generation: first))
+    }
+
+    func testRuntimeShutdownCancelsPendingRequests() async throws {
+        let native = LocationNative(); native.authorization = .always
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: MonitorStore())
+        let service = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let runtime = MiniAppRuntime()
+        try service.connect(to: runtime)
+        let generation = try service.requestLocation(desiredAccuracy: 10)
+        await runtime.shutdown()
+        XCTAssertTrue(native.requests.isEmpty)
+        XCTAssertTrue(native.actions.contains("cancel-request:\(generation)"))
+    }
+
+    func testSystemMonitorRunsWhileAnyOwnerUsesIt() throws {
+        let native = LocationNative(); native.authorization = .always
+        let monitorStore = MonitorStore()
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        let a = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let b = MiniAppLocationService(owner: MiniAppID("b"), coordinator: coordinator) { true }
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        try a.startMonitoring(.significantChanges)
+        try b.startMonitoring(.significantChanges)
+        try b.startMonitoring(.visits)
+        XCTAssertEqual(native.monitors, [.significantChanges, .visits])
+        XCTAssertEqual(native.actions.filter { $0 == "monitor-on:significantChanges" }.count, 1)
+        XCTAssertEqual(Set(monitorStore.values), [.init(owner: a.owner, monitor: .significantChanges),
+                                                 .init(owner: b.owner, monitor: .significantChanges),
+                                                 .init(owner: b.owner, monitor: .visits)])
+        try a.stopMonitoring(.significantChanges)
+        XCTAssertEqual(native.monitors, [.significantChanges, .visits], "B still uses significant changes")
+        try b.unregisterAllOwned()
+        XCTAssertTrue(native.monitors.isEmpty)
+        XCTAssertTrue(monitorStore.values.isEmpty)
+    }
+
+    func testSystemMonitorNeedsConsentAuthorizationAndAvailability() throws {
+        let native = LocationNative()
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: MonitorStore())
+        XCTAssertThrowsError(try coordinator.startMonitoring(.visits, owner: MiniAppID("a"), featureConsent: false)) {
+            XCTAssertEqual($0 as? MiniAppLocationFailure, .featureConsentDenied)
+        }
+        XCTAssertThrowsError(try coordinator.startMonitoring(.visits, owner: MiniAppID("a"), featureConsent: true)) {
+            XCTAssertEqual($0 as? MiniAppLocationFailure, .osAuthorizationDenied(.notDetermined))
+        }
+        native.authorization = .always; native.monitorAvailability = [.visits]
+        XCTAssertThrowsError(try coordinator.startMonitoring(.significantChanges, owner: MiniAppID("a"), featureConsent: true)) {
+            XCTAssertEqual($0 as? MiniAppLocationFailure, .monitoringUnavailable)
+        }
+        XCTAssertTrue(native.monitors.isEmpty)
+        XCTAssertTrue(coordinator.systemMonitors(owner: MiniAppID("a")).isEmpty)
+    }
+
+    func testPersistedMonitorsReconnectAtLaunchAndDeliverColdEventsToAllowedOwners() throws {
+        let native = LocationNative(); native.authorization = .always
+        let monitorStore = MonitorStore()
+        monitorStore.values = [.init(owner: MiniAppID("a"), monitor: .visits), .init(owner: MiniAppID("b"), monitor: .visits)]
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        let a = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let b = MiniAppLocationService(owner: MiniAppID("b"), coordinator: coordinator) { true }
+        let valuesA = MonitorEvents(), valuesB = MonitorEvents()
+        a.receiveMonitorEvent = { valuesA.values.append($0) }; b.receiveMonitorEvent = { valuesB.values.append($0) }
+        try a.externalAccess.prepare(true); try b.externalAccess.prepare(false)
+        XCTAssertTrue(native.monitors.isEmpty, "Nothing starts before the launch hook")
+        try a.reconnectPersistedMonitoring(); try b.reconnectPersistedMonitoring()
+        XCTAssertEqual(native.monitors, [.visits])
+        let visit = MiniAppLocationVisit(latitude: 1, longitude: 2, horizontalAccuracy: 3, arrival: .distantPast, departure: nil)
+        native.send(.visit(visit))
+        XCTAssertEqual(valuesA.values, [.visit(visit)])
+        XCTAssertTrue(valuesB.values.isEmpty, "A disabled owner receives nothing")
+        native.send(.significantChange([]))
+        XCTAssertEqual(valuesA.values.count, 1, "Only owners of the monitor receive its events")
+        XCTAssertEqual(native.actions.filter { $0.hasPrefix("updates:") }, [], "Continuous updates never restart")
+    }
+
+    func testConsentRevocationStopsTheOwnersMonitorsAndKeepsAnotherOwners() throws {
+        let native = LocationNative(); native.authorization = .always
+        let monitorStore = MonitorStore()
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        let consentA = Flag()
+        let a = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { consentA.value }
+        let b = MiniAppLocationService(owner: MiniAppID("b"), coordinator: coordinator) { true }
+        let runtimeA = MiniAppRuntime(), runtimeB = MiniAppRuntime()
+        try a.connect(to: runtimeA); try b.connect(to: runtimeB)
+        try a.startMonitoring(.significantChanges); try a.startMonitoring(.visits)
+        try b.startMonitoring(.visits)
+        _ = try a.register(localID: "home", region: fence())
+        consentA.value = false
+        try a.featureConsentDidChange()
+        XCTAssertEqual(native.monitors, [.visits])
+        XCTAssertTrue(native.ids.isEmpty, "The geofence stops with the monitors")
+        XCTAssertEqual(monitorStore.values, [.init(owner: b.owner, monitor: .visits)])
+    }
+
+    func testMonitorOfAnOwnerMissingFromTheBuildDoesNotKeepTheServiceRunning() throws {
+        let native = LocationNative(); native.authorization = .always
+        let monitorStore = MonitorStore()
+        monitorStore.values = [.init(owner: MiniAppID("gone"), monitor: .visits)]
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        let a = MiniAppLocationService(owner: MiniAppID("a"), coordinator: coordinator) { true }
+        let runtime = MiniAppRuntime()
+        try a.connect(to: runtime)
+        try a.startMonitoring(.visits)
+        try a.stopMonitoring(.visits)
+        XCTAssertTrue(native.monitors.isEmpty)
+        XCTAssertEqual(monitorStore.values, [.init(owner: MiniAppID("gone"), monitor: .visits)])
+    }
+
+    func testFailedMonitorPersistenceDoesNotStartTheService() {
+        let native = LocationNative(); native.authorization = .always
+        let monitorStore = MonitorStore(); monitorStore.writeError = StoreError.failed
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        XCTAssertThrowsError(try coordinator.startMonitoring(.visits, owner: MiniAppID("a"), featureConsent: true))
+        XCTAssertTrue(native.monitors.isEmpty)
+        XCTAssertTrue(coordinator.systemMonitors(owner: MiniAppID("a")).isEmpty)
+    }
+
+    func testCorruptMonitorStoreRefusesWrites() {
+        let monitorStore = MonitorStore(); monitorStore.readError = StoreError.failed
+        let native = LocationNative(); native.authorization = .always
+        let coordinator = MiniAppLocationCoordinator(native: native, store: LocationStore(), monitorStore: monitorStore)
+        XCTAssertNotNil(coordinator.persistenceFailure)
+        XCTAssertThrowsError(try coordinator.startMonitoring(.visits, owner: MiniAppID("a"), featureConsent: true))
+        XCTAssertEqual(monitorStore.writeCount, 0)
+    }
 }
 
 private func fence() -> MiniAppLocationRegion {
@@ -312,6 +459,18 @@ private func fence() -> MiniAppLocationRegion {
 
 private enum StoreError: Error { case failed }
 @MainActor private final class LocationEvents { var values: [MiniAppLocationEvent] = [] }
+@MainActor private final class Flag { var value = true }
+@MainActor private final class MonitorEvents { var values: [MiniAppLocationMonitorEvent] = [] }
+private final class MonitorStore: MiniAppLocationMonitorStore, @unchecked Sendable {
+    var values: [MiniAppLocationMonitorRegistration] = []
+    var writeError: Error?
+    var readError: Error?
+    var writeCount = 0
+    func read() throws -> [MiniAppLocationMonitorRegistration] { if let readError { throw readError }; return values }
+    func write(_ monitors: [MiniAppLocationMonitorRegistration]) throws {
+        writeCount += 1; if let writeError { throw writeError }; values = monitors
+    }
+}
 private final class LocationStore: MiniAppLocationRegistrationStore, @unchecked Sendable {
     var values: [MiniAppLocationRegistration] = []
     var writeError: Error?
@@ -344,5 +503,19 @@ private final class LocationStore: MiniAppLocationRegistrationStore, @unchecked 
     func startMonitoring(_ registration: MiniAppLocationRegistration) { ids.insert(registration.id); actions.append("monitor:\(registration.id)") }
     func stopMonitoring(identifier: String) { ids.remove(identifier); actions.append("stop:\(identifier)") }
     func requestState(identifier: String) { actions.append("state:\(identifier)") }
-    func send(_ event: MiniAppLocationNativeEvent) { eventHandler?(event) }
+    var requests: [UUID: Double] = [:]
+    func requestLocation(desiredAccuracy: Double, generation: UUID) { requests[generation] = desiredAccuracy }
+    func cancelLocationRequest(generation: UUID) { requests[generation] = nil; actions.append("cancel-request:\(generation)") }
+    var monitorAvailability: Set<MiniAppLocationSystemMonitor> = Set(MiniAppLocationSystemMonitor.allCases)
+    var monitors: Set<MiniAppLocationSystemMonitor> = []
+    func isAvailable(_ monitor: MiniAppLocationSystemMonitor) -> Bool { monitorAvailability.contains(monitor) }
+    func setMonitoring(_ monitor: MiniAppLocationSystemMonitor, active: Bool) {
+        if active { monitors.insert(monitor) } else { monitors.remove(monitor) }
+        actions.append("monitor-\(active ? "on" : "off"):\(monitor.rawValue)")
+    }
+    func send(_ event: MiniAppLocationNativeEvent) {
+        if case .locations(let generation, _) = event { requests[generation] = nil }
+        if case .failed(let generation?, _) = event { requests[generation] = nil }
+        eventHandler?(event)
+    }
 }

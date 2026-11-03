@@ -115,3 +115,6 @@
 "Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA." = "この画面を開くたびに比べます。変更はdocs/updating.mdの手順でパソコンから取り込み、そのあとIPAをビルドしてください。";
 "Upstream" = "上流";
 "Enter the upstream as OWNER/REPO, or leave it empty." = "上流はOWNER/REPOの形で入力するか、空のままにしてください。";
+"A newer build is available (built on %@ at %@)" = "このアプリより新しいビルドがあります（%@ %@にビルド）";
+"Use This Build" = "このビルドを使う";
+"This app is build-%lld. Each time this screen opens, Build looks for a newer build of the branch." = "このアプリはbuild-%lldです。この画面を開くたびに、ブランチのより新しいビルドを探します。";

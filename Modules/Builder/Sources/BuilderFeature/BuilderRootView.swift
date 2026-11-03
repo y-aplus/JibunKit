@@ -33,13 +33,16 @@ public struct BuilderEnvironment: Sendable {
     /// Where downloaded IPAs are kept until the next build.
     public var ipaDirectory: URL
     public var notifications: BuilderNotifications?
+    /// The build of the running app; nil when it was built outside GitHub.
+    public var installedBuild: InstalledBuild?
 
     public init(storage: any BuilderStorage, transport: any BuildHTTPTransport, ipaDirectory: URL,
-                notifications: BuilderNotifications? = nil) {
+                notifications: BuilderNotifications? = nil, installedBuild: InstalledBuild? = InstalledBuild.current) {
         self.storage = storage
         self.transport = transport
         self.ipaDirectory = ipaDirectory
         self.notifications = notifications
+        self.installedBuild = installedBuild
     }
 }
 
@@ -53,6 +56,8 @@ final class BuilderModel {
     var upstreamSlug = ""
     var upstreamStatus: UpstreamStatus?
     var upstreamError: String?
+    /// A published build of the branch that is newer than this app.
+    var newerBuild: BuildRun?
     var tokenInput = ""
     var hasToken = false
     var state = BuilderState()
@@ -94,6 +99,16 @@ final class BuilderModel {
     /// Upstream JibunKit's own repository has no upstream to compare with.
     var comparesWithUpstream: Bool { isConfigured && state.repository?.slug != upstream.slug }
 
+    /// Whether the newer build can replace the last build, which the
+    /// download, share and SideStore buttons and the shortcut use.
+    var canUseNewerBuild: Bool {
+        guard let newerBuild, newerBuild.id != state.request?.run?.id, !isWorking else { return false }
+        switch progress {
+        case .waiting, .running: return false
+        case .none, .finished: return true
+        }
+    }
+
     var canBuild: Bool {
         guard isConfigured, !isWorking else { return false }
         switch progress {
@@ -125,6 +140,7 @@ final class BuilderModel {
             upstreamSlug = state.upstream?.slug ?? ""
             try environment.storage.saveState(state)
             upstreamStatus = nil
+            newerBuild = nil
             show(String(localized: "Saved", bundle: .module), isError: false)
         } catch {
             show(error)
@@ -168,6 +184,31 @@ final class BuilderModel {
         await loadImported()
         await loadScreenshots()
         await loadUpstream()
+        await loadNewerBuild()
+    }
+
+    func loadNewerBuild() async {
+        guard let installed = environment.installedBuild, let client = client() else {
+            newerBuild = nil
+            return
+        }
+        do {
+            newerBuild = try await client.newerBuild(than: installed)
+        } catch {
+            show(error)
+        }
+    }
+
+    func useNewerBuild() {
+        guard canUseNewerBuild, let run = newerBuild else { return }
+        removeDownloadedIPAs()
+        state.request = BuildRequest(requestedAt: run.createdAt, run: run)
+        do {
+            try environment.storage.saveState(state)
+            message = nil
+        } catch {
+            show(error)
+        }
     }
 
     func loadUpstream() async {
@@ -402,6 +443,19 @@ public struct BuilderRootView: View {
 
     @ViewBuilder private var buildSection: some View {
         Section {
+            if let newer = model.newerBuild {
+                Label {
+                    Text("A newer build is available (built on \(newer.createdAt, style: .date) at \(newer.createdAt, style: .time))",
+                         bundle: .module)
+                } icon: {
+                    Image(systemName: "arrow.down.circle.fill").foregroundStyle(.orange)
+                }
+                .accessibilityIdentifier("builder.newerBuild")
+                if model.canUseNewerBuild {
+                    Button { model.useNewerBuild() } label: { Text("Use This Build", bundle: .module) }
+                        .accessibilityIdentifier("builder.useNewerBuild")
+                }
+            }
             progressRow
             if case .finished(let run) = model.progress, run.succeeded {
                 Button { openURL(BuiltIPA.shortcutURL(named: BuiltIPA.shortcutName)) } label: {
@@ -425,6 +479,9 @@ public struct BuilderRootView: View {
         } footer: {
             if !model.isConfigured {
                 Text("Enter the repository and a GitHub token below first.", bundle: .module)
+            } else if let installed = model.environment.installedBuild {
+                Text("This app is build-\(installed.runID). Each time this screen opens, Build looks for a newer build of the branch.",
+                     bundle: .module)
             }
         }
         Section {

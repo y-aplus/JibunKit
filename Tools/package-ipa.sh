@@ -56,6 +56,13 @@ build="$(plist_value "$app/Info.plist" CFBundleVersion)"
 app_group="$(plist_value "$app/Info.plist" JibunKitAppGroup 2>/dev/null || true)"
 echo "app: $app_id $version ($build)"
 python3 Tools/verify-localized-info-plist.py GeneratedFeatureResources/App "$app"
+# On GitHub, record the run and commit that built the app, so Build can tell
+# whether a build-RUN_ID prerelease is newer. Elsewhere the keys are left out.
+if [[ -n "${GITHUB_RUN_ID:-}" ]]; then
+  /usr/libexec/PlistBuddy -c "Add :JibunKitBuildRunID string $GITHUB_RUN_ID" \
+    -c "Add :JibunKitBuildCommit string ${GITHUB_SHA:-}" "$app/Info.plist"
+  echo "build: run $GITHUB_RUN_ID, commit ${GITHUB_SHA:-unknown}"
+fi
 
 shopt -s nullglob
 for appex in "$app"/PlugIns/*.appex; do

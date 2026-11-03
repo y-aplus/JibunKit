@@ -28,6 +28,12 @@ Without the shortcut, tap **Download the IPA**, then **Share the IPA**. In the 2
 
 The quick build runs no tests. A failed run shows a link to its page on GitHub.
 
+## Newer builds
+
+An IPA built on GitHub records the run that built it and its commit in the app's Info.plist (`JibunKitBuildRunID` and `JibunKitBuildCommit`, written by `Tools/package-ipa.sh`). Each time the screen opens, Build looks for a `build-RUN_ID` prerelease with an IPA that a later successful run of the branch in the settings published, for example a build started from a computer with `python3 Tools/build-ipa.py`. When it finds one, Build says so at the top; **Use This Build** makes it the last build, so **Download the IPA**, **Install with SideStore** and the shortcut use it. The footer names this app's build.
+
+An app built elsewhere, such as from Xcode, has no run ID, and Build does not look. Nothing runs in the background, and iOS does not let the app replace itself: installing stays a step in SideStore or AltStore.
+
 ## Upstream changes
 
 When the repository in the settings is not the upstream itself, Build shows under **Upstream** how many of the upstream's commits the repository does not have yet, the upstream's latest release and a link to the changes on GitHub. It compares each time the screen opens, so nothing runs in the background. The upstream is public JibunKit, `y-aplus/JibunKit`, unless **Upstream** in the settings names another `OWNER/REPO`; its `main` branch is compared.

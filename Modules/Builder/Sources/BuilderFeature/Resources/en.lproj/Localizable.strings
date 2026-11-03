@@ -115,3 +115,6 @@
 "Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA." = "Compared each time this screen opens. Merge the changes on a computer as docs/updating.md describes, then build the IPA.";
 "Upstream" = "Upstream";
 "Enter the upstream as OWNER/REPO, or leave it empty." = "Enter the upstream as OWNER/REPO, or leave it empty.";
+"A newer build is available (built on %@ at %@)" = "A newer build is available (built on %@ at %@)";
+"Use This Build" = "Use This Build";
+"This app is build-%lld. Each time this screen opens, Build looks for a newer build of the branch." = "This app is build-%lld. Each time this screen opens, Build looks for a newer build of the branch.";

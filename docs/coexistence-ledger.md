@@ -82,6 +82,7 @@ P0は0.7.0、P1は0.8.0で公開済み。2026-09-19にユーザーがP0/P1/P2の
 | D39 | 集中モードフィルタ | 未対応 | 2026-10-11、hostが一つの`SetFocusFilterIntent`「Show Mini Apps」（ミニアプリの複数選択）を持つ形で実装。選ばれなかったFeatureは一覧・切替メニュー・クイックアクション・バッジ合計から外れ、`filterCriteria`に所有者IDを付けた通知は消音される（Reminder/Recordsは付与済み）。URL・通知・Spotlightからは開ける（アクセス制限ではない）。選択の保存とバッジ集計はunit test。2026-10-11の実機で、集中モード設定への表示・perform・appContextの読取り・一覧/クイックアクション/バッジの反映（アプリ終了後を含む）を確認し、performがバッジ更新を待たずに戻る不具合を修正（[記録](verification/2026-10-11-focus-filter-device.md)）。通知の消音は未確認：その端末設定ではフィルタなしでも集中モードがJibunKitの通知を止めず、条件を試せなかった。Feature独自のフィルタは、一アプリが複数のフィルタ型を持てるかが未確認のため未提供。 2026-10-11、通知の消音、ビルドにないミニアプリを指す保存済み選択、通知extensionでの扱いの確認は長期保留。 |
 | D40 | iPadハードウェアキーボード・メニューバー | 未調査（長期保留） | Feature切替のキーボードショートカットとiPadOSメニューバー項目がない。iPad実機の検証自体が不足しており、設計前に実機での現状確認が必要。 2026-10-11、検証できる新しいiPadがなく、手持ちのiPadにsideload環境を整える予定もないため長期保留。 |
 | D41 | 端末内の基盤モデル（FoundationModels）の利用枠 | 未調査 | 2026-10-09、Issue #16で評価。session/設定はFeatureが所有し他Featureへ波及しないため共通APIは足さず、[指針](guides/foundation-models.md)を置いた。`rateLimited`の制限単位をAppleは公開しておらず、アプリ単位ならFeature間で枠を共有し、独立アプリより各Featureの枠が減りうる。hostは枠を増やせない。 |
+| D42 | Core Motionの生センサー（`CMMotionManager`） | 未調査 | 2026-11-04、Issue #21で評価。活動履歴（`CMMotionActivityManager`の問い合わせ）はmanagerごとに独立し、app全体の上限もないため共通APIは足さず、[指針](guides/core-motion.md)を置いた。Motion & Fitnessの許可はapp共有で、Feature同意を先に確認する。Appleは`CMMotionManager`をapp内で1つにするよう求めており、複数Featureがそれぞれ作ると加速度・ジャイロの配送間隔が変わりうるが、hostに共有managerはなく未検証。 |
 
 ## 更新規則
 
@@ -110,5 +111,6 @@ P0は0.7.0、P1は0.8.0で公開済み。2026-09-19にユーザーがP0/P1/P2の
 | D30 | 比較実験 | 汎用backend/HTTPのidentity分離は採用通常範囲で検証済み。任意CloudKit adapterの実round-trip、container/account変更、署名条件は未観測として残す。 |
 | D32 | 仕様確認・比較実験 | 局所的な計算・値変換等は、global状態・登録・外部資源を持たない条件を確認して個別に補完不要を判定する。領域全体を一括免除しない。 |
 | D41 | 仕様確認・比較実験 | rate limitの単位（app/端末/処理種別）。アプリ単位と確認でき、一方のFeatureの利用で他方が拒否される事例が出た時点で、調停の要否を設計検証する。 |
+| D42 | 比較実験 | 2つのFeatureがそれぞれ`CMMotionManager`で加速度・ジャイロを同時に受け取ったとき、要求した間隔で届くかを実機で比べる。ずれる場合に共有managerの要否を設計検証する。 |
 
 `未対応`の項目にも未確認部分は残る。たとえばD03のhelper extensionの補完範囲、D04のOS上の複数window、D25の監視枠と代替方式は個別の比較実験・設計検証が必要。実装順にこの具体欄と各領域のガイドを更新し、完了した実験を未調査のまま放置しない。

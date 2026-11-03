@@ -102,6 +102,7 @@ Add only the contracts your feature needs:
 - [App Intents](guides/package-app-intents.md), [widgets](guides/package-static-widgets.md), and [incoming files](guides/feature-incoming.md).
 - [Quick actions, icon badge, Handoff, TipKit and notification extensions](guides/app-wide-surfaces.md), which iOS gives the app only once.
 - [On-device language models](guides/foundation-models.md) with FoundationModels.
+- [Motion activity and sensors](guides/core-motion.md) with Core Motion.
 - Other Apple system surfaces under [docs/guides](guides/).
 
 A read-only screen does not need dummy lifecycle, backup, or removal providers. Add explicit ownership only for resources and data that exist.

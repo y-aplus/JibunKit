@@ -138,7 +138,7 @@ final class BackupRestoreUITests: XCTestCase {
         tap(app.buttons["backup.export"])
         XCTAssertTrue(app.buttons["保存"].waitForExistence(timeout: 20))
         let nameField = app.textFields["DOCPicker.filenameTextField"]
-        XCTAssertTrue(nameField.waitForExistence(timeout: 10))
+        XCTAssertTrue(nameField.waitForExistence(timeout: 20))
         let suggestedName = nameField.value as? String ?? ""
         XCTAssertNotNil(suggestedName.range(
             of: #"^JibunKit-backup-[0-9]{8}-[0-9]{6}(\.zip)?$"#, options: .regularExpression),

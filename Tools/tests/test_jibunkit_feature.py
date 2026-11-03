@@ -1,4 +1,6 @@
+import contextlib
 import importlib.util
+import io
 import json
 from pathlib import Path
 import re
@@ -44,6 +46,15 @@ class JibunKitFeatureTests(unittest.TestCase):
         self.assertIn('path: "Modules/Notes"', helper)
         self.assertIn('definitions: ["NotesMiniApp.definition"]', helper)
         self.assertFalse(MODULE.sync(self.root, check=True))
+
+    def testNewCommandCreatesTheFeature(self):
+        # main() once assigned a local named new, which hid the new() function.
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            status = MODULE.main(['--root', str(self.root), 'new', '--name', 'Notes'])
+        self.assertEqual(status, 0, err.getvalue())
+        self.assertIn('Created Modules/Notes', out.getvalue())
+        self.assertTrue(self.manifest().is_file())
 
     def testNewRefusesInvalidNamesAndExistingDirectories(self):
         for name in ['notes', 'Notes-App', '9Notes', '']:

@@ -27,7 +27,11 @@ To move a hand-registered feature under `Modules/` to the new form, put its inte
 
 Do not add another `NotificationAppDelegate`; route the common payload through the same destination mapping. Add widget/extension products, App Shortcuts, [plist/entitlement requirements](guides/feature-build-requirements.md), and matching verification only for OS surfaces the feature uses. Register background/native startup work through `MiniAppDefinition.onHostLaunch`. See [adding a feature](mini-apps.md).
 
-`JibunKitCore`, root navigation, notification entry points, shared build settings, workflows, and common documentation are foundation-owned. Do not embed personal feature behavior there.
+`JibunKitCore`, root navigation, notification entry points, shared build settings, workflows, `Tools/`, templates, tests, and common documentation are foundation-owned. Do not embed personal feature behavior there.
+
+When foundation-owned code fails or a document contradicts itself, report it upstream with the steps to reproduce and the upstream commit, instead of fixing it only in your host: a local fix diverges from upstream and conflicts with the next merge. Until upstream fixes it, prefer a workaround that leaves the foundation files unchanged. If you must patch one, keep the patch in its own commit so you can drop it when the fix arrives.
+
+Coding agents read [AGENTS.md](../AGENTS.md), which states these boundaries for them; `CLAUDE.md` only imports it. Both come from upstream, so do not edit them in your host: put your own rules for agents in `docs-local/AGENTS.md`, which `AGENTS.md` tells them to read. Tools that look for another file name, such as Gemini CLI's `GEMINI.md`, can be set to read `AGENTS.md` instead.
 
 The host screens' wording is in `Sources/JibunKit/Resources/en.lproj` and `ja.lproj/Localizable.strings` (and the Core and extension tables named in [CONTRIBUTING](../CONTRIBUTING.md)); the Swift source holds the English text, which is also the key. To reword a host screen in your host, change the Japanese value in `ja.lproj` instead of the Swift string, so later foundation updates merge cleanly, and run `python3 Tools/check-localization.py`.
 

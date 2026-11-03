@@ -2,7 +2,7 @@
 """Check that relative Markdown links point to existing files and headings.
 
 Usage: python3 Tools/check-doc-links.py [FILE_OR_DIRECTORY ...]
-Without arguments it checks the current documents: README, CONTRIBUTING,
+Without arguments it checks the current documents: README, AGENTS, CONTRIBUTING,
 SECURITY, CHANGELOG, docs/*.md, docs/guides and docs/releases. Dated
 verification records and history stay as they were written and are not checked
 by default. External URLs are not fetched.
@@ -14,7 +14,7 @@ import sys
 from urllib.parse import unquote
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md", "docs/*.md",
+DEFAULT = ["README.md", "AGENTS.md", "CONTRIBUTING.md", "SECURITY.md", "CHANGELOG.md", "docs/*.md",
            "docs/guides/*.md", "docs/releases/*.md", "Modules/*/README.md"]
 
 

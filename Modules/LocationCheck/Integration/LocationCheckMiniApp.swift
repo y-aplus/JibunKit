@@ -34,30 +34,34 @@ enum LocationCheckMiniApp {
         deniedBehavior: "iOSに許可を求めず、何も記録しません。"
     )
 
-    static let definition = MiniAppDefinition(
-        id: id,
-        title: "LocationCheck",
-        systemImage: "location.viewfinder",
-        lifetime: lifetime,
-        externalAccess: service.externalAccess,
-        permissions: [permission],
-        onConsentChange: { permission, decision in
-            guard permission == permissionID else { return }
-            log.add("利用同意: \(decision.rawValue)")
-            try service.featureConsentDidChange()
-        },
-        onUnregister: {
-            try await MainActor.run {
-                try service.unregisterAllOwned()
-                log.clear()
+    static let definition = makeDefinition()
+
+    private static func makeDefinition() -> MiniAppDefinition {
+        MiniAppDefinition(
+            id: id,
+            title: "LocationCheck",
+            systemImage: "location.viewfinder",
+            lifetime: lifetime,
+            externalAccess: service.externalAccess,
+            permissions: [permission],
+            onConsentChange: { permission, decision in
+                guard permission == permissionID else { return }
+                log.add("利用同意: \(decision.rawValue)")
+                try service.featureConsentDidChange()
+            },
+            onUnregister: {
+                try await MainActor.run {
+                    try service.unregisterAllOwned()
+                    log.clear()
+                }
+            },
+            onHostLaunch: {
+                log.add("アプリ起動（監視中: \(service.systemMonitors.map(\.rawValue).sorted().joined(separator: ", "))）")
+                try service.reconnectPersistedMonitoring()
             }
-        },
-        onHostLaunch: {
-            log.add("アプリ起動（監視中: \(service.systemMonitors.map(\.rawValue).sorted().joined(separator: ", "))）")
-            try service.reconnectPersistedMonitoring()
+        ) { _ in
+            LocationCheckView()
         }
-    ) { _ in
-        LocationCheckView()
     }
 }
 

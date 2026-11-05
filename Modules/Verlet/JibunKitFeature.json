@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "id": "verlet",
+  "draft": true,
+  "products": [
+    "VerletFeature"
+  ],
+  "sources": [
+    "Integration/**"
+  ],
+  "definitions": [
+    "VerletMiniApp.definition"
+  ]
+}

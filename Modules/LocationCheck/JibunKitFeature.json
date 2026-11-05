@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "locationcheck",
+  "products": ["LocationCheckFeature"],
+  "sources": ["Integration/**"],
+  "definitions": ["LocationCheckMiniApp.definition"],
+  "app": {
+    "infoPlist": {
+      "NSLocationWhenInUseUsageDescription": "LocationCheck gets your location once when you ask.",
+      "NSLocationAlwaysAndWhenInUseUsageDescription": "LocationCheck records significant location changes and visits, also after the app has quit."
+    },
+    "localizedInfoPlist": {
+      "en": {
+        "NSLocationWhenInUseUsageDescription": "LocationCheck gets your location once when you ask.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "LocationCheck records significant location changes and visits, also after the app has quit."
+      },
+      "ja": {
+        "NSLocationWhenInUseUsageDescription": "LocationCheckが、求めたときに現在地を1回取得します。",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "LocationCheckが、アプリの終了後も含めて大きな位置変化と訪問を記録します。"
+      }
+    }
+  }
+}

@@ -4,7 +4,7 @@
     "LocationCheck": {
       "repository": "https://github.com/y-aplus/JibunKit",
       "ref": "location-source",
-      "commit": "f82d091d0c148a0955dcfe7d3a4e15eb97eab635",
+      "commit": "bbc8ea9e2be2025f5f43bd5ce9a6fdf6995e7a7c",
       "path": "Modules/LocationCheck"
     }
   }

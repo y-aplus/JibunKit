@@ -164,7 +164,7 @@ private struct LocationCheckView: View {
                 Text("iOSの許可: \(MiniAppLocationCoordinator.shared.authorization.rawValue)")
                     .font(.caption)
             } footer: {
-                Text("アプリの終了後もイベントを受け取るには「常に」が必要です。")
+                Text("アプリの終了後もイベントを受け取るには「常に」が必要です。（LocationCheck 第2版）")
             }
             Section("1回の測位") {
                 Button("現在地を1回取得") {

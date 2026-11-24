@@ -38,6 +38,7 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     }
     public private(set) var restorationIdentifier: String
     public let owner: MiniAppID
+    public let isStateRestorationEnabled: Bool
     private var central: CBCentralManager!
     private let diagnostics: (@MainActor (String) -> Void)?
     private var peripherals: [UUID: CBPeripheral] = [:]
@@ -54,12 +55,28 @@ public final class MiniAppCoreBluetoothCentral: NSObject, MiniAppBluetoothNative
     private var pendingEvents: [MiniAppBluetoothEvent] = []
 
     public init(owner: MiniAppID, restorationIdentifier: String,
-                diagnostics: (@MainActor (String) -> Void)? = nil) {
+                diagnostics: (@MainActor (String) -> Void)? = nil,
+                infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
         self.owner = owner; self.restorationIdentifier = restorationIdentifier
         self.diagnostics = diagnostics
+        let options = Self.centralManagerOptions(restorationIdentifier: restorationIdentifier,
+                                                 infoDictionary: infoDictionary)
+        self.isStateRestorationEnabled = options != nil
         super.init()
-        central = CBCentralManager(delegate: self, queue: .main,
-            options: [CBCentralManagerOptionRestoreIdentifierKey: restorationIdentifier])
+        central = CBCentralManager(delegate: self, queue: .main, options: options)
+    }
+
+    // CoreBluetooth は Info.plist の UIBackgroundModes に bluetooth-central がない状態で
+    // CBCentralManagerOptionRestoreIdentifierKey を渡すと NSInternalInconsistencyException で即座に終了する。
+    static func centralManagerOptions(
+        restorationIdentifier: String,
+        infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]
+    ) -> [String: Any]? {
+        guard !restorationIdentifier.isEmpty,
+              supportsStateRestoration(infoDictionary: infoDictionary) else {
+            return nil
+        }
+        return [CBCentralManagerOptionRestoreIdentifierKey: restorationIdentifier]
     }
     public var power: MiniAppBluetoothPower { Self.power(central.state) }
     public var authorization: MiniAppBluetoothAuthorization {
@@ -372,7 +389,12 @@ public final class MiniAppCoreBluetoothCentral: MiniAppBluetoothNativeCentral {
     public var eventHandler: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
     public let owner: MiniAppID
     public let restorationIdentifier: String
-    public init(owner: MiniAppID, restorationIdentifier: String) { self.owner = owner; self.restorationIdentifier = restorationIdentifier }
+    public let isStateRestorationEnabled = false
+    public init(owner: MiniAppID, restorationIdentifier: String,
+                diagnostics: (@MainActor (String) -> Void)? = nil,
+                infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]) {
+        self.owner = owner; self.restorationIdentifier = restorationIdentifier
+    }
     public var power: MiniAppBluetoothPower { .unsupported }
     public var authorization: MiniAppBluetoothAuthorization { .unsupported }
     public func scan(serviceUUIDs: [String]?, allowDuplicates: Bool) {}
@@ -387,3 +409,14 @@ public final class MiniAppCoreBluetoothCentral: MiniAppBluetoothNativeCentral {
     public func stopAll() async {}
 }
 #endif
+
+@MainActor
+extension MiniAppCoreBluetoothCentral {
+    /// Info.plist の UIBackgroundModes に `bluetooth-central` が宣言されているかを返す。
+    public static func supportsStateRestoration(
+        infoDictionary: [String: Any] = Bundle.main.infoDictionary ?? [:]
+    ) -> Bool {
+        guard let modes = infoDictionary["UIBackgroundModes"] as? [String] else { return false }
+        return modes.contains("bluetooth-central")
+    }
+}

@@ -130,18 +130,30 @@ public final class MiniAppBluetoothCoordinator {
         var stopTransition: Transition?
     }
     public static let shared = MiniAppBluetoothCoordinator()
+    public let supportsStateRestoration: Bool
     private let factory: NativeFactory
     private var owners: [MiniAppID: OwnerState] = [:]
     private var busyOwners: Set<MiniAppID> = []
     private var ownerWaiters: [MiniAppID: [CheckedContinuation<Void, Never>]] = [:]
     private var busyPeripherals: Set<PeripheralKey> = []
     private var peripheralWaiters: [PeripheralKey: [CheckedContinuation<Void, Never>]] = [:]
-    public init(factory: @escaping NativeFactory = { MiniAppCoreBluetoothCentral(owner: $0, restorationIdentifier: $1) }) { self.factory = factory }
+    public convenience init() {
+        self.init(
+            factory: { MiniAppCoreBluetoothCentral(owner: $0, restorationIdentifier: $1) },
+            supportsStateRestoration: MiniAppCoreBluetoothCentral.supportsStateRestoration()
+        )
+    }
+    public init(factory: @escaping NativeFactory, supportsStateRestoration: Bool = true) {
+        self.factory = factory
+        self.supportsStateRestoration = supportsStateRestoration
+    }
     public static func restorationIdentifier(for owner: MiniAppID) -> String { "dev.jibunkit.bluetooth.central.\(owner.storageNamespace)" }
 
     public func prepareRestoration(owner: MiniAppID, admitted: Bool,
                                    onRestore: @escaping @MainActor @Sendable () -> Void) {
-        guard admitted else { return }
+        // UIBackgroundModes に bluetooth-central がないビルドでは状態復元が機能しないため、
+        // 起動時に無意味な CBCentralManager を生成しない。
+        guard admitted, supportsStateRestoration else { return }
         if var state = owners[owner] {
             guard state.stopTransition == nil else { return }
             state.admitted = true; state.restorationOpen = true; state.onRestore = onRestore; owners[owner] = state
@@ -339,6 +351,7 @@ public final class MiniAppBluetoothService {
     private weak var runtime: MiniAppRuntime?
     public var receive: (@MainActor @Sendable (MiniAppBluetoothEvent) -> Void)?
     public init(owner: MiniAppID, coordinator: MiniAppBluetoothCoordinator = .shared) { precondition(owner.isValid); self.owner = owner; self.coordinator = coordinator }
+    public var supportsStateRestoration: Bool { coordinator.supportsStateRestoration }
     public func prepareRestoration(admitted: Bool, onRestore: @escaping @MainActor @Sendable () -> Void) {
         coordinator.prepareRestoration(owner: owner, admitted: admitted, onRestore: onRestore)
     }

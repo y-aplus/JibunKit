@@ -1,5 +1,8 @@
 import XCTest
 @testable import JibunKitCore
+#if canImport(CoreBluetooth)
+@preconcurrency import CoreBluetooth
+#endif
 
 @MainActor
 final class MiniAppBluetoothCoordinatorTests: XCTestCase {
@@ -201,6 +204,64 @@ final class MiniAppBluetoothCoordinatorTests: XCTestCase {
         XCTAssertEqual(result.unique["180D"], "180D:first")
         XCTAssertEqual(result.unique["180F"], "180F:only")
         XCTAssertEqual(result.ambiguous, ["180D"])
+    }
+
+    func testCentralManagerOptionsRequiresBluetoothCentralBackgroundMode() {
+        let identifier = MiniAppBluetoothCoordinator.restorationIdentifier(for: MiniAppID("ble-foreground"))
+        XCTAssertFalse(MiniAppCoreBluetoothCentral.supportsStateRestoration(infoDictionary: [:]))
+        XCTAssertFalse(MiniAppCoreBluetoothCentral.supportsStateRestoration(
+            infoDictionary: ["UIBackgroundModes": ["location", "fetch"]]))
+        XCTAssertFalse(MiniAppCoreBluetoothCentral.supportsStateRestoration(
+            infoDictionary: ["UIBackgroundModes": "bluetooth-central"]))
+        XCTAssertTrue(MiniAppCoreBluetoothCentral.supportsStateRestoration(
+            infoDictionary: ["UIBackgroundModes": ["bluetooth-central"]]))
+        XCTAssertTrue(MiniAppCoreBluetoothCentral.supportsStateRestoration(
+            infoDictionary: ["UIBackgroundModes": ["fetch", "bluetooth-central"]]))
+
+        #if canImport(CoreBluetooth)
+        XCTAssertNil(MiniAppCoreBluetoothCentral.centralManagerOptions(
+            restorationIdentifier: identifier, infoDictionary: [:]))
+        XCTAssertNil(MiniAppCoreBluetoothCentral.centralManagerOptions(
+            restorationIdentifier: identifier,
+            infoDictionary: ["UIBackgroundModes": ["location", "fetch"]]))
+        XCTAssertNil(MiniAppCoreBluetoothCentral.centralManagerOptions(
+            restorationIdentifier: identifier,
+            infoDictionary: ["UIBackgroundModes": "bluetooth-central"]))
+        XCTAssertNil(MiniAppCoreBluetoothCentral.centralManagerOptions(
+            restorationIdentifier: "",
+            infoDictionary: ["UIBackgroundModes": ["bluetooth-central"]]))
+        let options = MiniAppCoreBluetoothCentral.centralManagerOptions(
+            restorationIdentifier: identifier,
+            infoDictionary: ["UIBackgroundModes": ["fetch", "bluetooth-central"]])
+        XCTAssertEqual(options?.count, 1)
+        XCTAssertEqual(options?[CBCentralManagerOptionRestoreIdentifierKey] as? String, identifier)
+        #endif
+    }
+
+    func testUnsupportedRestorationSkipsPrepareRestorationButAllowsForegroundConnect() async throws {
+        let pool = FakePool(), owner = MiniAppID("ble-fg-only")
+        let coordinator = MiniAppBluetoothCoordinator(factory: pool.make, supportsStateRestoration: false)
+        let service = MiniAppBluetoothService(owner: owner, coordinator: coordinator)
+        XCTAssertFalse(coordinator.supportsStateRestoration)
+        XCTAssertFalse(service.supportsStateRestoration)
+
+        // bluetooth-central 非宣言時は prepareRestoration で manager を生成しない。
+        service.prepareRestoration(admitted: true) { XCTFail("復元非対応時に onRestore は呼ばれない") }
+        XCTAssertTrue(pool.created.isEmpty)
+
+        // フォアグラウンド接続はそのまま利用でき、誤った復元イベントは受理しない。
+        let runtime = MiniAppRuntime()
+        let events = EventBox()
+        service.receive = { events.values.append($0) }
+        try await service.connect(to: runtime)
+        XCTAssertEqual(pool.created, [owner])
+        try service.scan()
+        let peripheral = UUID()
+        let connection = try await service.connect(peripheral: peripheral)
+        pool[owner].emit(.connected(peripheral: UUID(), generation: UUID(), restored: true))
+        pool[owner].emit(.connected(peripheral: peripheral, generation: connection.generation, restored: false))
+        XCTAssertEqual(events.values, [.connected(peripheral: peripheral, generation: connection.generation, restored: false)])
+        await runtime.shutdown()
     }
 }
 
